@@ -1,6 +1,6 @@
 # README #
 
-These are source file for cimDraw. Note that external libraries (D3, Bootstrap, jQuery...) are not included.
+These are source file for cimDraw.
 
 ### What is this? ###
 
