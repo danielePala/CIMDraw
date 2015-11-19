@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Visualizing CIM using D3</title>
+    <link rel="stylesheet" href="css/bootstrap.css" >
+    <link href="css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="css/main.css" >
+    <script src="js/D3/d3.v3.js"></script>
+    <script src="js/jquery/jquery-2.1.4.js"></script>
+    <script src="js/bootstrap-fileinput/plugins/canvas-to-blob.js"></script>
+    <script src="js/bootstrap-fileinput/fileinput.js"></script>
+    <script src="js/bootstrap/bootstrap.js"></script>
+  </head>
+  <body>
+    <h1>CIM network visualization</h1>
+
+    <label class="control-label">Select File</label>
+    <form enctype="multipart/form-data">
+      <input id="cim-file-input" type="file" class="file" data-show-preview="false" data-show-upload="false">
+    </form>
+
+    <div id="cim-diagrams" class="btn-group">
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Action
+	<span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu">
+        <li><a href="#">Don't use any diagram</a></li>
+	<li role="separator" class="divider"></li>
+      </ul>
+    </div>
+      
+    <div class="btn-group" data-toggle="buttons">
+      <label class="btn btn-primary active">
+        <input type="radio" id="select" name="tool" value="select" onchange="disableForce(); disableZoom(); enableDrag()" autocomplete="off" checked>select
+      </label>
+      <label class="btn btn-primary">
+        <input type="radio" id="force" name="tool" value="force" onchange="disableDrag(); disableZoom(); enableForce()" autocomplete="off">force (auto-layout)
+      </label>
+      <label class="btn btn-primary">
+        <input type="radio" id="pan" name="tool" value="pan" onchange="disableDrag(); disableForce(); enableZoom()" autocomplete="off">pan+zoom
+      </label>
+    </div>
+
+    <div class="app-container">
+      <div class="app-diagram">
+	<canvas height="800" width="1800"></canvas>
+        <svg height="800" width="1800">
+	  <g></g>
+        </svg>
+      </div>
+      <div class="app-spreadsheet" id="app-spreadsheet"></div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+      document.getElementById('select').checked = true;
+
+      function locationHashChanged() {
+        cimDiagram.dataViz(location.hash);
+      }
+
+      window.onhashchange = locationHashChanged;
+      
+      $("#cim-file-input").fileinput();
+      $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {
+        d3.xml(file.name, function(error,data) {
+          console.log(error, data);
+          let diagrams = getDiagramList(data);
+          for (i in diagrams) {
+            d3.select("#cim-diagrams").select("ul").append("li").append("a").attr("href", "#"+diagrams[i]).text(diagrams[i]);
+          }
+          cimDiagram.setData(data);
+        });
+      });
+    </script>
+  </body>
+</html>
