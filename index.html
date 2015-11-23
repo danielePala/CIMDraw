@@ -11,27 +11,29 @@
     <script src="js/bootstrap-fileinput/plugins/canvas-to-blob.js"></script>
     <script src="js/bootstrap-fileinput/fileinput.js"></script>
     <script src="js/bootstrap/bootstrap.js"></script>
-  </head>
+    <script src="js/riot/route.js"></script>
+    </head>
   <body>
     <h1>CIM network visualization</h1>
 
     <label class="control-label">Select File</label>
     <form enctype="multipart/form-data">
       <input id="cim-file-input" type="file" class="file" data-show-preview="false" data-show-upload="false">
-    </form>
+      </form>
+      <a class="btn btn-default" href="#diagrams" role="button" id="cim-load">Load</a>
 
     <div id="cim-diagrams" class="btn-group">
       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Action
 	<span class="caret"></span>
       </button>
       <ul class="dropdown-menu">
-        <li><a href="#">Don't use any diagram</a></li>
+        <li><a href="#diagrams/nodiagram">Don't use any diagram</a></li>
 	<li role="separator" class="divider"></li>
       </ul>
     </div>
       
-    <div class="btn-group" data-toggle="buttons">
-      <label class="btn btn-primary active">
+    <div class="btn-group" data-toggle="buttons" id="cim-diagram-controls">
+      <label class="btn btn-primary active" id="selectLabel">
         <input type="radio" id="select" name="tool" value="select" onchange="disableForce(); disableZoom(); enableDrag()" autocomplete="off" checked>select
       </label>
       <label class="btn btn-primary">
@@ -53,26 +55,9 @@
     </div>
 
     <script src="js/main.js"></script>
-    <script>
-      document.getElementById('select').checked = true;
-
-      function locationHashChanged() {
-        cimDiagram.dataViz(location.hash);
-      }
-
-      window.onhashchange = locationHashChanged;
-      
-      $("#cim-file-input").fileinput();
-      $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {
-        d3.xml(file.name, function(error,data) {
-          console.log(error, data);
-          let diagrams = getDiagramList(data);
-          for (i in diagrams) {
-            d3.select("#cim-diagrams").select("ul").append("li").append("a").attr("href", "#"+diagrams[i]).text(diagrams[i]);
-          }
-          cimDiagram.setData(data);
-        });
-      });
-    </script>
+    <script src="js/model.js"></script>
+    <script src="js/cimTreeController.js"></script>
+    <script src="js/cimDiagramController.js"></script>
+    <script></script>
   </body>
 </html>
