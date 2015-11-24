@@ -16,6 +16,10 @@ let cimDiagramModel = {
 			    return el.attributes.length === 0;
 			});
 		    };
+		    allObjects[i].getAttribute = function(attrName) {
+			let attributes = this.getAttributes();
+			return attributes.filter(el => el.nodeName === attrName)[0];
+		    };
 		    allObjects[i].getLinks = function() {
 			return [].filter.call(this.children, function(el) {
 			    return el.attributes.length > 0;

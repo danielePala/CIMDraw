@@ -11,6 +11,8 @@ let cimTreeController = {
 	let diagram = this.model.getObjects("cim:Diagram")
             .filter(el => el.getAttributes()
 		    .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===decodeURI(diagramName));
+	let allConnectivityNodes = this.model.getObjects("cim:ConnectivityNode");
+	console.log("extracted connectivity nodes");
 	let allACLines = this.model.getObjects("cim:ACLineSegment");
 	console.log("extracted acLines");
 	let allDiagramObjects = this.model.getObjects("cim:DiagramObject");
@@ -25,50 +27,62 @@ let cimTreeController = {
 	}
 	let nodes = allACLines;
 	
-	// spreadsheet test
-	if (allACLines.length > 0) {
-	    var keyValues = allACLines[0].getAttributes().map(el => el.localName);
-
+	// navtree test
 	    d3.select("#app-spreadsheet")
-		.append("div")
-		.attr("class", "table")
+	        .append("div")
+	        .attr("class", "tree");
+	
+	let cimNetwork = d3.select("div.tree")
+	    .append("ul")
+	    .attr("class", "CIMNetwork");
+	this.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
+	this.createElements(cimNetwork, "ConnectivityNode", "Connectivity Nodes", allConnectivityNodes);
+	
+	d3.selectAll("li.ACLineSegment")
+	    .on("mouseover.hover", this.hover)
+	    .on("mouseout", this.mouseOut);
+    },
 
-	    d3.select("div.table")
-		.append("div")
-		.attr("class", "head")
-		.selectAll("div.data")
-		.data(keyValues)
-		.enter()
-		.append("div")
-		.attr("class", "data")
-		.html(function (d) {return d})
-		.style("left", function(d,i) {return (i * 200) + "px"});
-
-	    d3.select("div.table")
-		.selectAll("div.datarow")
-		.data(allACLines)
-		.enter()
-		.append("div")
-		.attr("class", "datarow")
-		.style("top", function(d,i) {return (40 + (i * 40)) + "px"});
-
-	    d3.selectAll("div.datarow")
-		.selectAll("div.data")
-		.data(function(d) {return d.getAttributes()})
-		.enter()
-		.append("div")
-		.attr("class", "data")
-		.html(function (d) {return d.innerHTML})
-		.style("left", function(d,i,j) {return (i * 200) + "px"});
-
-	    d3.selectAll("div.datarow")
-		.on("mouseover.hover", this.hover)
-		.on("mouseout", this.mouseOut);
-	}
+    createElements: function(cimNetwork, name, printName, data) {
+	let elementsTopContainer = cimNetwork
+	    .append("li")
+	    .attr("class", name + "s");
+	elementsTopContainer.append("a")
+	    .attr("class", "btn btn-primary btn-xs")
+	    .attr("role", "button")
+	    .attr("data-toggle", "collapse")
+	    .attr("href", "#" + name + "sList")
+	    .html(printName);
+	let elements = elementsTopContainer
+	    .append("ul")
+	    .attr("id", name + "sList")
+	    .attr("class", "collapse");
+	let elementTopContainer = elements
+	    .selectAll("li." + name)
+	    .data(data)
+	    .enter()
+	    .append("li")
+	    .attr("class", name)
+	elementTopContainer.append("a")
+	    .attr("class", "btn btn-primary btn-xs")
+	    .attr("role", "button")
+	    .attr("data-toggle", "collapse")
+	    .attr("href", function(d) {return "#" + d.attributes[0].value;})
+	    .html(function (d) {return d.getAttribute("cim:IdentifiedObject.name").textContent});
+	let elementEnter = elementTopContainer
+	    .append("ul")
+	    .attr("id", function(d) {return d.attributes[0].value;})
+	    .attr("class", "collapse");
+	elementEnter
+	    .selectAll("li")
+	    .data(function(d) {return d.getAttributes();})
+	    .enter()
+	    .append("li")
+	    .html(function (d) {return d.localName.split(".")[1] + ": " + d.innerHTML});
     },
 
     hover: function(hoverD) {
-	d3.selectAll("div.datarow")
+	d3.selectAll("li.ACLineSegment")
 	    .filter(function (d) {return d == hoverD;})
 	    .style("background", "#94B8FF");
 	d3.selectAll("g.ACLineSegment")
@@ -78,7 +92,7 @@ let cimTreeController = {
     },
 
     mouseOut: function() {
-	d3.selectAll("div.datarow").style("background", "white");
+	d3.selectAll("li.ACLineSegment").style("background", "white");
 	d3.selectAll("g.ACLineSegment").style("stroke-width", "0px");
     }
 };

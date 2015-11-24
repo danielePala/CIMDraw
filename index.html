@@ -20,14 +20,14 @@
     <form enctype="multipart/form-data">
       <input id="cim-file-input" type="file" class="file" data-show-preview="false" data-show-upload="false">
       </form>
-      <a class="btn btn-default" href="#diagrams" role="button" id="cim-load">Load</a>
+      <a class="btn btn-default" href="/diagrams" role="button" id="cim-load">Load</a>
 
     <div id="cim-diagrams" class="btn-group">
       <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Action
 	<span class="caret"></span>
       </button>
       <ul class="dropdown-menu">
-        <li><a href="#diagrams/nodiagram">Don't use any diagram</a></li>
+        <li><a href="/diagrams/nodiagram">Don't use any diagram</a></li>
 	<li role="separator" class="divider"></li>
       </ul>
     </div>
@@ -45,13 +45,13 @@
     </div>
 
     <div class="app-container">
+      <div class="app-spreadsheet" id="app-spreadsheet"></div>
       <div class="app-diagram">
 	<canvas height="800" width="1800"></canvas>
         <svg height="800" width="1800">
 	  <g></g>
         </svg>
       </div>
-      <div class="app-spreadsheet" id="app-spreadsheet"></div>
     </div>
 
     <script src="js/main.js"></script>

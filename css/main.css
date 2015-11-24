@@ -2,9 +2,14 @@ body {
 	margin: 20px;
 }
 
+.tree {
+    max-height: 800px;
+    overflow: scroll;
+}
+
 .app-container {
 	display: flex;
-	flex-flow: column nowrap;
+	flex-flow: row nowrap;
 }
 
 .app-diagram {

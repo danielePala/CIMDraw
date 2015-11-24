@@ -148,7 +148,7 @@ let cimDiagramController = {
 	    d3.selectAll("g.ACLineSegment")
 		.on("mouseover.hover", this.hover)
 		.on("mouseout", this.mouseOut);
-	    d3.selectAll("div.datarow")
+	    d3.selectAll("li.ACLineSegment")
 	        .on("click.moveTo", this.moveTo(edges));
 	}
     },
@@ -373,6 +373,7 @@ let cimDiagramController = {
             .attr("class", "ConnectivityNodes");
 	let cnEnter = d3.select("svg").select("g.ConnectivityNodes").selectAll("g.ConnectivityNode")
 	    .data(allConnectivityNodes, function (d) {
+		d.ok = false;
 		let lineData = [];
 		let xcalc = 0;
 		let ycalc = 0;
@@ -462,7 +463,9 @@ let cimDiagramController = {
 			});
 		    }
 		    lineData.sort(function(a, b){return a.seq-b.seq});
+		    d.ok = true;
 		} else if (positionCalculated) {
+		    d.ok = true;
 		    lineData.push({x:-5, y:-5, seq:1});
 		    lineData.push({x:5, y:-5, seq:2});
 		    lineData.push({x:5, y:5, seq:3});
@@ -473,23 +476,24 @@ let cimDiagramController = {
 		}
 		d.lineData = lineData;
 		return d.attributes[0].value;
-	    })
+	    })/*.filter(function(d) {console.log(d); return d.ok === true;})*/
 	    .enter()
 	    .append("g")
 	    .attr("class", "ConnectivityNode")
 	    .attr("id", function(d) { return d.attributes[0].value;});
+
 	cnEnter.append("path")
             .attr("d", function(d) {
 		return line(this.parentNode.__data__.lineData);
 	    })
-	    .attr("fill", "none")
 	    .attr("stroke", "black")
 	    .attr("stroke-width", 2);
+	
 	return cnEnter;
     },
 
     hover: function(hoverD) {
-        d3.selectAll("div.datarow")
+        d3.selectAll("li.ACLineSegment")
 	    .filter(function (d) {return d == hoverD;})
 	    .style("background", "#94B8FF");
 	d3.selectAll("g.ACLineSegment")
@@ -500,6 +504,7 @@ let cimDiagramController = {
 
     moveTo: function(edges) {
 	return function(hoverD) {
+	    console.log("ciao");
 	    let svgWidth = d3.select("svg").node().width.baseVal.value;
 	    let svgHeight = d3.select("svg").node().height.baseVal.value;
 	    let newZoom = zoomComp.scale();
@@ -534,7 +539,7 @@ let cimDiagramController = {
     },
 
     mouseOut: function() {
-	d3.selectAll("div.datarow").style("background", "white");
+	d3.selectAll("li.ACLineSegment").style("background", "white");
 	d3.selectAll("g.ACLineSegment").style("stroke-width", "0px");
     }
 };
@@ -640,10 +645,29 @@ function zooming(edges) {
 
 function forceTick(edges) {
     return function() {
-	d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode")
+	let cnEnter = d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode")
 	    .attr("transform", function (d) {
 		return "translate("+d.x+","+d.y+")";
 	    });
+	// get status from Webdis
+	/*cnEnter.data().forEach(function(d, index, array) {
+	    let cnName = d.getAttribute("cim:IdentifiedObject.name").textContent;
+	    d3.json("http://127.0.0.1:7379/GET/" + cnName + "_breaker_status")
+		.get(function(error, data) {
+		    let ret = "green";
+		    if (data !== null) {
+			if (data.GET === "1") {
+			    ret = "red";
+			}
+		    }
+		    cnEnter.filter(function (cnD) {return d == cnD;})
+			.attr("fill", function(d) {
+			    return ret;
+			});
+		});
+	});*/
+
+	
 	d3.select("g.ACLineSegments").selectAll("g.ACLineSegment")
 	    .attr("transform", function (d) {
 		return "translate("+d.x+","+d.y+")";
