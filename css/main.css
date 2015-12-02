@@ -1,59 +1,50 @@
 body {
-	margin: 20px;
+    margin: 20px;
+}
+
+.diagramTools {
+    margin-bottom: 20px;
 }
 
 .tree {
     max-height: 800px;
+    min-width: 300px;
     overflow: scroll;
+    resize: horizontal;
 }
 
 .app-container {
-	display: flex;
-	flex-flow: row nowrap;
+    display: flex;
+    flex-flow: row nowrap;
 }
 
 .app-diagram {
-	max-height: 800px;
+    max-height: 800px;
+}
+
+path.domain {
+    fill: none;
+    stroke: black;
+}
+
+g.tick > line {
+    stroke: black;
+    stroke-dasharray: 1 5;
 }
 
 .app-spreadsheet {
-
+    
 }
 
 canvas {
-	
-	width: 1800px;
-      	height: 800px;
+    width: 1800px;
+    height: 800px;
 }
 
 svg {
-	position: relative;
-	top: -800px;
-      	width: 1800px;
-      	height: 800px;
-      	border:1px solid black;
-}
-
-div.table {
-  	position: relative;
-}
-
-div.data {
-	position: absolute;
-	width: 190px;
-  	padding: 0 5px;
-}
-
-div.head {
-  	position: absolute;
-}
-
-div.datarow {
-  	position: absolute;
-  	width: 100%;
-  	border-top: 2px black solid;
-  	background: white;
-  	height: 35px;
-  	overflow: hidden;
+    position: relative;
+    top: -800px;
+    width: 1800px;
+    height: 800px;
 }
 

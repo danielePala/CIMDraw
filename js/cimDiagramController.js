@@ -373,7 +373,6 @@ let cimDiagramController = {
             .attr("class", "ConnectivityNodes");
 	let cnEnter = d3.select("svg").select("g.ConnectivityNodes").selectAll("g.ConnectivityNode")
 	    .data(allConnectivityNodes, function (d) {
-		d.ok = false;
 		let lineData = [];
 		let xcalc = 0;
 		let ycalc = 0;
@@ -397,50 +396,57 @@ let cimDiagramController = {
 		    } else if (equipments.length > 0) {
 			positionCalculated = true;
 			if (equipments.length === 1) {
-			    xcalc = equipments[0].lineData[0].x + equipments[0].x;
-			    ycalc = equipments[0].lineData[0].y + equipments[0].y;
+			    if (typeof(equipments[0].x === "undefined")) {
+				positionCalculated = false;
+			    } else {
+				xcalc = equipments[0].lineData[0].x + equipments[0].x;
+				ycalc = equipments[0].lineData[0].y + equipments[0].y;
+			    }
 			} else {
-			    let x1 = equipments[0].x;
-			    let y1 = equipments[0].y;
-			    let x2 = equipments[1].x;
-			    let y2 = equipments[1].y;
-			    let start1 = equipments[0].lineData[0];
-			    let end1 = equipments[0].lineData[equipments[0].lineData.length-1];
-			    let start2 = equipments[1].lineData[0];
-			    let end2 = equipments[1].lineData[equipments[1].lineData.length-1];
+			    if (typeof(equipments[0].x === "undefined") || typeof(equipments[1].x === "undefined")) {
+				positionCalculated = false;
+			    } else {
+				let x1 = equipments[0].x;
+				let y1 = equipments[0].y;
+				let x2 = equipments[1].x;
+				let y2 = equipments[1].y;
+				let start1 = equipments[0].lineData[0];
+				let end1 = equipments[0].lineData[equipments[0].lineData.length-1];
+				let start2 = equipments[1].lineData[0];
+				let end2 = equipments[1].lineData[equipments[1].lineData.length-1];
 
-			    let start1x = start1.x + x1;
-			    let start1y = start1.y + y1;
-			    let end1x = end1.x + x1;
-			    let end1y = end1.y + y1;
-			    let start2x = start2.x + x2;
-			    let start2y = start2.y + y2;
-			    let end2x = end2.x + x2;
-			    let end2y = end2.y + y2;
+				let start1x = start1.x + x1;
+				let start1y = start1.y + y1;
+				let end1x = end1.x + x1;
+				let end1y = end1.y + y1;
+				let start2x = start2.x + x2;
+				let start2y = start2.y + y2;
+				let end2x = end2.x + x2;
+				let end2y = end2.y + y2;
 
-			    let d1 = ((start1x-start2x)*(start1x-start2x))+((start1y-start2y)*(start1y-start2y));
-			    let d2 = ((start1x-end2x)*(start1x-end2x))+((start1y-end2y)*(start1y-end2y));
-			    let d3 = ((end1x-start2x)*(end1x-start2x))+((end1y-start2y)*(end1y-start2y));
-			    let d4 = ((end1x-end2x)*(end1x-end2x))+((end1y-end2y)*(end1y-end2y));
+				let d1 = ((start1x-start2x)*(start1x-start2x))+((start1y-start2y)*(start1y-start2y));
+				let d2 = ((start1x-end2x)*(start1x-end2x))+((start1y-end2y)*(start1y-end2y));
+				let d3 = ((end1x-start2x)*(end1x-start2x))+((end1y-start2y)*(end1y-start2y));
+				let d4 = ((end1x-end2x)*(end1x-end2x))+((end1y-end2y)*(end1y-end2y));
 
-			    let min = Math.min(d1, d2, d3, d4);
-			    if (min === d1) {
-				xcalc = (start1x+start2x)/2;
-				ycalc = (start1y+start2y)/2;
-			    } else if (min === d2) {
-				xcalc = (start1x+end2x)/2;
-				ycalc = (start1y+end2y)/2;
-			    } else if (min === d3) {
-				xcalc = (end1x+start2x)/2;
-				ycalc = (end1y+start2y)/2;
-			    } else if (min === d4) {
-				xcalc = (end1x+end2x)/2;
-				ycalc = (end1y+end2y)/2;
+				let min = Math.min(d1, d2, d3, d4);
+				if (min === d1) {
+				    xcalc = (start1x+start2x)/2;
+				    ycalc = (start1y+start2y)/2;
+				} else if (min === d2) {
+				    xcalc = (start1x+end2x)/2;
+				    ycalc = (start1y+end2y)/2;
+				} else if (min === d3) {
+				    xcalc = (end1x+start2x)/2;
+				    ycalc = (end1y+start2y)/2;
+				} else if (min === d4) {
+				    xcalc = (end1x+end2x)/2;
+				    ycalc = (end1y+end2y)/2;
+				}
 			    }
 			}
 		    }
 		}
-
 		let points = doEdges.filter(el => dobjs.indexOf(el.source) > -1).map(el => el.target);
 		if (points.length > 0) {
 		    let startx = parseInt(points[0].getAttributes().filter(el => el.localName === "DiagramObjectPoint.xPosition")[0].innerHTML);
@@ -463,9 +469,7 @@ let cimDiagramController = {
 			});
 		    }
 		    lineData.sort(function(a, b){return a.seq-b.seq});
-		    d.ok = true;
 		} else if (positionCalculated) {
-		    d.ok = true;
 		    lineData.push({x:-5, y:-5, seq:1});
 		    lineData.push({x:5, y:-5, seq:2});
 		    lineData.push({x:5, y:5, seq:3});
@@ -476,11 +480,11 @@ let cimDiagramController = {
 		}
 		d.lineData = lineData;
 		return d.attributes[0].value;
-	    })/*.filter(function(d) {console.log(d); return d.ok === true;})*/
+	    })
 	    .enter()
 	    .append("g")
 	    .attr("class", "ConnectivityNode")
-	    .attr("id", function(d) { return d.attributes[0].value;});
+	    .attr("id", function(d) {return d.attributes[0].value;});
 
 	cnEnter.append("path")
             .attr("d", function(d) {
@@ -493,9 +497,9 @@ let cimDiagramController = {
     },
 
     hover: function(hoverD) {
-        d3.selectAll("li.ACLineSegment")
+        /*d3.selectAll("li.ACLineSegment")
 	    .filter(function (d) {return d == hoverD;})
-	    .style("background", "#94B8FF");
+	    .style("background", "#94B8FF");*/
 	d3.selectAll("g.ACLineSegment")
 	    .filter(function (d) {return d == hoverD;})
 	    .style("stroke", "black")
@@ -504,17 +508,16 @@ let cimDiagramController = {
 
     moveTo: function(edges) {
 	return function(hoverD) {
-	    console.log("ciao");
-	    let svgWidth = d3.select("svg").node().width.baseVal.value;
-	    let svgHeight = d3.select("svg").node().height.baseVal.value;
+	    let svgWidth = parseInt(d3.select("svg").style("width"));
+	    let svgHeight = parseInt(d3.select("svg").style("height"));
 	    let newZoom = zoomComp.scale();
 	    let newx = -hoverD.x*newZoom + (svgWidth/2);
 	    let newy = -hoverD.y*newZoom + (svgHeight/2);
-	    d3.select("svg").select("g").attr("transform", "translate(" + [newx, newy] + ")scale(" + newZoom + ")");
+	    d3.selectAll("svg").select("g").attr("transform", "translate(" + [newx, newy] + ")scale(" + newZoom + ")");
 
-	    let context = d3.select("canvas").node().getContext("2d");
+	    let context = d3.selectAll("canvas").node().getContext("2d");
 	    context.save();
-	    context.clearRect(0, 0, d3.select("canvas").node().width, d3.select("canvas").node().height);
+	    context.clearRect(0, 0, svgWidth, svgHeight);
 	    context.translate(newx, newy);
 	    context.scale(newZoom, newZoom);
 	    edges.forEach(function (link) {
@@ -533,8 +536,8 @@ let cimDiagramController = {
 	    let yScale = d3.scale.linear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0,svgHeight]);
 	    let yAxis = d3.svg.axis().scale(yScale).orient("right");
 	    let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
-	    d3.select("svg").selectAll("#yAxisG").call(yAxis);
-	    d3.select("svg").selectAll("#xAxisG").call(xAxis);
+	    d3.selectAll("svg").selectAll("#yAxisG").call(yAxis);
+	    d3.selectAll("svg").selectAll("#xAxisG").call(xAxis);
 	} 
     },
 
@@ -615,9 +618,9 @@ function zooming(edges) {
 	let newx = zoomComp.translate()[0];
 	let newy = zoomComp.translate()[1];
 	let newZoom = zoomComp.scale();
-	let svgWidth = d3.select("svg").node().width.baseVal.value;
-	let svgHeight = d3.select("svg").node().height.baseVal.value;
-
+	let svgWidth = parseInt(d3.select("svg").style("width"));
+	let svgHeight = parseInt(d3.select("svg").style("height"));
+	
 	// manage axes
 	let xScale = d3.scale.linear().domain([-newx/newZoom, (svgWidth-newx)/newZoom]).range([0,svgWidth]);
 	let yScale = d3.scale.linear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0,svgHeight]);
@@ -630,7 +633,7 @@ function zooming(edges) {
 	
 	let context = d3.select("canvas").node().getContext("2d");
 	context.save();
-	context.clearRect(0, 0, d3.select("canvas").node().width, d3.select("canvas").node().height);
+	context.clearRect(0, 0, svgWidth, svgHeight);
 	context.translate(newx, newy);
 	context.scale(newZoom, newZoom);
 	edges.forEach(function (link) {
@@ -699,7 +702,7 @@ function forceTick(edges) {
 		return d.attributes[0].value;
 	    });
 	let context = d3.select("canvas").node().getContext("2d");
-	context.clearRect(0, 0, d3.select("canvas").node().width, d3.select("canvas").node().height);
+	context.clearRect(0, 0, parseInt(d3.select("svg").style("width")), parseInt(d3.select("svg").style("height")));
 	context.lineWidth = 1;
 	context.strokeStyle = "rgba(0, 0, 0, 0.5)";
 	edges.forEach(function (link) {
@@ -708,6 +711,7 @@ function forceTick(edges) {
 	    context.lineTo((link.target.x*svgZoom)+xoffset,(link.target.y*svgZoom)+yoffset)
 	    context.stroke();
 	});
+	context.restore();
     }
 };
 

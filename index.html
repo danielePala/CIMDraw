@@ -1,59 +1,88 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Visualizing CIM using D3</title>
-    <link rel="stylesheet" href="css/bootstrap.css" >
-    <link href="css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="css/main.css" >
+    <link rel="stylesheet" href="css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="css/bootstrap-select.css" type="text/css" />
+    <link rel="stylesheet" href="css/fileinput.css" type="text/css" />
+    <link rel="stylesheet" href="css/main.css" type="text/css" />
     <script src="js/D3/d3.v3.js"></script>
     <script src="js/jquery/jquery-2.1.4.js"></script>
     <script src="js/bootstrap-fileinput/plugins/canvas-to-blob.js"></script>
     <script src="js/bootstrap-fileinput/fileinput.js"></script>
+    <script src="js/bootstrap-select/bootstrap-select.js"></script>
     <script src="js/bootstrap/bootstrap.js"></script>
     <script src="js/riot/route.js"></script>
     </head>
   <body>
-    <h1>CIM network visualization</h1>
-
-    <label class="control-label">Select File</label>
-    <form enctype="multipart/form-data">
-      <input id="cim-file-input" type="file" class="file" data-show-preview="false" data-show-upload="false">
-      </form>
-      <a class="btn btn-default" href="/diagrams" role="button" id="cim-load">Load</a>
-
-    <div id="cim-diagrams" class="btn-group">
-      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Action
-	<span class="caret"></span>
-      </button>
-      <ul class="dropdown-menu">
-        <li><a href="/diagrams/nodiagram">Don't use any diagram</a></li>
-	<li role="separator" class="divider"></li>
-      </ul>
-    </div>
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+	<!-- Brand and toggle get grouped for better mobile display -->
+	<div class="navbar-header">
+	  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+	    <span class="sr-only">Toggle navigation</span>
+	    <span class="icon-bar"></span>
+	    <span class="icon-bar"></span>
+	    <span class="icon-bar"></span>
+	  </button>
+	  <a class="navbar-brand" href="#">CIM network visualization</a>
+	</div>
+	<div class="collapse navbar-collapse">
+	  <p class="navbar-text">cim.xml</p>
+	  <a class="btn btn-default navbar-btn navbar-left" href="#" role="button" id="cim-home-container">Change file</a>
+	  <select id="cim-diagrams" class="selectpicker navbar-left navbar-form" onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
+	    <option disabled="disabled">Select a diagram</option>
+	  </select>
+	  <div class="btn-group navbar-left" data-toggle="buttons" id="cim-diagram-controls">
+	    <label class="btn btn-default navbar-btn active" id="selectLabel">
+	      <input type="radio" id="select" name="tool" value="select" onchange="disableForce(); disableZoom(); enableDrag()" autocomplete="off" checked>select</input>
+	    </label>
+	    <label class="btn btn-default navbar-btn">
+	      <input type="radio" id="force" name="tool" value="force" onchange="disableDrag(); disableZoom(); enableForce()" autocomplete="off">force (auto-layout)</input>
+	    </label>
+	    <label class="btn btn-default navbar-btn">
+	      <input type="radio" id="pan" name="tool" value="pan" onchange="disableDrag(); disableForce(); enableZoom()" autocomplete="off">pan+zoom</input>
+	    </label>
+	  </div>
+	</div>
+      </div><!-- /.container-fluid -->
+    </nav>
+    
+    <div class="container-fluid">
+      <div class="row" id="cim-select-file">
+	<div class="col-md-8">
+	  <label class="control-label">Select File</label>
+	</div>
+      </div>
+      <div class="row">
+	<div class="col-md-6" id="cim-file-input-container">
+	  <form enctype="multipart/form-data">
+	    <input id="cim-file-input" type="file" class="file" multiple data-show-preview="false" data-show-upload="false">
+	  </form>
+	</div>
+	<div class="col-md-1" id="cim-load-container">
+	  <a class="btn btn-default" href="#diagrams" role="button" id="cim-load">Load</a>
+	</div>
+      </div>
       
-    <div class="btn-group" data-toggle="buttons" id="cim-diagram-controls">
-      <label class="btn btn-primary active" id="selectLabel">
-        <input type="radio" id="select" name="tool" value="select" onchange="disableForce(); disableZoom(); enableDrag()" autocomplete="off" checked>select
-      </label>
-      <label class="btn btn-primary">
-        <input type="radio" id="force" name="tool" value="force" onchange="disableDrag(); disableZoom(); enableForce()" autocomplete="off">force (auto-layout)
-      </label>
-      <label class="btn btn-primary">
-        <input type="radio" id="pan" name="tool" value="pan" onchange="disableDrag(); disableForce(); enableZoom()" autocomplete="off">pan+zoom
-      </label>
-    </div>
+      <div class="row diagramTools">
+	<div class="col-md-4"></div>	
+	<div class="col-md-4"></div>
+      </div>
 
-    <div class="app-container">
-      <div class="app-spreadsheet" id="app-spreadsheet"></div>
-      <div class="app-diagram">
-	<canvas height="800" width="1800"></canvas>
-        <svg height="800" width="1800">
-	  <g></g>
-        </svg>
+      <div class="row">
+	<div class="app-container col-md-12">
+	  <div class="app-spreadsheet" id="app-spreadsheet"></div>
+	  <div class="app-diagram">
+	    <canvas height="800" width="1800"></canvas>
+            <svg>
+	      <g></g>
+            </svg>
+	  </div>
+	</div>
       </div>
     </div>
-
+    
     <script src="js/main.js"></script>
     <script src="js/model.js"></script>
     <script src="js/cimTreeController.js"></script>

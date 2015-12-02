@@ -6,7 +6,7 @@ let cimTreeController = {
 
     render: function(diagramName) {
 	// clear all
-	d3.select("#app-spreadsheet").select(".table").remove();
+	d3.select("#app-spreadsheet").select(".tree").remove();
 	
 	let diagram = this.model.getObjects("cim:Diagram")
             .filter(el => el.getAttributes()
@@ -27,14 +27,14 @@ let cimTreeController = {
 	}
 	let nodes = allACLines;
 	
-	// navtree test
-	    d3.select("#app-spreadsheet")
-	        .append("div")
-	        .attr("class", "tree");
+	// navtree
+	d3.select("#app-spreadsheet")
+	    .append("div")
+	    .attr("class", "tree");
 	
 	let cimNetwork = d3.select("div.tree")
 	    .append("ul")
-	    .attr("class", "CIMNetwork");
+	    .attr("class", "CIMNetwork list-group");
 	this.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
 	this.createElements(cimNetwork, "ConnectivityNode", "Connectivity Nodes", allConnectivityNodes);
 	
@@ -46,13 +46,16 @@ let cimTreeController = {
     createElements: function(cimNetwork, name, printName, data) {
 	let elementsTopContainer = cimNetwork
 	    .append("li")
-	    .attr("class", name + "s");
+	    .attr("class", name + "s" + " list-group-item");
 	elementsTopContainer.append("a")
 	    .attr("class", "btn btn-primary btn-xs")
 	    .attr("role", "button")
 	    .attr("data-toggle", "collapse")
 	    .attr("href", "#" + name + "sList")
 	    .html(printName);
+	elementsTopContainer.append("span")
+	    .attr("class", "badge")
+	    .html(data.length);
 	let elements = elementsTopContainer
 	    .append("ul")
 	    .attr("id", name + "sList")
@@ -82,9 +85,9 @@ let cimTreeController = {
     },
 
     hover: function(hoverD) {
-	d3.selectAll("li.ACLineSegment")
+	/*d3.selectAll("li.ACLineSegment")
 	    .filter(function (d) {return d == hoverD;})
-	    .style("background", "#94B8FF");
+	    .style("background", "#94B8FF");*/
 	d3.selectAll("g.ACLineSegment")
 	    .filter(function (d) {return d == hoverD;})
 	    .style("stroke", "black")

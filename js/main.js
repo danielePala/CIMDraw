@@ -1,32 +1,47 @@
 let cimFile = "";
 
-route.base('/');
 route('/diagrams/*', function(name) {
-    console.log(name);
     d3.select("#cim-diagram-controls").style("display", null);
     document.getElementById("selectLabel").click();
     cimTreeController.render(name);
     cimDiagramController.render(name);
+    d3.select("svg").style("border", "1px solid black");
 });
 
 route('/diagrams', function(name) {
-    console.log('The list of diagrams');
-    $('#cim-file-input').fileinput('disable');
+    d3.select("#cim-select-file").style("display", "none");
+    d3.select("#cim-file-input-container").style("display", "none");
+    d3.select("#cim-load-container").style("display", "none");
+    d3.select("#cim-home-container").style("display", null);
+    
     let m = Object.create(cimDiagramModel);
     m.load(cimFile.name, function(error) {
 	let diagrams = m.getDiagramList();
 	for (i in diagrams) {
-	    d3.select("#cim-diagrams").select("ul").append("li").append("a").attr("href", "/diagrams/"+diagrams[i]).text(diagrams[i]);
+	    d3.select("#cim-diagrams").append("option").attr("value", "#diagrams/"+diagrams[i]).text(diagrams[i]);
+	    $(".selectpicker").selectpicker("refresh");
 	}
 	cimDiagramController.setModel(m);
 	cimTreeController.setModel(m);
     });
-    d3.select("#cim-diagrams").style("display", null);
+    $(".selectpicker").selectpicker("show");    
 });
 
 // This is the initial route ("the home page").
 route(function(name) {
-    console.log('The root');
+    d3.select("#cim-select-file").style("display", null);
+    d3.select("#cim-file-input-container").style("display", null);
+    $("#cim-file-input").fileinput("reset");
+    $("#cim-file-input").fileinput("enable");
+    $(".selectpicker").selectpicker("hide");
+    d3.select("#cim-diagram-controls").style("display", "none");
+    d3.select("#cim-load-container").style("display", "none");
+    d3.select("#cim-home-container").style("display", "none");
+    d3.select("svg").style("border", "0px");
+    d3.select("#cim-diagrams").select("select").selectAll("option").remove();
+    d3.select("#cim-diagrams").select("select").append("option").attr("disabled", "disabled").html("Select a diagram");
+    
+    $(".selectpicker").selectpicker();
     $("#cim-file-input").fileinput();
     $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {
 	
@@ -38,12 +53,7 @@ route(function(name) {
 	});*/
 	
 	cimFile = file;
-	d3.select("#cim-load").style("display", null);
+	d3.select("#cim-load-container").style("display", null);
     });
-
-    $('#cim-file-input').fileinput('enable');
-    d3.select("#cim-diagrams").style("display", "none");
-    d3.select("#cim-diagram-controls").style("display", "none");
-    d3.select("#cim-load").style("display", "none");
 });
 route.start(true);
