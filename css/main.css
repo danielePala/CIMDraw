@@ -1,5 +1,11 @@
 body {
     margin: 20px;
+    min-height: 200px;
+}
+
+.center-block {
+    width: 600px;
+    text-align: center;
 }
 
 .diagramTools {
