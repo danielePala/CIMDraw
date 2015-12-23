@@ -49,11 +49,12 @@ function cimTreeController() {
 		.attr("class", "btn btn-default")
 		.html("Search").on("click", function() {
 		    let searchKey = document.getElementById("cim-search-key").value;
-		    $(".CIMNetwork>li>ul>li>a:contains(" + searchKey + ")").parent().show();
-		    $(".CIMNetwork>li>ul>li>a:not(:contains(" + searchKey + "))").parent().hide();
-		    console.log($(".CIMNetwork>li>ul>li>a:contains(" + searchKey + ")").size());
 		    $(".CIMNetwork>li>ul").each(function() {
-			console.log(this);
+			let toShow = $(this).find(">li>a:contains(" + searchKey + ")");
+			let toHide = $(this).find(">li>a:not(:contains(" + searchKey + "))");
+			toShow.parent().show();
+			toHide.parent().hide();
+			$(this).parent().find(">span").html(toShow.size());
 		    });
 		});
 
@@ -102,11 +103,24 @@ function cimTreeController() {
 		.attr("id", function(d) {return d.attributes[0].value;})
 		.attr("class", "collapse");
 	    elementEnter
-		.selectAll("li")
+		.selectAll("li.attribute")
 		.data(function(d) {return d.getAttributes();})
 		.enter()
 		.append("li")
+		.attr("class", "attribute")
 		.html(function (d) {return d.localName.split(".")[1] + ": " + d.innerHTML});
+	    let cimModel = this.model;
+	    elementEnter
+	        .selectAll("li.link")
+	        .data(function(d) {return d.getLinks();})
+	        .enter()
+	        .append("li")
+		.attr("class", "link")
+	        .html(function (d) {return d.localName.split(".")[1] + ": ";})
+		.append("button")
+		.attr("class","btn btn-default btn-xs")
+		.attr("type", "submit")
+		.html(function (d) {return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;});
 	},
 
 	hover: function(hoverD) {

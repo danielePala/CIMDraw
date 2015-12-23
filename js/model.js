@@ -52,9 +52,7 @@ function cimDiagramModel() {
 	},
 
 	resolveLink: function(link) {
-	    return [].filter.call(this.data, function(el) {
-		return (el.attributes[0].value) === link.attributes[0].value;
-	    })[0];
+	    return this.dataMap.get(link.attributes[0].value);
 	},
 
 	getGraph: function(sources, linkName) {
