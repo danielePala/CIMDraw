@@ -2,9 +2,11 @@
 
 function cimDiagramModel() {
     return {
-	load: function(filename, callback) {
-	    d3.xml(filename, function(error, data) {
-		console.log(error, data);
+	load: function(file, reader, callback) {
+	    reader.onload = function(e) {
+                let parser = new DOMParser();
+		let data = parser.parseFromString(reader.result, "application/xml"); 
+		console.log(data);
 		this.data = data;
 		this.dataMap = new Map();
 
@@ -28,8 +30,9 @@ function cimDiagramModel() {
 			};
 		    } 
 		}
-		callback(error);
-	    }.bind(this));
+		callback();
+	    }.bind(this);
+	    reader.readAsText(file);
 	},
 	
 	getDiagramList: function() {
@@ -55,7 +58,7 @@ function cimDiagramModel() {
 	    return this.dataMap.get(link.attributes[0].value);
 	},
 
-	getGraph: function(sources, linkName) {
+	getGraph: function(sources, linkName, invLinkName) {
 	    let result = [];
 	    for (let i in sources) {
 		let links = sources[i].getLinks().filter(el => el.localName === linkName);
@@ -70,6 +73,24 @@ function cimDiagramModel() {
 		    }
 		}
 	    }
+	    // test
+	    let allObjs = this.getAllObjects();
+	    for (let i = 0; i < allObjs.length; i++) {
+		let links = allObjs[i].getLinks().filter(el => el.localName === invLinkName);
+		for (let j in links) {
+		    let targetObj = this.dataMap.get(links[j].attributes[0].value);
+		    if (typeof(targetObj) != "undefined" && sources.indexOf(targetObj) > -1) {
+			if (result.filter(el => el.source === allObjs[i] && el.target === targetObj).length === 0) {
+			    result.push({
+				weight: 1,
+				source: allObjs[i],
+				target: targetObj
+			    });
+			}
+		    }
+		}
+	    }
+	    
 	    return result;
 	}
     }

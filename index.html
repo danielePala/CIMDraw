@@ -17,7 +17,6 @@
   <body>
     <nav class="navbar navbar-default">
       <div class="container-fluid">
-	<!-- Brand and toggle get grouped for better mobile display -->
 	<div class="navbar-header">
 	  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
 	    <span class="sr-only">Toggle navigation</span>
@@ -25,11 +24,11 @@
 	    <span class="icon-bar"></span>
 	    <span class="icon-bar"></span>
 	  </button>
-	  <a class="navbar-brand" href="#">CIM network visualization</a>
+	  <a class="navbar-brand" href="">CIM network visualization</a>
 	</div>
 	<div class="collapse navbar-collapse">
 	  <p class="navbar-text" id="cim-filename"></p>
-	  <a class="btn btn-default navbar-btn navbar-left" href="#" role="button" id="cim-home-container">Change file</a>
+	  <a class="btn btn-default navbar-btn navbar-left" href="" role="button" id="cim-home-container">Change file</a>
 	  <select id="cim-diagrams" class="selectpicker navbar-left navbar-form" onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
 	    <option disabled="disabled">Select a diagram</option>
 	  </select>
@@ -49,28 +48,25 @@
     </nav>
     
     <div class="container-fluid">
-      
-      
-	<div class="row center-block" id="cim-select-file">
-	  <div class="col-md-12">
-	    <label class="control-label">Select File</label>
-	  </div>
+      <div class="row center-block" id="cim-select-file">
+	<div class="col-md-12">
+	  <label class="control-label">Select File</label>
 	</div>
+      </div>
 
-	<div class="row center-block">
-	  <div class="col-md-12" id="cim-file-input-container">
-	    <form enctype="multipart/form-data">
-	      <input id="cim-file-input" type="file" class="file" multiple data-show-preview="false" data-show-upload="false">
-	    </form>
-	  </div>
+      <div class="row center-block">
+	<div class="col-md-12" id="cim-file-input-container">
+	  <form enctype="multipart/form-data">
+	    <input id="cim-file-input" type="file" class="file" multiple data-show-preview="false" data-show-upload="false">
+	  </form>
 	</div>
+      </div>
 	
-	<div class="row center-block">
-	  <div class="col-md-12" id="cim-load-container">
-	    <a class="btn btn-primary btn-lg" href="#diagrams" role="button" id="cim-load">Load</a>
-	  </div>
+      <div class="row center-block">
+	<div class="col-md-12" id="cim-load-container">
+	  <a class="btn btn-primary btn-lg" href="#diagrams" role="button" id="cim-load">Load</a>
 	</div>
-      
+      </div>
       
       <div class="row diagramTools">
 	<div class="col-md-4"></div>	
@@ -88,12 +84,13 @@
 	  </div>
 	</div>
       </div>
+
     </div>
     
-    <script src="js/main.js"></script>
     <script src="js/model.js"></script>
     <script src="js/cimDiagramController.js"></script>
     <script src="js/cimTreeController.js"></script>
+    <script src="js/main.js"></script>
     <script></script>
   </body>
 </html>

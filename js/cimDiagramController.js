@@ -48,10 +48,10 @@ function cimDiagramController() {
 	    let allBusbarSections = this.model.getObjects("cim:BusbarSection");
 	    console.log("extracted busbarSections");
 	    // Build graph
-	    let edges = this.model.getGraph(allTerminals, "Terminal.ConnectivityNode");
-	    let ceEdges = this.model.getGraph(allTerminals, "Terminal.ConductingEquipment");
-	    let ioEdges = this.model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject");
-	    let doEdges = this.model.getGraph(allDiagramObjectPoints, "DiagramObjectPoint.DiagramObject");
+	    let edges = this.model.getGraph(allTerminals, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals");
+	    let ceEdges = this.model.getGraph(allTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals");
+	    let ioEdges = this.model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
+	    let doEdges = this.model.getGraph(allDiagramObjectPoints, "DiagramObjectPoint.DiagramObject", "DiagramObject.DiagramObjectPoints");
 	    console.log(ioEdges[0]);
 	    console.log(doEdges[0]);
 
@@ -177,7 +177,7 @@ function cimDiagramController() {
 
 	bindToTree: function() {
 	    let allTerminals = this.model.getObjects("cim:Terminal");
-	    let edges = this.model.getGraph(allTerminals, "Terminal.ConnectivityNode");
+	    let edges = this.model.getGraph(allTerminals, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals");
 	    d3.select(".CIMNetwork").selectAll("li.ACLineSegment, li.ConnectivityNode")
 		.on("click.moveTo", this.moveTo(edges));
 	},
