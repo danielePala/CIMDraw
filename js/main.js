@@ -5,79 +5,83 @@ function startRouter() {
     route.stop(); // clear all the old router callbacks
     let cimFile = {};
     let cimFileReader = {};
+    let cimModel = {};
     let cimDiagram = {};
     let cimTree = {};
 
     // This is the initial route ("the home page").
     route(function(name) {
-	$(".selectpicker").selectpicker({container: "body"});
+	// things to show
 	$("#cim-select-file").show();
 	$("#cim-file-input-container").show();
-	$("#cim-file-input").fileinput("reset");
-	$("#cim-file-input").fileinput("enable");
-	$(".selectpicker").selectpicker("hide");
-	$(".app-container").hide();
+	// things to hide
 	$("#cim-diagram-controls").hide();
 	$("#cim-load-container").hide();
 	$("#cim-home-container").hide();
-	
+	$("#cim-save").hide();
+	$(".app-container").hide();
+	$(".selectpicker").selectpicker("hide");
+	// main logic
+	$(".selectpicker").selectpicker({container: "body"});
+	$("#cim-file-input").fileinput("reset");
+	$("#cim-file-input").fileinput("enable");
 	d3.select("#cim-diagrams").selectAll("option").remove();
 	d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
 	d3.select("#cim-filename").html("");    
 	$(".selectpicker").selectpicker("refresh");
 	$("#cim-file-input").fileinput();
 	$("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {	    
-	    /*d3.xml("http://ric302107:8080/com.vogella.jersey.first/rest/cim/Class/ACLineSegment")
-	      .header("Accept", "application/rdf+xml")
-	      .get(function(error, data) {
-	      console.log(error, data);
-	      });*/
 	    cimFile = file;
 	    cimFileReader = reader;
-	    /*console.log(reader);
-	    reader.readAsText(file);
-	    reader.onload = function(e) {
-		let parser = new DOMParser();
-		let doc = parser.parseFromString(reader.result, "application/xml");
-	    }*/
-	    d3.select("#cim-load-container").style("display", null);
+	    $("#cim-load-container").show();
 	});
     });
 
     // here we choose a diagram to display
     route('/diagrams', function(name) {
-	let m = Object.assign({}, cimDiagramModel());
+	cimModel = Object.assign({}, cimDiagramModel());
 	cimDiagram = Object.assign({}, cimDiagramController());
 	cimTree = Object.assign({}, cimTreeController());
-
-	d3.select("#cim-load-container").style("display", null);
-	d3.select("#cim-select-file").style("display", "none");
-	d3.select("#cim-file-input-container").style("display", "none");
-	d3.select("#cim-load-container").style("display", "none");
-	d3.select("#cim-home-container").style("display", null);
+	// things to show
+	$("#cim-load-container").show();
+	$("#cim-home-container").show();
+	$(".selectpicker").selectpicker("show"); // TODO: should wait for diagram list
+	// things to hide
+	$("#cim-select-file").hide();
+	$("#cim-file-input-container").hide();
+	$("#cim-load-container").hide();
+	// main logic 
 	d3.select("#cim-filename").html(cimFile.name);
-
-	m.load(cimFile, cimFileReader, function() {
+	cimModel.load(cimFile, cimFileReader, function() {
 	    d3.select("#cim-diagrams").append("option").attr("value", "#diagrams/none").text("Generate a new diagram");
-	    let diagrams = m.getDiagramList();
+	    let diagrams = cimModel.getDiagramList();
 	    for (let i in diagrams) {
 		d3.select("#cim-diagrams").append("option").attr("value", "#diagrams/"+diagrams[i]).text(diagrams[i]);
 		}
 	    $(".selectpicker").selectpicker("refresh");
-	    cimDiagram.setModel(m);
-	    cimTree.setModel(m);
+	    cimDiagram.setModel(cimModel);
+	    cimTree.setModel(cimModel);
 	});
-	$(".selectpicker").selectpicker("show");
     });
 
     // here we show a certain diagram
     route('/diagrams/*', function(name) {
+	// things to show
 	$("#cim-diagram-controls").show();
+	$("#cim-save").show();
 	$(".app-container").show();
+	// main logic
 	$(".selectLabel").click();
 	cimDiagram.render(name);
 	cimTree.render(name);
 	cimDiagram.bindToTree();
+	// test: save a copy of the file
+	$("#cim-save").on("click", function() {
+	    let out = cimModel.save();
+	    let blob = new Blob([out], {type : 'text/xml'});
+	    let objectURL = URL.createObjectURL(blob);
+	    $("#cim-save").attr("href", objectURL);
+	});
     });
 
     route('/diagrams/*/*', function(name, element) {

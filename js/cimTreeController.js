@@ -82,6 +82,7 @@ function cimTreeController() {
 	},
 
 	createElements: function(cimNetwork, name, printName, data) {
+	    //let model = this.model;
 	    let elementsTopContainer = cimNetwork
 		.append("li")
 		.attr("class", name + "s" + " list-group-item");
@@ -127,7 +128,17 @@ function cimTreeController() {
 		.enter()
 		.append("li")
 		.attr("class", "attribute")
-		.html(function (d) {return d.localName.split(".")[1] + ": <span contenteditable=\"true\">" + d.innerHTML  + "</span>"});
+		.html(function (d) {return d.localName.split(".")[1] + ": "})
+		.append("span")
+		.attr("contenteditable", "true")
+		.html(function (d) {return d.innerHTML})
+		.on("input", function(d) {
+		    //console.log("new value: ", d3.select(this).html());
+		    //console.log("changed element: ", d);
+		    d.innerHTML = d3.select(this).html();
+		    //console.log("changed element: ", d);
+		    //model.save();
+		});
 	    // add links
 	    let cimModel = this.model;
 	    elementEnter

@@ -34,6 +34,13 @@ function cimDiagramModel() {
 	    }.bind(this);
 	    reader.readAsText(file);
 	},
+
+	// serialize test
+	save: function() {
+	    var oSerializer = new XMLSerializer();
+	    var sXML = oSerializer.serializeToString(this.data);
+	    return sXML;
+	},
 	
 	getDiagramList: function() {
 	    let diagrams = this.getObjects("cim:Diagram")

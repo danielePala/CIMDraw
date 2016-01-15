@@ -18,17 +18,12 @@
     <nav class="navbar navbar-default">
       <div class="container-fluid">
 	<div class="navbar-header">
-	  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-	    <span class="sr-only">Toggle navigation</span>
-	    <span class="icon-bar"></span>
-	    <span class="icon-bar"></span>
-	    <span class="icon-bar"></span>
-	  </button>
 	  <a class="navbar-brand" href="">CIM network visualization</a>
 	</div>
 	<div class="collapse navbar-collapse">
 	  <p class="navbar-text" id="cim-filename"></p>
 	  <a class="btn btn-default navbar-btn navbar-left" href="" role="button" id="cim-home-container">Change file</a>
+	  <a class="btn btn-default navbar-btn navbar-left" role="button" id="cim-save" download="file.xml">Save as...</a>
 	  <select id="cim-diagrams" class="selectpicker navbar-left navbar-form" onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
 	    <option disabled="disabled">Select a diagram</option>
 	  </select>
@@ -56,8 +51,8 @@
 
       <div class="row center-block">
 	<div class="col-md-12" id="cim-file-input-container">
-	  <form enctype="multipart/form-data">
-	    <input id="cim-file-input" type="file" class="file" multiple data-show-preview="false" data-show-upload="false">
+	  <form enctype="multipart/form-data" action="/api/upload" method="POST">
+	    <input id="cim-file-input" name="cim-file" type="file" class="file" multiple data-show-preview="false" data-show-upload="false">
 	  </form>
 	</div>
       </div>
