@@ -105,6 +105,7 @@ function cimTreeController() {
 		.enter()
 		.append("li")
 		.attr("class", name);
+	    let cimModel = this.model;
 	    elementTopContainer.append("a")
 		.attr("class", "btn btn-primary btn-xs")
 		.attr("role", "button")
@@ -115,6 +116,12 @@ function cimTreeController() {
 		    let basePath = hashComponents[0] + "/" + hashComponents[1];
 		    if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
 			route(basePath + "/" + d.attributes[0].value);
+		    }
+		    // test...
+		    if (d3.select("#cimTarget").empty() === false) {
+			d3.select("#cimTarget").data()[0].attributes[0].value = "#" + d.attributes[0].value;
+			d3.select("#cimTarget").select("button").html(function (d) {return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;});
+			d3.select("#cimTarget").attr("id", null);
 		    }
 		})
 		.html(function (d) {return d.getAttribute("cim:IdentifiedObject.name").textContent});
@@ -133,22 +140,23 @@ function cimTreeController() {
 		.attr("contenteditable", "true")
 		.html(function (d) {return d.innerHTML})
 		.on("input", function(d) {
-		    //console.log("new value: ", d3.select(this).html());
-		    //console.log("changed element: ", d);
 		    d.innerHTML = d3.select(this).html();
-		    //console.log("changed element: ", d);
-		    //model.save();
+		})
+		.on("keydown", function() {
+		    // trap the return key being pressed
+		    if (d3.event.keyCode === 13) {
+			d3.event.preventDefault();
+		    }
 		});
 	    // add links
-	    let cimModel = this.model;
-	    elementEnter
+	    let elementLink = elementEnter
 	        .selectAll("li.link")
 	        .data(function(d) {return d.getLinks();})
 	        .enter()
 	        .append("li")
 		.attr("class", "link")
-	        .html(function (d) {return d.localName.split(".")[1] + ": ";})
-		.append("button")
+	        .html(function (d) {return d.localName.split(".")[1] + ": ";});
+	    elementLink.append("button")
 		.attr("class","btn btn-default btn-xs")
 		.attr("type", "submit")
 		.on("click", function (d) {
@@ -169,12 +177,16 @@ function cimTreeController() {
 		    $(d.attributes[0].value).parent().parent().collapse("show");
 		})
 		.html(function (d) {return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;});
+	    elementLink.append("button")
+	        .attr("class","btn btn-default btn-xs")
+	        .attr("type", "submit")
+	        .on("click", function (d) {
+		    $(this).parent().attr("id", "cimTarget");
+		})
+	        .html("change");
 	},
 
 	hover: function(hoverD) {
-	    /*d3.selectAll("li.ACLineSegment")
-	      .filter(function (d) {return d == hoverD;})
-	      .style("background", "#94B8FF");*/
 	    d3.selectAll("g.ACLineSegment")
 		.filter(function (d) {return d == hoverD;})
 		.style("stroke", "black")
