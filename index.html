@@ -12,8 +12,10 @@
     <script src="js/bootstrap-fileinput/fileinput.js"></script>
     <script src="js/bootstrap-select/bootstrap-select.js"></script>
     <script src="js/bootstrap/bootstrap.js"></script>
-    <script src="js/riot/route.js"></script>
-    </head>
+    <script src="js/cimDiagram.tag" type="riot/tag"></script>
+    <script src="js/cimTree.tag" type="riot/tag"></script>
+    <script src="js/riot/riot+compiler.js"></script>
+  </head>
   <body>
     <nav class="navbar navbar-default">
       <div class="container-fluid">
@@ -70,22 +72,15 @@
 
       <div class="row">
 	<div class="app-container col-md-12">
-	  <div class="app-tree" id="app-tree"></div>
-	  <div class="app-diagram">
-	    <canvas height="800" width="1800"></canvas>
-            <svg>
-	      <g></g>
-            </svg>
-	  </div>
+	  <cimTree></cimTree>
+	  <cimDiagram></cimDiagram>
 	</div>
       </div>
 
     </div>
-    
     <script src="js/model.js"></script>
-    <script src="js/cimDiagramController.js"></script>
-    <script src="js/cimTreeController.js"></script>
+    <!--<script src="js/cimDiagramController.js"></script>
+    <script src="js/cimTreeController.js"></script>-->
     <script src="js/main.js"></script>
-    <script></script>
   </body>
 </html>

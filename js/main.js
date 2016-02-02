@@ -2,15 +2,14 @@
 
 function startRouter() {
     console.log("start router");
-    route.stop(); // clear all the old router callbacks
+    riot.route.stop(); // clear all the old router callbacks
     let cimFile = {};
     let cimFileReader = {};
     let cimModel = {};
-    let cimDiagram = {};
-    let cimTree = {};
+    //let cimDiagram = {};
 
     // This is the initial route ("the home page").
-    route(function(name) {
+    riot.route(function(name) {
 	// things to show
 	$("#cim-select-file").show();
 	$("#cim-file-input-container").show();
@@ -38,10 +37,12 @@ function startRouter() {
     });
 
     // here we choose a diagram to display
-    route('/diagrams', function(name) {
+    riot.route('/diagrams', function(name) {
 	cimModel = Object.assign({}, cimDiagramModel());
-	cimDiagram = Object.assign({}, cimDiagramController());
-	cimTree = Object.assign({}, cimTreeController());
+	//cimDiagram = Object.assign({}, cimDiagramController());
+	//cimDiagram.setModel(cimModel);
+	riot.mount("cimDiagram", {model: cimModel});
+	riot.mount("cimTree", {model: cimModel});
 	// things to show
 	$("#cim-load-container").show();
 	$("#cim-home-container").show();
@@ -59,22 +60,22 @@ function startRouter() {
 		d3.select("#cim-diagrams").append("option").attr("value", "#diagrams/"+diagrams[i]).text(diagrams[i]);
 		}
 	    $(".selectpicker").selectpicker("refresh");
-	    cimDiagram.setModel(cimModel);
-	    cimTree.setModel(cimModel);
 	});
     });
 
     // here we show a certain diagram
-    route('/diagrams/*', function(name) {
+    riot.route('/diagrams/*', function(name) {
 	// things to show
 	$("#cim-diagram-controls").show();
 	$("#cim-save").show();
 	$(".app-container").show();
 	// main logic
 	$(".selectLabel").click();
-	cimDiagram.render(name);
-	cimTree.render(name);
-	cimDiagram.bindToTree();
+
+	/*cimModel.on("selectDiagram", function(name) {
+	    cimDiagram.render(name);
+	});
+	cimModel.trigger("selectDiagram", name);*/
 	// test: save a copy of the file
 	$("#cim-save").on("click", function() {
 	    let out = cimModel.save();
@@ -84,14 +85,15 @@ function startRouter() {
 	});
     });
 
-    route('/diagrams/*/*', function(name, element) {
-	let target = d3.select("#" + element).node().parentNode;
-	d3.select(".CIMNetwork").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
-	d3.select(target).select("a").attr("class", "btn btn-danger btn-xs");
-	$(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find("#" + element).parent().offset().top - $(".tree").offset().top));
-    });
+    // used for tree navigation
+    //riot.route('/diagrams/*/*', function(name, element) {
+/*	cimModel.on("selectElement", function(name) {
+	    cimDiagram.moveTo(element);    
+	});
+	cimModel.trigger("selectElement", element);
+    });*/
     
-    route.start(true);
+    riot.route.start(true);
 };
 
 // start routing
