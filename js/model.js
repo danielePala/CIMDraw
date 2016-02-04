@@ -2,6 +2,7 @@
 
 function cimDiagramModel() {
     return {
+	// load a CIM file.
 	load(file, reader, callback) {
 	    reader.onload = function(e) {
                 let parser = new DOMParser();
@@ -44,13 +45,14 @@ function cimDiagramModel() {
 	    reader.readAsText(file);
 	},
 
-	// serialize test
+	// serialize the current CIM file.
 	save() {
 	    var oSerializer = new XMLSerializer();
 	    var sXML = oSerializer.serializeToString(this.data);
 	    return sXML;
 	},
-	
+
+	// get a list of diagrams in the current CIM file.
 	getDiagramList() {
 	    let diagrams = this.getObjects("cim:Diagram")
 		.map(el => el.getAttributes()
@@ -59,6 +61,7 @@ function cimDiagramModel() {
 	    return diagrams;
 	},
 
+	// Get the objects of a given type (doesn't filter by diagram).
 	getObjects(type) {
 	    let allObjects = this.data.children[0].children;
 	    return [].filter.call(allObjects, function(el) {
@@ -66,8 +69,13 @@ function cimDiagramModel() {
 	    });
 	},
 
+	// Get the objects of a given type that have at least one
+	// DiagramObject in the current diagram.
 	// NOTE: we're using this also for connectivity nodes...
 	getConductingEquipments(type) {
+	    if (this.activeDiagramName === "none") {
+		return this.getObjects(type);
+	    }
 	    let allObjects = this.getDiagramObjectGraph().map(el => el.source);
 	    let allObjectsSet = new Set(allObjects); // we want uniqueness
 	    return [...allObjectsSet].filter(function(el) {
@@ -75,7 +83,11 @@ function cimDiagramModel() {
 	    });
 	},
 
+	// Get the connectivity nodes that belong to the current diagram.
 	getConnectivityNodes() {
+	    if (this.activeDiagramName === "none") {
+		return this.getObjects("cim:ConnectivityNode");
+	    }
 	    let allConnectivityNodes = this.getObjects("cim:ConnectivityNode");
 	    let graphic = this.getConductingEquipments("cim:ConnectivityNode");
 	    let graphicSet = new Set(graphic);
@@ -92,24 +104,31 @@ function cimDiagramModel() {
 	    return graphic.concat(nonGraphic);
 	},
 
+	// get all objects (doesn't filter by diagram).
 	getAllObjects() {
 	    return this.data.children[0].children;
 	},
 
+	// get an object given its UUID.
 	getObject(uuid) {
 	    return this.dataMap.get("#" + uuid);
 	},
 
+	// get all the links of a given object.
 	getLinks(object) {
 	    return [].filter.call(object.children, function(el) {
 		return el.attributes.length > 0;
 	    });
 	},
 
+	// resolve a given link.
 	resolveLink(link) {
 	    return this.dataMap.get(link.attributes[0].value);
 	},
 
+	// returns all relations between given sources and other objects,
+	// via a given link name. The inverse link name should be supplied too.
+	// It doesn't filter by diagram.
 	getGraph(sources, linkName, invLinkName, invert) {
 	    if (arguments.length === 3) {
 		invert = false;
@@ -217,6 +236,7 @@ function cimDiagramModel() {
 	    return doEdges;
 	},
 
+	// Selects a given diagram in the current CIM file.
 	// TODO: perform some checks...
 	selectDiagram(diagramName) {
 	    if (diagramName !== this.activeDiagramName) {

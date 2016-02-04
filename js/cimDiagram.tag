@@ -29,6 +29,24 @@
 	 self.moveTo(element);
      });
 
+     $("#select").change(function() {
+	 self.disableForce();
+	 self.disableZoom();
+	 self.enableDrag();
+     });
+     
+     $("#force").change(function() {
+	 self.disableZoom();
+	 self.disableDrag();
+	 self.enableForce();
+     });
+
+     $("#pan").change(function() {
+	 self.disableForce();
+	 self.disableDrag();
+	 self.enableZoom();
+     });
+
      this.model = opts.model;
      this.edges = [];
      
@@ -114,7 +132,6 @@
 		.nodes(nodes)
 		.links(edges)
 		.on("tick", tickFunction);
-	 let self = this;
 	 console.log("Routing links...");
 	 this.edges.forEach(function (link) {
 	     link.p = self.closestPoint(link.source, link.target);
@@ -123,22 +140,7 @@
 	 this.disableForce();
 	 this.disableZoom();
 	 this.enableDrag();
-	 let controller = this;
-	 $("#select").change(function() {
-	     controller.disableForce();
-	     controller.disableZoom();
-	     controller.enableDrag();
-	 });
-	 $("#force").change(function() {
-	     controller.disableZoom();
-	     controller.disableDrag();
-	     controller.enableForce();
-	 });
-	 $("#pan").change(function() {
-	     controller.disableForce();
-	     controller.disableDrag();
-	     controller.enableZoom();
-	 });
+
 	 tickFunction();
 	 // setup xy axes
 	 let xScale = d3.scale.linear().domain([0, 1800]).range([0,1800]);
@@ -174,7 +176,17 @@
 	 // handle mouseover
 	 d3.selectAll("g.ACLineSegment")
 			    .on("mouseover.hover", this.hover)
-			    .on("mouseout", this.mouseOut);
+			    .on("mouseout", this.mouseOut)
+			    .on("click", function (d) {
+				if (self.status === "ZOOM") {
+				    let hashComponents = window.location.hash.substring(1).split("/");
+				    let basePath = hashComponents[0] + "/" + hashComponents[1];
+				    if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
+					riot.route(basePath + "/" + d.attributes[0].value);
+				    }
+				}
+			    });
+	     
      }
 
      // bind data to an x,y array from Diagram Object Points
@@ -428,27 +440,6 @@
 		      });
      }
 
-     /*filterConnectivityNodes(allConnectivityNodes) { 
-	let self = this;
-	return allConnectivityNodes.filter(function(d) {
-	let edges = self.model.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
-	let cnTerminals = edges.map(el => el.target);
-	// let's try to get some equipment
-	let equipments = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
-	equipments = self.model.getConductingEquipmentGraph(equipments).map(el => el.source);
-	// let's try to get a busbar section
-	let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target); 
-	let positionCalculated = false;
-	if (dobjs.length === 0) {
-	if (equipments.length > 0) {
-	positionCalculated = true;
-	}
-	}
-	let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
-	return ((points.length > 0) || (positionCalculated === true));
-	});
-	}*/
-
      // Draw all ConnectivityNodes
      drawConnectivityNodes(allConnectivityNodes) {
 	 let line = d3.svg.line()
@@ -632,6 +623,8 @@
      }
 
      enableDrag() {
+	 $("#select").click();
+	 this.status = "DRAG";
 	 let model = this.model;
 	 let drag = d3.behavior.drag().origin(function(d) { return d; })
 		      .on("drag", function(d,i) {
@@ -683,6 +676,8 @@
      }
 
      enableForce() {
+	 $("#force").click();
+	 this.status = "FORCE";
 	 d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode").call(force.drag());
 	 d3.select("g.ACLineSegments").selectAll("g.ACLineSegment").call(force.drag());
 	 d3.select("g.Breakers").selectAll("g.Breaker").call(force.drag());
@@ -708,6 +703,8 @@
      }
      
      enableZoom() {
+	 $("#zoom").click();
+	 this.status = "ZOOM";
 	 zoomComp = d3.behavior.zoom();
 	 zoomComp.on("zoom", zoomFunction);
 	 d3.select("svg").call(zoomComp);

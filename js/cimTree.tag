@@ -11,6 +11,7 @@
      });	
      
      subRoute("/diagrams/*/*", function(name, element) {
+	 console.log("hello");
 	 self.moveTo(element);
      });	
 
@@ -192,10 +193,19 @@
      }
 
      moveTo(uuid) {
-	 let target = d3.select("#" + uuid).node().parentNode;
+	 let target = d3.select(".tree").select("#" + uuid).node().parentNode;
+	 let targetParent = $(target).parent();
 	 d3.select(".CIMNetwork").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
 	 d3.select(target).select("a").attr("class", "btn btn-danger btn-xs");
-	 $(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find("#" + uuid).parent().offset().top - $(".tree").offset().top));
+	 if (targetParent.is(":visible") === false) {
+	     targetParent.on("shown.bs.collapse", function() {
+		 $(".tree").scrollTop($(".tree").scrollTop() + ($(target).offset().top - $(".tree").offset().top));
+		 targetParent.off("shown.bs.collapse");
+	     });
+	 } else {
+	     $(".tree").scrollTop($(".tree").scrollTop() + ($(target).offset().top - $(".tree").offset().top));
+	 }
+	 targetParent.collapse("show");
      }
 
      hover(hoverD) {
