@@ -7,7 +7,6 @@ function cimDiagramModel() {
                 let parser = new DOMParser();
 		let data = parser.parseFromString(reader.result, "application/xml");
 		this.data = data;
-		this.dataMap = new Map();
 		this.linksMap = new Map();
 		this.conductingEquipmentGraphs = new Map();
 		this.diagramObjectGraphs = new Map();
@@ -15,9 +14,9 @@ function cimDiagramModel() {
 		this.activeDiagramName = "none";
 
 		let allObjects = data.children[0].children;
+		this.dataMap = new Map(Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes[0].value, el]));
 		for (let i in allObjects) {
 		    if (typeof(allObjects[i].attributes) !== "undefined") {
-			this.dataMap.set(("#" + allObjects[i].attributes[0].value), allObjects[i]);
 			allObjects[i].getAttributes = function() {
 			    return [].filter.call(this.children, function(el) {
 				return el.attributes.length === 0;
@@ -27,11 +26,6 @@ function cimDiagramModel() {
 			    let attributes = this.getAttributes();
 			    return attributes.filter(el => el.nodeName === attrName)[0];
 			};
-			/*allObjects[i].getLinks = function() {
-			    return [].filter.call(this.children, function(el) {
-				return el.attributes.length > 0;
-			    });
-			};*/
 			let links = this.getLinks(allObjects[i]);
 			for (let j in links) {
 			    let key = links[j].localName + links[j].attributes[0].value;
@@ -41,8 +35,7 @@ function cimDiagramModel() {
 			    } else {
 				val.push(allObjects[i]);
 			    }
-			}
-			    
+			}   
 		    } 
 		}
 		riot.observable(this);
@@ -71,6 +64,32 @@ function cimDiagramModel() {
 	    return [].filter.call(allObjects, function(el) {
 		return el.nodeName === type;
 	    });
+	},
+
+	// NOTE: we're using this also for connectivity nodes...
+	getConductingEquipments(type) {
+	    let allObjects = this.getDiagramObjectGraph().map(el => el.source);
+	    let allObjectsSet = new Set(allObjects); // we want uniqueness
+	    return [...allObjectsSet].filter(function(el) {
+		return el.nodeName === type;
+	    });
+	},
+
+	getConnectivityNodes() {
+	    let allConnectivityNodes = this.getObjects("cim:ConnectivityNode");
+	    let graphic = this.getConductingEquipments("cim:ConnectivityNode");
+	    let graphicSet = new Set(graphic);
+	    let nonGraphic = allConnectivityNodes.filter(el => !graphicSet.has(el));
+	    let self = this;
+	    nonGraphic = nonGraphic.filter(function(d) {
+		let edges = self.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
+		let cnTerminals = edges.map(el => el.target);
+		// let's try to get some equipment
+		let equipments = self.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+		equipments = self.getConductingEquipmentGraph(equipments).map(el => el.source);
+		return (equipments.length > 0);
+	    });
+	    return graphic.concat(nonGraphic);
 	},
 
 	getAllObjects() {
@@ -200,10 +219,12 @@ function cimDiagramModel() {
 
 	// TODO: perform some checks...
 	selectDiagram(diagramName) {
-	    this.activeDiagramName = diagramName;
-	    this.activeDiagram = this.getObjects("cim:Diagram")
-	        .filter(el => el.getAttributes()
-			.filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===this.activeDiagramName)[0];
+	    if (diagramName !== this.activeDiagramName) {
+		this.activeDiagramName = diagramName;
+		this.activeDiagram = this.getObjects("cim:Diagram")
+	            .filter(el => el.getAttributes()
+			    .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===this.activeDiagramName)[0];
+	    }
 	}
     }
 };

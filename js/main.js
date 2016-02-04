@@ -39,8 +39,6 @@ function startRouter() {
     // here we choose a diagram to display
     riot.route('/diagrams', function(name) {
 	cimModel = Object.assign({}, cimDiagramModel());
-	//cimDiagram = Object.assign({}, cimDiagramController());
-	//cimDiagram.setModel(cimModel);
 	riot.mount("cimDiagram", {model: cimModel});
 	riot.mount("cimTree", {model: cimModel});
 	// things to show
@@ -86,12 +84,8 @@ function startRouter() {
     });
 
     // used for tree navigation
-    //riot.route('/diagrams/*/*', function(name, element) {
-/*	cimModel.on("selectElement", function(name) {
-	    cimDiagram.moveTo(element);    
-	});
-	cimModel.trigger("selectElement", element);
-    });*/
+    riot.route('/diagrams/*/*', function(name, element) {
+    });
     
     riot.route.start(true);
 };

@@ -39,29 +39,24 @@
 	 d3.select("svg").selectAll("#xAxisG").remove();
 
 	 this.model.selectDiagram(decodeURI(diagramName));
-	 let diagram = this.model.getObjects("cim:Diagram")
-			   .filter(el => el.getAttributes()
-					   .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===decodeURI(diagramName));
 	 let allTerminals = this.model.getObjects("cim:Terminal");
 	 console.log("extracted terminals");
-	 let allConnectivityNodes = this.model.getObjects("cim:ConnectivityNode");
+	 let allConnectivityNodes = this.model.getConnectivityNodes();
 	 console.log("extracted connectivity nodes");
-	 let allACLines = this.model.getObjects("cim:ACLineSegment");
+	 let allACLines = this.model.getConductingEquipments("cim:ACLineSegment");
 	 console.log("extracted acLines");
-	 let allBreakers = this.model.getObjects("cim:Breaker");
+	 let allBreakers = this.model.getConductingEquipments("cim:Breaker");
 	 console.log("extracted breakers");
-	 let allDisconnectors = this.model.getObjects("cim:Disconnector");
+	 let allDisconnectors = this.model.getConductingEquipments("cim:Disconnector");
 	 console.log("extracted disconnectors");
-	 let allBusbarSections = this.model.getObjects("cim:BusbarSection");
+	 let allEnergySources = this.model.getConductingEquipments("cim:EnergySource");
+	 console.log("extracted energy sources");
+	 let allEnergyConsumers = this.model.getConductingEquipments("cim:EnergyConsumer")
+				      .concat(this.model.getConductingEquipments("cim:ConformLoad"))
+				      .concat(this.model.getConductingEquipments("cim:NonConformLoad"));
+	 console.log("extracted energy consumers");
+	 let allBusbarSections = this.model.getConductingEquipments("cim:BusbarSection");
 	 console.log("extracted busbarSections");
-	 // Build graph
-	 let edges = this.model.getGraph(allTerminals, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals");
-	 let ceEdges = this.model.getConductingEquipmentGraph(); 
-	 let ioEdges = this.model.getDiagramObjectGraph(); 
-	 //let doEdges = this.model.getDiagramObjectPointGraph(); 
-	 console.log(ceEdges);
-	 console.log(ioEdges);
-	 //console.log(doEdges);
 
 	 // reset all terminals
 	 for (let i in allTerminals) {
@@ -69,20 +64,6 @@
 		 delete allTerminals[i].x;
 		 delete allTerminals[i].y;
 	     }
-	 }
-	 // reset all connectivity nodes
-	 for (let i in allConnectivityNodes) {
-	     if (typeof(allConnectivityNodes[i].x) != "undefined") {
-		 delete allConnectivityNodes[i].x;
-		 delete allConnectivityNodes[i].y;
-	     }
-	 }
-	 
-	 if (diagram.length > 0) {
-	     let graphicObjects = ioEdges.map(el => el.source);
-	     allACLines = allACLines.filter(acl => graphicObjects.indexOf(acl) > -1);
-	     allBreakers = allBreakers.filter(breaker => graphicObjects.indexOf(breaker) > -1);
-	     allDisconnectors = allDisconnectors.filter(disc => graphicObjects.indexOf(disc) > -1);
 	 }
 	 
 	 // AC Lines
@@ -94,19 +75,17 @@
 	 // disconnectors
 	 let discEnter = this.drawDisconnectors(allDisconnectors);
 	 console.log("drawn disconnectors");
-	 // Connectivity Nodes
-	 if (diagram.length > 0) {
-	     allConnectivityNodes = this.filterConnectivityNodes(allConnectivityNodes);
-	     console.log("filtered connectivity nodes");
-	 }
-	 let nodes = allTerminals
-		.concat(allConnectivityNodes)
-		.concat(allACLines)
-		.concat(allBreakers)
-		.concat(allDisconnectors);
-	 
+	 // energy sources
+	 let ensrcEnter = this.drawEnergySources(allEnergySources);
+	 console.log("drawn energy sources");
+	 // energy consumers
+	 let enconsEnter = this.drawEnergyConsumers(allEnergyConsumers);
+	 console.log("drawn energy consumers");
+	 // connectivity nodes
 	 let cnEnter = this.drawConnectivityNodes(allConnectivityNodes);
 	 console.log("drawn connectivity nodes");
+	 let edges = this.model.getGraph(allConnectivityNodes, "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
+
 	 // ac line terminals
 	 this.createTwoTerminals(aclineEnter, edges);
 	 console.log("drawn acline terminals");
@@ -116,6 +95,19 @@
 	 // disconnector terminals
 	 this.createTwoTerminals(discEnter, edges);
 	 console.log("drawn disconnector terminals");
+	 // energy source terminals
+	 this.createTwoTerminals(ensrcEnter, edges);
+	 console.log("drawn energy source terminals");
+	 // energy consumer terminals
+	 this.createTwoTerminals(enconsEnter, edges);
+	 console.log("drawn energy consumer terminals");
+
+	 let nodes = allConnectivityNodes
+		.concat(allACLines)
+		.concat(allBreakers)
+		.concat(allDisconnectors)
+		.concat(allEnergySources)
+		.concat(allEnergyConsumers);
 	 tickFunction = this.forceTick(edges);
 	 zoomFunction = this.zooming(edges);
 	 force = force
@@ -259,75 +251,117 @@
 			return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
 		    });
 	 return aclineEnter;
-     },
+     }
 
-	 // Draw all Breakers
-	 drawBreakers(allBreakers) {
-	     let line = d3.svg.line()
-			  .x(function(d) { return d.x; })
-			  .y(function(d) { return d.y; })
-			  .interpolate("linear");
+     // Draw all Breakers
+     drawBreakers(allBreakers) {
+	 let line = d3.svg.line()
+		      .x(function(d) { return d.x; })
+		      .y(function(d) { return d.y; })
+		      .interpolate("linear");
 
-	     let breakerEnter = this.createSelection("Breaker", allBreakers);
-	     
-	     breakerEnter.append("path")
-			 .attr("d", function(d) {
-			     return line([{x: 0, y:0, seq:1}, {x:30, y:0, seq:2}]);
-			 })
-			 .attr("fill", "none")
-			 .attr("stroke", "green")
-			 .attr("stroke-width", 4);
-	     breakerEnter.append("text")
-			 .style("text-anchor", "middle")
-			 .attr("x", function(d) {
-			     let lineData = this.parentNode.__data__.lineData;
-			     let end = lineData[lineData.length-1];
-			     return end.x/2;
-			 })
-			 .attr("y", function(d) {
-			     let lineData = this.parentNode.__data__.lineData;
-			     let end = lineData[lineData.length-1];
-			     return end.y/2;
-			 })
-			 .text(function(d) {
-			     return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
-			 });
-	     return breakerEnter;
-	 },
+	 let breakerEnter = this.createSelection("Breaker", allBreakers);
+	 
+	 breakerEnter.append("path")
+		     .attr("d", function(d) {
+			 return line([{x: 0, y:0, seq:1}, {x:30, y:0, seq:2}]);
+		     })
+		     .attr("fill", "none")
+		     .attr("stroke", "green")
+		     .attr("stroke-width", 4);
+	 breakerEnter.append("text")
+		     .style("text-anchor", "middle")
+		     .attr("x", function(d) {
+			 let lineData = this.parentNode.__data__.lineData;
+			 let end = lineData[lineData.length-1];
+			 return end.x/2;
+		     })
+		     .attr("y", function(d) {
+			 let lineData = this.parentNode.__data__.lineData;
+			 let end = lineData[lineData.length-1];
+			 return end.y/2;
+		     })
+		     .text(function(d) {
+			 return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+		     });
+	 return breakerEnter;
+     }
 
-	 // Draw all Disconnectors
-	 drawDisconnectors(allDisconnectors) {
-	     let line = d3.svg.line()
-			  .x(function(d) { return d.x; })
-			  .y(function(d) { return d.y; })
-			  .interpolate("linear");
+     // Draw all Disconnectors
+     drawDisconnectors(allDisconnectors) {
+	 let line = d3.svg.line()
+		      .x(function(d) { return d.x; })
+		      .y(function(d) { return d.y; })
+		      .interpolate("linear");
 
-	     let discEnter = this.createSelection("Disconnector", allDisconnectors);
-	     
-	     discEnter.append("path")
-		      .attr("d", function(d) {
-			  return line([{x: 0, y:0, seq:1}, {x:24, y:18, seq:2}]);
-		      })
-		      .attr("fill", "none")
-		      .attr("stroke", "blue")
-		      .attr("stroke-width", 4);
-	     discEnter.append("text")
-		      .style("text-anchor", "middle")
-		      .attr("x", function(d) {
-			  let lineData = this.parentNode.__data__.lineData;
-			  let end = lineData[lineData.length-1];
-			  return end.x/2;
-		      })
-		      .attr("y", function(d) {
-			  let lineData = this.parentNode.__data__.lineData;
-			  let end = lineData[lineData.length-1];
-			  return end.y/2;
-		      })
-		      .text(function(d) {
-			  return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
-		      });
-	     return discEnter;
-	 }
+	 let discEnter = this.createSelection("Disconnector", allDisconnectors);
+	 
+	 discEnter.append("path")
+		  .attr("d", function(d) {
+		      return line([{x: 0, y:0, seq:1}, {x:24, y:18, seq:2}]);
+		  })
+		  .attr("fill", "none")
+		  .attr("stroke", "blue")
+		  .attr("stroke-width", 4);
+	 discEnter.append("text")
+		  .style("text-anchor", "middle")
+		  .attr("x", function(d) {
+		      let lineData = this.parentNode.__data__.lineData;
+		      let end = lineData[lineData.length-1];
+		      return end.x/2;
+		  })
+		  .attr("y", function(d) {
+		      let lineData = this.parentNode.__data__.lineData;
+		      let end = lineData[lineData.length-1];
+		      return end.y/2;
+		  })
+		  .text(function(d) {
+		      return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+		  });
+	 return discEnter;
+     }
+
+     // Draw all EnergySources
+     drawEnergySources(allEnergySources) {
+	 let ensrcEnter = this.createSelection("EnergySource", allEnergySources);
+	 
+	 ensrcEnter.append("circle")
+		   .attr("r", 25)
+		   .attr("cx", 0) 
+		   .attr("cy", 0)
+		   .attr("fill", "white")
+		   .attr("stroke", "blue")
+		   .attr("stroke-width", 4);
+	 ensrcEnter.append("text")
+		   .style("text-anchor", "middle")
+		   .attr("x", 0)
+		   .attr("y", 0)
+		   .text(function(d) {
+		       return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+		   });
+	 return ensrcEnter;
+     }
+
+     // Draw all EnergyConsumers
+     drawEnergyConsumers(allEnergyConsumers) {
+	 let enconsEnter = this.createSelection("EnergyConsumer", allEnergyConsumers);
+	 
+	 enconsEnter.append("circle")
+		    .attr("r", 25)
+		    .attr("cx", 0)
+		    .attr("cy", 0) 
+		    .attr("fill", "white")
+		    .attr("stroke", "green")
+		    .attr("stroke-width", 4);
+	 enconsEnter.append("text")
+		    .style("text-anchor", "middle")
+		    .attr("x", 0) 
+		    .attr("y", 0)
+		    .text(function(d) {
+			return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+		    });
+	 return enconsEnter;
+     }
 
      createTwoTerminals(eqSelection, edges) {
 	 let ceEdges = this.model.getConductingEquipmentGraph();
@@ -338,10 +372,8 @@
 					.enter()
 					.append("g")
 					.attr("id", function(d, i) {
-					    let cn = edges
-			.filter(el => el.target === d)
-			.map(el => el.source)[0];
-					    
+					    let cn = edges.filter(el => el.target === d).map(el => el.source)[0];
+
 					    let lineData = this.parentNode.__data__.lineData;
 					    let start = lineData[0];
 					    let end = lineData[lineData.length-1];
@@ -396,39 +428,26 @@
 		      });
      }
 
-     filterConnectivityNodes(allConnectivityNodes) { 
-	 let self = this;
-	 return allConnectivityNodes.filter(function(d) {
-	     let edges = self.model.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
-	     let cnTerminals = edges.map(el => el.target);
-	     // let's try to get some equipment
-	     let equipments = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
-	     equipments = self.model.getConductingEquipmentGraph(equipments).map(el => el.source);
-	     // let's try to get a busbar section
-	     let busbarSection = equipments
-	            .filter(el => el.localName === "BusbarSection")[0];
-	     let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target); 
-	     let positionCalculated = false;
-	     if (dobjs.length === 0) {
-		 if (typeof(busbarSection) != "undefined") {
-		     positionCalculated = true;
-		 } else if (equipments.length > 0) {
-		     positionCalculated = true;
-		     if (equipments.length === 1) {
-			 if (typeof(equipments[0].x === "undefined")) {
-			     positionCalculated = false;
-			 }
-		     } else {
-			 if (typeof(equipments[0].x === "undefined") || typeof(equipments[1].x === "undefined")) {
-			     positionCalculated = false;
-			 }
-		     }
-		 }
-	     }
-	     let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
-	     return ((points.length > 0) || (positionCalculated === true));
-	 });
-     }
+     /*filterConnectivityNodes(allConnectivityNodes) { 
+	let self = this;
+	return allConnectivityNodes.filter(function(d) {
+	let edges = self.model.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
+	let cnTerminals = edges.map(el => el.target);
+	// let's try to get some equipment
+	let equipments = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+	equipments = self.model.getConductingEquipmentGraph(equipments).map(el => el.source);
+	// let's try to get a busbar section
+	let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target); 
+	let positionCalculated = false;
+	if (dobjs.length === 0) {
+	if (equipments.length > 0) {
+	positionCalculated = true;
+	}
+	}
+	let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
+	return ((points.length > 0) || (positionCalculated === true));
+	});
+	}*/
 
      // Draw all ConnectivityNodes
      drawConnectivityNodes(allConnectivityNodes) {
@@ -589,9 +608,9 @@
 	 context.scale(newZoom, newZoom);
 	 edges.forEach(function (link) {
 	     context.beginPath();
-	     context.moveTo(link.source.x,link.source.y)
-		 context.lineTo(link.target.x,link.target.y)
-		 context.stroke();
+	     context.moveTo(link.source.x,link.source.y);
+	     context.lineTo(link.target.x,link.target.y);
+	     context.stroke();
 	 });
 	 context.restore();
 	 // update zoomComp
@@ -648,6 +667,8 @@
 	 d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode").call(drag);
 	 d3.select("g.Breakers").selectAll("g.Breaker").call(drag);
 	 d3.select("g.Disconnectors").selectAll("g.Disconnector").call(drag);
+	 d3.select("g.EnergySources").selectAll("g.EnergySource").call(drag);
+	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer").call(drag);
      }
 
      disableDrag() {
@@ -657,6 +678,8 @@
 	 d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode").call(drag);
 	 d3.select("g.Breakers").selectAll("g.Breaker").call(drag);
 	 d3.select("g.Disconnectors").selectAll("g.Disconnector").call(drag);
+	 d3.select("g.EnergySources").selectAll("g.EnergySource").call(drag);
+	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer").call(drag);
      }
 
      enableForce() {
@@ -664,10 +687,15 @@
 	 d3.select("g.ACLineSegments").selectAll("g.ACLineSegment").call(force.drag());
 	 d3.select("g.Breakers").selectAll("g.Breaker").call(force.drag());
 	 d3.select("g.Disconnectors").selectAll("g.Disconnector").call(force.drag());
+	 d3.select("g.EnergySources").selectAll("g.EnergySource").call(force.drag());
+	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer").call(force.drag());
+
 	 d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode").on("click", fixNode);
 	 d3.select("g.ACLineSegments").selectAll("g.ACLineSegment").on("click", fixNode);
 	 d3.select("g.Breakers").selectAll("g.Breaker").call(fixNode);
 	 d3.select("g.Disconnectors").selectAll("g.Disconnector").call(fixNode);
+	 d3.select("g.EnergySources").selectAll("g.EnergySource").call(fixNode);
+	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer").call(fixNode);
 	 
 	 function fixNode(d) {
 	     d.fixed = true;
@@ -790,6 +818,27 @@
 		   d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
 		   return d.attributes[0].value;
 	       });
+	     d3.select("g.EnergySources").selectAll("g.EnergySource")
+	       .attr("transform", function (d) {
+		   return "translate("+d.x+","+d.y+")";
+	       })
+	       .selectAll("g")
+	       .attr("id", function(d, i) {
+		   d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
+		   d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
+		   return d.attributes[0].value;
+	       });
+	     d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer")
+	       .attr("transform", function (d) {
+		   return "translate("+d.x+","+d.y+")";
+	       })
+	       .selectAll("g")
+	       .attr("id", function(d, i) {
+		   d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
+		   d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
+		   return d.attributes[0].value;
+	       });
+	     
 	     let context = d3.select("canvas").node().getContext("2d");
 	     context.clearRect(0, 0, parseInt(d3.select("svg").style("width")), parseInt(d3.select("svg").style("height")));
 	     context.lineWidth = 1;

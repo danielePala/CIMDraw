@@ -6,45 +6,37 @@
      let self = this;
      let subRoute = riot.route.create();
 	
-     subRoute('/diagrams/*', function(name) {
+     subRoute("/diagrams/*", function(name) {
             self.render(name);
      });	
      
-     subRoute('/diagrams/*/*', function(name, element) {
+     subRoute("/diagrams/*/*", function(name, element) {
 	 self.moveTo(element);
      });	
 
      render(diagramName) {
 	 // clear all
 	 d3.select("#app-tree").select(".tree").remove();
-	 
-	 let diagram = this.model.getObjects("cim:Diagram")
-			   .filter(el => el.getAttributes()
-					   .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===decodeURI(diagramName));
-	 let allConnectivityNodes = this.model.getObjects("cim:ConnectivityNode");
+
+	 this.model.selectDiagram(decodeURI(diagramName));
+	 let allConnectivityNodes = this.model.getConnectivityNodes();
 	 console.log("extracted connectivity nodes");
-	 let allACLines = this.model.getObjects("cim:ACLineSegment");
+	 let allACLines = this.model.getConductingEquipments("cim:ACLineSegment");
 	 console.log("extracted acLines");
-	 let allBreakers = this.model.getObjects("cim:Breaker");
+	 let allBreakers = this.model.getConductingEquipments("cim:Breaker");
 	 console.log("extracted breakers");
-	 let allDisconnectors = this.model.getObjects("cim:Disconnector");
+	 let allDisconnectors = this.model.getConductingEquipments("cim:Disconnector");
 	 console.log("extracted disconnectors");
-	 let allSubstations = this.model.getObjects("cim:Substation");
+	 let allEnergySources = this.model.getConductingEquipments("cim:EnergySource");
+	 console.log("extracted energy sources");
+	 let allEnergyConsumers = this.model.getConductingEquipments("cim:EnergyConsumer")
+	                              .concat(this.model.getConductingEquipments("cim:ConformLoad"))
+	                              .concat(this.model.getConductingEquipments("cim:NonConformLoad"));
+	 console.log("extracted energy consumers");
+	 let allSubstations = this.model.getObjects("cim:Substation"); // TODO: filter substations
 	 console.log("extracted substations");
-	 let allDiagramObjects = this.model.getObjects("cim:DiagramObject");
-	 console.log("extracted diagramObjects");
-	 if (diagram.length > 0) {
-	     allDiagramObjects = allDiagramObjects.filter(el => this.model.getLinks(el).filter(el => el.localName === "DiagramObject.Diagram")[0].attributes[0].value === "#" + diagram[0].attributes[0].value);
-	 }
-	 let ioEdges = this.model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
-	 if (diagram.length > 0) {
-	     let graphicObjects = ioEdges.map(el => el.source);
-	     allACLines = allACLines.filter(acl => graphicObjects.indexOf(acl) > -1);
-	     allBreakers = allBreakers.filter(breaker => graphicObjects.indexOf(breaker) > -1);
-	     allDisconnectors = allDisconnectors.filter(disc => graphicObjects.indexOf(disc) > -1);
-	     allConnectivityNodes = allConnectivityNodes.filter(cn => typeof(cn.x) != "undefined");
-	     // TODO: filter substations
-	 }
+	 let allLines = this.model.getObjects("cim:Line"); // TODO: filter lines
+	 console.log("extracted lines");
 	 let nodes = allACLines;
 	 
 	 // navtree
@@ -80,8 +72,11 @@
 	 this.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
 	 this.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
 	 this.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
+	 this.createElements(cimNetwork, "EnergySource", "Energy Sources", allEnergySources);
+	 this.createElements(cimNetwork, "EnergyConsumer", "Loads", allEnergyConsumers);
 	 this.createElements(cimNetwork, "ConnectivityNode", "Connectivity Nodes", allConnectivityNodes);
 	 this.createElements(cimNetwork, "Substation", "Substations", allSubstations);
+	 this.createElements(cimNetwork, "Line", "Lines", allLines);
 
 	 d3.selectAll("li.ACLineSegment")
 	   .on("mouseover.hover", this.hover)
@@ -124,12 +119,12 @@
 				if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
 				    riot.route(basePath + "/" + d.attributes[0].value);
 				}
-				// test...
-					   if (d3.select("#cimTarget").empty() === false) {
-					       d3.select("#cimTarget").data()[0].attributes[0].value = "#" + d.attributes[0].value;
-					       d3.select("#cimTarget").select("button").html(function (d) {return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;});
-					       d3.select("#cimTarget").attr("id", null);
-					   }
+				
+				if (d3.select("#cimTarget").empty() === false) {
+				    d3.select("#cimTarget").data()[0].attributes[0].value = "#" + d.attributes[0].value;
+				    d3.select("#cimTarget").select("button").html(function (d) {return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;});
+				    d3.select("#cimTarget").attr("id", null);
+				}
 			    })
 			    .html(function (d) {return d.getAttribute("cim:IdentifiedObject.name").textContent});
 	 let elementEnter = elementTopContainer
