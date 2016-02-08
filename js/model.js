@@ -104,6 +104,10 @@ function cimDiagramModel() {
 	    return graphic.concat(nonGraphic);
 	},
 
+	getTerminals(identObjs) {
+	    return this.getConductingEquipmentGraph(identObjs).map(el => el.target);
+	},
+
 	// get all objects (doesn't filter by diagram).
 	getAllObjects() {
 	    return this.data.children[0].children;
@@ -117,7 +121,7 @@ function cimDiagramModel() {
 	// get all the links of a given object.
 	getLinks(object) {
 	    return [].filter.call(object.children, function(el) {
-		return el.attributes.length > 0;
+		return (el.attributes.length > 0) && (el.attributes[0].value.charAt(0) === "#");
 	    });
 	},
 
@@ -190,7 +194,7 @@ function cimDiagramModel() {
 			let ioEdges = this.getDiagramObjectGraph();
 			let graphicObjects = ioEdges.map(el => el.source);
 			ceEdges = this.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
-		    }
+		    } 
 		    this.conductingEquipmentGraphs.set(this.activeDiagramName, ceEdges);
 		}
 	    } else {
@@ -198,6 +202,8 @@ function cimDiagramModel() {
 		    let ioEdges = this.getDiagramObjectGraph(identObjs);
 		    let graphicObjects = ioEdges.map(el => el.source);
 		    ceEdges = this.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
+		} else {
+		    ceEdges = this.getGraph(identObjs, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
 		}
 	    }
 	    return ceEdges;
@@ -217,7 +223,8 @@ function cimDiagramModel() {
 		}
 	    } else {
 		if (typeof(this.activeDiagram) !== "undefined") {
-		    let allDiagramObjects = this.getGraph(identObjs, "IdentifiedObject.DiagramObjects", "DiagramObject.IdentifiedObject").map(el => el.source);
+		    ioEdges = this.getGraph(identObjs, "IdentifiedObject.DiagramObjects", "DiagramObject.IdentifiedObject", true);
+		    let allDiagramObjects = ioEdges.map(el => el.target);
 		    allDiagramObjects = this.getGraph(allDiagramObjects, "DiagramObject.Diagram", "Diagram.DiagramObjects").filter(el => el.source === this.activeDiagram).map(el => el.target);
 		    ioEdges = this.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
 		}

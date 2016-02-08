@@ -11,7 +11,6 @@
      });	
      
      subRoute("/diagrams/*/*", function(name, element) {
-	 console.log("hello");
 	 self.moveTo(element);
      });	
 
@@ -28,7 +27,8 @@
 	 console.log("extracted breakers");
 	 let allDisconnectors = this.model.getConductingEquipments("cim:Disconnector");
 	 console.log("extracted disconnectors");
-	 let allEnergySources = this.model.getConductingEquipments("cim:EnergySource");
+	 let allEnergySources = this.model.getConductingEquipments("cim:EnergySource")
+	     .concat(this.model.getConductingEquipments("cim:SynchronousMachine"));
 	 console.log("extracted energy sources");
 	 let allEnergyConsumers = this.model.getConductingEquipments("cim:EnergyConsumer")
 	                              .concat(this.model.getConductingEquipments("cim:ConformLoad"))
@@ -182,7 +182,9 @@
 			}
 			$(d.attributes[0].value).parent().parent().collapse("show");
 		    })
-		    .html(function (d) {return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;});
+		    .html(function (d) {
+			return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;
+		    });
 	 elementLink.append("button")
 	            .attr("class","btn btn-default btn-xs")
 	            .attr("type", "submit")
