@@ -19,8 +19,10 @@
 	 d3.select("#app-tree").select(".tree").remove();
 
 	 this.model.selectDiagram(decodeURI(diagramName));
-	 let allConnectivityNodes = this.model.getConnectivityNodes();
-	 console.log("extracted connectivity nodes");
+	 let allBusbarSections = this.model.getConductingEquipments("cim:BusbarSection");
+	 console.log("extracted busbarSections");
+	 let allPowerTransformers = this.model.getConductingEquipments("cim:PowerTransformer");
+	 console.log("extracted power transformers");
 	 let allACLines = this.model.getConductingEquipments("cim:ACLineSegment");
 	 console.log("extracted acLines");
 	 let allBreakers = this.model.getConductingEquipments("cim:Breaker");
@@ -75,8 +77,9 @@
 	 this.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
 	 this.createElements(cimNetwork, "EnergySource", "Energy Sources", allEnergySources);
 	 this.createElements(cimNetwork, "EnergyConsumer", "Loads", allEnergyConsumers);
-	 this.createElements(cimNetwork, "ConnectivityNode", "Connectivity Nodes", allConnectivityNodes);
+	 this.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
 	 this.createElements(cimNetwork, "Substation", "Substations", allSubstations);
+	 this.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 this.createElements(cimNetwork, "Line", "Lines", allLines);
 
 	 d3.selectAll("li.ACLineSegment")
@@ -122,8 +125,14 @@
 				}
 				
 				if (d3.select("#cimTarget").empty() === false) {
-				    d3.select("#cimTarget").data()[0].attributes[0].value = "#" + d.attributes[0].value;
-				    d3.select("#cimTarget").select("button").html(function (d) {return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;});
+				    let source = d3.select(d3.select("#cimTarget").node().parentNode.parentNode).datum();
+				    let sourceLink = d3.select("#cimTarget").datum();
+				    console.log(sourceLink);
+				    let target = cimModel.getLink(source, "cim:" + sourceLink.attributes[0].value.substring(1));
+				    target.attributes[0].value = "#" + d.attributes[0].value;
+				    d3.select("#cimTarget").select("button").html(function (dd) {
+					return cimModel.getAttribute(d, "cim:IdentifiedObject.name").textContent;
+				    });
 				    d3.select("#cimTarget").attr("id", null);
 				}
 			    })
@@ -134,16 +143,37 @@
 		.attr("class", "collapse");
 	 elementEnter
 		.selectAll("li.attribute")
-		.data(function(d) {return d.getAttributes();})
+		.data(function(d) {
+		    return cimModel.getSchemaAttributes(d.localName); /*d.getAttributes();*/
+		})
 		.enter()
 		.append("li")
 		.attr("class", "attribute")
-		.html(function (d) {return d.localName.split(".")[1] + ": "})
+		.html(function (d) {
+		    return d.attributes[0].value.substring(1).split(".")[1] + ": "; //d.localName.split(".")[1] + ": "
+		})
 		.append("span")
 		.attr("contenteditable", "true")
-		.html(function (d) {return d.innerHTML})
+		.html(function (d) {
+		    let ret = "none";
+		    let object = d3.select(d3.select(this).node().parentNode.parentNode).datum();
+		    let value = cimModel.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
+		    if (typeof(value) !== "undefined") {
+			ret = value.innerHTML;
+		    }
+		    return ret; //d.innerHTML
+		})
 		.on("input", function(d) {
-		    d.innerHTML = d3.select(this).html();
+		    let object = d3.select(d3.select(this).node().parentNode.parentNode).datum();
+		    let attrName = "cim:" + d.attributes[0].value.substring(1);
+		    let value = cimModel.getAttribute(object, attrName);
+		    if (typeof(value) !== "undefined") {
+			value.innerHTML = d3.select(this).html();
+		    } else {
+			let newAttribute = cimModel.data.createElement(attrName);
+			newAttribute.innerHTML = d3.select(this).html();
+			object.appendChild(newAttribute);
+		    }
 		})
 		.on("keydown", function() {
 		    if (typeof(d3.event) === "undefined") {
@@ -157,33 +187,47 @@
 	 // add links
 	 let elementLink = elementEnter
 	        .selectAll("li.link")
-	        .data(function(d) {return cimModel.getLinks(d);})
+	        .data(function(d) {
+		    return cimModel.getSchemaLinks(d.localName)
+				   .filter(el => cimModel.getAttribute(el, "cims:AssociationUsed").textContent === "Yes"); //cimModel.getLinks(d);
+		})
 	        .enter()
 	        .append("li")
 		.attr("class", "link")
-	        .html(function (d) {return d.localName.split(".")[1] + ": ";});
+	        .html(function (d) {
+		    return d.attributes[0].value.substring(1).split(".")[1] + ": "; //d.localName.split(".")[1] + ": ";
+		});
 	 elementLink.append("button")
 		    .attr("class","btn btn-default btn-xs")
 		    .attr("type", "submit")
 		    .on("click", function (d) {
-			if ($(d.attributes[0].value).parent().parent().is(":visible") === false) {
-			    $(d.attributes[0].value).parent().parent().on("shown.bs.collapse", function() {
-				$(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(d.attributes[0].value).parent().offset().top - $(".tree").offset().top));
+			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
+			let target = cimModel.getLink(source, "cim:" + d.attributes[0].value.substring(1));
+			let targetUUID = target.attributes[0].value;
+			
+			if ($(targetUUID).parent().parent().is(":visible") === false) {
+			    $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
+				$(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top));
 				let hashComponents = window.location.hash.substring(1).split("/");
 				let basePath = hashComponents[0] + "/" + hashComponents[1];
-				riot.route(basePath + "/" + d.attributes[0].value.substring(1));
-				$(d.attributes[0].value).parent().parent().off("shown.bs.collapse");
+				riot.route(basePath + "/" + targetUUID.substring(1));
+				$(targetUUID).parent().parent().off("shown.bs.collapse");
 			    });
 			} else {
-			    $(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(d.attributes[0].value).parent().offset().top - $(".tree").offset().top));
+			    $(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top));
 			    let hashComponents = window.location.hash.substring(1).split("/");
 			    let basePath = hashComponents[0] + "/" + hashComponents[1];
-			    riot.route(basePath + "/" + d.attributes[0].value.substring(1));
+			    riot.route(basePath + "/" + targetUUID.substring(1));
 			}
-			$(d.attributes[0].value).parent().parent().collapse("show");
+			$(targetUUID).parent().parent().collapse("show");
 		    })
 		    .html(function (d) {
-			return cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;
+			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
+			let target = cimModel.getLink(source, "cim:" + d.attributes[0].value.substring(1));
+			if (typeof(target) === "undefined") {
+			    return "none";
+			}
+			return cimModel.resolveLink(target).getAttribute("cim:IdentifiedObject.name").textContent; //cimModel.resolveLink(d).getAttribute("cim:IdentifiedObject.name").textContent;
 		    });
 	 elementLink.append("button")
 	            .attr("class","btn btn-default btn-xs")

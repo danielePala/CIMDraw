@@ -207,12 +207,13 @@
 			   .data(data, function(d) {
 			       let lineData = [];
 			       let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target);
-			       let rotation = dobjs[0].getAttribute("cim:DiagramObject.rotation");
-			       if (typeof(rotation) !== "undefined") {
-				   d.rotation = parseInt(rotation.innerHTML);
-			       } else {
-				   d.rotation = 0;
-			       }
+			       d.rotation = 0;
+			       if (dobjs.length > 0) {
+				   let rotation = dobjs[0].getAttribute("cim:DiagramObject.rotation");
+				   if (typeof(rotation) !== "undefined") {
+				       d.rotation = parseInt(rotation.innerHTML);
+				   }
+			       } 
 			       let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
 			       if (points.length > 0) {
 				   d.x = parseInt(points[0].getAttributes().filter(el => el.localName === "DiagramObjectPoint.xPosition")[0].innerHTML);

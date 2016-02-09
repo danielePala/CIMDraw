@@ -5,6 +5,7 @@ function cimDiagramModel() {
 	// load a CIM file.
 	load(file, reader, callback) {
 	    reader.onload = function(e) {
+		let self = this;
                 let parser = new DOMParser();
 		let data = parser.parseFromString(reader.result, "application/xml");
 		this.data = data;
@@ -15,7 +16,9 @@ function cimDiagramModel() {
 		this.activeDiagramName = "none";
 
 		let allObjects = data.children[0].children;
+		// build a map (UUID)->(object)
 		this.dataMap = new Map(Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes[0].value, el]));
+		// build a map (link name, target UUID)->(source objects)
 		for (let i in allObjects) {
 		    if (typeof(allObjects[i].attributes) !== "undefined") {
 			allObjects[i].getAttributes = function() {
@@ -39,6 +42,12 @@ function cimDiagramModel() {
 			}   
 		    } 
 		}
+		// let's read a schema file
+		let rdfs = "rdf-schema/EquipmentProfileRDFSAugmented-v2_4_15-7Aug2014.rdf";
+		d3.xml(rdfs, function(schemaData) {
+		    self.schemaData = schemaData;
+		});
+		
 		riot.observable(this);
 		callback();
 	    }.bind(this);
@@ -67,6 +76,75 @@ function cimDiagramModel() {
 	    return [].filter.call(allObjects, function(el) {
 		return el.nodeName === type;
 	    });
+	},
+
+	getSchemaObject(type) {
+	    let allSchemaObjects = this.schemaData.children[0].children;
+	    return [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value === "#" + type;
+	    })[0];
+	},
+
+	getSchemaAttributes(type) {
+	    let allSchemaObjects = this.schemaData.children[0].children;
+	    let ret = [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value.startsWith("#" + type + ".");
+	    });
+	    let supers = this.getAllSuper(type);
+	    for (let i in supers) {
+		ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+		}));
+	    }
+	    ret = ret.filter(function(el) {
+		let name = el.attributes[0].value;
+		let isLiteral = false;
+		let localName = name.split(".")[1];
+		if (typeof(localName) !== "undefined") {
+		    isLiteral = (localName.toLowerCase().charAt(0) === localName.charAt(0));
+		}
+		return isLiteral;
+	    });
+	    
+	    return ret;
+	},
+
+	getSchemaLinks(type) {
+	    let allSchemaObjects = this.schemaData.children[0].children;
+	    let ret = [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value.startsWith("#" + type + ".");
+	    });
+	    let supers = this.getAllSuper(type);
+	    for (let i in supers) {
+		ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+		}));
+	    }
+	    ret = ret.filter(function(el) {
+		let name = el.attributes[0].value;
+		let isLiteral = false;
+		let localName = name.split(".")[1];
+		if (typeof(localName) !== "undefined") {
+		    isLiteral = (localName.toLowerCase().charAt(0) !== localName.charAt(0));
+		}
+		return isLiteral;
+	    });
+	    
+	    return ret;
+	},
+
+	getAllSuper(type) {
+	    let allSuper = [];
+	    let object = this.getSchemaObject(type);
+	    let aSuper = [].filter.call(object.children, function(el) {
+		return el.nodeName === "rdfs:subClassOf";
+	    })[0];
+	    if (typeof(aSuper) !== "undefined") {
+		let aSuperName = aSuper.attributes[0].value.substring(1);
+		allSuper.push(aSuperName);
+		allSuper = allSuper.concat(this.getAllSuper(aSuperName));
+	    }
+	    return allSuper;
 	},
 
 	// Get the objects of a given type that have at least one
@@ -118,11 +196,30 @@ function cimDiagramModel() {
 	    return this.dataMap.get("#" + uuid);
 	},
 
+	// get all the attributes of a given object.
+	getAttributes(object) {
+	    return [].filter.call(object.children, function(el) {
+		return el.attributes.length === 0;
+	    });
+	},
+
+	// get a specific attribute of a given object.
+	getAttribute(object, attrName) {
+	    let attributes = this.getAttributes(object);
+	    return attributes.filter(el => el.nodeName === attrName)[0];
+	},
+	    
 	// get all the links of a given object.
 	getLinks(object) {
 	    return [].filter.call(object.children, function(el) {
 		return (el.attributes.length > 0) && (el.attributes[0].value.charAt(0) === "#");
 	    });
+	},
+
+	// get a specific link of a given object.
+	getLink(object, linkName) {
+	    let links = this.getLinks(object);
+	    return links.filter(el => el.nodeName === linkName)[0];
 	},
 
 	// resolve a given link.
