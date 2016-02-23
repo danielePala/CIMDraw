@@ -26,10 +26,6 @@ function cimDiagramModel() {
 				return el.attributes.length === 0;
 			    });
 			};
-			allObjects[i].getAttribute = function(attrName) {
-			    let attributes = this.getAttributes();
-			    return attributes.filter(el => el.nodeName === attrName)[0];
-			};
 			let links = this.getLinks(allObjects[i]);
 			for (let j in links) {
 			    let key = links[j].localName + links[j].attributes[0].value;
@@ -149,8 +145,7 @@ function cimDiagramModel() {
 
 	// Get the objects of a given type that have at least one
 	// DiagramObject in the current diagram.
-	// NOTE: we're using this also for connectivity nodes...
-	getConductingEquipments(type) {
+	getGraphicObjects(type) {
 	    if (this.activeDiagramName === "none") {
 		return this.getObjects(type);
 	    }
@@ -167,10 +162,9 @@ function cimDiagramModel() {
 		return this.getObjects("cim:ConnectivityNode");
 	    }
 	    let allConnectivityNodes = this.getObjects("cim:ConnectivityNode");
-	    let graphic = this.getConductingEquipments("cim:ConnectivityNode");
+	    let graphic = this.getGraphicObjects("cim:ConnectivityNode");
 	    let graphicSet = new Set(graphic);
 	    let nonGraphic = allConnectivityNodes.filter(el => !graphicSet.has(el));
-	    let self = this;
 	    nonGraphic = nonGraphic.filter(function(d) {
 		let edges = self.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
 		let cnTerminals = edges.map(el => el.target);
@@ -182,8 +176,12 @@ function cimDiagramModel() {
 	    return graphic.concat(nonGraphic);
 	},
 
+	// get all the terminals of a given object.
 	getTerminals(identObjs) {
-	    return this.getConductingEquipmentGraph(identObjs).map(el => el.target);
+	    let terminals = this.getConductingEquipmentGraph(identObjs).map(el => el.target);
+	    let terminalsSet = new Set(terminals);
+	    terminals = [...terminalsSet]; // we want uniqueness
+	    return terminals;
 	},
 
 	// get all objects (doesn't filter by diagram).
@@ -196,7 +194,7 @@ function cimDiagramModel() {
 	    return this.dataMap.get("#" + uuid);
 	},
 
-	// get all the attributes of a given object.
+	// get all the attributes of a given object which are actually set.
 	getAttributes(object) {
 	    return [].filter.call(object.children, function(el) {
 		return el.attributes.length === 0;
@@ -209,10 +207,17 @@ function cimDiagramModel() {
 	    return attributes.filter(el => el.nodeName === attrName)[0];
 	},
 	    
-	// get all the links of a given object.
+	// get all the links of a given object which are actually set.
 	getLinks(object) {
 	    return [].filter.call(object.children, function(el) {
 		return (el.attributes.length > 0) && (el.attributes[0].value.charAt(0) === "#");
+	    });
+	},
+
+	// get all the enums of a given object which are actually set.
+	getEnums(object) {
+	    return [].filter.call(object.children, function(el) {
+		return (el.attributes.length > 0) && (el.attributes[0].value.charAt(0) !== "#");
 	    });
 	},
 
@@ -220,6 +225,30 @@ function cimDiagramModel() {
 	getLink(object, linkName) {
 	    let links = this.getLinks(object);
 	    return links.filter(el => el.nodeName === linkName)[0];
+	},
+
+	// get a specific enum of a given object.
+	getEnum(object, enumName) {
+	    let enums = this.getEnums(object);
+	    return enums.filter(el => el.nodeName === enumName)[0];
+	},
+
+	// set a specific link of a given object.
+	setLink(source, linkSchema, target) {
+	    let linkName = "cim:" + linkSchema.attributes[0].value.substring(1);
+	    let link = this.getLink(source, linkName);
+	    // handle inverse relation
+	    let invLinkName = [].filter.call(linkSchema.children, function(el) {
+		return el.localName === "inverseRoleName";
+	    })[0].attributes[0].value;
+	    invLinkName = "cim:" + invLinkName.substring(1);
+	    let actTarget = this.dataMap.get(link.attributes[0].value);
+	    let invLink = this.getLink(actTarget, invLinkName);
+	    if (typeof(invLink) !== "undefined") {
+		invLink.remove();
+	    }
+	    // set the new value
+	    link.attributes[0].value = "#" + target.attributes[0].value;
 	},
 
 	// resolve a given link.
@@ -282,6 +311,10 @@ function cimDiagramModel() {
 	    return result;
 	},
 
+	// Get a graph of equipments and terminals, for each equipment
+	// that have at least one DiagramObject in the current diagram.
+	// If an array of equipments is given as argument, only the
+	// subgraph for that equipments is returned.
 	getConductingEquipmentGraph(identObjs) {
 	    let ceEdges = [];
 	    if (arguments.length === 0) {
@@ -306,6 +339,10 @@ function cimDiagramModel() {
 	    return ceEdges;
 	},
 
+	// Get a graph of objects and DiagramObjects, for each object
+	// that have at least one DiagramObject in the current diagram.
+	// If an array of objects is given as argument, only the
+	// subgraph for that objects is returned.
 	getDiagramObjectGraph(identObjs) {
 	    let ioEdges = [];
 	    if (arguments.length === 0) {
@@ -329,6 +366,8 @@ function cimDiagramModel() {
 	    return ioEdges;
 	},
 
+	// Get a graph of DiagramObjects and DiagramObjectPoints
+	// for the current diagram.
 	getDiagramObjectPointGraph() {
 	    let doEdges = this.diagramObjectPointGraphs.get(this.activeDiagramName);
 	    if (typeof(doEdges) === "undefined") {

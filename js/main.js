@@ -70,10 +70,6 @@ function startRouter() {
 	// main logic
 	$(".selectLabel").click();
 
-	/*cimModel.on("selectDiagram", function(name) {
-	    cimDiagram.render(name);
-	});
-	cimModel.trigger("selectDiagram", name);*/
 	// test: save a copy of the file
 	$("#cim-save").on("click", function() {
 	    let out = cimModel.save();

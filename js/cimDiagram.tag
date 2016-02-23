@@ -7,6 +7,8 @@
     </div>
 
     <script>
+     "use strict";
+     
      let zoomComp = d3.behavior.zoom();
      let zoomEnabled = false;
      let xoffset = 0;
@@ -59,22 +61,22 @@
 	 this.model.selectDiagram(decodeURI(diagramName));
 	 let allConnectivityNodes = this.model.getConnectivityNodes();
 	 console.log("extracted connectivity nodes");
-	 let allACLines = this.model.getConductingEquipments("cim:ACLineSegment");
+	 let allACLines = this.model.getGraphicObjects("cim:ACLineSegment");
 	 console.log("extracted acLines");
-	 let allBreakers = this.model.getConductingEquipments("cim:Breaker");
+	 let allBreakers = this.model.getGraphicObjects("cim:Breaker");
 	 console.log("extracted breakers");
-	 let allDisconnectors = this.model.getConductingEquipments("cim:Disconnector");
+	 let allDisconnectors = this.model.getGraphicObjects("cim:Disconnector");
 	 console.log("extracted disconnectors");
-	 let allEnergySources = this.model.getConductingEquipments("cim:EnergySource")
-	     .concat(this.model.getConductingEquipments("cim:SynchronousMachine"));
+	 let allEnergySources = this.model.getGraphicObjects("cim:EnergySource")
+	     .concat(this.model.getGraphicObjects("cim:SynchronousMachine"));
 	 console.log("extracted energy sources");
-	 let allEnergyConsumers = this.model.getConductingEquipments("cim:EnergyConsumer")
-				      .concat(this.model.getConductingEquipments("cim:ConformLoad"))
-				      .concat(this.model.getConductingEquipments("cim:NonConformLoad"));
+	 let allEnergyConsumers = this.model.getGraphicObjects("cim:EnergyConsumer")
+				      .concat(this.model.getGraphicObjects("cim:ConformLoad"))
+				      .concat(this.model.getGraphicObjects("cim:NonConformLoad"));
 	 console.log("extracted energy consumers");
-	 let allPowerTransformers = this.model.getConductingEquipments("cim:PowerTransformer");
+	 let allPowerTransformers = this.model.getGraphicObjects("cim:PowerTransformer");
 	 console.log("extracted power transformers");
-	 let allBusbarSections = this.model.getConductingEquipments("cim:BusbarSection");
+	 let allBusbarSections = this.model.getGraphicObjects("cim:BusbarSection");
 	 console.log("extracted busbarSections");
 	 let allTerminals = this.model.getTerminals(allACLines
 	                 .concat(allBreakers)
@@ -83,6 +85,8 @@
 	                 .concat(allEnergyConsumers)
 			 .concat(allPowerTransformers));
 	 console.log("extracted terminals");
+	 let allSubstations = this.model.getObjects("cim:Substation"); // TODO: filter substations
+	 console.log("extracted substations");
 
 	 // AC Lines
 	 let aclineEnter = this.drawACLines(allACLines);
@@ -109,7 +113,8 @@
 	 this.edges = this.edges.filter(el => allTerminals.indexOf(el.target) > -1);
 	 
 	 // ac line terminals
-	 this.createTwoTerminals(aclineEnter);
+	 let termSelection = this.createTwoTerminals(aclineEnter);
+	 this.createMeasurements(termSelection);
 	 console.log("drawn acline terminals");
 	 // breaker terminals
 	 this.createTwoTerminals(breakerEnter);
@@ -118,14 +123,21 @@
 	 this.createTwoTerminals(discEnter);
 	 console.log("drawn disconnector terminals");
 	 // energy source terminals
-	 this.createTwoTerminals(ensrcEnter, 50);
+	 termSelection = this.createTwoTerminals(ensrcEnter, 50);
+	 this.createMeasurements(termSelection);
 	 console.log("drawn energy source terminals");
 	 // energy consumer terminals
-	 this.createTwoTerminals(enconsEnter);
+	 termSelection = this.createTwoTerminals(enconsEnter);
+	 this.createMeasurements(termSelection);
 	 console.log("drawn energy consumer terminals");
 	 // power transformer terminals
-	 this.createTwoTerminals(trafoEnter, 50);
+	 termSelection = this.createTwoTerminals(trafoEnter, 50);
+	 this.createMeasurements(termSelection);
 	 console.log("drawn power transformer terminals");
+
+	 // substations
+	 /*this.drawSubstations(allSubstations);
+	 console.log("drawn substations");*/
 
 	 let nodes = allConnectivityNodes
 		.concat(allACLines)
@@ -157,16 +169,9 @@
 	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 	 d3.select("svg").append("g").attr("id", "yAxisG").call(yAxis);
 	 d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
-	 // add tooltips 
-	 /*aclineEnter.attr("title", function(d) {
-	     let attributes = d.getAttributes();
-	     let tooltip = "";
-	     for (let i in attributes) {
-		 tooltip = tooltip + attributes[i].localName + ": " + attributes[i].textContent + "\n";
-	     }
-	     return tooltip;
-	 });
-	 cnEnter.attr("title", function(d) {
+	 
+	 // add tooltips
+	 /*cnEnter.attr("title", function(d) {
 	     let attributes = d.getAttributes();
 	     let tooltip = "";
 	     for (let i in attributes) {
@@ -182,19 +187,51 @@
 	    var sXML = oSerializer.serializeToString(data);
 	    console.log(sXML);*/
 	 // handle mouseover
-	 d3.selectAll("g.ACLineSegment")
-			    .on("mouseover.hover", this.hover)
-			    .on("mouseout", this.mouseOut)
-			    .on("click", function (d) {
-				if (self.status === "ZOOM") {
-				    let hashComponents = window.location.hash.substring(1).split("/");
-				    let basePath = hashComponents[0] + "/" + hashComponents[1];
-				    if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
-					riot.route(basePath + "/" + d.attributes[0].value);
-				    }
-				}
-			    });
-	     
+	 d3.select("svg").selectAll("svg > g > g > g")
+		  .on("mouseover.hover", this.hover)
+		  .on("mouseout", this.mouseOut);
+     }
+
+     createMeasurements(termSelection) {
+	 termSelection.attr("title", function(d) {
+	     let tooltip = "";
+	     let tooltipLines = [];
+	     let measurements = self.model.getGraph([d], "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
+	     for (let i in measurements) {
+		 let measurement = measurements[i];
+		 let type = self.model.getAttribute(measurement, "cim:Measurement.measurementType").textContent;
+		 let phases = self.model.getEnum(measurement, "cim:Measurement.phases").attributes[0].textContent.split("#")[1].split(".")[1];
+		 let unitMultiplier = self.model.getEnum(measurement, "cim:Measurement.unitMultiplier").attributes[0].textContent.split("#")[1].split(".")[1];
+		 if (unitMultiplier === "none") {
+		     unitMultiplier = "";
+		 }
+		 let unitSymbol = self.model.getEnum(measurement, "cim:Measurement.unitSymbol").attributes[0].textContent.split("#")[1].split(".")[1];
+		 let valueObject = self.model.getGraph([measurement], "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source)[0];
+		 let actLine = "";
+		 if (typeof(valueObject) !== "undefined") {
+		     let value = "n.a."
+		     if(typeof(self.model.getAttribute(valueObject, "cim:AnalogValue.value")) !== "undefined") {
+			 value = self.model.getAttribute(valueObject, "cim:AnalogValue.value").textContent;
+		     }
+		     
+		     actLine = actLine + type;
+		     actLine = actLine + " (phase: " + phases + ")";
+		     actLine = actLine + ": ";
+		     actLine = actLine + value;
+		     actLine = actLine + " [" + unitMultiplier + unitSymbol + "]";
+		     actLine = actLine + "\n";
+		     tooltipLines.push(actLine);
+		 }
+	     }
+	     tooltipLines.sort();
+	     for (let i in tooltipLines) {
+		 tooltip = tooltip + tooltipLines[i];
+	     }
+	     if (tooltip === "") {
+		 tooltip = "No measurements available.";
+	     }
+	     return tooltip;
+	 });
      }
 
      // bind data to an x,y array from Diagram Object Points
@@ -209,20 +246,20 @@
 			       let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target);
 			       d.rotation = 0;
 			       if (dobjs.length > 0) {
-				   let rotation = dobjs[0].getAttribute("cim:DiagramObject.rotation");
+				   let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation");
 				   if (typeof(rotation) !== "undefined") {
 				       d.rotation = parseInt(rotation.innerHTML);
 				   }
 			       } 
 			       let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
 			       if (points.length > 0) {
-				   d.x = parseInt(points[0].getAttributes().filter(el => el.localName === "DiagramObjectPoint.xPosition")[0].innerHTML);
-				   d.y = parseInt(points[0].getAttributes().filter(el => el.localName === "DiagramObjectPoint.yPosition")[0].innerHTML);
+				   d.x = parseInt(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.xPosition").innerHTML);
+				   d.y = parseInt(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.yPosition").innerHTML);
 				   for (let point in points) {
 				       lineData.push({
-					   x: parseInt(points[point].getAttributes().filter(el => el.localName === "DiagramObjectPoint.xPosition")[0].innerHTML) - d.x,
-					   y: parseInt(points[point].getAttributes().filter(el => el.localName === "DiagramObjectPoint.yPosition")[0].innerHTML) - d.y,
-					   seq: parseInt(points[point].getAttributes().filter(el => el.localName === "DiagramObjectPoint.sequenceNumber")[0].innerHTML)
+					   x: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.xPosition").innerHTML) - d.x,
+					   y: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.yPosition").innerHTML) - d.y,
+					   seq: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.sequenceNumber").innerHTML)
 				       });
 				   }
 				   lineData.sort(function(a, b){return a.seq-b.seq});
@@ -263,15 +300,16 @@
 		    .attr("stroke-width", 2);
 	 aclineEnter.append("text")
 		    .style("text-anchor", "middle")
+		    .attr("font-size", 8)
 		    .attr("x", function(d) {
 			let lineData = this.parentNode.__data__.lineData;
 			let end = lineData[lineData.length-1];
-			return end.x/2;
+			return (lineData[0].x + end.x)/2;
 		    })
 		    .attr("y", function(d) {
 			let lineData = this.parentNode.__data__.lineData;
 			let end = lineData[lineData.length-1];
-			return end.y/2;
+			return (lineData[0].y + end.y)/2;
 		    })
 		    .text(function(d) {
 			return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
@@ -296,16 +334,17 @@
 		     .attr("stroke", "green")
 		     .attr("stroke-width", 4);
 	 breakerEnter.append("text")
-		     .style("text-anchor", "middle")
+		     .style("text-anchor", "end")
+		     .attr("font-size", 8)
 		     .attr("x", function(d) {
 			 let lineData = this.parentNode.__data__.lineData;
 			 let end = lineData[lineData.length-1];
-			 return end.x/2;
+			 return ((lineData[0].x + end.x)/2) - 10;
 		     })
 		     .attr("y", function(d) {
 			 let lineData = this.parentNode.__data__.lineData;
 			 let end = lineData[lineData.length-1];
-			 return end.y/2;
+			 return ((lineData[0].y + end.y)/2) + 15;
 		     })
 		     .text(function(d) {
 			 return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
@@ -324,22 +363,36 @@
 	 
 	 discEnter.append("path")
 		  .attr("d", function(d) {
-		      return line([{x: 0, y:0, seq:1}, {x:18, y:24, seq:2}]);
+		      let value = "0"; // default is OPEN
+		      // check the status of this disconnector
+		      let measurement = self.model.getGraph([d], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source)[0];
+		      if (typeof(measurement) !== "undefined") {
+			  let valueObject = self.model.getGraph([measurement], "Discrete.DiscreteValues", "DiscreteValue.Discrete").map(el => el.source)[0];
+			  if (typeof(valueObject) !== "undefined") {
+			      value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
+			  }
+		      }
+		      if (value === "0") {
+			  return line([{x: 0, y:0, seq:1}, {x:18, y:24, seq:2}]);
+		      } else {
+			  return line([{x: 0, y:0, seq:1}, {x:0, y:30, seq:2}]);
+		      }
 		  })
 		  .attr("fill", "none")
 		  .attr("stroke", "blue")
 		  .attr("stroke-width", 4);
 	 discEnter.append("text")
-		  .style("text-anchor", "middle")
+		  .style("text-anchor", "end")
+		  .attr("font-size", 8)
 		  .attr("x", function(d) {
 		      let lineData = this.parentNode.__data__.lineData;
 		      let end = lineData[lineData.length-1];
-		      return end.x/2;
+		      return ((lineData[0].x + end.x)/2) - 10;
 		  })
 		  .attr("y", function(d) {
 		      let lineData = this.parentNode.__data__.lineData;
 		      let end = lineData[lineData.length-1];
-		      return end.y/2;
+		      return ((lineData[0].y + end.y)/2) + 15;
 		  })
 		  .text(function(d) {
 		      return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
@@ -360,8 +413,9 @@
 		   .attr("stroke-width", 4);
 	 ensrcEnter.append("text")
 		   .style("text-anchor", "middle")
+		   .attr("font-size", 8)
 		   .attr("x", 0)
-		   .attr("y", 0)
+		   .attr("y", -10)
 		   .text(function(d) {
 		       return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
 		   });
@@ -385,8 +439,9 @@
 		     .attr("stroke-width", 4);
 	 enconsEnter.append("text")
 		    .style("text-anchor", "middle")
+		    .attr("font-size", 8)
 		    .attr("x", 0) 
-		    .attr("y", 0)
+		    .attr("y", 30)
 		    .text(function(d) {
 			return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
 		    });
@@ -412,13 +467,76 @@
 	           .attr("stroke", "black")
 	           .attr("stroke-width", 4);
 	 trafoEnter.append("text")
-		   .style("text-anchor", "middle")
-		   .attr("x", 0)
-		   .attr("y", 0)
+		   .style("text-anchor", "end")
+		   .attr("font-size", 8)
+		   .attr("x", -25)
+		   .attr("y", 25)
 		   .text(function(d) {
 		       return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
 		   });
 	 return trafoEnter;
+     }
+
+     // Draw all Substations
+     drawSubstations(allSubstations) {
+	 let substations = d3.select("svg").select("g").append("g")
+	   .attr("class", "Substations");
+	 
+	 let selection = substations.selectAll("g.Substation")
+				    .data(allSubstations)
+				    .enter()
+	                            .append("g")
+	                            .attr("class", "Substation")
+	                            .attr("id", function(d) {
+					let allChildNodes = [];	 
+					let equipments = self.model.getGraph([d], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
+					for (i in equipments) {
+					    let equipment = equipments[i];
+					    // handle busbars
+					    // TODO: duplicate code in moveTo()
+						if (equipment.nodeName === "cim:BusbarSection") {
+						    let terminal = self.model.getConductingEquipmentGraph([equipment]).map(el => el.target)[0];
+						    if (typeof(terminal) === "undefined") {
+							continue;
+						    }
+						    let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+						    equipment = cn;
+						}
+					    allChildNodes.push(d3.select("svg").select("#" + equipment.attributes[0].value).node());
+					}
+					d.x = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().x+d3.select(dd).datum().x}) - 30;
+					d.y = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().y+d3.select(dd).datum().y}) - 30;
+					d.width = d3.max(allChildNodes.filter(el => el !== null), function(dd) {
+					    var bb = dd.getBBox();
+					    return (bb.x + d3.select(dd).datum().x + bb.width) - d.x + 60;
+					});
+					d.height = d3.max(allChildNodes.filter(el => el !== null), function(dd) {
+					    var bb = dd.getBBox();
+					    return (bb.y + d3.select(dd).datum().y + bb.height) - d.y + 60;
+					});
+					d.rotation = 0;
+					return d.attributes[0].value;
+				    });
+	 
+	 selection.append("rect")
+		  .attr("x", 0)
+		  .attr("y", 0)  
+		  .attr("width", function(d) {
+		      return d.width;
+		  })  
+		  .attr("height",  function(d) {
+		      return d.height;
+		  })  
+		  .attr("stroke", "blue")
+		  .attr("stroke-width", 4)
+		  .attr("fill", "none");
+	 selection.append("text")
+		  .style("text-anchor", "middle")
+		  .attr("x", 0)
+		  .attr("y", 0)
+		  .text(function(d) {
+		      return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+		  });
      }
 
      createTwoTerminals(eqSelection, heigth) {
@@ -433,7 +551,6 @@
 					.append("g")
 					.attr("id", function(d, i) {
 					    let cn = self.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-
 					    let lineData = this.parentNode.__data__.lineData;
 					    let start = lineData[0];
 					    let end = lineData[lineData.length-1];
@@ -443,7 +560,7 @@
 						start = {x:0, y:0};
 						end = {x:0, y:heigth};
 					    }
-					    if (typeof(cn) !== "undefined" /*&& lineData.length > 1*/) {
+					    if (typeof(cn) !== "undefined") {
 						let dist1 = Math.pow((eqX+start.x-cn.x), 2)+Math.pow((eqY+start.y-cn.y), 2);
 						let dist2 = Math.pow((eqX+end.x-cn.x), 2)+Math.pow((eqY+end.y-cn.y), 2);
 						if (dist2 < dist1) {
@@ -454,7 +571,7 @@
 						    d.y = eqY + start.y;
 						}
 						// be sure we don't put two terminals on the same side of the equipment
-						let terminals = d3.select(this.parentNode).selectAll("g").data();
+						let terminals = self.model.getTerminals(d3.select(this.parentNode).data());//d3.select(this.parentNode).selectAll("g").data();
 						if (terminals.length > 1) {
 						    let otherTerm = terminals.filter(term => term !== d)[0];
 
@@ -484,10 +601,6 @@
 							cnToChange.x = termToChange.x;
 							cnToChange.y = termToChange.y + 20;
 						    }
-
-						    /*if (d3.select(this.parentNode).attr("id") === "_c458f064-0d8f-41d0-bf6e-8b8efbc932fe") {
-							
-						    }*/
 						}
 					    } else {
 						if (lineData.length === 1) {
@@ -512,6 +625,7 @@
 		      .attr("cy", function(d, i) {
 			  return this.parentNode.__data__.y-this.parentNode.parentNode.__data__.y;
 		      });
+	 return termSelection;
      }
 
      // Draw all ConnectivityNodes
@@ -525,6 +639,7 @@
 	   .attr("class", "ConnectivityNodes");
 	 let cnEnter = d3.select("svg").select("g.ConnectivityNodes").selectAll("g.ConnectivityNode")
 			 .data(allConnectivityNodes, function (d) {
+			     d.rotation = 0;
 			     let lineData = [];
 			     let xcalc = 0;
 			     let ycalc = 0;
@@ -534,8 +649,7 @@
 			     let equipments = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
 			     equipments = self.model.getConductingEquipmentGraph(equipments).map(el => el.source);
 			     // let's try to get a busbar section
-			     let busbarSection = equipments
-			.filter(el => el.localName === "BusbarSection")[0];
+			     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 			     let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target); 
 			     if (dobjs.length === 0) {
 				 if (typeof(busbarSection) != "undefined") {
@@ -589,6 +703,11 @@
 					     }
 					 }
 				     }
+				 }
+			     } else {
+				 let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation"); 
+				 if (typeof(rotation) !== "undefined") {
+				     d.rotation = parseInt(rotation.innerHTML);
 				 }
 			     }
 			     let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source); 
@@ -646,17 +765,35 @@
      }
 
      hover(hoverD) {
-	 d3.selectAll("g.ACLineSegment")
-	   .filter(function (d) {return d === hoverD;})
-	   .style("stroke", "black")
-	   .style("stroke-width", "2px");
+	 d3.select("svg").selectAll("svg > g > g > g")
+	   .filter(function (d) {
+	       return d === hoverD;
+	   }).each(function (d) {
+	       d3.select(this).append("rect")
+		 .attr("x", this.getBBox().x)
+		 .attr("y", this.getBBox().y)
+		 .attr("width", this.getBBox().width)
+		 .attr("height", this.getBBox().height)
+		 .attr("stroke", "black")
+		 .attr("stroke-width", 2)
+		 .attr("stroke-dasharray", "5,5")
+		 .attr("fill", "none");	       
+	   });
      }
 
      moveTo(uuid) {
 	 let hoverD = this.model.getObject(uuid);
+	 // handle busbars
+	 if (hoverD.nodeName === "cim:BusbarSection") {
+	     let terminal = self.model.getConductingEquipmentGraph([hoverD]).map(el => el.target)[0];
+	     let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+	     hoverD = cn;
+	 }
+
 	 if (typeof(hoverD.x) === "undefined" || typeof(hoverD.y) === "undefined") {
 	     return;
 	 }
+	 
 	 let svgWidth = parseInt(d3.select("svg").style("width"));
 	 let svgHeight = parseInt(d3.select("svg").style("height"));
 	 let newZoom = zoomComp.scale();
@@ -690,8 +827,7 @@
      }
 
      mouseOut() {
-	 d3.selectAll("li.ACLineSegment").style("background", "white");
-	 d3.selectAll("g.ACLineSegment").style("stroke-width", "0px");
+	 d3.select("svg").selectAll("svg > g > g > g").selectAll("rect").remove();
      }
 
      enableDrag() {
@@ -719,54 +855,32 @@
 			  let points = doEdges.filter(el => dobjs.indexOf(el.source) > -1).map(el => el.target);
 			  if (points.length > 0) {
 			      for (let point in points) {
-				  let seq = parseInt(points[point].getAttributes().filter(el => el.localName === "DiagramObjectPoint.sequenceNumber")[0].innerHTML);
+				  let seq = 1;
+				  let seqObject = self.model.getAttribute(points[point], "cim:DiagramObjectPoint.sequenceNumber");
+				  if (typeof(seqObject) !== "undefined") {
+				      seq = parseInt(seqObject.innerHTML);
+				  }
 				  let actLineData = d.lineData.filter(el => el.seq === seq)[0];
-				  points[point].getAttributes().filter(el => el.localName === "DiagramObjectPoint.xPosition")[0].innerHTML = actLineData.x + d.x;
-				  points[point].getAttributes().filter(el => el.localName === "DiagramObjectPoint.yPosition")[0].innerHTML = actLineData.y + d.y;
+				  self.model.getAttribute(points[point], "cim:DiagramObjectPoint.xPosition").innerHTML = actLineData.x + d.x;
+				  self.model.getAttribute(points[point], "cim:DiagramObjectPoint.yPosition").innerHTML = actLineData.y + d.y;
 			      }
 			  }
 			  
 			  tickFunction();
 		      });
-	 d3.select("g.ACLineSegments").selectAll("g.ACLineSegment").call(drag);
-	 d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode").call(drag);
-	 d3.select("g.Breakers").selectAll("g.Breaker").call(drag);
-	 d3.select("g.Disconnectors").selectAll("g.Disconnector").call(drag);
-	 d3.select("g.EnergySources").selectAll("g.EnergySource").call(drag);
-	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer").call(drag);
-	 d3.select("g.PowerTransformers").selectAll("g.PowerTransformer").call(drag);
+	 d3.select("svg").selectAll("svg > g > g > g").call(drag);
      }
 
      disableDrag() {
 	 let drag = d3.behavior.drag()
 		      .on("drag", null);
-	 d3.select("g.ACLineSegments").selectAll("g.ACLineSegment").call(drag);
-	 d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode").call(drag);
-	 d3.select("g.Breakers").selectAll("g.Breaker").call(drag);
-	 d3.select("g.Disconnectors").selectAll("g.Disconnector").call(drag);
-	 d3.select("g.EnergySources").selectAll("g.EnergySource").call(drag);
-	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer").call(drag);
-	 d3.select("g.PowerTransformers").selectAll("g.PowerTransformer").call(drag);
+	 d3.select("svg").selectAll("svg > g > g > g").call(drag);
      }
 
      enableForce() {
 	 $("#force").click();
 	 this.status = "FORCE";
-	 d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode").call(force.drag());
-	 d3.select("g.ACLineSegments").selectAll("g.ACLineSegment").call(force.drag());
-	 d3.select("g.Breakers").selectAll("g.Breaker").call(force.drag());
-	 d3.select("g.Disconnectors").selectAll("g.Disconnector").call(force.drag());
-	 d3.select("g.EnergySources").selectAll("g.EnergySource").call(force.drag());
-	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer").call(force.drag());
-	 d3.select("g.PowerTransformers").selectAll("g.PowerTransformer").call(force.drag());
-
-	 d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode").on("click", fixNode);
-	 d3.select("g.ACLineSegments").selectAll("g.ACLineSegment").on("click", fixNode);
-	 d3.select("g.Breakers").selectAll("g.Breaker").call(fixNode);
-	 d3.select("g.Disconnectors").selectAll("g.Disconnector").call(fixNode);
-	 d3.select("g.EnergySources").selectAll("g.EnergySource").call(fixNode);
-	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer").call(fixNode);
-	 d3.select("g.PowerTransformers").selectAll("g.PowerTransformer").call(fixNode);
+	 d3.select("svg").selectAll("svg > g > g > g").call(force.drag()).on("click", fixNode);
 	 
 	 function fixNode(d) {
 	     d.fixed = true;
@@ -781,6 +895,14 @@
      enableZoom() {
 	 $("#zoom").click();
 	 this.status = "ZOOM";
+	 d3.select("svg").selectAll("svg > g > g > g")
+	   .on("click", function (d) {
+	       let hashComponents = window.location.hash.substring(1).split("/");
+	       let basePath = hashComponents[0] + "/" + hashComponents[1];
+	       if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
+		       riot.route(basePath + "/" + d.attributes[0].value);
+	       }
+	   });
 	 zoomComp = d3.behavior.zoom();
 	 zoomComp.on("zoom", zoomFunction);
 	 d3.select("svg").call(zoomComp);
@@ -791,6 +913,7 @@
 
      disableZoom() {
 	 if (zoomEnabled===true) {
+	     d3.select("svg").selectAll("svg > g > g > g").on("click", null);
 	     zoomComp.on("zoom", null);
 	     d3.select("svg").select("g").call(zoomComp);
 	     xoffset = zoomComp.translate()[0];
@@ -833,10 +956,6 @@
      }
 
      forceTick() {
-	 let cnEnter = d3.select("g.ConnectivityNodes").selectAll("g.ConnectivityNode")
-			 .attr("transform", function (d) {
-			     return "translate("+d.x+","+d.y+")";
-			 });
 	 // get status from Webdis
 	 /*cnEnter.data().forEach(function(d, index, array) {
 	    let cnName = d.getAttribute("cim:IdentifiedObject.name").textContent;
@@ -855,67 +974,7 @@
 	    });
 	    });*/
 
-	 
-	 d3.select("g.ACLineSegments").selectAll("g.ACLineSegment")
-		  .attr("transform", function (d) {
-		      return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
-		  })
-		  .selectAll("g")
-		  .attr("id", function(d, i) {
-		      d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
-		      d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
-		      return d.attributes[0].value;
-		  });
-	 d3.select("g.Breakers").selectAll("g.Breaker")
-	   .attr("transform", function (d) {
-	       return "translate("+d.x+","+d.y+")";
-	   })
-	   .selectAll("g")
-	   .attr("id", function(d, i) {
-	       d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
-	       d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
-	       return d.attributes[0].value;
-	   });
-	 d3.select("g.Disconnectors").selectAll("g.Disconnector")
-	   .attr("transform", function (d) {
-	       return "translate("+d.x+","+d.y+")";
-	   })
-	   .selectAll("g")
-	   .attr("id", function(d, i) {
-	       d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
-	       d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
-	       return d.attributes[0].value;
-	   });
-	 d3.select("g.EnergySources").selectAll("g.EnergySource")
-	   .attr("transform", function (d) {
-	       return "translate("+d.x+","+d.y+")";
-	   })
-	   .selectAll("g")
-	   .attr("id", function(d, i) {
-	       d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
-	       d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
-	       return d.attributes[0].value;
-	   });
-	 d3.select("g.EnergyConsumers").selectAll("g.EnergyConsumer")
-	   .attr("transform", function (d) {
-	       return "translate("+d.x+","+d.y+")";
-	   })
-	   .selectAll("g")
-	   .attr("id", function(d, i) {
-	       d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
-	       d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
-	       return d.attributes[0].value;
-	   });
-	 d3.select("g.PowerTransformers").selectAll("g.PowerTransformer")
-	   .attr("transform", function (d) {
-	       return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
-	   })
-	   .selectAll("g")
-	   .attr("id", function(d, i) {
-	       d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
-	       d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
-	       return d.attributes[0].value;
-	   });
+	 updateElements(d3.select("svg").selectAll("svg > g > g > g"));
 	 
 	 let context = d3.select("canvas").node().getContext("2d");
 	 context.clearRect(0, 0, parseInt(d3.select("svg").style("width")), parseInt(d3.select("svg").style("height")));
@@ -927,6 +986,17 @@
 	     context.stroke();
 	 });
 	 context.restore();
+
+	 function updateElements(selection) {
+	     selection.attr("transform", function (d) {
+		 return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
+	     }).selectAll("g")
+		      .attr("id", function(d, i) {
+			  d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
+			  d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
+			  return d.attributes[0].value;
+		      });
+	 };
      }
 
      closestPoint(source, point) {
@@ -934,6 +1004,8 @@
 	 if (pathNode === null) {
 	     return [0, 0];
 	 }
+
+	 // TODO: pathNode.pathSegList is deprecated in Chrome 48, we use a polyfill
 	 let pathLength = pathNode.getTotalLength(),
 	     precision = pathLength / pathNode.pathSegList.numberOfItems * .125,
 	     best,
@@ -949,7 +1021,7 @@
 	 }
 	 
 	 // linear scan for coarse approximation
-	 for (var scan, scanLength = 0, scanDistance; scanLength <= pathLength; scanLength += precision) {
+	 for (let scan, scanLength = 0, scanDistance; scanLength <= pathLength; scanLength += precision) {
 	     if ((scanDistance = distance2(scan = pathNode.getPointAtLength(scanLength))) < bestDistance) {
 		 best = scan, bestLength = scanLength, bestDistance = scanDistance;
 	     }
@@ -976,7 +1048,7 @@
 	 return best;
 
 	 function distance2(p) {
-	     var dx = p.x + d3.select(source).datum().x - point.x, 
+	     let dx = p.x + d3.select(source).datum().x - point.x, 
 		 dy = p.y + d3.select(source).datum().y - point.y; 
 	     return dx * dx + dy * dy;
 	 }
