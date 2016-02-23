@@ -12,6 +12,9 @@
 		    <label class="btn btn-default">
 			<input type="radio" id="pan" name="tool" value="pan" autocomplete="off">pan+zoom</input>
 		    </label>
+		    <label class="btn btn-default">
+			<input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input>
+		    </label>
 		</div>
 	    </div>
 	</div>
@@ -53,20 +56,31 @@
 	 $("#select").change(function() {
 	     self.disableForce();
 	     self.disableZoom();
+	     self.disableConnect();
 	     self.enableDrag();
 	 });
 	 
 	 $("#force").change(function() {
 	     self.disableZoom();
 	     self.disableDrag();
+	     self.disableConnect();
 	     self.enableForce();
 	 });
 
 	 $("#pan").change(function() {
 	     self.disableForce();
 	     self.disableDrag();
+	     self.disableConnect();
 	     self.enableZoom();
 	 });
+
+	 $("#connect").change(function() {
+	     self.disableForce();
+	     self.disableDrag();
+	     self.disableZoom();
+	     self.enableConnect();
+	 });
+	 
      });
 
      this.model = opts.model;
@@ -854,7 +868,10 @@
 	 $("#select").click();
 	 this.status = "DRAG";
 	 let model = this.model;
-	 let drag = d3.behavior.drag().origin(function(d) { return d; })
+	 let drag = d3.behavior.drag()
+		      .origin(function(d) {
+			  return d;
+		      })
 		      .on("drag", function(d,i) {
 			  d.x = d3.event.x;
 			  d.px = d.x;
@@ -975,25 +992,22 @@
 	 context.restore();
      }
 
-     forceTick() {
-	 // get status from Webdis
-	 /*cnEnter.data().forEach(function(d, index, array) {
-	    let cnName = d.getAttribute("cim:IdentifiedObject.name").textContent;
-	    d3.json("http://127.0.0.1:7379/GET/" + cnName + "_breaker_status")
-	    .get(function(error, data) {
-	    let ret = "green";
-	    if (data !== null) {
-	    if (data.GET === "1") {
-	    ret = "red";
-	    }
-	    }
-	    cnEnter.filter(function (cnD) {return d == cnD;})
-	    .attr("fill", function(d) {
-	    return ret;
-	    });
-	    });
-	    });*/
+     enableConnect() {
+         $("#connect").click();
+	 this.status = "CONNECT";
+	 d3.select("svg").selectAll("svg > g > g > g > g.Terminal")
+	   .on("click", function (d) {
+	       console.log(d);
+	   });
+	 
+     }
 
+     disableConnect() {
+	 d3.select("svg").selectAll("svg > g > g > g > g.Terminal")
+	                .on("click", null);
+     }
+
+     forceTick() {
 	 updateElements(d3.select("svg").selectAll("svg > g > g > g"));
 	 
 	 let context = d3.select("canvas").node().getContext("2d");
