@@ -1,4 +1,22 @@
 <cimDiagram>
+    <div class="container-fluid">
+	<div class="row center-block">
+	    <div class="col-md-12">		
+		<div class="btn-group" data-toggle="buttons" id="cim-diagram-controls">
+		    <label class="btn btn-default active" id="selectLabel">
+			<input type="radio" id="select" name="tool" value="select" autocomplete="off" checked>select</input>
+		    </label>
+		    <label class="btn btn-default">
+			<input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)</input>
+		    </label>
+		    <label class="btn btn-default">
+			<input type="radio" id="pan" name="tool" value="pan" autocomplete="off">pan+zoom</input>
+		    </label>
+		</div>
+	    </div>
+	</div>
+    </div>
+    
     <div class="app-diagram">
 	<canvas height="800" width="1800"></canvas>
 	<svg>
@@ -31,22 +49,24 @@
 	 self.moveTo(element);
      });
 
-     $("#select").change(function() {
-	 self.disableForce();
-	 self.disableZoom();
-	 self.enableDrag();
-     });
-     
-     $("#force").change(function() {
-	 self.disableZoom();
-	 self.disableDrag();
-	 self.enableForce();
-     });
+     this.on("mount", function() {
+	 $("#select").change(function() {
+	     self.disableForce();
+	     self.disableZoom();
+	     self.enableDrag();
+	 });
+	 
+	 $("#force").change(function() {
+	     self.disableZoom();
+	     self.disableDrag();
+	     self.enableForce();
+	 });
 
-     $("#pan").change(function() {
-	 self.disableForce();
-	 self.disableDrag();
-	 self.enableZoom();
+	 $("#pan").change(function() {
+	     self.disableForce();
+	     self.disableDrag();
+	     self.enableZoom();
+	 });
      });
 
      this.model = opts.model;

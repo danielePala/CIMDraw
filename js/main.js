@@ -14,7 +14,6 @@ function startRouter() {
 	$("#cim-select-file").show();
 	$("#cim-file-input-container").show();
 	// things to hide
-	$("#cim-diagram-controls").hide();
 	$("#cim-load-container").hide();
 	$("#cim-home-container").hide();
 	$("#cim-save").hide();
@@ -64,7 +63,6 @@ function startRouter() {
     // here we show a certain diagram
     riot.route('/diagrams/*', function(name) {
 	// things to show
-	$("#cim-diagram-controls").show();
 	$("#cim-save").show();
 	$(".app-container").show();
 	// main logic
