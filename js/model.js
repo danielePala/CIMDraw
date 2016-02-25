@@ -158,6 +158,7 @@ function cimDiagramModel() {
 
 	// Get the connectivity nodes that belong to the current diagram.
 	getConnectivityNodes() {
+	    let self = this;
 	    if (this.activeDiagramName === "none") {
 		return this.getObjects("cim:ConnectivityNode");
 	    }

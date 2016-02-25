@@ -199,7 +199,7 @@
 	        .data(function(d) {
 		    return cimModel.getSchemaLinks(d.localName)
 				   .filter(el => cimModel.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
-				   .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal"); //cimModel.getLinks(d);
+				   .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal"); 
 		})
 	        .enter()
 	        .append("li")
@@ -234,6 +234,8 @@
 		    .html(function (d) {
 			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
 			let target = cimModel.getLink(source, "cim:" + d.attributes[0].value.substring(1));
+			// TODO: maybe the inverse link is set
+			console.log(d);
 			if (typeof(target) === "undefined") {
 			    return "none";
 			}

@@ -594,7 +594,8 @@
 						start = {x:0, y:0};
 						end = {x:0, y:heigth};
 					    }
-					    if (typeof(cn) !== "undefined") {
+					    let terminals = self.model.getTerminals(d3.select(this.parentNode).data());
+					    if (typeof(cn) !== "undefined" && terminals.length > 1) {
 						let dist1 = Math.pow((eqX+start.x-cn.x), 2)+Math.pow((eqY+start.y-cn.y), 2);
 						let dist2 = Math.pow((eqX+end.x-cn.x), 2)+Math.pow((eqY+end.y-cn.y), 2);
 						if (dist2 < dist1) {
@@ -605,37 +606,7 @@
 						    d.y = eqY + start.y;
 						}
 						// be sure we don't put two terminals on the same side of the equipment
-						let terminals = self.model.getTerminals(d3.select(this.parentNode).data());//d3.select(this.parentNode).selectAll("g").data();
-						if (terminals.length > 1) {
-						    let otherTerm = terminals.filter(term => term !== d)[0];
-
-						    // we need to check if the other terminal must be moved
-						    let otherCn = self.model.getGraph([otherTerm], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-						    let edges = self.model.getGraph([otherCn], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
-						    let cnTerminals = edges.map(el => el.target);
-						    // let's try to get some equipment
-						    let equipments = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
-						    equipments = self.model.getConductingEquipmentGraph(equipments).map(el => el.source);
-						    equipments = new Set(equipments); // we want uniqueness
-						    let termToChange = d;
-						    let cnToChange = cn;
-						    if (equipments.size < 2) {
-							termToChange = otherTerm;
-							cnToChange = otherCn;
-						    }
-							
-						    if (otherTerm.x === d.x && otherTerm.y === d.y) {
-							if (d.x === eqX + end.x && d.y === eqY + end.y) {
-							    termToChange.x = eqX + start.x;
-							    termToChange.y = eqY + start.y;
-							} else {
-							    termToChange.x = eqX + end.x;
-							    termToChange.y = eqY + end.y;			
-							}
-							cnToChange.x = termToChange.x;
-							cnToChange.y = termToChange.y + 20;
-						    }
-						}
+						checkTerminals(terminals, d, cn, eqX, eqY, start, end);
 					    } else {
 						if (lineData.length === 1) {
 						    d.x = eqX;
@@ -659,6 +630,41 @@
 		      .attr("cy", function(d, i) {
 			  return this.parentNode.__data__.y-this.parentNode.parentNode.__data__.y;
 		      });
+
+	 function checkTerminals(terminals, d, cn, eqX, eqY, start, end) {
+	     let otherTerm = terminals.filter(term => term !== d)[0];
+	     // we need to check if the other terminal must be moved
+	     let otherCn = self.model.getGraph([otherTerm], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+	     let termToChange = otherTerm;
+	     let cnToChange = otherCn;
+	     if(typeof(otherCn) !== "undefined") {
+		 let edges = self.model.getGraph([otherCn], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
+		 let cnTerminals = edges.map(el => el.target);
+		 // let's try to get some equipment
+		 let equipments = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+		 equipments = self.model.getConductingEquipmentGraph(equipments).map(el => el.source);
+		 equipments = new Set(equipments); // we want uniqueness
+		 if (equipments.size > 1) {
+		     termToChange = d;
+		     cnToChange = cn;
+		 }
+	     } 
+	     
+	     if (otherTerm.x === d.x && otherTerm.y === d.y) {
+		 if (d.x === eqX + end.x && d.y === eqY + end.y) {
+		     termToChange.x = eqX + start.x;
+		     termToChange.y = eqY + start.y;
+		 } else {
+		     termToChange.x = eqX + end.x;
+		     termToChange.y = eqY + end.y;			
+		 }
+		 if(typeof(cnToChange) !== "undefined") {
+		     cnToChange.x = termToChange.x;
+		     cnToChange.y = termToChange.y + 20;
+		 }
+	     }
+	 }
+	 
 	 return termSelection;
      }
 
