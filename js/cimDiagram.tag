@@ -1069,20 +1069,20 @@
 
 	 // binary search for precise estimate
 	 precision *= .5;
-	   while (precision > .5) {
-	       let before,
-		   after, beforeLength,
-		   afterLength,
-		   beforeDistance,
-		   afterDistance;
-	       if ((beforeLength = bestLength - precision) >= 0 && (beforeDistance = distance2(before = pathNode.getPointAtLength(beforeLength))) < bestDistance) {
-		   best = before, bestLength = beforeLength, bestDistance = beforeDistance;
-	       } else if ((afterLength = bestLength + precision) <= pathLength && (afterDistance = distance2(after = pathNode.getPointAtLength(afterLength))) < bestDistance) {
-		   best = after, bestLength = afterLength, bestDistance = afterDistance;
-	       } else {
-		   precision *= .5;
-	       }
-	   }
+	 while (precision > .5) {
+	     let before,
+		 after, beforeLength,
+		 afterLength,
+		 beforeDistance,
+		 afterDistance;
+	     if ((beforeLength = bestLength - precision) >= 0 && (beforeDistance = distance2(before = pathNode.getPointAtLength(beforeLength))) < bestDistance) {
+		 best = before, bestLength = beforeLength, bestDistance = beforeDistance;
+	     } else if ((afterLength = bestLength + precision) <= pathLength && (afterDistance = distance2(after = pathNode.getPointAtLength(afterLength))) < bestDistance) {
+		 best = after, bestLength = afterLength, bestDistance = afterDistance;
+	     } else {
+		 precision *= .5;
+	     }
+	 }
 
 	 best = [best.x, best.y];
 	 return best;

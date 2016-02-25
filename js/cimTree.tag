@@ -148,7 +148,9 @@
 			    });
 	 let elementEnter = elementTopContainer
 		.append("ul")
-		.attr("id", function(d) {return d.attributes[0].value;})
+		.attr("id", function(d) {
+		    return d.attributes[0].value;
+		})
 		.attr("class", "collapse");
 	 elementEnter
 		.selectAll("li.attribute")

@@ -14,6 +14,8 @@ function cimDiagramModel() {
 		this.diagramObjectGraphs = new Map();
 		this.diagramObjectPointGraphs = new Map();
 		this.activeDiagramName = "none";
+		this.schemaAttributesMap = new Map();
+		this.schemaLinksMap = new Map();
 
 		let allObjects = data.children[0].children;
 		// build a map (UUID)->(object)
@@ -82,50 +84,57 @@ function cimDiagramModel() {
 	},
 
 	getSchemaAttributes(type) {
-	    let allSchemaObjects = this.schemaData.children[0].children;
-	    let ret = [].filter.call(allSchemaObjects, function(el) {
-		return el.attributes[0].value.startsWith("#" + type + ".");
-	    });
-	    let supers = this.getAllSuper(type);
-	    for (let i in supers) {
-		ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
-		    return el.attributes[0].value.startsWith("#" + supers[i] + ".");
-		}));
-	    }
-	    ret = ret.filter(function(el) {
-		let name = el.attributes[0].value;
-		let isLiteral = false;
-		let localName = name.split(".")[1];
-		if (typeof(localName) !== "undefined") {
-		    isLiteral = (localName.toLowerCase().charAt(0) === localName.charAt(0));
+	    let ret = this.schemaAttributesMap.get(type);
+	    if (typeof(ret) === "undefined") {
+		let allSchemaObjects = this.schemaData.children[0].children;
+		ret = [].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith("#" + type + ".");
+		});
+		let supers = this.getAllSuper(type);
+		for (let i in supers) {
+		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
+			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+		    }));
 		}
-		return isLiteral;
-	    });
+		ret = ret.filter(function(el) {
+		    let name = el.attributes[0].value;
+		    let isLiteral = false;
+		    let localName = name.split(".")[1];
+		    if (typeof(localName) !== "undefined") {
+			isLiteral = (localName.toLowerCase().charAt(0) === localName.charAt(0));
+		    }
+		    return isLiteral;
+		});
+		this.schemaAttributesMap.set(type, ret);
+	    }
 	    
 	    return ret;
 	},
 
 	getSchemaLinks(type) {
-	    let allSchemaObjects = this.schemaData.children[0].children;
-	    let ret = [].filter.call(allSchemaObjects, function(el) {
-		return el.attributes[0].value.startsWith("#" + type + ".");
-	    });
-	    let supers = this.getAllSuper(type);
-	    for (let i in supers) {
-		ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
-		    return el.attributes[0].value.startsWith("#" + supers[i] + ".");
-		}));
-	    }
-	    ret = ret.filter(function(el) {
-		let name = el.attributes[0].value;
-		let isLiteral = false;
-		let localName = name.split(".")[1];
-		if (typeof(localName) !== "undefined") {
-		    isLiteral = (localName.toLowerCase().charAt(0) !== localName.charAt(0));
+	    let ret = this.schemaLinksMap.get(type);
+	    if (typeof(ret) === "undefined") {
+		let allSchemaObjects = this.schemaData.children[0].children;
+		ret = [].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith("#" + type + ".");
+		});
+		let supers = this.getAllSuper(type);
+		for (let i in supers) {
+		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
+			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+		    }));
 		}
-		return isLiteral;
-	    });
-	    
+		ret = ret.filter(function(el) {
+		    let name = el.attributes[0].value;
+		    let isLiteral = false;
+		    let localName = name.split(".")[1];
+		    if (typeof(localName) !== "undefined") {
+			isLiteral = (localName.toLowerCase().charAt(0) !== localName.charAt(0));
+		    }
+		    return isLiteral;
+		});
+		this.schemaLinksMap.set(type, ret);
+	    }
 	    return ret;
 	},
 
