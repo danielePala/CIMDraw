@@ -346,7 +346,7 @@
 			return (lineData[0].y + end.y)/2;
 		    })
 		    .text(function(d) {
-			return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+			return self.model.getAttribute(d, "cim:IdentifiedObject.name").innerHTML;
 		    });
 	 return aclineEnter;
      }
@@ -381,7 +381,7 @@
 			 return ((lineData[0].y + end.y)/2) + 15;
 		     })
 		     .text(function(d) {
-			 return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+			 return self.model.getAttribute(d, "cim:IdentifiedObject.name").innerHTML;
 		     });
 	 return breakerEnter;
      }
@@ -429,7 +429,7 @@
 		      return ((lineData[0].y + end.y)/2) + 15;
 		  })
 		  .text(function(d) {
-		      return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+ 		      return self.model.getAttribute(d, "cim:IdentifiedObject.name").innerHTML;
 		  });
 	 return discEnter;
      }
@@ -451,7 +451,7 @@
 		   .attr("x", 0)
 		   .attr("y", -10)
 		   .text(function(d) {
-		       return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+		       return self.model.getAttribute(d, "cim:IdentifiedObject.name").innerHTML;
 		   });
 	 return ensrcEnter;
      }
@@ -477,7 +477,7 @@
 		    .attr("x", 0) 
 		    .attr("y", 30)
 		    .text(function(d) {
-			return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+			return self.model.getAttribute(d, "cim:IdentifiedObject.name").innerHTML;
 		    });
 	 return enconsEnter;
      }
@@ -506,7 +506,7 @@
 		   .attr("x", -25)
 		   .attr("y", 25)
 		   .text(function(d) {
-		       return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+		       return self.model.getAttribute(d, "cim:IdentifiedObject.name").innerHTML;
 		   });
 	 return trafoEnter;
      }
@@ -569,7 +569,7 @@
 		  .attr("x", 0)
 		  .attr("y", 0)
 		  .text(function(d) {
-		      return d.getAttributes().filter(el => el.localName === "IdentifiedObject.name")[0].innerHTML;
+		      return self.model.getAttribute(d, "cim:IdentifiedObject.name").innerHTML;
 		  });
      }
 
