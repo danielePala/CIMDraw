@@ -227,7 +227,7 @@
      }
 
      createMeasurements(termSelection) {
-	 termSelection.attr("title", function(d) {
+	 termSelection.append("title").text(function(d) {
 	     let tooltip = "";
 	     let tooltipLines = [];
 	     let measurements = self.model.getGraph([d], "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
