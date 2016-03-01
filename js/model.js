@@ -186,6 +186,18 @@ function cimDiagramModel() {
 	    return graphic.concat(nonGraphic);
 	},
 
+	// Get the equipment containers that belong to the current diagram.
+	getEquipmentContainers(type) {
+	    let self = this;
+	    let allContainers = this.getObjects(type);
+	    let allGraphicObjects = this.getDiagramObjectGraph().map(el => el.source);
+	    return allContainers.filter(function(container) {
+		let allContainedObjects = self.getGraph([container], "EquipmentContainers.Equipment", "Equipment.EquipmentContainer").map(el => el.source);
+		let graphicContainedObjects = self.getDiagramObjectGraph(allContainedObjects);
+		return (graphicContainedObjects.length > 0);
+	    });
+	},
+
 	// get all the terminals of a given object.
 	getTerminals(identObjs) {
 	    let terminals = this.getConductingEquipmentGraph(identObjs).map(el => el.target);
@@ -378,13 +390,18 @@ function cimDiagramModel() {
 
 	// Get a graph of DiagramObjects and DiagramObjectPoints
 	// for the current diagram.
-	getDiagramObjectPointGraph() {
-	    let doEdges = this.diagramObjectPointGraphs.get(this.activeDiagramName);
+	getDiagramObjectPointGraph(diagObjs) {
+	    let doEdges = [];
+	    if (arguments.length === 0) {
+		doEdges = this.diagramObjectPointGraphs.get(this.activeDiagramName);
 	    if (typeof(doEdges) === "undefined") {
 		let ioEdges = this.getDiagramObjectGraph();
 		let allDiagramObjects = ioEdges.map(el => el.target);
 		doEdges = this.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
 		this.diagramObjectPointGraphs.set(this.activeDiagramName, doEdges);
+	    }
+	    } else {
+		doEdges = this.getGraph(diagObjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
 	    }
 	    return doEdges;
 	},
@@ -398,6 +415,15 @@ function cimDiagramModel() {
 	            .filter(el => el.getAttributes()
 			    .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===this.activeDiagramName)[0];
 	    }
+	},
+
+	getEquipments(connectivityNode) {
+	    let edges = this.getGraph([connectivityNode], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
+	    let cnTerminals = edges.map(el => el.target);
+	    // let's try to get some equipment
+	    let equipments = this.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+	    equipments = this.getConductingEquipmentGraph(equipments).map(el => el.source);
+	    return [...new Set(equipments)]; // we want uniqueness
 	}
     }
 };

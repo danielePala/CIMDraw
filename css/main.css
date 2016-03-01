@@ -54,3 +54,7 @@ svg {
     height: 800px;
 }
 
+.tooltip-inner {
+    max-width: 250px;
+    width: 250px;
+}

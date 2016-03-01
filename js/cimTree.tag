@@ -32,6 +32,8 @@
 	 console.log("extracted breakers");
 	 let allDisconnectors = this.model.getGraphicObjects("cim:Disconnector");
 	 console.log("extracted disconnectors");
+	 let allLoadBreakSwitches = this.model.getGraphicObjects("cim:LoadBreakSwitch");
+	 console.log("extracted load break switches");
 	 let allEnergySources = this.model.getGraphicObjects("cim:EnergySource")
 	     .concat(this.model.getGraphicObjects("cim:SynchronousMachine"));
 	 console.log("extracted energy sources");
@@ -39,9 +41,9 @@
 	                              .concat(this.model.getGraphicObjects("cim:ConformLoad"))
 	                              .concat(this.model.getGraphicObjects("cim:NonConformLoad"));
 	 console.log("extracted energy consumers");
-	 let allSubstations = this.model.getObjects("cim:Substation"); // TODO: filter substations
+	 let allSubstations = this.model.getEquipmentContainers("cim:Substation");
 	 console.log("extracted substations");
-	 let allLines = this.model.getObjects("cim:Line"); // TODO: filter lines
+	 let allLines = this.model.getEquipmentContainers("cim:Line");
 	 console.log("extracted lines");
 	 let nodes = allACLines;
 	 
@@ -78,6 +80,7 @@
 	 this.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
 	 this.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
 	 this.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
+	 this.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
 	 this.createElements(cimNetwork, "EnergySource", "Energy Sources", allEnergySources);
 	 this.createElements(cimNetwork, "EnergyConsumer", "Loads", allEnergyConsumers);
 	 this.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
@@ -144,7 +147,11 @@
 				}
 			    })
 			    .html(function (d) {
-				return cimModel.getAttribute(d, "cim:IdentifiedObject.name").textContent
+				let name = cimModel.getAttribute(d, "cim:IdentifiedObject.name");
+				if (typeof(name) !== "undefined") {
+				    return name.innerHTML;
+				}
+				return "unnamed";
 			    });
 	 let elementEnter = elementTopContainer
 		.append("ul")
@@ -240,7 +247,11 @@
 			if (typeof(target) === "undefined") {
 			    return "none";
 			}
-			return cimModel.getAttribute(cimModel.resolveLink(target), "cim:IdentifiedObject.name").textContent; 
+			let name = cimModel.getAttribute(cimModel.resolveLink(target), "cim:IdentifiedObject.name");
+			if (typeof(name) !== "undefined") {
+			    return name.innerHTML;
+			}
+			return "unnamed";
 		    });
 	 elementLink.append("button")
 	            .attr("class","btn btn-default btn-xs")
@@ -257,11 +268,7 @@
 	 let hoverD = self.model.getObject(uuid);
 	 // handle connectivity nodes
 	 if (hoverD.nodeName === "cim:ConnectivityNode") {
-	     let edges = self.model.getGraph([hoverD], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
-	     let cnTerminals = edges.map(el => el.target);
-	     // let's try to get some equipment
-	     let equipments = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
-	     equipments = self.model.getConductingEquipmentGraph(equipments).map(el => el.source);
+	     let equipments = self.model.getEquipments(hoverD);
 	     // let's try to get a busbar section
 	     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 	     let busbarUUID = busbarSection.attributes[0].value;
