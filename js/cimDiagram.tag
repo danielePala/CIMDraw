@@ -123,8 +123,6 @@
 	                 .concat(allEnergyConsumers)
 			 .concat(allPowerTransformers));
 	 console.log("extracted terminals");
-	 let allSubstations = this.model.getEquipmentContainers("cim:Substation");
-	 console.log("extracted substations");
 
 	 // AC Lines
 	 let aclineEnter = this.drawACLines(allACLines);
@@ -179,10 +177,6 @@
 	 this.createMeasurements(termSelection);
 	 console.log("drawn power transformer terminals");
 
-	 // substations
-	 /*this.drawSubstations(allSubstations);
-	 console.log("drawn substations");*/
-
 	 let nodes = allConnectivityNodes
 		.concat(allACLines)
 		.concat(allBreakers)
@@ -225,8 +219,13 @@
 	    console.log(sXML);*/
 	 // handle mouseover
 	 d3.select("svg").selectAll("svg > g > g > g")
-		  .on("mouseover.hover", this.hover)
-		  .on("mouseout", this.mouseOut);
+			    .on("mouseover.hover", this.hover)
+			    .on("mouseout", mouseOut);
+
+	 function mouseOut(d) {
+	     d3.select(this).selectAll("rect").remove();
+	 }
+
      }
 
      createMeasurements(termSelection) {
@@ -545,50 +544,36 @@
 	 return trafoEnter;
      }
 
-     // Draw all Substations
-     drawSubstations(allSubstations) {
-	 let substations = d3.select("svg").select("g").append("g")
-	   .attr("class", "Substations");
-	 
-	 let selection = substations.selectAll("g.Substation")
-				    .data(allSubstations)
+     // Draw an EquipmentContainer
+     drawEquipmentContainer(container) {
+	 let type = container.localName;
+	 let substations = d3.select("svg").select("g").select("g." + type + "s");
+	 if (substations.empty()) {
+	     substations = d3.select("svg").select("g").append("g")
+			.attr("class", type + "s");
+	 }
+
+	 let selection = substations.selectAll("g#" + container.attributes[0].value);
+	 if (selection.empty()) {
+	     selection = substations.selectAll("g#" + container.attributes[0].value)
+				    .data([container], function(d) {
+				        return d.attributes[0].value;
+				    })
 				    .enter()
 	                            .append("g")
-	                            .attr("class", "Substation")
+	                            .attr("class", type)
 	                            .attr("id", function(d) {
-					let allChildNodes = [];	 
-					let equipments = self.model.getGraph([d], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
-					for (i in equipments) {
-					    let equipment = equipments[i];
-					    // handle busbars
-					    // TODO: duplicate code in moveTo()
-						if (equipment.nodeName === "cim:BusbarSection") {
-						    let terminal = self.model.getConductingEquipmentGraph([equipment]).map(el => el.target)[0];
-						    if (typeof(terminal) === "undefined") {
-							continue;
-						    }
-						    let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-						    equipment = cn;
-						}
-					    allChildNodes.push(d3.select("svg").select("#" + equipment.attributes[0].value).node());
-					}
-					d.x = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().x+d3.select(dd).datum().x}) - 30;
-					d.y = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().y+d3.select(dd).datum().y}) - 30;
-					d.width = d3.max(allChildNodes.filter(el => el !== null), function(dd) {
-					    var bb = dd.getBBox();
-					    return (bb.x + d3.select(dd).datum().x + bb.width) - d.x + 60;
-					});
-					d.height = d3.max(allChildNodes.filter(el => el !== null), function(dd) {
-					    var bb = dd.getBBox();
-					    return (bb.y + d3.select(dd).datum().y + bb.height) - d.y + 60;
-					});
-					d.rotation = 0;
+					self.calculateContainer(d);
 					return d.attributes[0].value;
 				    });
-	 
-	 selection.append("rect")
-		  .attr("x", 0)
-		  .attr("y", 0)  
+
+	     	 selection.append("rect")
+		  .attr("x", function(d) {
+		      return d.x;
+		  })
+		  .attr("y", function(d) {
+		      return d.y;
+		  })
 		  .attr("width", function(d) {
 		      return d.width;
 		  })  
@@ -600,8 +585,12 @@
 		  .attr("fill", "none");
 	 selection.append("text")
 		  .style("text-anchor", "middle")
-		  .attr("x", 0)
-		  .attr("y", 0)
+		  .attr("x", function(d) {
+		      return d.x;
+		  })
+		  .attr("y", function(d) {
+		      return d.y;
+		  })
 		  .text(function(d) {
 		      let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
 		      if (typeof(name) !== "undefined") {
@@ -609,6 +598,52 @@
 		      }
 		      return "";
 		  });
+
+	 } else {
+	     
+	 }
+	 
+     }
+
+     highlightEquipments(d) {
+	 let allChildNodes = [];
+	 let equipments = self.model.getGraph([d], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
+	 for (let equipment of equipments) {
+	     let childNode = d3.select("svg").select("#" + equipment.attributes[0].value);
+	     childNode.select("path").attr("stroke-width", 30);
+	     allChildNodes.push(childNode.node());
+	 }
+	 d.x = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().x+d3.select(dd).datum().x}) - 30;
+	 d.y = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().y+d3.select(dd).datum().y}) - 30;    
+     }
+
+     calculateContainer(d) {
+	 let allChildNodes = [];	 
+	 let equipments = self.model.getGraph([d], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
+	 for (let equipment of equipments) {
+	     // handle busbars
+	     // TODO: duplicate code in moveTo()
+	     if (equipment.nodeName === "cim:BusbarSection") {
+		 let terminal = self.model.getConductingEquipmentGraph([equipment]).map(el => el.target)[0];
+		 if (typeof(terminal) === "undefined") {
+		     continue;
+		 }
+		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 equipment = cn;
+	     }
+	     allChildNodes.push(d3.select("svg").select("#" + equipment.attributes[0].value).node());
+	 }
+	 d.x = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().x+d3.select(dd).datum().x}) - 30;
+	 d.y = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().y+d3.select(dd).datum().y}) - 30;
+	 d.width = d3.max(allChildNodes.filter(el => el !== null), function(dd) {
+	     var bb = dd.getBBox();
+	     return (bb.x + d3.select(dd).datum().x + bb.width) - d.x + 60;
+	 });
+	 d.height = d3.max(allChildNodes.filter(el => el !== null), function(dd) {
+	     var bb = dd.getBBox();
+	     return (bb.y + d3.select(dd).datum().y + bb.height) - d.y + 60;
+	 });
+	 d.rotation = 0;
      }
 
      createTwoTerminals(eqSelection, heigth) {
@@ -851,6 +886,9 @@
      }
 
      moveTo(uuid) {
+	 // clear substations and lines
+	 d3.select("svg").selectAll("svg > g > g.Substations > g").remove();
+	 d3.select("svg").selectAll("svg > g > g.ACLineSegments > g > path").attr("stroke-width", 2);
 	 let hoverD = this.model.getObject(uuid);
 	 // handle busbars
 	 if (hoverD.nodeName === "cim:BusbarSection") {
@@ -859,6 +897,14 @@
 	     hoverD = cn;
 	 }
 
+	 // handle substations and lines
+	 if (hoverD.nodeName === "cim:Substation") {
+	     this.drawEquipmentContainer(hoverD);
+	 }
+	 if (hoverD.nodeName === "cim:Line") {
+	     this.highlightEquipments(hoverD);
+	 }
+	 
 	 if (typeof(hoverD.x) === "undefined" || typeof(hoverD.y) === "undefined") {
 	     return;
 	 }
@@ -893,10 +939,6 @@
 	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 	 d3.selectAll("svg").selectAll("#yAxisG").call(yAxis);
 	 d3.selectAll("svg").selectAll("#xAxisG").call(xAxis);
-     }
-
-     mouseOut() {
-	 d3.select("svg").selectAll("svg > g > g > g").selectAll("rect").remove();
      }
 
      enableDrag() {
