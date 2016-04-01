@@ -6,7 +6,6 @@ function startRouter() {
     let cimFile = {};
     let cimFileReader = {};
     let cimModel = {};
-    //let cimDiagram = {};
 
     // This is the initial route ("the home page").
     riot.route(function(name) {

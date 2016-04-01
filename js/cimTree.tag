@@ -91,7 +91,6 @@
 	 this.createElements(cimNetwork, "Line", "Lines", allLines);
 
 	 d3.selectAll("li.ACLineSegment")
-	   .on("mouseover.hover", this.hover)
 	   .on("mouseout", this.mouseOut);
      }
 
@@ -214,7 +213,7 @@
 	        .append("li")
 		.attr("class", "link")
 	        .html(function (d) {
-		    return d.attributes[0].value.substring(1).split(".")[1] + ": "; //d.localName.split(".")[1] + ": ";
+		    return d.attributes[0].value.substring(1).split(".")[1] + ": "; 
 		});
 	 elementLink.append("button")
 		    .attr("class","btn btn-default btn-xs")
@@ -291,16 +290,8 @@
 	 targetParent.collapse("show");
      }
 
-     hover(hoverD) {
-	 d3.selectAll("g.ACLineSegment")
-	   .filter(function (d) {return d == hoverD;})
-	   .style("stroke", "black")
-	   .style("stroke-width", "2px");
-     }
-
      mouseOut() {
 	 d3.selectAll("li.ACLineSegment").style("background", "white");
-	 d3.selectAll("g.ACLineSegment").style("stroke-width", "0px");
      }
 
     </script> 

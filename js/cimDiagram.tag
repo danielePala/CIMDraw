@@ -1,25 +1,5 @@
 <cimDiagram>
-    <div class="container-fluid">
-	<div class="row center-block">
-	    <div class="col-md-12">		
-		<div class="btn-group" data-toggle="buttons" id="cim-diagram-controls">
-		    <label class="btn btn-default active" id="selectLabel">
-			<input type="radio" id="select" name="tool" value="select" autocomplete="off" checked>select</input>
-		    </label>
-		    <label class="btn btn-default">
-			<input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)</input>
-		    </label>
-		    <label class="btn btn-default">
-			<input type="radio" id="pan" name="tool" value="pan" autocomplete="off">pan+zoom</input>
-		    </label>
-		    <label class="btn btn-default">
-			<input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input>
-		    </label>
-		</div>
-	    </div>
-	</div>
-    </div>
-    
+    <cimDiagramControls model={model}></cimDiagramControls>
     <div class="app-diagram">
 	<canvas height="800" width="1800"></canvas>
 	<svg>
@@ -29,21 +9,9 @@
 
     <script>
      "use strict";
-     
-     let zoomComp = d3.behavior.zoom();
-     let zoomEnabled = false;
-     let xoffset = 0;
-     let yoffset = 0;
-     let svgZoom = 1;
-     let tickFunction = function(){};
-     let zoomFunction = function(){};
-     let force = d3.layout.force().charge(-900)
-		   .gravity(0.9)
-		   .size([1200,800])
-		   .linkDistance(20);
-     let subRoute = riot.route.create();
      let self = this;
-     
+     let subRoute = riot.route.create();
+
      subRoute("/diagrams/*", function(name) {
 	 self.render(name);
      });
@@ -52,45 +20,49 @@
 	 self.moveTo(element);
      });
 
-     this.on("mount", function() {
-	 $("#select").change(function() {
-	     self.disableForce();
-	     self.disableZoom();
-	     self.disableConnect();
-	     self.enableDrag();
-	 });
-	 
-	 $("#force").change(function() {
-	     self.disableZoom();
-	     self.disableDrag();
-	     self.disableConnect();
-	     self.enableForce();
-	 });
+     this.model = opts.model;
+     this.nodes = [];
+     this.edges = [];
 
-	 $("#pan").change(function() {
-	     self.disableForce();
-	     self.disableDrag();
-	     self.disableConnect();
-	     self.enableZoom();
-	 });
+     // listen to 'transform' event
+     this.on("transform", function() {
+	 let transform = d3.transform(d3.select("svg").select("g").attr("transform"));
+	 let newx = transform.translate[0];
+	 let newy = transform.translate[1];
+	 let newZoom = transform.scale[0];
+	 let svgWidth = parseInt(d3.select("svg").style("width"));
+	 let svgHeight = parseInt(d3.select("svg").style("height"));
 
-	 $("#connect").change(function() {
-	     self.disableForce();
-	     self.disableDrag();
-	     self.disableZoom();
-	     self.enableConnect();
+	 // manage axes
+	 let xScale = d3.scale.linear().domain([-newx/newZoom, (svgWidth-newx)/newZoom]).range([0,svgWidth]);
+	 let yScale = d3.scale.linear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0,svgHeight]);
+	 let yAxis = d3.svg.axis().scale(yScale).orient("right");
+	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+	 d3.select("svg").selectAll("#yAxisG").call(yAxis);
+	 d3.select("svg").selectAll("#xAxisG").call(xAxis);
+
+	 let context = d3.select("canvas").node().getContext("2d");
+	 context.save();
+	 context.clearRect(0, 0, svgWidth, svgHeight);
+	 context.translate(newx, newy);
+	 context.scale(newZoom, newZoom);
+	 context.lineWidth = 1;
+	 self.edges.forEach(function (link) {
+	     context.beginPath();
+	     context.moveTo(link.p[0] + d3.select(link.source).datum().x, link.p[1] + d3.select(link.source).datum().y);
+	     context.lineTo(link.target.x,link.target.y);
+	     context.stroke();
 	 });
+	 context.restore();
 	 
      });
-
-     this.model = opts.model;
-     this.edges = [];
      
      render(diagramName) {
 	 // clear all
 	 d3.select("svg").select("g").selectAll("g").remove();
 	 d3.select("svg").selectAll("#yAxisG").remove();
 	 d3.select("svg").selectAll("#xAxisG").remove();
+	 this.nodes = [];
 	 this.edges = [];
 
 	 this.model.selectDiagram(decodeURI(diagramName));
@@ -177,7 +149,7 @@
 	 this.createMeasurements(termSelection);
 	 console.log("drawn power transformer terminals");
 
-	 let nodes = allConnectivityNodes
+	 this.nodes = allConnectivityNodes
 		.concat(allACLines)
 		.concat(allBreakers)
 		.concat(allDisconnectors)
@@ -185,23 +157,10 @@
 		.concat(allEnergySources)
 		.concat(allEnergyConsumers)
 		.concat(allPowerTransformers);
-	 tickFunction = this.forceTick;
-	 zoomFunction = this.zooming;
-	 force = force
-		.nodes(nodes)
-		.links(this.edges)
-		.on("tick", this.forceTick);
 	 console.log("Routing links...");
 	 this.edges.forEach(function (link) {
 	     link.p = self.closestPoint(link.source, link.target);
 	 });
-	 // setup diagram buttons 
-	 this.disableForce();
-	 this.disableZoom();
-	 this.disableConnect();
-	 this.enableDrag();
-
-	 tickFunction();
 	 // setup xy axes
 	 let xScale = d3.scale.linear().domain([0, 1800]).range([0,1800]);
 	 let yScale = d3.scale.linear().domain([0, 800]).range([0,800]);
@@ -226,6 +185,8 @@
 	     d3.select(this).selectAll("rect").remove();
 	 }
 
+	 this.forceTick();
+	 this.trigger("render");
      }
 
      createMeasurements(termSelection) {
@@ -911,16 +872,17 @@
 	 
 	 let svgWidth = parseInt(d3.select("svg").style("width"));
 	 let svgHeight = parseInt(d3.select("svg").style("height"));
-	 let newZoom = zoomComp.scale();
+	 let newZoom = d3.behavior.zoom().scale();
 	 let newx = -hoverD.x*newZoom + (svgWidth/2);
 	 let newy = -hoverD.y*newZoom + (svgHeight/2);
 	 d3.selectAll("svg").select("g").attr("transform", "translate(" + [newx, newy] + ")scale(" + newZoom + ")");
-
+	
 	 let context = d3.selectAll("canvas").node().getContext("2d");
 	 context.save();
 	 context.clearRect(0, 0, svgWidth, svgHeight);
 	 context.translate(newx, newy);
 	 context.scale(newZoom, newZoom);
+	 context.lineWidth = 1;
 	 this.edges.forEach(function (link) {
 	     context.beginPath();
 	     context.moveTo(link.p[0] + d3.select(link.source).datum().x, link.p[1] + d3.select(link.source).datum().y);
@@ -929,9 +891,8 @@
 	 });
 	 context.restore();
 	 // update zoomComp
-	 xoffset = newx;
-	 yoffset = newy;
-	 zoomComp.translate([xoffset, yoffset]);
+	 d3.select("svg").select("g").attr("transform", "translate(" + [newx, newy] + ")scale(" + newZoom + ")");
+	 this.trigger("transform");
 	 // update axes
 	 let xScale = d3.scale.linear().domain([-newx/newZoom, (svgWidth-newx)/newZoom]).range([0,svgWidth]);
 	 let yScale = d3.scale.linear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0,svgHeight]);
@@ -939,184 +900,6 @@
 	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 	 d3.selectAll("svg").selectAll("#yAxisG").call(yAxis);
 	 d3.selectAll("svg").selectAll("#xAxisG").call(xAxis);
-     }
-
-     enableDrag() {
-	 $("#select").click();
-	 this.status = "DRAG";
-	 let model = this.model;
-	 let drag = d3.behavior.drag()
-		      .origin(function(d) {
-			  return d;
-		      })
-		      .on("drag", function(d,i) {
-			  d.x = d3.event.x;
-			  d.px = d.x;
-			  d.y = d3.event.y;
-			  d.py = d.y;
-
-			  let elem = d3.select(this);
-			  if (elem.datum().nodeName === "cim:ConnectivityNode") {
-			      
-			  } else {
-
-			  }
-			  
-			  tickFunction();
-		      })
-		      .on("dragend", function(d) {
-			  // save new position.
-			  let ioEdges = model.getDiagramObjectGraph([d]); 
-			  let dobjs = ioEdges.map(el => el.target);
-			  if (d.nodeName === "cim:ConnectivityNode" && dobjs.length === 0) {
-			      let equipments = self.model.getEquipments(d);
-			      let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-			      if (typeof(busbarSection) !== "undefined") {
-				  dobjs = self.model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
-				  console.log(dobjs);
-			      }
-			  }			  
-			  let doEdges = model.getDiagramObjectPointGraph(dobjs); 
-			  let points = doEdges.map(el => el.target);
-			  if (points.length > 0) {
-			      for (let point of points) {
-				  let seq = 1;
-				  let seqObject = self.model.getAttribute(point, "cim:DiagramObjectPoint.sequenceNumber");
-				  if (typeof(seqObject) !== "undefined") {
-				      seq = parseInt(seqObject.innerHTML);
-				  }
-				  let actLineData = d.lineData.filter(el => el.seq === seq)[0];
-				  self.model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML = actLineData.x + d.x;
-				  self.model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML = actLineData.y + d.y;
-			      }
-			  }
-		      });
-	 d3.select("svg").selectAll("svg > g > g > g").call(drag);
-     }
-
-     disableDrag() {
-	 let drag = d3.behavior.drag()
-		      .on("drag", null);
-	 d3.select("svg").selectAll("svg > g > g > g").call(drag);
-     }
-
-     enableForce() {
-	 $("#force").click();
-	 this.status = "FORCE";
-	 d3.select("svg").selectAll("svg > g > g > g").call(force.drag()).on("click", fixNode);
-	 
-	 function fixNode(d) {
-	     d.fixed = true;
-	 };
-	 force.start();
-     }
-
-     disableForce() {
-	 force.stop();    
-     }
-     
-     enableZoom() {
-	 $("#zoom").click();
-	 this.status = "ZOOM";
-	 d3.select("svg").selectAll("svg > g > g > g")
-	   .on("click", function (d) {
-	       let hashComponents = window.location.hash.substring(1).split("/");
-	       let basePath = hashComponents[0] + "/" + hashComponents[1];
-	       if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
-		       riot.route(basePath + "/" + d.attributes[0].value);
-	       }
-	   });
-	 zoomComp = d3.behavior.zoom();
-	 zoomComp.on("zoom", zoomFunction);
-	 d3.select("svg").call(zoomComp);
-	 zoomComp.translate([xoffset, yoffset]);
-	 zoomComp.scale(svgZoom);
-	 zoomEnabled = true;
-     }
-
-     disableZoom() {
-	 if (zoomEnabled===true) {
-	     d3.select("svg").selectAll("svg > g > g > g").on("click", null);
-	     zoomComp.on("zoom", null);
-	     d3.select("svg").select("g").call(zoomComp);
-	     xoffset = zoomComp.translate()[0];
-	     yoffset = zoomComp.translate()[1];
-	     svgZoom = zoomComp.scale();
-	     tickFunction();
-	     zoomEnabled = false;
-	 }
-     }
-
-     zooming() {
-	 let newx = zoomComp.translate()[0];
-	 let newy = zoomComp.translate()[1];
-	 let newZoom = zoomComp.scale();
-	 let svgWidth = parseInt(d3.select("svg").style("width"));
-	 let svgHeight = parseInt(d3.select("svg").style("height"));
-	 
-	 // manage axes
-	 let xScale = d3.scale.linear().domain([-newx/newZoom, (svgWidth-newx)/newZoom]).range([0,svgWidth]);
-	 let yScale = d3.scale.linear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0,svgHeight]);
-	 let yAxis = d3.svg.axis().scale(yScale).orient("right");
-	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
-	 d3.select("svg").selectAll("#yAxisG").call(yAxis);
-	 d3.select("svg").selectAll("#xAxisG").call(xAxis);
-	 
-	 d3.select("svg").select("g").attr("transform", "translate(" + [newx, newy] + ")scale(" + newZoom + ")");
-	 
-	 let context = d3.select("canvas").node().getContext("2d");
-	 context.save();
-	 context.clearRect(0, 0, svgWidth, svgHeight);
-	 context.translate(newx, newy);
-	 context.scale(newZoom, newZoom);
-	 self.edges.forEach(function (link) {
-	     context.beginPath();
-	     context.moveTo(link.p[0] + d3.select(link.source).datum().x, link.p[1] + d3.select(link.source).datum().y);
-	     context.lineTo(link.target.x,link.target.y);
-	     context.stroke();
-	 });
-	 context.restore();
-     }
-
-     enableConnect() {
-         $("#connect").click();
-	 this.status = "CONNECT";
-	 d3.select("svg").selectAll("svg > g > g > g > g.Terminal")
-	   .on("click", function (d) {
-	       console.log(d);
-	   });
-	 
-     }
-
-     disableConnect() {
-	 d3.select("svg").selectAll("svg > g > g > g > g.Terminal")
-	                .on("click", null);
-     }
-
-     forceTick() {
-	 updateElements(d3.select("svg").selectAll("svg > g > g > g"));
-	 
-	 let context = d3.select("canvas").node().getContext("2d");
-	 context.clearRect(0, 0, parseInt(d3.select("svg").style("width")), parseInt(d3.select("svg").style("height")));
-	 context.lineWidth = 1;
-	 self.edges.forEach(function (link) {
-	     context.beginPath();
-	     context.moveTo(((link.p[0] + d3.select(link.source).datum().x)*svgZoom)+xoffset, ((link.p[1] + d3.select(link.source).datum().y)*svgZoom)+yoffset);
-	     context.lineTo((link.target.x*svgZoom)+xoffset, (link.target.y*svgZoom)+yoffset);
-	     context.stroke();
-	 });
-	 context.restore();
-
-	 function updateElements(selection) {
-	     selection.attr("transform", function (d) {
-		 return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
-	     }).selectAll("g")
-		      .attr("id", function(d, i) {
-			  d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
-			  d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
-			  return d.attributes[0].value;
-		      });
-	 };
      }
 
      closestPoint(source, point) {
@@ -1172,6 +955,36 @@
 		 dy = p.y + d3.select(source).datum().y - point.y; 
 	     return dx * dx + dy * dy;
 	 }
+     }
+
+     forceTick() {
+	 let transform = d3.transform(d3.select("svg").select("g").attr("transform"));
+	 let xoffset = transform.translate[0];
+	 let yoffset = transform.translate[1];
+	 let svgZoom = transform.scale[0];
+	 updateElements(d3.select("svg").selectAll("svg > g > g > g"));
+
+	 let context = d3.select("canvas").node().getContext("2d");
+	 context.clearRect(0, 0, parseInt(d3.select("svg").style("width")), parseInt(d3.select("svg").style("height")));
+	 context.lineWidth = 1;
+	 self.edges.forEach(function (link) {
+	     context.beginPath();
+	     context.moveTo(((link.p[0] + d3.select(link.source).datum().x)*svgZoom)+xoffset, ((link.p[1] + d3.select(link.source).datum().y)*svgZoom)+yoffset);
+	     context.lineTo((link.target.x*svgZoom)+xoffset, (link.target.y*svgZoom)+yoffset);
+	     context.stroke();
+	 });
+	 context.restore();
+
+	 function updateElements(selection) {
+	     selection.attr("transform", function (d) {
+		 return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
+	     }).selectAll("g")
+		      .attr("id", function(d, i) {
+			  d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
+			  d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
+			  return d.attributes[0].value;
+		      });
+	 };
      }
 
     </script>
