@@ -1,67 +1,89 @@
 "use strict";
 
 function cimDiagramModel() {
-    return {
-	// load a CIM file.
+    let model = {	
+	// load a CIM file from the local filesystem.
 	load(file, reader, callback) {
-	    reader.onload = function(e) {
-		let self = this;
-                let parser = new DOMParser();
-		let data = parser.parseFromString(reader.result, "application/xml");
-		this.data = data;
-		this.linksMap = new Map();
-		this.conductingEquipmentGraphs = new Map();
-		this.diagramObjectGraphs = new Map();
-		this.diagramObjectPointGraphs = new Map();
-		this.activeDiagramName = "none";
-		this.schemaAttributesMap = new Map();
-		this.schemaLinksMap = new Map();
-
-		let allObjects = data.children[0].children;
-		// build a map (UUID)->(object)
-		this.dataMap = new Map(Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes[0].value, el]));
-		// build a map (link name, target UUID)->(source objects)
-		for (let i in allObjects) {
-		    if (typeof(allObjects[i].attributes) !== "undefined") {
-			allObjects[i].getAttributes = function() {
-			    return [].filter.call(this.children, function(el) {
-				return el.attributes.length === 0;
-			    });
-			};
-			let links = this.getLinks(allObjects[i]);
-			for (let j in links) {
-			    let key = links[j].localName + links[j].attributes[0].value;
-			    let val = this.linksMap.get(key);
-			    if (typeof(val) === "undefined") {
-				this.linksMap.set(key, [allObjects[i]]);
-			    } else {
-				val.push(allObjects[i]);
-			    }
-			}   
-		    } 
+	    if (model.fileName !== file.name) {
+		reader.onload = function(e) {
+                    let parser = new DOMParser();
+		    let data = parser.parseFromString(reader.result, "application/xml");
+		    model.buildModel(data, callback);
 		}
-		// let's read a schema file
-		let rdfs = "rdf-schema/EquipmentProfileRDFSAugmented-v2_4_15-7Aug2014.rdf";
-		d3.xml(rdfs, function(schemaData) {
-		    self.schemaData = schemaData;
+		model.fileName = file.name;
+		reader.readAsText(file);
+	    } else {
+		callback(null);
+	    }
+	},
+
+	// load a CIM file from a remote location
+	loadRemote(fileName, callback) {
+	    if (model.fileName !== decodeURI(fileName).substring(1)) {
+		model.fileName = decodeURI(fileName).substring(1);
+		d3.xml(fileName, function(error, data) {
+		    if (error !== null) {
+			callback(error);
+			return;
+		    }
+		    model.buildModel(data, callback);
 		});
-		
-		riot.observable(this);
-		callback();
-	    }.bind(this);
-	    reader.readAsText(file);
+	    } else {
+		callback(null);
+	    }
+	},
+
+	buildModel(data, callback) {
+	    model.data = data;
+	    model.linksMap = new Map();
+	    model.conductingEquipmentGraphs = new Map();
+	    model.diagramObjectGraphs = new Map();
+	    model.diagramObjectPointGraphs = new Map();
+	    model.activeDiagramName = "none";
+	    model.schemaAttributesMap = new Map();
+	    model.schemaLinksMap = new Map();
+
+	    let allObjects = data.children[0].children;
+	    // build a map (UUID)->(object)
+	    model.dataMap = new Map(Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes[0].value, el]));
+	    // build a map (link name, target UUID)->(source objects)
+	    for (let i in allObjects) {
+		if (typeof(allObjects[i].attributes) !== "undefined") {
+		    allObjects[i].getAttributes = function() {
+			return [].filter.call(this.children, function(el) {
+			    return el.attributes.length === 0;
+			});
+		    };
+		    let links = model.getLinks(allObjects[i]);
+		    for (let j in links) {
+			let key = links[j].localName + links[j].attributes[0].value;
+			let val = model.linksMap.get(key);
+			if (typeof(val) === "undefined") {
+			    model.linksMap.set(key, [allObjects[i]]);
+			} else {
+			    val.push(allObjects[i]);
+			}
+		    }   
+		} 
+	    }
+	    // let's read a schema file
+	    let rdfs = "/rdf-schema/EquipmentProfileRDFSAugmented-v2_4_15-7Aug2014.rdf";
+	    d3.xml(rdfs, function(schemaData) {
+		model.schemaData = schemaData;
+		callback(null);
+	    });
 	},
 
 	// serialize the current CIM file.
 	save() {
 	    var oSerializer = new XMLSerializer();
-	    var sXML = oSerializer.serializeToString(this.data);
+	    var sXML = oSerializer.serializeToString(model.data);
 	    return sXML;
 	},
 
 	// get a list of diagrams in the current CIM file.
 	getDiagramList() {
-	    let diagrams = this.getObjects("cim:Diagram")
+	    let diagrams = model.getObjects("cim:Diagram")
 		.map(el => el.getAttributes()
 		     .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0])
 		.map(el => el.textContent);
@@ -70,27 +92,27 @@ function cimDiagramModel() {
 
 	// Get the objects of a given type (doesn't filter by diagram).
 	getObjects(type) {
-	    let allObjects = this.data.children[0].children;
+	    let allObjects = model.data.children[0].children;
 	    return [].filter.call(allObjects, function(el) {
 		return el.nodeName === type;
 	    });
 	},
 
 	getSchemaObject(type) {
-	    let allSchemaObjects = this.schemaData.children[0].children;
+	    let allSchemaObjects = model.schemaData.children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value === "#" + type;
 	    })[0];
 	},
 
 	getSchemaAttributes(type) {
-	    let ret = this.schemaAttributesMap.get(type);
+	    let ret = model.schemaAttributesMap.get(type);
 	    if (typeof(ret) === "undefined") {
-		let allSchemaObjects = this.schemaData.children[0].children;
+		let allSchemaObjects = model.schemaData.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
-		let supers = this.getAllSuper(type);
+		let supers = model.getAllSuper(type);
 		for (let i in supers) {
 		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
 			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
@@ -105,20 +127,20 @@ function cimDiagramModel() {
 		    }
 		    return isLiteral;
 		});
-		this.schemaAttributesMap.set(type, ret);
+		model.schemaAttributesMap.set(type, ret);
 	    }
 	    
 	    return ret;
 	},
 
 	getSchemaLinks(type) {
-	    let ret = this.schemaLinksMap.get(type);
+	    let ret = model.schemaLinksMap.get(type);
 	    if (typeof(ret) === "undefined") {
-		let allSchemaObjects = this.schemaData.children[0].children;
+		let allSchemaObjects = model.schemaData.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
-		let supers = this.getAllSuper(type);
+		let supers = model.getAllSuper(type);
 		for (let i in supers) {
 		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
 			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
@@ -133,21 +155,21 @@ function cimDiagramModel() {
 		    }
 		    return isLiteral;
 		});
-		this.schemaLinksMap.set(type, ret);
+		model.schemaLinksMap.set(type, ret);
 	    }
 	    return ret;
 	},
 
 	getAllSuper(type) {
 	    let allSuper = [];
-	    let object = this.getSchemaObject(type);
+	    let object = model.getSchemaObject(type);
 	    let aSuper = [].filter.call(object.children, function(el) {
 		return el.nodeName === "rdfs:subClassOf";
 	    })[0];
 	    if (typeof(aSuper) !== "undefined") {
 		let aSuperName = aSuper.attributes[0].value.substring(1);
 		allSuper.push(aSuperName);
-		allSuper = allSuper.concat(this.getAllSuper(aSuperName));
+		allSuper = allSuper.concat(model.getAllSuper(aSuperName));
 	    }
 	    return allSuper;
 	},
@@ -155,10 +177,10 @@ function cimDiagramModel() {
 	// Get the objects of a given type that have at least one
 	// DiagramObject in the current diagram.
 	getGraphicObjects(type) {
-	    if (this.activeDiagramName === "none") {
-		return this.getObjects(type);
+	    if (model.activeDiagramName === "none") {
+		return model.getObjects(type);
 	    }
-	    let allObjects = this.getDiagramObjectGraph().map(el => el.source);
+	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
 	    let allObjectsSet = new Set(allObjects); // we want uniqueness
 	    return [...allObjectsSet].filter(function(el) {
 		return el.nodeName === type;
@@ -168,19 +190,19 @@ function cimDiagramModel() {
 	// Get the connectivity nodes that belong to the current diagram.
 	getConnectivityNodes() {
 	    let self = this;
-	    if (this.activeDiagramName === "none") {
-		return this.getObjects("cim:ConnectivityNode");
+	    if (model.activeDiagramName === "none") {
+		return model.getObjects("cim:ConnectivityNode");
 	    }
-	    let allConnectivityNodes = this.getObjects("cim:ConnectivityNode");
-	    let graphic = this.getGraphicObjects("cim:ConnectivityNode");
+	    let allConnectivityNodes = model.getObjects("cim:ConnectivityNode");
+	    let graphic = model.getGraphicObjects("cim:ConnectivityNode");
 	    let graphicSet = new Set(graphic);
 	    let nonGraphic = allConnectivityNodes.filter(el => !graphicSet.has(el));
 	    nonGraphic = nonGraphic.filter(function(d) {
-		let edges = self.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
+		let edges = model.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
 		let cnTerminals = edges.map(el => el.target);
 		// let's try to get some equipment
-		let equipments = self.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
-		equipments = self.getConductingEquipmentGraph(equipments).map(el => el.source);
+		let equipments = model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+		equipments = model.getConductingEquipmentGraph(equipments).map(el => el.source);
 		return (equipments.length > 0);
 	    });
 	    return graphic.concat(nonGraphic);
@@ -189,18 +211,18 @@ function cimDiagramModel() {
 	// Get the equipment containers that belong to the current diagram.
 	getEquipmentContainers(type) {
 	    let self = this;
-	    let allContainers = this.getObjects(type);
-	    let allGraphicObjects = this.getDiagramObjectGraph().map(el => el.source);
+	    let allContainers = model.getObjects(type);
+	    let allGraphicObjects = model.getDiagramObjectGraph().map(el => el.source);
 	    return allContainers.filter(function(container) {
-		let allContainedObjects = self.getGraph([container], "EquipmentContainers.Equipment", "Equipment.EquipmentContainer").map(el => el.source);
-		let graphicContainedObjects = self.getDiagramObjectGraph(allContainedObjects);
+		let allContainedObjects = model.getGraph([container], "EquipmentContainers.Equipment", "Equipment.EquipmentContainer").map(el => el.source);
+		let graphicContainedObjects = model.getDiagramObjectGraph(allContainedObjects);
 		return (graphicContainedObjects.length > 0);
 	    });
 	},
 
 	// get all the terminals of a given object.
 	getTerminals(identObjs) {
-	    let terminals = this.getConductingEquipmentGraph(identObjs).map(el => el.target);
+	    let terminals = model.getConductingEquipmentGraph(identObjs).map(el => el.target);
 	    let terminalsSet = new Set(terminals);
 	    terminals = [...terminalsSet]; // we want uniqueness
 	    return terminals;
@@ -208,12 +230,12 @@ function cimDiagramModel() {
 
 	// get all objects (doesn't filter by diagram).
 	getAllObjects() {
-	    return this.data.children[0].children;
+	    return model.data.children[0].children;
 	},
 
 	// get an object given its UUID.
 	getObject(uuid) {
-	    return this.dataMap.get("#" + uuid);
+	    return model.dataMap.get("#" + uuid);
 	},
 
 	// get all the attributes of a given object which are actually set.
@@ -225,7 +247,7 @@ function cimDiagramModel() {
 
 	// get a specific attribute of a given object.
 	getAttribute(object, attrName) {
-	    let attributes = this.getAttributes(object);
+	    let attributes = model.getAttributes(object);
 	    return attributes.filter(el => el.nodeName === attrName)[0];
 	},
 	    
@@ -245,27 +267,27 @@ function cimDiagramModel() {
 
 	// get a specific link of a given object.
 	getLink(object, linkName) {
-	    let links = this.getLinks(object);
+	    let links = model.getLinks(object);
 	    return links.filter(el => el.nodeName === linkName)[0];
 	},
 
 	// get a specific enum of a given object.
 	getEnum(object, enumName) {
-	    let enums = this.getEnums(object);
+	    let enums = model.getEnums(object);
 	    return enums.filter(el => el.nodeName === enumName)[0];
 	},
 
 	// set a specific link of a given object.
 	setLink(source, linkSchema, target) {
 	    let linkName = "cim:" + linkSchema.attributes[0].value.substring(1);
-	    let link = this.getLink(source, linkName);
+	    let link = model.getLink(source, linkName);
 	    // handle inverse relation
 	    let invLinkName = [].filter.call(linkSchema.children, function(el) {
 		return el.localName === "inverseRoleName";
 	    })[0].attributes[0].value;
 	    invLinkName = "cim:" + invLinkName.substring(1);
-	    let actTarget = this.dataMap.get(link.attributes[0].value);
-	    let invLink = this.getLink(actTarget, invLinkName);
+	    let actTarget = model.dataMap.get(link.attributes[0].value);
+	    let invLink = model.getLink(actTarget, invLinkName);
 	    if (typeof(invLink) !== "undefined") {
 		invLink.remove();
 	    }
@@ -275,7 +297,7 @@ function cimDiagramModel() {
 
 	// resolve a given link.
 	resolveLink(link) {
-	    return this.dataMap.get(link.attributes[0].value);
+	    return model.dataMap.get(link.attributes[0].value);
 	},
 
 	// returns all relations between given sources and other objects,
@@ -288,9 +310,9 @@ function cimDiagramModel() {
 	    let resultKeys = new Map();
 	    let result = [];
 	    for (let i in sources) {
-		let links = this.getLinks(sources[i]).filter(el => el.localName === linkName);
+		let links = model.getLinks(sources[i]).filter(el => el.localName === linkName);
 		for (let j in links) {
-		    let targetObj = this.dataMap.get(links[j].attributes[0].value);
+		    let targetObj = model.dataMap.get(links[j].attributes[0].value);
 		    if (typeof(targetObj) != "undefined") {
 			if (invert === false) {
 			    result.push({
@@ -308,7 +330,7 @@ function cimDiagramModel() {
 		    }
 		}
 		// handle inverse relation
-		let allObjs = this.linksMap.get(invLinkName+"#"+sources[i].attributes[0].value);
+		let allObjs = model.linksMap.get(invLinkName+"#"+sources[i].attributes[0].value);
 		if (typeof(allObjs) === "undefined") {
 		    continue;
 		}
@@ -340,22 +362,22 @@ function cimDiagramModel() {
 	getConductingEquipmentGraph(identObjs) {
 	    let ceEdges = [];
 	    if (arguments.length === 0) {
-		ceEdges = this.conductingEquipmentGraphs.get(this.activeDiagramName);
+		ceEdges = model.conductingEquipmentGraphs.get(model.activeDiagramName);
 		if (typeof(ceEdges) === "undefined") {
-		    if (typeof(this.activeDiagram) !== "undefined") {
-			let ioEdges = this.getDiagramObjectGraph();
+		    if (typeof(model.activeDiagram) !== "undefined") {
+			let ioEdges = model.getDiagramObjectGraph();
 			let graphicObjects = ioEdges.map(el => el.source);
-			ceEdges = this.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
+			ceEdges = model.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
 		    } 
-		    this.conductingEquipmentGraphs.set(this.activeDiagramName, ceEdges);
+		    model.conductingEquipmentGraphs.set(model.activeDiagramName, ceEdges);
 		}
 	    } else {
-		if (typeof(this.activeDiagram) !== "undefined") {
-		    let ioEdges = this.getDiagramObjectGraph(identObjs);
+		if (typeof(model.activeDiagram) !== "undefined") {
+		    let ioEdges = model.getDiagramObjectGraph(identObjs);
 		    let graphicObjects = ioEdges.map(el => el.source);
-		    ceEdges = this.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
+		    ceEdges = model.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
 		} else {
-		    ceEdges = this.getGraph(identObjs, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
+		    ceEdges = model.getGraph(identObjs, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
 		}
 	    }
 	    return ceEdges;
@@ -368,21 +390,21 @@ function cimDiagramModel() {
 	getDiagramObjectGraph(identObjs) {
 	    let ioEdges = [];
 	    if (arguments.length === 0) {
-		ioEdges = this.diagramObjectGraphs.get(this.activeDiagramName);
+		ioEdges = model.diagramObjectGraphs.get(model.activeDiagramName);
 		if (typeof(ioEdges) === "undefined") {
 		    let allDiagramObjects = []; 
-		    if (typeof(this.activeDiagram) !== "undefined") {
-			allDiagramObjects = this.getGraph([this.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
+		    if (typeof(model.activeDiagram) !== "undefined") {
+			allDiagramObjects = model.getGraph([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
 		    }
-		    ioEdges = this.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
-	 	    this.diagramObjectGraphs.set(this.activeDiagramName, ioEdges);
+		    ioEdges = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
+	 	    model.diagramObjectGraphs.set(model.activeDiagramName, ioEdges);
 		}
 	    } else {
-		if (typeof(this.activeDiagram) !== "undefined") {
-		    ioEdges = this.getGraph(identObjs, "IdentifiedObject.DiagramObjects", "DiagramObject.IdentifiedObject", true);
+		if (typeof(model.activeDiagram) !== "undefined") {
+		    ioEdges = model.getGraph(identObjs, "IdentifiedObject.DiagramObjects", "DiagramObject.IdentifiedObject", true);
 		    let allDiagramObjects = ioEdges.map(el => el.target);
-		    allDiagramObjects = this.getGraph(allDiagramObjects, "DiagramObject.Diagram", "Diagram.DiagramObjects").filter(el => el.source === this.activeDiagram).map(el => el.target);
-		    ioEdges = this.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
+		    allDiagramObjects = model.getGraph(allDiagramObjects, "DiagramObject.Diagram", "Diagram.DiagramObjects").filter(el => el.source === model.activeDiagram).map(el => el.target);
+		    ioEdges = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
 		}
 	    }
 	    return ioEdges;
@@ -393,37 +415,40 @@ function cimDiagramModel() {
 	getDiagramObjectPointGraph(diagObjs) {
 	    let doEdges = [];
 	    if (arguments.length === 0) {
-		doEdges = this.diagramObjectPointGraphs.get(this.activeDiagramName);
+		doEdges = model.diagramObjectPointGraphs.get(model.activeDiagramName);
 	    if (typeof(doEdges) === "undefined") {
-		let ioEdges = this.getDiagramObjectGraph();
+		let ioEdges = model.getDiagramObjectGraph();
 		let allDiagramObjects = ioEdges.map(el => el.target);
-		doEdges = this.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
-		this.diagramObjectPointGraphs.set(this.activeDiagramName, doEdges);
+		doEdges = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
+		model.diagramObjectPointGraphs.set(model.activeDiagramName, doEdges);
 	    }
 	    } else {
-		doEdges = this.getGraph(diagObjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
+		doEdges = model.getGraph(diagObjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
 	    }
 	    return doEdges;
+	},
+
+	getEquipments(connectivityNode) {
+	    let edges = model.getGraph([connectivityNode], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
+	    let cnTerminals = edges.map(el => el.target);
+	    // let's try to get some equipment
+	    let equipments = model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+	    equipments = model.getConductingEquipmentGraph(equipments).map(el => el.source);
+	    return [...new Set(equipments)]; // we want uniqueness
 	},
 
 	// Selects a given diagram in the current CIM file.
 	// TODO: perform some checks...
 	selectDiagram(diagramName) {
-	    if (diagramName !== this.activeDiagramName) {
-		this.activeDiagramName = diagramName;
-		this.activeDiagram = this.getObjects("cim:Diagram")
+	    if (diagramName !== model.activeDiagramName) {
+		model.activeDiagramName = diagramName;
+		model.activeDiagram = model.getObjects("cim:Diagram")
 	            .filter(el => el.getAttributes()
-			    .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===this.activeDiagramName)[0];
+			    .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===model.activeDiagramName)[0];
+		model.trigger("changedDiagram");
 	    }
-	},
-
-	getEquipments(connectivityNode) {
-	    let edges = this.getGraph([connectivityNode], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
-	    let cnTerminals = edges.map(el => el.target);
-	    // let's try to get some equipment
-	    let equipments = this.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
-	    equipments = this.getConductingEquipmentGraph(equipments).map(el => el.source);
-	    return [...new Set(equipments)]; // we want uniqueness
 	}
-    }
+    };
+    riot.observable(model);
+    return model;
 };

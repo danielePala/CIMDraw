@@ -5,21 +5,22 @@
      
      this.model = opts.model;	
      let self = this;
-     let subRoute = riot.route.create();
-	
-     subRoute("/diagrams/*", function(name) {
-            self.render(name);
-     });	
-     
-     subRoute("/diagrams/*/*", function(name, element) {
-	 self.moveTo(element);
-     });	
+
+     self.parent.on("showDiagram", function(file, name, element) {
+	 if (name !== self.diagramName) {
+	     self.render(name);
+	 }
+	 if (typeof(element) !== "undefined") {
+	     self.moveTo(element);
+	 }
+     });
 
      render(diagramName) {
 	 // clear all
 	 d3.select("#app-tree").select(".tree").remove();
 
-	 this.model.selectDiagram(decodeURI(diagramName));
+	 self.model.selectDiagram(decodeURI(diagramName));
+	 self.diagramName = decodeURI(diagramName);
 	 let allBusbarSections = this.model.getGraphicObjects("cim:BusbarSection");
 	 console.log("extracted busbarSections");
 	 let allPowerTransformers = this.model.getGraphicObjects("cim:PowerTransformer");
@@ -128,7 +129,7 @@
 	    		    .on("click", function (d) {
 				// change address to 'this object'
 				let hashComponents = window.location.hash.substring(1).split("/");
-				let basePath = hashComponents[0] + "/" + hashComponents[1];
+				let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 				if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
 				    riot.route(basePath + "/" + d.attributes[0].value);
 				}
@@ -227,14 +228,14 @@
 			    $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
 				$(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top));
 				let hashComponents = window.location.hash.substring(1).split("/");
-				let basePath = hashComponents[0] + "/" + hashComponents[1];
+				let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 				riot.route(basePath + "/" + targetUUID.substring(1));
 				$(targetUUID).parent().parent().off("shown.bs.collapse");
 			    });
 			} else {
 			    $(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top));
 			    let hashComponents = window.location.hash.substring(1).split("/");
-			    let basePath = hashComponents[0] + "/" + hashComponents[1];
+			    let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 			    riot.route(basePath + "/" + targetUUID.substring(1));
 			}
 			$(targetUUID).parent().parent().collapse("show");

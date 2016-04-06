@@ -10,19 +10,20 @@
     <script>
      "use strict";
      let self = this;
-     let subRoute = riot.route.create();
 
-     subRoute("/diagrams/*", function(name) {
-	 self.render(name);
+     self.parent.on("showDiagram", function(file, name, element) {
+	 if (name !== self.diagramName) {
+             self.render(name);
+	 }
+         if (typeof(element) !== "undefined") {
+             self.moveTo(element);
+         }
      });
-
-     subRoute("/diagrams/*/*", function(name, element) {
-	 self.moveTo(element);
-     });
-
+	 
      this.model = opts.model;
      this.nodes = [];
      this.edges = [];
+     this.nodeGraphic = new Map(); // map connectivy nodes to their SVG elements 
 
      // listen to 'transform' event
      this.on("transform", function() {
@@ -49,7 +50,7 @@
 	 context.lineWidth = 1;
 	 self.edges.forEach(function (link) {
 	     context.beginPath();
-	     context.moveTo(link.p[0] + d3.select(link.source).datum().x, link.p[1] + d3.select(link.source).datum().y);
+	     context.moveTo(link.p[0] + link.source.x, link.p[1] + link.source.y);
 	     context.lineTo(link.target.x,link.target.y);
 	     context.stroke();
 	 });
@@ -62,10 +63,11 @@
 	 d3.select("svg").select("g").selectAll("g").remove();
 	 d3.select("svg").selectAll("#yAxisG").remove();
 	 d3.select("svg").selectAll("#xAxisG").remove();
-	 this.nodes = [];
-	 this.edges = [];
+	 self.nodes = [];
+	 self.edges = [];
 
-	 this.model.selectDiagram(decodeURI(diagramName));
+	 self.model.selectDiagram(decodeURI(diagramName));
+	 self.diagramName = decodeURI(diagramName);
 	 let allConnectivityNodes = this.model.getConnectivityNodes();
 	 console.log("extracted connectivity nodes");
 	 let allACLines = this.model.getGraphicObjects("cim:ACLineSegment");
@@ -87,14 +89,6 @@
 	 console.log("extracted power transformers");
 	 let allBusbarSections = this.model.getGraphicObjects("cim:BusbarSection");
 	 console.log("extracted busbarSections");
-	 let allTerminals = this.model.getTerminals(allACLines
-	                 .concat(allBreakers)
-	                 .concat(allDisconnectors)
-			 .concat(allLoadBreakSwitches)
-	                 .concat(allEnergySources)
-	                 .concat(allEnergyConsumers)
-			 .concat(allPowerTransformers));
-	 console.log("extracted terminals");
 
 	 // AC Lines
 	 let aclineEnter = this.drawACLines(allACLines);
@@ -121,8 +115,15 @@
 	 let cnEnter = this.drawConnectivityNodes(allConnectivityNodes);
 	 console.log("drawn connectivity nodes");
 
-	 this.edges = this.edges.filter(el => allTerminals.indexOf(el.target) > -1);
-	 
+	 this.nodes = allConnectivityNodes
+		.concat(allACLines)
+		.concat(allBreakers)
+		.concat(allDisconnectors)
+		.concat(allLoadBreakSwitches)
+		.concat(allEnergySources)
+		.concat(allEnergyConsumers)
+		.concat(allPowerTransformers);
+
 	 // ac line terminals
 	 let termSelection = this.createTwoTerminals(aclineEnter);
 	 this.createMeasurements(termSelection);
@@ -149,17 +150,9 @@
 	 this.createMeasurements(termSelection);
 	 console.log("drawn power transformer terminals");
 
-	 this.nodes = allConnectivityNodes
-		.concat(allACLines)
-		.concat(allBreakers)
-		.concat(allDisconnectors)
-		.concat(allLoadBreakSwitches)
-		.concat(allEnergySources)
-		.concat(allEnergyConsumers)
-		.concat(allPowerTransformers);
 	 console.log("Routing links...");
 	 this.edges.forEach(function (link) {
-	     link.p = self.closestPoint(link.source, link.target);
+	     link.p = self.closestPoint(self.nodeGraphic.get(link.source), link.target);
 	 });
 	 // setup xy axes
 	 let xScale = d3.scale.linear().domain([0, 1800]).range([0,1800]);
@@ -397,12 +390,12 @@
 		.style("text-anchor", "end")
 		.attr("font-size", 8)
 		.attr("x", function(d) {
-		    let lineData = this.parentNode.__data__.lineData;
+		    let lineData = d3.select(this.parentNode).datum().lineData;
 		    let end = lineData[lineData.length-1];
 		    return ((lineData[0].x + end.x)/2) - 10;
 		})
 		.attr("y", function(d) {
-		    let lineData = this.parentNode.__data__.lineData;
+		    let lineData = d3.select(this.parentNode).datum().lineData;
 		    let end = lineData[lineData.length-1];
 		    return ((lineData[0].y + end.y)/2) + 15;
 		})
@@ -559,11 +552,7 @@
 		      }
 		      return "";
 		  });
-
-	 } else {
-	     
-	 }
-	 
+	 } 
      }
 
      highlightEquipments(d) {
@@ -619,11 +608,12 @@
 					.append("g")
 					.attr("id", function(d, i) {
 					    let cn = self.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-					    let lineData = this.parentNode.__data__.lineData;
+					    self.edges.push({source: cn, target: d}); // add a new edge to the connectivity graph
+					    let lineData = d3.select(this.parentNode).datum().lineData;
 					    let start = lineData[0];
 					    let end = lineData[lineData.length-1];
-					    let eqX = this.parentNode.__data__.x;
-					    let eqY = this.parentNode.__data__.y;
+					    let eqX = d3.select(this.parentNode).datum().x;
+					    let eqY = d3.select(this.parentNode).datum().y;
 					    if (lineData.length === 1) {
 						start = {x:0, y:0};
 						end = {x:0, y:heigth};
@@ -650,6 +640,7 @@
 						    d.y = eqY + start.y*(1-i)+end.y*i;
 						}
 					    }
+					    self.nodes.push(d);
 					    return d.attributes[0].value;
 					})
 					.attr("class", function(d) {
@@ -659,10 +650,10 @@
 		      .attr("r", 5)
 		      .style("fill","black")
 		      .attr("cx", function(d, i) {	    
-			  return this.parentNode.__data__.x-this.parentNode.parentNode.__data__.x; 
+			  return d3.select(this.parentNode).datum().x-d3.select(this.parentNode.parentNode).datum().x; 
 		      })
 		      .attr("cy", function(d, i) {
-			  return this.parentNode.__data__.y-this.parentNode.parentNode.__data__.y;
+			  return d3.select(this.parentNode).datum().y-d3.select(this.parentNode.parentNode).datum().y;
 		      });
 
 	 function checkTerminals(terminals, d, cn, eqX, eqY, start, end) {
@@ -812,20 +803,41 @@
 			 .enter()
 			 .append("g")
 			 .attr("class", "ConnectivityNode")
-			 .attr("id", function(d) {return d.attributes[0].value;});
+			 .attr("id", function(d) {
+			     return d.attributes[0].value;
+			 });
 
 	 cnEnter.append("path")
 		.attr("d", function(d) {
-		    let edges = self.model.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
-		    let cnTerminals = edges.map(el => el.target);
-		    for (let i in cnTerminals) {
-			self.edges.push({source: this.parentNode, target: cnTerminals[i]});
-		    }
-		    return line(this.parentNode.__data__.lineData);
+		    return line(d3.select(this.parentNode).datum().lineData);
 		})
 		.attr("stroke", "black")
 		.attr("stroke-width", 2);
+
+	 cnEnter.append("text")
+	        .style("text-anchor", "end")
+	        .attr("font-size", 8)
+	        .attr("x", function(d) {
+		    let lineData = d3.select(this.parentNode).datum().lineData;
+		    let end = lineData[lineData.length-1];
+		    return ((lineData[0].x + end.x)/2) - 10;
+		})
+	        .attr("y", function(d) {
+		    let lineData = d3.select(this.parentNode).datum().lineData;
+		    let end = lineData[lineData.length-1];
+		    return ((lineData[0].y + end.y)/2) + 15;
+		})
+	        .text(function(d) {
+		    let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
+		    if (typeof(name) !== "undefined") {
+			return name.innerHTML;
+		    }
+		    return "";
+		});
 	 
+	 cnEnter.each(function(d) {
+	     self.nodeGraphic.set(d, this);
+	 });
 	 return cnEnter;
      }
 
@@ -872,34 +884,11 @@
 	 
 	 let svgWidth = parseInt(d3.select("svg").style("width"));
 	 let svgHeight = parseInt(d3.select("svg").style("height"));
-	 let newZoom = d3.behavior.zoom().scale();
+	 let newZoom = 1;
 	 let newx = -hoverD.x*newZoom + (svgWidth/2);
 	 let newy = -hoverD.y*newZoom + (svgHeight/2);
 	 d3.selectAll("svg").select("g").attr("transform", "translate(" + [newx, newy] + ")scale(" + newZoom + ")");
-	
-	 let context = d3.selectAll("canvas").node().getContext("2d");
-	 context.save();
-	 context.clearRect(0, 0, svgWidth, svgHeight);
-	 context.translate(newx, newy);
-	 context.scale(newZoom, newZoom);
-	 context.lineWidth = 1;
-	 this.edges.forEach(function (link) {
-	     context.beginPath();
-	     context.moveTo(link.p[0] + d3.select(link.source).datum().x, link.p[1] + d3.select(link.source).datum().y);
-	     context.lineTo(link.target.x,link.target.y);
-	     context.stroke();
-	 });
-	 context.restore();
-	 // update zoomComp
-	 d3.select("svg").select("g").attr("transform", "translate(" + [newx, newy] + ")scale(" + newZoom + ")");
 	 this.trigger("transform");
-	 // update axes
-	 let xScale = d3.scale.linear().domain([-newx/newZoom, (svgWidth-newx)/newZoom]).range([0,svgWidth]);
-	 let yScale = d3.scale.linear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0,svgHeight]);
-	 let yAxis = d3.svg.axis().scale(yScale).orient("right");
-	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
-	 d3.selectAll("svg").selectAll("#yAxisG").call(yAxis);
-	 d3.selectAll("svg").selectAll("#xAxisG").call(xAxis);
      }
 
      closestPoint(source, point) {
@@ -965,12 +954,15 @@
 	 updateElements(d3.select("svg").selectAll("svg > g > g > g"));
 
 	 let context = d3.select("canvas").node().getContext("2d");
+	 context.save();
 	 context.clearRect(0, 0, parseInt(d3.select("svg").style("width")), parseInt(d3.select("svg").style("height")));
+	 context.translate(xoffset, yoffset);
+	 context.scale(svgZoom, svgZoom);
 	 context.lineWidth = 1;
 	 self.edges.forEach(function (link) {
 	     context.beginPath();
-	     context.moveTo(((link.p[0] + d3.select(link.source).datum().x)*svgZoom)+xoffset, ((link.p[1] + d3.select(link.source).datum().y)*svgZoom)+yoffset);
-	     context.lineTo((link.target.x*svgZoom)+xoffset, (link.target.y*svgZoom)+yoffset);
+	     context.moveTo(link.p[0] + link.source.x, link.p[1] + link.source.y);
+	     context.lineTo(link.target.x, link.target.y);
 	     context.stroke();
 	 });
 	 context.restore();
@@ -980,8 +972,8 @@
 		 return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
 	     }).selectAll("g")
 		      .attr("id", function(d, i) {
-			  d.x = this.parentNode.__data__.x + parseInt(d3.select(this.firstChild).attr("cx"));
-			  d.y = this.parentNode.__data__.y + parseInt(d3.select(this.firstChild).attr("cy"));
+			  d.x = d3.select(this.parentNode).datum().x + parseInt(d3.select(this.firstChild).attr("cx"));
+			  d.y = d3.select(this.parentNode).datum().y + parseInt(d3.select(this.firstChild).attr("cy"));
 			  return d.attributes[0].value;
 		      });
 	 };

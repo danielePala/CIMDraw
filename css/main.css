@@ -38,10 +38,6 @@ g.tick > line {
     stroke-dasharray: 1 5;
 }
 
-.app-spreadsheet {
-    
-}
-
 canvas {
     width: 1800px;
     height: 800px;

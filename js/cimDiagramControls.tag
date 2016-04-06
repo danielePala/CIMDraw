@@ -1,4 +1,8 @@
 <cimDiagramControls>
+    <style>
+	#cim-diagram-controls { display: none }
+    </style>
+
     <div class="container-fluid">
 	<div class="row center-block">
 	    <div class="col-md-12">		
@@ -79,6 +83,7 @@
 	 self.disableZoom();
 	 self.disableConnect();
 	 self.enableDrag();
+	 $("#cim-diagram-controls").show();
      });
      
      enableDrag() {
@@ -93,7 +98,7 @@
 			  d.px = d.x;
 			  d.y = d3.event.y;
 			  d.py = d.y;
-
+			  
 			  let elem = d3.select(this);
 			  if (elem.datum().nodeName === "cim:ConnectivityNode") {
 			      
@@ -160,7 +165,7 @@
 	 d3.select("svg").selectAll("svg > g > g > g")
 	   .on("click", function (d) {
 	       let hashComponents = window.location.hash.substring(1).split("/");
-	       let basePath = hashComponents[0] + "/" + hashComponents[1];
+	       let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 	       if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
 		       riot.route(basePath + "/" + d.attributes[0].value);
 	       }
