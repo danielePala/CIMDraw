@@ -250,6 +250,20 @@ function cimDiagramModel() {
 	    let attributes = model.getAttributes(object);
 	    return attributes.filter(el => el.nodeName === attrName)[0];
 	},
+
+	// set a specific attribute of a given object. If it doesen't exists, it is created.
+	setAttribute(object, attrName, value) {
+	    let attribute = model.getAttribute(object, attrName);
+	    if (typeof(attribute) !== "undefined") {
+		attribute.innerHTML = value;
+	    } else {
+		attribute = model.data.createElement(attrName);
+		attribute.innerHTML = value;
+		object.appendChild(attribute);
+	    }
+	    model.trigger("setAttribute", object, attrName, value);
+	    return;
+	},
 	    
 	// get all the links of a given object which are actually set.
 	getLinks(object) {
@@ -445,8 +459,8 @@ function cimDiagramModel() {
 		model.activeDiagram = model.getObjects("cim:Diagram")
 	            .filter(el => el.getAttributes()
 			    .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===model.activeDiagramName)[0];
-		model.trigger("changedDiagram");
 	    }
+	    model.trigger("changedDiagram");
 	}
     };
     riot.observable(model);

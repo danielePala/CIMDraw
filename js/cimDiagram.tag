@@ -57,6 +57,24 @@
 	 context.restore();
 	 
      });
+
+     // listen to 'setAttribute' event from model
+     self.model.on("setAttribute", function(object, attrName, value) {
+	 if (attrName === "cim:IdentifiedObject.name") {
+	     let type = object.localName;
+	     let uuid = object.attributes[0].value;
+	     // special case for busbars
+	     if (object.nodeName === "cim:BusbarSection") {
+		 let terminal = self.model.getConductingEquipmentGraph([object]).map(el => el.target)[0];
+		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 type = cn.localName;
+		 uuid = cn.attributes[0].value;
+	     }
+	     let types = d3.select("svg").selectAll("svg > g > g." + type + "s");
+	     let target = types.select("#" + uuid);
+	     target.select("text").html(value);
+	 }
+     });
      
      render(diagramName) {
 	 // clear all
@@ -254,8 +272,10 @@
      // bind data to an x,y array from Diagram Object Points
      createSelection(type, data) {
 	 let types = type + "s";
-	 d3.select("svg").select("g").append("g")
-	   .attr("class", types);
+	 if (d3.select("svg").select("g." + types).empty()) {
+	     d3.select("svg").select("g").append("g")
+	       .attr("class", types);
+	 }
 
 	 for (let d of data) {
 	     let lineData = [];
@@ -828,9 +848,14 @@
 		    return ((lineData[0].y + end.y)/2) + 15;
 		})
 	        .text(function(d) {
-		    let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
-		    if (typeof(name) !== "undefined") {
-			return name.innerHTML;
+		    let equipments = self.model.getEquipments(d);
+		    // let's try to get a busbar section
+		    let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+		    if (typeof(busbarSection) != "undefined") {    
+			let name = self.model.getAttribute(busbarSection, "cim:IdentifiedObject.name");
+			if (typeof(name) !== "undefined") {
+			    return name.innerHTML;
+			}
 		    }
 		    return "";
 		});
@@ -884,7 +909,7 @@
 	 
 	 let svgWidth = parseInt(d3.select("svg").style("width"));
 	 let svgHeight = parseInt(d3.select("svg").style("height"));
-	 let newZoom = 1;
+	 let newZoom = 5;
 	 let newx = -hoverD.x*newZoom + (svgWidth/2);
 	 let newy = -hoverD.y*newZoom + (svgHeight/2);
 	 d3.selectAll("svg").select("g").attr("transform", "translate(" + [newx, newy] + ")scale(" + newZoom + ")");

@@ -14,10 +14,10 @@
 			<input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)</input>
 		    </label>
 		    <label class="btn btn-default">
-			<input type="radio" id="pan" name="tool" value="pan" autocomplete="off">pan+zoom</input>
+			<input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input>
 		    </label>
 		    <label class="btn btn-default">
-			<input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input>
+			<input type="radio" id="connect" name="tool" value="add" autocomplete="off">add breaker</input>
 		    </label>
 		</div>
 	    </div>
@@ -51,13 +51,6 @@
 	     self.enableForce();
 	 });
 
-	 $("#pan").change(function() {
-	     self.disableForce();
-	     self.disableDrag();
-	     self.disableConnect();
-	     self.enableZoom();
-	 });
-
 	 $("#connect").change(function() {
 	     self.disableForce();
 	     self.disableDrag();
@@ -85,10 +78,37 @@
 	 self.enableDrag();
 	 $("#cim-diagram-controls").show();
      });
+
+     // modality for drag+zoom
+     d3.select("body")
+       .on("keydown", function() {
+	   if (typeof(d3.event) === "undefined") {
+	       return;
+	   }
+	   // trap the ctrl key being pressed
+	   if (d3.event.ctrlKey) {
+	       self.disableForce();
+	       self.disableDrag();
+	       self.disableConnect();
+	       self.enableZoom();
+	   }
+       })
+       .on("keyup", function() {
+	   self.disableZoom();
+	   if (self.status === "DRAG") {
+	       self.enableDrag();
+	   }
+	   if (self.status === "FORCE") {
+	       self.enableForce();
+	   }
+	   if (self.status === "CONNECT") {
+	       self.enableConnect();
+	   }
+       });
      
      enableDrag() {
 	 $("#select").click();
-	 this.status = "DRAG";
+	 self.status = "DRAG";
 	 let drag = d3.behavior.drag()
 		      .origin(function(d) {
 			  return d;
@@ -117,7 +137,6 @@
 			      let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 			      if (typeof(busbarSection) !== "undefined") {
 				  dobjs = opts.model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
-				  console.log(dobjs);
 			      }
 			  }			  
 			  let doEdges = opts.model.getDiagramObjectPointGraph(dobjs); 
@@ -146,7 +165,7 @@
 
      enableForce() {
 	 $("#force").click();
-	 this.status = "FORCE";
+	 self.status = "FORCE";
 	 d3.select("svg").selectAll("svg > g > g > g").call(force.drag()).on("click", fixNode);
 	 
 	 function fixNode(d) {
@@ -161,7 +180,7 @@
      
      enableZoom() {
 	 $("#zoom").click();
-	 this.status = "ZOOM";
+	 //self.status = "ZOOM";
 	 d3.select("svg").selectAll("svg > g > g > g")
 	   .on("click", function (d) {
 	       let hashComponents = window.location.hash.substring(1).split("/");
@@ -185,7 +204,7 @@
 	 if (zoomEnabled===true) {
 	     d3.select("svg").selectAll("svg > g > g > g").on("click", null);
 	     zoomComp.on("zoom", null);
-	     d3.select("svg").select("g").call(zoomComp);
+	     d3.select("svg").call(zoomComp);
 	     zoomEnabled = false;
 	 }
      }
@@ -202,28 +221,26 @@
 
      enableConnect() {
          $("#connect").click();
-	 this.status = "CONNECT";
+	 self.status = "CONNECT";
 
 	 d3.select("svg").selectAll("svg > g > g > g > g.Terminal")
 	   .on("click", function (d) {
 	       let svg = d3.select("svg");
 	       var line = svg.append("line");
-
 	       var circle = svg.append("circle")
 			       .attr("cx", -10)
 			       .attr("cy", -10)
 			       .attr("r", 3.5);
 	       svg.on("mousemove", mousemoved);
-	       
 	       edgeToChange = self.parent.edges.filter(el => el.target === d)[0];
 	   });
 	 d3.select("svg").selectAll("svg > g > g > g.ConnectivityNode")
 	   .on("click", function (d) {
 	       if (typeof(edgeToChange) !== "undefined") {
 		   d3.select("svg").on("mousemove", null);
-		   edgeToChange.p = [edgeToChange.p[0] + d3.select(edgeToChange.source).datum().x, edgeToChange.p[1] + d3.select(edgeToChange.source).datum().y];
-		   edgeToChange.source = d3.select(this).node();
-		   edgeToChange.p = [edgeToChange.p[0] - d3.select(edgeToChange.source).datum().x, edgeToChange.p[1] - d3.select(edgeToChange.source).datum().y];
+		   edgeToChange.p = [edgeToChange.p[0] + edgeToChange.source.x, edgeToChange.p[1] + edgeToChange.source.y];
+		   edgeToChange.source = d;
+		   edgeToChange.p = [edgeToChange.p[0] - edgeToChange.source.x, edgeToChange.p[1] - edgeToChange.source.y];
 		   // update the model
 		   let schemaLinks = opts.model.getSchemaLinks(edgeToChange.target.localName);
 		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
@@ -236,7 +253,7 @@
 	      let transform = d3.transform(d3.select("svg").select("g").attr("transform"));
 	      m[0] = (m[0]-transform.translate[0])/transform.scale[0];
 	      m[1] = (m[1]-transform.translate[1])/transform.scale[0];
-	      edgeToChange.p = [m[0]-d3.select(edgeToChange.source).datum().x, m[1]-d3.select(edgeToChange.source).datum().y];
+	      edgeToChange.p = [m[0]-edgeToChange.source.x, m[1]-edgeToChange.source.y];
 	      self.parent.forceTick();
 	  }
      }

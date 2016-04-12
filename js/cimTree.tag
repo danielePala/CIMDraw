@@ -15,6 +15,16 @@
 	 }
      });
 
+     // listen to 'setAttribute' event from model
+     self.model.on("setAttribute", function(object, attrName, value) {
+	 if (attrName === "cim:IdentifiedObject.name") {
+	     let type = object.localName;
+	     let target = d3.select("div.tree").selectAll("div.tree > ul > li." + type + "s > ul > li > ul#" + object.attributes[0].value);
+	     let a = d3.select(target.node().parentNode).select("a");
+	     a.html(value);
+	 }
+     });
+
      render(diagramName) {
 	 // clear all
 	 d3.select("#app-tree").select(".tree").remove();
@@ -184,14 +194,7 @@
 		.on("input", function(d) {
 		    let object = d3.select(d3.select(this).node().parentNode.parentNode).datum();
 		    let attrName = "cim:" + d.attributes[0].value.substring(1);
-		    let value = cimModel.getAttribute(object, attrName);
-		    if (typeof(value) !== "undefined") {
-			value.innerHTML = d3.select(this).html();
-		    } else {
-			let newAttribute = cimModel.data.createElement(attrName);
-			newAttribute.innerHTML = d3.select(this).html();
-			object.appendChild(newAttribute);
-		    }
+		    cimModel.setAttribute(object, attrName, d3.select(this).html());
 		})
 		.on("keydown", function() {
 		    if (typeof(d3.event) === "undefined") {

@@ -117,7 +117,7 @@
 	     if (hashComponents.length === 4) {
 		 end = window.location.hash.lastIndexOf("/");
 	     }
-	     $('.selectpicker').selectpicker('val', decodeURI(window.location.hash.substring(0, end)));
+	     $('.selectpicker').selectpicker('val', window.location.hash.substring(0, end));
 	 });
 
 	 // here we show a certain diagram
