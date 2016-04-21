@@ -68,6 +68,7 @@
 	     // things to show
 	     $("#cim-local-file-component").show();
 	     // things to hide
+	     $("#app-container").hide();
 	     $("#cim-load-container").hide();
 	     $("#cim-home-container").hide();
 	     $("#cim-save").hide();
@@ -136,27 +137,27 @@
 		 }
 		 loadDiagramList(decodeURI(file));
 		 self.cimModel.selectDiagram(decodeURI(name));
-		 $("#cim-save").show();
 		 $(".selectLabel").click();
-
-		 // test: save a copy of the file
-		 $("#cim-save").on("click", function() {
-		     let out = self.cimModel.save();
-		     let blob = new Blob([out], {type : 'text/xml'});
-		     let objectURL = URL.createObjectURL(blob);
-		     $("#cim-save").attr("href", objectURL);
-		 });
 		 self.trigger("showDiagram", file, name, element);
 		 $("#app-container").show();
 	     };
 	 };
 
 	 function loadDiagramList(filename) {
+	     // allow saving a copy of the file 
+	     $("#cim-save").on("click", function() {
+		 let out = self.cimModel.save();
+		 let blob = new Blob([out], {type : 'text/xml'});
+		 let objectURL = URL.createObjectURL(blob);
+		 $("#cim-save").attr("href", objectURL);
+	     });
+	     $("#cim-save").show();
+	     // load diagram list
 	     $(".selectpicker").selectpicker({container: "body"});
 	     d3.select("#cim-diagrams").selectAll("option").remove();
 	     d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
 	     $(".selectpicker").selectpicker("refresh");
-	     d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/none").text("Generate a new diagram");
+	     d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/new1").text("Generate a new diagram");
 	     let diagrams = self.cimModel.getDiagramList();
 	     for (let i in diagrams) {
 		 d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/"+diagrams[i]).text(diagrams[i]);

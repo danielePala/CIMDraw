@@ -48,20 +48,16 @@ function cimDiagramModel() {
 	    model.dataMap = new Map(Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes[0].value, el]));
 	    // build a map (link name, target UUID)->(source objects)
 	    for (let i in allObjects) {
-		if (typeof(allObjects[i].attributes) !== "undefined") {
-		    allObjects[i].getAttributes = function() {
-			return [].filter.call(this.children, function(el) {
-			    return el.attributes.length === 0;
-			});
-		    };
-		    let links = model.getLinks(allObjects[i]);
-		    for (let j in links) {
-			let key = links[j].localName + links[j].attributes[0].value;
+		let object = allObjects[i];
+		if (typeof(object.attributes) !== "undefined") {
+		    let links = model.getLinks(object);
+		    for (let link of links) {
+			let key = link.localName + link.attributes[0].value;
 			let val = model.linksMap.get(key);
 			if (typeof(val) === "undefined") {
-			    model.linksMap.set(key, [allObjects[i]]);
+			    model.linksMap.set(key, [object]);
 			} else {
-			    val.push(allObjects[i]);
+			    val.push(object);
 			}
 		    }   
 		} 
@@ -84,8 +80,7 @@ function cimDiagramModel() {
 	// get a list of diagrams in the current CIM file.
 	getDiagramList() {
 	    let diagrams = model.getObjects("cim:Diagram")
-		.map(el => el.getAttributes()
-		     .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0])
+		.map(el => model.getAttribute(el, "cim:IdentifiedObject.name"))
 		.map(el => el.textContent);
 	    return diagrams;
 	},
@@ -177,9 +172,6 @@ function cimDiagramModel() {
 	// Get the objects of a given type that have at least one
 	// DiagramObject in the current diagram.
 	getGraphicObjects(type) {
-	    if (model.activeDiagramName === "none") {
-		return model.getObjects(type);
-	    }
 	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
 	    let allObjectsSet = new Set(allObjects); // we want uniqueness
 	    return [...allObjectsSet].filter(function(el) {
@@ -190,9 +182,6 @@ function cimDiagramModel() {
 	// Get the connectivity nodes that belong to the current diagram.
 	getConnectivityNodes() {
 	    let self = this;
-	    if (model.activeDiagramName === "none") {
-		return model.getObjects("cim:ConnectivityNode");
-	    }
 	    let allConnectivityNodes = model.getObjects("cim:ConnectivityNode");
 	    let graphic = model.getGraphicObjects("cim:ConnectivityNode");
 	    let graphicSet = new Set(graphic);
@@ -264,7 +253,55 @@ function cimDiagramModel() {
 	    model.trigger("setAttribute", object, attrName, value);
 	    return;
 	},
+
+	// create an object of a given type
+	createObject(type) {
+	    let newElement = model.cimObject(type);
+	    model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
+	    // create two terminals (not always right)
+	    let term1 = model.cimObject("cim:Terminal");
+	    let term2 = model.cimObject("cim:Terminal");	    
+	    model.addLink(newElement, "cim:ConductingEquipment.Terminals", term1);
+	    model.addLink(newElement, "cim:ConductingEquipment.Terminals", term2);
 	    
+	    model.trigger("createObject", newElement);
+	},
+
+	// add an object to the active diagram
+	addToActiveDiagram(object, lineData) {
+	    // create a diagram object and a diagram object point
+	    let dobj = model.cimObject("cim:DiagramObject");
+	    for (let linePoint of lineData) {
+		let point = model.cimObject("cim:DiagramObjectPoint");
+		model.setAttribute(point, "cim:DiagramObjectPoint.xPosition", linePoint.x);
+		model.setAttribute(point, "cim:DiagramObjectPoint.yPosition", linePoint.y);
+		model.setAttribute(point, "cim:DiagramObjectPoint.sequenceNumber", linePoint.seq);
+		model.addLink(dobj, "cim:DiagramObject.DiagramObjectPoints", point);
+	    }
+	    model.addLink(object, "cim:IdentifiedObject.DiagramObjects", dobj);
+	    model.addLink(dobj, "cim:DiagramObject.Diagram", model.activeDiagram);
+	},
+
+	cimObject(name) {
+	    let obj = model.data.createElementNS("http://iec.ch/TC57/2010/CIM-schema-cim15#", name);
+	    model.data.children[0].appendChild(obj);
+	    let objID = model.data.createAttribute("rdf:ID");
+	    objID.nodeValue = generateUUID();
+	    obj.setAttributeNode(objID);
+	    model.dataMap.set("#" + obj.attributes[0].value, obj);
+	    
+	    function generateUUID() {
+		var d = new Date().getTime();
+		var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		    var r = (d + Math.random()*16)%16 | 0;
+		    d = Math.floor(d/16);
+		    return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+		});
+		return "_" + uuid;
+	    };
+	    return obj;
+	},
+	
 	// get all the links of a given object which are actually set.
 	getLinks(object) {
 	    return [].filter.call(object.children, function(el) {
@@ -295,18 +332,46 @@ function cimDiagramModel() {
 	setLink(source, linkSchema, target) {
 	    let linkName = "cim:" + linkSchema.attributes[0].value.substring(1);
 	    let link = model.getLink(source, linkName);
-	    // handle inverse relation
-	    let invLinkName = [].filter.call(linkSchema.children, function(el) {
-		return el.localName === "inverseRoleName";
-	    })[0].attributes[0].value;
-	    invLinkName = "cim:" + invLinkName.substring(1);
-	    let actTarget = model.dataMap.get(link.attributes[0].value);
-	    let invLink = model.getLink(actTarget, invLinkName);
-	    if (typeof(invLink) !== "undefined") {
-		invLink.remove();
+	    if (typeof(link) === "undefined") {
+		model.addLink(source, linkName, target);
+	    } else {
+		// handle inverse relation
+		let invLinkName = [].filter.call(linkSchema.children, function(el) {
+		    return el.localName === "inverseRoleName";
+		})[0].attributes[0].value;
+		invLinkName = "cim:" + invLinkName.substring(1);
+		let actTarget = model.dataMap.get(link.attributes[0].value);
+		let invLink = model.getLink(actTarget, invLinkName);
+		if (typeof(invLink) !== "undefined") {
+		    invLink.remove();
+		}
+		// set the new value
+		link.attributes[0].value = "#" + target.attributes[0].value;
 	    }
+	    if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
+		model.trigger("setEdge", source, target);
+	    }
+	    if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
+		model.trigger("setEdge", target, source);
+	    }
+	},
+
+	addLink(source, linkName, target) {
+	    let link = model.data.createElementNS("http://iec.ch/TC57/2010/CIM-schema-cim15#", linkName);
+	    let linkValue = model.data.createAttribute("rdf:resource");
+	    linkValue.nodeValue = "#";
+	    link.setAttributeNode(linkValue);
+	    source.appendChild(link);
 	    // set the new value
 	    link.attributes[0].value = "#" + target.attributes[0].value;
+
+	    let key = link.localName + link.attributes[0].value;
+	    let val = model.linksMap.get(key);
+	    if (typeof(val) === "undefined") {
+		model.linksMap.set(key, [source]);
+	    } else {
+		val.push(source);
+	    }
 	},
 
 	// resolve a given link.
@@ -457,8 +522,14 @@ function cimDiagramModel() {
 	    if (diagramName !== model.activeDiagramName) {
 		model.activeDiagramName = diagramName;
 		model.activeDiagram = model.getObjects("cim:Diagram")
-	            .filter(el => el.getAttributes()
-			    .filter(el => el.nodeName === "cim:IdentifiedObject.name")[0].textContent===model.activeDiagramName)[0];
+	            .filter(el => model.getAttribute(el, "cim:IdentifiedObject.name").textContent === model.activeDiagramName)[0];
+	    }
+	    // see if we must generate a new diagram
+	    if (typeof(model.activeDiagram) === "undefined") {
+		model.activeDiagram = model.cimObject("cim:Diagram");
+		model.setAttribute(model.activeDiagram, "cim:IdentifiedObject.name", diagramName);
+		model.activeDiagramName = diagramName;
+		model.trigger("createdDiagram");
 	    }
 	    model.trigger("changedDiagram");
 	}

@@ -1,10 +1,34 @@
 <cimTree>
-    <div class="app-tree" id="app-tree"></div>
+    <div class="app-tree" id="app-tree">
+	<div class="tree">
+	    <form class="form-inline">
+		<div class="form-group">
+		    <input type="search" class="form-control" id="cim-search-key" placeholder="Search...">
+		</div>
+		<button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button>
+	    </form>
+	    <ul class="CIMNetwork list-group"></ul>
+	</div>
+    </div>
     <script>
      "use strict";
      
      this.model = opts.model;	
      let self = this;
+
+     self.on("mount", function() {
+	 // setup search button
+	 $("#cimTreeSearchBtn").on("click", function() {
+	     let searchKey = document.getElementById("cim-search-key").value;
+	     $(".CIMNetwork>li>ul").each(function() {
+		 let toShow = $(this).find(">li>a:contains(" + searchKey + ")");
+		 let toHide = $(this).find(">li>a:not(:contains(" + searchKey + "))");
+		 toShow.parent().show();
+		 toHide.parent().hide();
+		 $(this).parent().find(">span").html(toShow.size());
+	     });
+	 });
+     });
 
      self.parent.on("showDiagram", function(file, name, element) {
 	 if (name !== self.diagramName) {
@@ -15,79 +39,65 @@
 	 }
      });
 
+     // listen to 'createObject' event from model
+     self.model.on("createObject", function(object) {
+	 let cimNetwork = d3.select("div.tree").selectAll("div.tree > ul.CIMNetwork");
+	 self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
+     });
+
      // listen to 'setAttribute' event from model
      self.model.on("setAttribute", function(object, attrName, value) {
 	 if (attrName === "cim:IdentifiedObject.name") {
 	     let type = object.localName;
 	     let target = d3.select("div.tree").selectAll("div.tree > ul > li." + type + "s > ul > li > ul#" + object.attributes[0].value);
-	     let a = d3.select(target.node().parentNode).select("a");
-	     a.html(value);
+	     if (target.empty() === false) {
+		 let a = d3.select(target.node().parentNode).select("a");
+		 a.html(value);
+	     }
 	 }
+     });
+
+     self.model.on("createdDiagram", function() {
+	 self.createTree(self.model.getObjects);
      });
 
      render(diagramName) {
 	 // clear all
-	 d3.select("#app-tree").select(".tree").remove();
+	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
 
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
-	 let allBusbarSections = this.model.getGraphicObjects("cim:BusbarSection");
-	 console.log("extracted busbarSections");
-	 let allPowerTransformers = this.model.getGraphicObjects("cim:PowerTransformer");
-	 console.log("extracted power transformers");
-	 let allPowerTransformerEnds = this.model.getGraphicObjects("cim:PowerTransformerEnd");
-	 console.log("extracted power transformer ends");
-	 let allACLines = this.model.getGraphicObjects("cim:ACLineSegment");
-	 console.log("extracted acLines");
-	 let allBreakers = this.model.getGraphicObjects("cim:Breaker");
-	 console.log("extracted breakers");
-	 let allDisconnectors = this.model.getGraphicObjects("cim:Disconnector");
-	 console.log("extracted disconnectors");
-	 let allLoadBreakSwitches = this.model.getGraphicObjects("cim:LoadBreakSwitch");
-	 console.log("extracted load break switches");
-	 let allEnergySources = this.model.getGraphicObjects("cim:EnergySource")
-	     .concat(this.model.getGraphicObjects("cim:SynchronousMachine"));
-	 console.log("extracted energy sources");
-	 let allEnergyConsumers = this.model.getGraphicObjects("cim:EnergyConsumer")
-	                              .concat(this.model.getGraphicObjects("cim:ConformLoad"))
-	                              .concat(this.model.getGraphicObjects("cim:NonConformLoad"));
-	 console.log("extracted energy consumers");
-	 let allSubstations = this.model.getEquipmentContainers("cim:Substation");
-	 console.log("extracted substations");
-	 let allLines = this.model.getEquipmentContainers("cim:Line");
-	 console.log("extracted lines");
-	 let nodes = allACLines;
-	 
-	 // navtree
-	 let form = d3.select("#app-tree")
-		      .append("div")
-		      .attr("class", "tree")
-		      .append("form")
-		      .attr("class", "form-inline");
-	 form.append("div")
-	     .attr("class", "form-group")
-	     .append("input")
-	     .attr("type", "search")
-	     .attr("class", "form-control")
-	     .attr("id", "cim-search-key")
-	     .attr("placeholder", "Search...");
-	 form.append("button")
-	     .attr("type", "submit")
-	     .attr("class", "btn btn-default")
-	     .html("Search").on("click", function() {
-		 let searchKey = document.getElementById("cim-search-key").value;
-		 $(".CIMNetwork>li>ul").each(function() {
-		     let toShow = $(this).find(">li>a:contains(" + searchKey + ")");
-		     let toHide = $(this).find(">li>a:not(:contains(" + searchKey + "))");
-		     toShow.parent().show();
-		     toHide.parent().hide();
-		     $(this).parent().find(">span").html(toShow.size());
-		 });
-	     });
+	 self.createTree(self.model.getGraphicObjects);
+     }
 
-	 let cimNetwork = d3.select("div.tree")
-			    .append("ul")
-			    .attr("class", "CIMNetwork list-group");
+     createTree(getObjects) {
+	 let allBusbarSections = getObjects("cim:BusbarSection");
+	 console.log("extracted busbarSections");
+	 let allPowerTransformers = getObjects("cim:PowerTransformer");
+	 console.log("extracted power transformers");
+	 let allPowerTransformerEnds = getObjects("cim:PowerTransformerEnd");
+	 console.log("extracted power transformer ends");
+	 let allACLines = getObjects("cim:ACLineSegment");
+	 console.log("extracted acLines");
+	 let allBreakers = getObjects("cim:Breaker");
+	 console.log("extracted breakers");
+	 let allDisconnectors = getObjects("cim:Disconnector");
+	 console.log("extracted disconnectors");
+	 let allLoadBreakSwitches = getObjects("cim:LoadBreakSwitch");
+	 console.log("extracted load break switches");
+	 let allEnergySources = getObjects("cim:EnergySource")
+	     .concat(getObjects("cim:SynchronousMachine"));
+	 console.log("extracted energy sources");
+	 let allEnergyConsumers = getObjects("cim:EnergyConsumer")
+	                              .concat(getObjects("cim:ConformLoad"))
+	                              .concat(getObjects("cim:NonConformLoad"));
+	 console.log("extracted energy consumers");
+	 let allSubstations = self.model.getEquipmentContainers("cim:Substation");
+	 console.log("extracted substations");
+	 let allLines = self.model.getEquipmentContainers("cim:Line");
+	 console.log("extracted lines");
+	 
+	 let cimNetwork = d3.select("div.tree > ul.CIMNetwork");
 	 this.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
 	 this.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
 	 this.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
@@ -99,32 +109,40 @@
 	 this.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 // TODO: add these as sub-elements of transformer 
 	 this.createElements(cimNetwork, "PowerTransformerEnd", "Transformer Windings", allPowerTransformerEnds);
-	 this.createElements(cimNetwork, "Line", "Lines", allLines);
-
-	 d3.selectAll("li.ACLineSegment")
-	   .on("mouseout", this.mouseOut);
+	 this.createElements(cimNetwork, "Line", "Lines", allLines);	 
      }
 
      createElements(cimNetwork, name, printName, data) {
-	 let elementsTopContainer = cimNetwork
+	 let elementsTopContainer = cimNetwork.select("li." + name + "s");
+	 let elements = elementsTopContainer.select("ul#" + name + "sList");
+	 if (elementsTopContainer.empty()) {
+	     elementsTopContainer = cimNetwork
 		.append("li")
 		.attr("class", name + "s" + " list-group-item");
-	 elementsTopContainer.append("a")
-			     .attr("class", "btn btn-primary btn-xs")
-			     .attr("role", "button")
-			     .attr("data-toggle", "collapse")
-			     .attr("href", "#" + name + "sList")
-			     .html(printName);
-	 elementsTopContainer.append("span")
-			     .attr("class", "badge")
-			     .html(data.length);
-	 let elements = elementsTopContainer
+	     elementsTopContainer.append("a")
+				 .attr("class", "btn btn-primary btn-xs")
+				 .attr("role", "button")
+				 .attr("data-toggle", "collapse")
+				 .attr("href", "#" + name + "sList")
+				 .html(printName);
+	     elementsTopContainer.append("span")
+				 .attr("class", "badge")
+				 .html(data.length);
+	     elements = elementsTopContainer
 		.append("ul")
 		.attr("id", name + "sList")
 		.attr("class", "collapse");
+	 } else {
+	     let elementCount = parseInt(elementsTopContainer.select("span").html());
+	     elementCount = elementCount + data.length;
+	     elementsTopContainer.select("span").html(elementCount);
+	 }
+
 	 let elementTopContainer = elements
 		.selectAll("li." + name)
-		.data(data)
+		.data(data, function(d) {
+		    return d.attributes[0].value;
+		})
 		.enter()
 		.append("li")
 		.attr("class", name);
@@ -162,7 +180,11 @@
 				    return name.innerHTML;
 				}
 				return "unnamed";
-			    });
+			    })
+			    .call(d3.behavior.drag().on("dragend", function(d) {
+				console.log("dragend");
+				cimModel.trigger("dragend", d);
+			    }));
 	 let elementEnter = elementTopContainer
 		.append("ul")
 		.attr("id", function(d) {
@@ -293,11 +315,6 @@
 	 }
 	 targetParent.collapse("show");
      }
-
-     mouseOut() {
-	 d3.selectAll("li.ACLineSegment").style("background", "white");
-     }
-
     </script> 
     
 </cimTree>
