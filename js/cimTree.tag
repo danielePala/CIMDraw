@@ -7,6 +7,13 @@
 		</div>
 		<button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button>
 	    </form>
+	    <form>
+		<div class="checkbox">
+		    <label>
+			<input type="checkbox" id="showAllObjects"> Show all objects
+		    </label>
+		</div>
+	    </form>
 	    <ul class="CIMNetwork list-group"></ul>
 	</div>
     </div>
@@ -28,6 +35,14 @@
 		 $(this).parent().find(">span").html(toShow.size());
 	     });
 	 });
+
+	 $("#showAllObjects").change(function() {
+	     if (this.checked === true) {
+		 self.createTree(self.model.getObjects);
+	     } else {
+		 self.createTree(self.model.getGraphicObjects);
+	     }
+	 });
      });
 
      self.parent.on("showDiagram", function(file, name, element) {
@@ -42,7 +57,12 @@
      // listen to 'createObject' event from model
      self.model.on("createObject", function(object) {
 	 let cimNetwork = d3.select("div.tree").selectAll("div.tree > ul.CIMNetwork");
-	 self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
+	 if (object.nodeName === "cim:Breaker") {
+	     self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
+	 }
+	 if (object.nodeName === "cim:ACLineSegment") {
+	     self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
+	 }
      });
 
      // listen to 'setAttribute' event from model
@@ -58,19 +78,21 @@
      });
 
      self.model.on("createdDiagram", function() {
-	 self.createTree(self.model.getObjects);
+	 self.diagramName = decodeURI(self.model.activeDiagramName);
+	 $("#showAllObjects").prop("checked", true);
+	 $("#showAllObjects").change();
      });
 
      render(diagramName) {
-	 // clear all
-	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
-
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
 	 self.createTree(self.model.getGraphicObjects);
      }
 
      createTree(getObjects) {
+	 // clear all
+	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
+
 	 let allBusbarSections = getObjects("cim:BusbarSection");
 	 console.log("extracted busbarSections");
 	 let allPowerTransformers = getObjects("cim:PowerTransformer");
@@ -182,7 +204,6 @@
 				return "unnamed";
 			    })
 			    .call(d3.behavior.drag().on("dragend", function(d) {
-				console.log("dragend");
 				cimModel.trigger("dragend", d);
 			    }));
 	 let elementEnter = elementTopContainer
@@ -296,6 +317,9 @@
 	     let equipments = self.model.getEquipments(hoverD);
 	     // let's try to get a busbar section
 	     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+	     if (typeof(busbarSection) === "undefined") {
+		 return;
+	     }
 	     let busbarUUID = busbarSection.attributes[0].value;
 	     target = d3.select(".tree").select("#" + busbarUUID).node().parentNode;
 	 } else {

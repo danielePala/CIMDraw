@@ -50,6 +50,27 @@
 	    </div>
 	</div>
 
+
+	<!-- Modal -->
+	<div class="modal fade" id="newDiagramModal" tabindex="-1" role="dialog" aria-labelledby="newDiagramModalLabel">
+	    <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		    <div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			<h4 class="modal-title" id="newDiagramModalLabel">Enter a name for the new diagram</h4>
+		    </div>
+		    <div class="modal-body">
+			<form>
+			    <input type="text" class="form-control" id="newDiagramName" placeholder="untitled">
+			</form> 
+		    </div>
+		    <div class="modal-footer">
+			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			<button type="button" class="btn btn-primary" id="newDiagramBtn">Create</button>
+		    </div>
+		</div>
+	    </div>
+	</div>
     </div>
     <script>
      "use strict";
@@ -112,6 +133,7 @@
 	     }
 	 });
 
+	 /*
 	 self.cimModel.on("changedDiagram", function() {
 	     let hashComponents = window.location.hash.split("/");
 	     let end = window.location.hash.length;
@@ -120,6 +142,7 @@
 	     }
 	     $('.selectpicker').selectpicker('val', decodeURI(window.location.hash.substring(0, end)));
 	 });
+	 */
 
 	 // here we show a certain diagram
 	 riot.route('/*/diagrams/*', function(file, name) {	
@@ -135,9 +158,9 @@
 		     riot.route("/");
 		     return;
 		 }
-		 loadDiagramList(decodeURI(file));
 		 self.cimModel.selectDiagram(decodeURI(name));
-		 $(".selectLabel").click();
+		 loadDiagramList(decodeURI(file));
+		 $('.selectpicker').selectpicker('val', decodeURI("#" + file + "/diagrams/" + name));
 		 self.trigger("showDiagram", file, name, element);
 		 $("#app-container").show();
 	     };
@@ -157,7 +180,9 @@
 	     d3.select("#cim-diagrams").selectAll("option").remove();
 	     d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
 	     $(".selectpicker").selectpicker("refresh");
-	     d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/new1").text("Generate a new diagram");
+	     d3.select("#cim-diagrams").append("option")
+	       .attr("value", "#" + filename + "/createNew") 
+	       .text("Generate a new diagram");
 	     let diagrams = self.cimModel.getDiagramList();
 	     for (let i in diagrams) {
 		 d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/"+diagrams[i]).text(diagrams[i]);
@@ -168,6 +193,18 @@
 	 riot.route("/*/diagrams/*/*", function(file, name, element) {
 	     $("#cim-local-file-component").hide();
 	     loadDiagram(file, name, element);
+	 });
+
+	 riot.route("/*/createNew", function(file) {
+	     $("#newDiagramModal").modal("show");
+	     d3.select("#newDiagramBtn").on("click", function() {
+		 let diagramName = d3.select("#newDiagramName").node().value;
+		 let hashComponents = window.location.hash.substring(1).split("/");
+		 let basePath = hashComponents[0] + "/diagrams/";
+		 let fullPath = basePath + diagramName;
+		 $('#newDiagramModal').modal("hide");
+		 riot.route(fullPath);
+	     });
 	 });
 
 	 // start router

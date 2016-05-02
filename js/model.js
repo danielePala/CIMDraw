@@ -273,13 +273,43 @@ function cimDiagramModel() {
 	    let dobj = model.cimObject("cim:DiagramObject");
 	    for (let linePoint of lineData) {
 		let point = model.cimObject("cim:DiagramObjectPoint");
-		model.setAttribute(point, "cim:DiagramObjectPoint.xPosition", linePoint.x);
-		model.setAttribute(point, "cim:DiagramObjectPoint.yPosition", linePoint.y);
+		model.setAttribute(point, "cim:DiagramObjectPoint.xPosition", linePoint.x + object.x);
+		model.setAttribute(point, "cim:DiagramObjectPoint.yPosition", linePoint.y + object.y);
 		model.setAttribute(point, "cim:DiagramObjectPoint.sequenceNumber", linePoint.seq);
 		model.addLink(dobj, "cim:DiagramObject.DiagramObjectPoints", point);
 	    }
 	    model.addLink(object, "cim:IdentifiedObject.DiagramObjects", dobj);
 	    model.addLink(dobj, "cim:DiagramObject.Diagram", model.activeDiagram);
+	    model.diagramObjectGraphs.get(model.activeDiagramName).push({source: object, target: dobj});
+	},
+
+	updateActiveDiagram(object, lineData) {
+	    // save new position.
+	    let ioEdges = model.getDiagramObjectGraph([object]);
+	    let dobjs = ioEdges.map(el => el.target);
+	    if (object.nodeName === "cim:ConnectivityNode" && dobjs.length === 0) {
+		let equipments = model.getEquipments(object);
+		let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+		if (typeof(busbarSection) !== "undefined") {
+		    dobjs = model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
+		}
+	    }
+	    let doEdges = model.getDiagramObjectPointGraph(dobjs);
+	    let points = doEdges.map(el => el.target);
+	    if (points.length > 0) {
+		for (let point of points) {
+		    let seq = 1;
+		    let seqObject = model.getAttribute(point, "cim:DiagramObjectPoint.sequenceNumber");
+		    if (typeof(seqObject) !== "undefined") {
+			seq = parseInt(seqObject.innerHTML);
+		    }
+		    let actLineData = object.lineData.filter(el => el.seq === seq)[0];
+		    model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML = actLineData.x + object.x;
+		    model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML = actLineData.y + object.y;
+		}
+	    } else {
+		model.addToActiveDiagram(object, object.lineData);
+	    }
 	},
 
 	cimObject(name) {

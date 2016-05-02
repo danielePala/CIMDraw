@@ -4,14 +4,23 @@
 	<svg>
 	    <path stroke-width="1" stroke="black" fill="none"></path>
 	    <circle r="3.5" cy="-10" cx="-10"></circle>
-	    <g></g>
+	    <g>
+		<g class="edges"></g>
+	    </g>
 	</svg>
     </div>
 
     <script>
      "use strict";
      let self = this;
+     self.model = opts.model;
+     self.nodes = [];
+     self.edges = [];
+     self.nodeGraphic = new Map(); // map connectivy nodes to their SVG elements 
+     self.termGraphic = new Map(); // map terminals to their SVG elements
+     self.edgeGraphic = new Map(); // map edges to their SVG elements
 
+     // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
 	 if (name !== self.diagramName) {
              self.render(name);
@@ -20,13 +29,17 @@
              self.moveTo(element);
          }
      });
-	 
-     self.model = opts.model;
-     self.nodes = [];
-     self.edges = [];
-     self.nodeGraphic = new Map(); // map connectivy nodes to their SVG elements 
-     self.termGraphic = new Map(); // map terminals to their SVG elements
-     self.edgeGraphic = new Map(); // map edges to their SVG elements
+
+     // listen to 'mount' event
+     self.on("mount", function() {
+	 // setup xy axes
+	 let xScale = d3.scale.linear().domain([0, 1800]).range([0,1800]);
+	 let yScale = d3.scale.linear().domain([0, 800]).range([0,800]);
+	 let yAxis = d3.svg.axis().scale(yScale).orient("right");
+	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+	 d3.select("svg").append("g").attr("id", "yAxisG").call(yAxis);
+	 d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
+     });
      
      // listen to 'transform' event
      self.on("transform", function() {
@@ -76,43 +89,43 @@
 	 if (typeof(edgeToChange) === "undefined") {
 	     edgeToChange = {source: cn, target: term};
 	     self.edges.push(edgeToChange);
+	     self.createEdges([edgeToChange]);
 	 } else {
 	     edgeToChange.source = cn;
 	 }
 	 edgeToChange.p = self.closestPoint(cn, term);
 	 self.forceTick();
      });
-     
+
+     /** Main rendering function */
      render(diagramName) {
 	 // clear all
-	 d3.select("svg").select("g").selectAll("g").remove();
-	 d3.select("svg").selectAll("#yAxisG").remove();
-	 d3.select("svg").selectAll("#xAxisG").remove();
+	 d3.select("svg").select("g").selectAll("g:not(.edges)").remove();
 	 self.nodes = [];
 	 self.edges = [];
 	 
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
-	 let allConnectivityNodes = this.model.getConnectivityNodes();
+	 let allConnectivityNodes = self.model.getConnectivityNodes();
 	 console.log("extracted connectivity nodes");
-	 let allACLines = this.model.getGraphicObjects("cim:ACLineSegment");
+	 let allACLines = self.model.getGraphicObjects("cim:ACLineSegment");
 	 console.log("extracted acLines");
-	 let allBreakers = this.model.getGraphicObjects("cim:Breaker");
+	 let allBreakers = self.model.getGraphicObjects("cim:Breaker");
 	 console.log("extracted breakers");
-	 let allDisconnectors = this.model.getGraphicObjects("cim:Disconnector");
+	 let allDisconnectors = self.model.getGraphicObjects("cim:Disconnector");
 	 console.log("extracted disconnectors");
-	 let allLoadBreakSwitches = this.model.getGraphicObjects("cim:LoadBreakSwitch");
+	 let allLoadBreakSwitches = self.model.getGraphicObjects("cim:LoadBreakSwitch");
 	 console.log("extracted load break switches");
-	 let allEnergySources = this.model.getGraphicObjects("cim:EnergySource")
-	     .concat(this.model.getGraphicObjects("cim:SynchronousMachine"));
+	 let allEnergySources = self.model.getGraphicObjects("cim:EnergySource")
+	     .concat(self.model.getGraphicObjects("cim:SynchronousMachine"));
 	 console.log("extracted energy sources");
-	 let allEnergyConsumers = this.model.getGraphicObjects("cim:EnergyConsumer")
-				      .concat(this.model.getGraphicObjects("cim:ConformLoad"))
-				      .concat(this.model.getGraphicObjects("cim:NonConformLoad"));
+	 let allEnergyConsumers = self.model.getGraphicObjects("cim:EnergyConsumer")
+				      .concat(self.model.getGraphicObjects("cim:ConformLoad"))
+				      .concat(self.model.getGraphicObjects("cim:NonConformLoad"));
 	 console.log("extracted energy consumers");
-	 let allPowerTransformers = this.model.getGraphicObjects("cim:PowerTransformer");
+	 let allPowerTransformers = self.model.getGraphicObjects("cim:PowerTransformer");
 	 console.log("extracted power transformers");
-	 let allBusbarSections = this.model.getGraphicObjects("cim:BusbarSection");
+	 let allBusbarSections = self.model.getGraphicObjects("cim:BusbarSection");
 	 console.log("extracted busbarSections");
 
 	 // AC Lines
@@ -175,27 +188,15 @@
 	 this.createMeasurements(termSelection);
 	 console.log("drawn power transformer terminals");
 
-	 // setup xy axes
-	 let xScale = d3.scale.linear().domain([0, 1800]).range([0,1800]);
-	 let yScale = d3.scale.linear().domain([0, 800]).range([0,800]);
-	 let yAxis = d3.svg.axis().scale(yScale).orient("right");
-	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
-	 d3.select("svg").append("g").attr("id", "yAxisG").call(yAxis);
-	 d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
-	 
 	 // handle mouseover
-	 d3.select("svg").selectAll("svg > g > g > g")
-			    .on("mouseover.hover", this.hover)
+	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
+			    .on("mouseover.hover", self.hover)
 			    .on("mouseout", mouseOut);
 	 d3.select("svg").on("mouseover", function() {
 	     self.model.on("dragend", dragend);
 	 }).on("mouseout",function() {
 	     self.model.off("dragend", dragend);
 	 });
-	 
-	 function mouseOut(d) {
-	     d3.select(this).selectAll("rect").remove();	     
-	 }
 
 	 function dragend(d) {
 	     let dobjs = self.model.getDiagramObjectGraph([d]);
@@ -207,11 +208,21 @@
 	     }
 	 }
 
-	 // test
-         d3.select("svg").select("g").append("g")
-	   .attr("class", "edges")
+	 function mouseOut(d) {
+	     d3.select(this).selectAll("rect").remove();	     
+	 }
+
+	 // create edges
+	 self.createEdges(self.edges);
+	 self.forceTick();
+
+	 self.trigger("render");
+     }
+
+     createEdges(edges) {
+	 d3.select("svg").select("g > g.edges")
 	   .selectAll("g.edge")
-	   .data(self.edges, function(d) {
+	   .data(edges, function(d) {
 	       return d.source.attributes[0].value+d.target.attributes[0].value;
 	   })
 	   .enter()
@@ -222,17 +233,9 @@
 	       return d.source.attributes[0].value+d.target.attributes[0].value;
 	   })
 	   .append("path")
-	   /*.attr("d", function(d) {
-	       d.p = self.closestPoint(d.source, d.target);
-	       let lineData = [{x: d.p[0] + d.source.x, y: d.p[1] + d.source.y}, {x: d.target.x, y: d.target.y}];
-	       return line(lineData);
-	   })*/
 	   .attr("fill", "none")
 	   .attr("stroke", "black")
 	   .attr("stroke-width", 1);
-	 
-	 self.forceTick();
-	 self.trigger("render");
      }
 
      createMeasurements(termSelection) {
@@ -343,6 +346,34 @@
 	     d.lineData = lineData;
 	 }
 
+	 var menu = [
+	     {
+		 title: 'Rotate',
+		 action: function(elm, d, i) {
+		     let selection = d3.select(elm);
+		     let terminals = self.model.getTerminals(selection.data());
+		     terminals.forEach(function (terminal) {
+			 terminal.rotation = terminal.rotation + 90;
+		     });
+		     d.rotation = d.rotation + 90;
+		     self.forceTick(selection);
+		 }
+	     },
+	     {
+		 title: 'Delete',
+		 action: function(elm, d, i) {
+		     let selection = d3.select(elm);
+		     let terminals = self.model.getTerminals(selection.data());
+		     let links = self.edges.filter(el => selection.data().indexOf(el.source) > -1 || terminals.indexOf(el.target) > -1);
+		     links.forEach(function (link) {
+			 let graphicEdge = self.edgeGraphic.get(link);
+			 d3.select(graphicEdge).remove();
+		     });
+		     selection.remove();
+		 }
+	     }
+	 ]
+	 
 	 let selection = d3.select("svg").select("g." + types).selectAll("g." + type)
 			   .data(data, function(d) {
 			       return d.attributes[0].value;
@@ -352,8 +383,8 @@
 			   .attr("class", type)
 			   .attr("id", function(d) {
 			       return d.attributes[0].value;
-			   });
-	 
+			   })
+			   .on("contextmenu", d3.contextMenu(menu));
 	 return selection; 
      }
 
@@ -423,25 +454,31 @@
 	 let swEnter = this.createSelection(type, allSwitches);
 	 
 	 swEnter.append("path")
-		  .attr("d", function(d) {
-		      let value = "0"; // default is OPEN
-		      // check the status of this disconnector
-		      let measurement = self.model.getGraph([d], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source)[0];
-		      if (typeof(measurement) !== "undefined") {
-			  let valueObject = self.model.getGraph([measurement], "Discrete.DiscreteValues", "DiscreteValue.Discrete").map(el => el.source)[0];
-			  if (typeof(valueObject) !== "undefined") {
-			      value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
-			  }
-		      }
-		      if (value === "0") {
-			  return line([{x: 0, y:0, seq:1}, {x:18, y:24, seq:2}]);
-		      } else {
-			  return line([{x: 0, y:0, seq:1}, {x:0, y:30, seq:2}]);
-		      }
-		  })
-		  .attr("fill", "none")
-		  .attr("stroke", color)
-		  .attr("stroke-width", 4);
+		.attr("d", function(d) {
+		    return line([{x:-9, y:6, seq:1},
+				 {x:9, y:6, seq:2},
+				 {x:9, y:24, seq:3},
+				 {x:-9, y:24, seq:4},
+				 {x:-9, y:6, seq:5}]);		    
+		})
+		.attr("fill", function(d) {
+		    let value = "0"; // default is OPEN
+		    // check the status of this disconnector
+		    let measurement = self.model.getGraph([d], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source)[0];
+		    if (typeof(measurement) !== "undefined") {
+			let valueObject = self.model.getGraph([measurement], "Discrete.DiscreteValues", "DiscreteValue.Discrete").map(el => el.source)[0];
+			if (typeof(valueObject) !== "undefined") {
+			    value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
+			}
+		    }
+		    if (value === "0") {
+			return "white";
+		    } else {
+			return "black";
+		    }
+		})
+		.attr("stroke", color)
+		.attr("stroke-width", 2);
 	 swEnter.append("text")
 		.style("text-anchor", "end")
 		.attr("font-size", 8)
@@ -664,9 +701,6 @@
 					.append("g")
 					.attr("id", function(d, i) {
 					    let cn = self.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-					    if (typeof(cn) !== "undefined") {
-						self.edges.push({source: cn, target: d}); // add a new edge to the connectivity graph
-					    }
 					    let lineData = d3.select(this.parentNode).datum().lineData;
 					    let start = lineData[0];
 					    let end = lineData[lineData.length-1];
@@ -700,6 +734,11 @@
 					    }
 					    d.rotation = d3.select(this.parentNode).datum().rotation;
 					    self.nodes.push(d);
+					    if (typeof(cn) !== "undefined") {
+						let newEdge = {source: cn, target: d};
+						self.edges.push(newEdge); // add a new edge to the connectivity graph
+						self.createEdges([newEdge]);
+					    }
 					    return d.attributes[0].value;
 					})
 					.attr("class", function(d) {
@@ -758,8 +797,12 @@
 		      .y(function(d) { return d.y; })
 		      .interpolate("linear");
 	 let self = this;
-	 d3.select("svg").select("g").append("g")
-	   .attr("class", "ConnectivityNodes");
+
+	 if (d3.select("svg").select("g.ConnectivityNodes").empty()) {
+	     d3.select("svg").select("g").append("g")
+	       .attr("class", "ConnectivityNodes");
+	 }
+	 
 	 let cnUpdate = d3.select("svg").select("g.ConnectivityNodes").selectAll("g.ConnectivityNode")
 			 .data(allConnectivityNodes, function (d) {
 			     d.rotation = 0;
@@ -920,7 +963,7 @@
      }
 
      hover(hoverD) {
-	 d3.select("svg").selectAll("svg > g > g > g")
+	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
 	   .filter(function (d) {
 	       return d === hoverD;
 	   }).each(function (d) {
@@ -1053,10 +1096,11 @@
 
      /** Update the diagram based on x and y values of data */
      forceTick(selection) {
-	 if (arguments.length === 0) {
+	 if (arguments.length === 0 || selection.alpha !== undefined) {
 	     // update everything
 	     selection = d3.select("svg").selectAll("svg > g > g:not(.edges) > g");
 	 }
+	     
 	 let transform = d3.transform(d3.select("svg").select("g").attr("transform"));
 	 let xoffset = transform.translate[0];
 	 let yoffset = transform.translate[1];
@@ -1073,6 +1117,7 @@
 	 
 	 function updateElements(selection) {
 	     selection.attr("transform", function (d) {
+		 self.model.updateActiveDiagram(d, d.lineData);
 		 return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
 	     }).selectAll("g")
 		      .attr("id", function(d, i) {
@@ -1085,17 +1130,23 @@
 
      addToDiagram(object) {
 	 let m = d3.mouse(d3.select("svg").node());
-	 object.x = m[0];
+	 let transform = d3.transform(d3.select("svg").select("g").attr("transform"));
+	 let xoffset = transform.translate[0];
+	 let yoffset = transform.translate[1];
+	 let svgZoom = transform.scale[0];
+	 object.x = (m[0] - transform.translate[0]) / svgZoom;
 	 object.px = object.x;
-	 object.y = m[1];
+	 object.y = (m[1] - transform.translate[1]) / svgZoom;
 	 object.py = object.y;
 	 
-	 let lineData = [{x: m[0], y: m[1], seq:1}]; // always OK except acline
+	 let lineData = [{x: object.x, y: object.y, seq:1}]; // always OK except acline and busbar
 	 if (object.nodeName === "cim:ACLineSegment") {
-	     lineData.push({x: m[0] + 150, y: m[1], seq:2});
+	     lineData.push({x: object.x + 150, y: object.y, seq:2});
 	     self.model.addToActiveDiagram(object, lineData);
 	     let aclineEnter = self.drawACLines([object]);
 	     handleTerminals(aclineEnter);
+	     aclineEnter.on("mouseover.hover", self.hover)
+			.on("mouseout", mouseOut);
 	 }
 	 if (object.nodeName === "cim:Breaker") {
 	     self.model.addToActiveDiagram(object, lineData);
@@ -1129,7 +1180,7 @@
 	 }
 	 // handle busbars
 	 if (object.nodeName === "cim:BusbarSection") {
-	     lineData.push({x: m[0] + 150, y: m[1], seq:2});
+	     lineData.push({x: object.x + 150, y: object.y, seq:2});
 	     self.model.addToActiveDiagram(object, lineData);
 	     let terminal = self.model.getGraph([object], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true).map(el => el.target);
 	     let cn = self.model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
@@ -1150,12 +1201,14 @@
 		 }
 	     }
 	     self.createTerminals(selection);
-	     self.edges.forEach(function (link) {
-		 link.p = self.closestPoint(link.source, link.target);
-	     });
+	 }
+
+	 function mouseOut(d) {
+	     d3.select(this).selectAll("rect").remove();	     
 	 }
      }
 
+     /** Update the given links. If links is absent, update all links */     
      updateEdges(xoffset, yoffset, svgZoom, links) {
 	 let line = d3.svg.line()
 		      .x(function(d) { return d.x; })
@@ -1169,12 +1222,12 @@
 	     d3.select(graphicEdge)
 	       .select("path")
 	       .attr("d", function(d) {
-		   d.p = self.closestPoint(d.source, d.target);
-		   let tarRot = [d.target.x, d.target.y];
+		   let tarRot = {x: d.target.x, y: d.target.y};
 		   if (link.target.rotation > 0) {
 		       tarRot = rotateTerm(link.target);
 		   }
-		   let lineData = [{x: d.p[0] + d.source.x, y: d.p[1] + d.source.y}, {x: tarRot[0], y: tarRot[1]}];
+		   d.p = self.closestPoint(d.source, tarRot);
+		   let lineData = [{x: d.p[0] + d.source.x, y: d.p[1] + d.source.y}, tarRot];
 		   return line(lineData);
 	       });
 	 });
@@ -1189,10 +1242,11 @@
 	     let cRot = self.rotate({x: cx, y: cy}, term.rotation);
 	     let newX = baseX + cRot.x;
 	     let newY = baseY + cRot.y;
-	     return [newX, newY];
+	     return {x: newX, y: newY};
 	 }	 
      }
 
+     /** rotate a point of a given amount (in degrees) */
      rotate(p, rotation) {
 	 let svgroot = d3.select("svg").node();
 	 let pt = svgroot.createSVGPoint();
