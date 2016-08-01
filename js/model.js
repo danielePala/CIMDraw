@@ -1,9 +1,19 @@
 "use strict";
 
 function cimDiagramModel() {
+    //let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2010/CIM-schema-cim15#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
+    
     let model = {	
 	// load a CIM file from the local filesystem.
 	load(file, reader, callback) {
+	    /*if (arguments.length === 1) {
+		let parser = new DOMParser();
+		let data = parser.parseFromString(emptyFile, "application/xml");
+		model.buildModel(data, callback);
+		model.fileName = "new1"; //TODO: should be parametrized
+		return;
+	    }*/
+	    
 	    if (model.fileName !== file.name) {
 		reader.onload = function(e) {
                     let parser = new DOMParser();
@@ -43,16 +53,18 @@ function cimDiagramModel() {
 	    model.schemaAttributesMap = new Map();
 	    model.schemaLinksMap = new Map();
 
-	    let allObjects = data.children[0].children;
+	    let allObjects = [].filter.call(data.children[0].children, function(el) {
+		return el.attributes.getNamedItem("rdf:ID") !== null;
+	    });
 	    // build a map (UUID)->(object)
-	    model.dataMap = new Map(Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes[0].value, el]));
+	    model.dataMap = new Map(Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes.getNamedItem("rdf:ID").value, el]));
 	    // build a map (link name, target UUID)->(source objects)
 	    for (let i in allObjects) {
-		let object = allObjects[i];
+	      let object = allObjects[i];
 		if (typeof(object.attributes) !== "undefined") {
 		    let links = model.getLinks(object);
 		    for (let link of links) {
-			let key = link.localName + link.attributes[0].value;
+ 			let key = link.localName + link.attributes[0].value;
 			let val = model.linksMap.get(key);
 			if (typeof(val) === "undefined") {
 			    model.linksMap.set(key, [object]);
@@ -62,6 +74,7 @@ function cimDiagramModel() {
 		    }   
 		} 
 	    }
+	    
 	    // let's read a schema file
 	    let rdfs = "/rdf-schema/EquipmentProfileRDFSAugmented-v2_4_15-7Aug2014.rdf";
 	    d3.xml(rdfs, function(schemaData) {
@@ -80,7 +93,13 @@ function cimDiagramModel() {
 	// get a list of diagrams in the current CIM file.
 	getDiagramList() {
 	    let diagrams = model.getObjects("cim:Diagram")
-		.map(el => model.getAttribute(el, "cim:IdentifiedObject.name"))
+		.map(el => {
+		    let name = model.getAttribute(el, "cim:IdentifiedObject.name");
+		    if (typeof(name) === "undefined") {
+			model.setAttribute(el, "cim:IdentifiedObject.name", "unnamed diagram");
+		    }
+		    return model.getAttribute(el, "cim:IdentifiedObject.name");
+		})
 		.map(el => el.textContent);
 	    return diagrams;
 	},
@@ -181,18 +200,21 @@ function cimDiagramModel() {
 
 	// Get the connectivity nodes that belong to the current diagram.
 	getConnectivityNodes() {
-	    let self = this;
 	    let allConnectivityNodes = model.getObjects("cim:ConnectivityNode");
 	    let graphic = model.getGraphicObjects("cim:ConnectivityNode");
-	    let graphicSet = new Set(graphic);
-	    let nonGraphic = allConnectivityNodes.filter(el => !graphicSet.has(el));
+	    let nonGraphic = allConnectivityNodes.filter(el => graphic.indexOf(el) === -1);
 	    nonGraphic = nonGraphic.filter(function(d) {
 		let edges = model.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
 		let cnTerminals = edges.map(el => el.target);
 		// let's try to get some equipment
 		let equipments = model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
 		equipments = model.getConductingEquipmentGraph(equipments).map(el => el.source);
-		return (equipments.length > 0);
+		// let's try to get a busbar section
+		let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+		equipments = equipments.filter(el => el !== busbarSection);
+		let equipmentsSet = new Set(equipments);
+		equipments = [...equipmentsSet]; // we want uniqueness
+		return (equipments.length > 1) || (typeof(busbarSection) !== "undefined");
 	    });
 	    return graphic.concat(nonGraphic);
 	},
@@ -269,6 +291,9 @@ function cimDiagramModel() {
 
 	// add an object to the active diagram
 	addToActiveDiagram(object, lineData) {
+	    if (lineData.length < 1) {
+		return;
+	    }
 	    // create a diagram object and a diagram object point
 	    let dobj = model.cimObject("cim:DiagramObject");
 	    for (let linePoint of lineData) {
@@ -304,6 +329,9 @@ function cimDiagramModel() {
 			seq = parseInt(seqObject.innerHTML);
 		    }
 		    let actLineData = object.lineData.filter(el => el.seq === seq)[0];
+		    if (typeof(actLineData) === "undefined") {
+			console.log(object);
+		    }
 		    model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML = actLineData.x + object.x;
 		    model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML = actLineData.y + object.y;
 		}
@@ -318,7 +346,7 @@ function cimDiagramModel() {
 	    let objID = model.data.createAttribute("rdf:ID");
 	    objID.nodeValue = generateUUID();
 	    obj.setAttributeNode(objID);
-	    model.dataMap.set("#" + obj.attributes[0].value, obj);
+	    model.dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
 	    
 	    function generateUUID() {
 		var d = new Date().getTime();
@@ -335,7 +363,7 @@ function cimDiagramModel() {
 	// get all the links of a given object which are actually set.
 	getLinks(object) {
 	    return [].filter.call(object.children, function(el) {
-		return (el.attributes.length > 0) && (el.attributes[0].value.charAt(0) === "#");
+		return (el.attributes.length > 0) && (el.attributes.getNamedItem("rdf:resource").value.charAt(0) === "#");
 	    });
 	},
 
@@ -376,7 +404,7 @@ function cimDiagramModel() {
 		    invLink.remove();
 		}
 		// set the new value
-		link.attributes[0].value = "#" + target.attributes[0].value;
+		link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;
 	    }
 	    if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
 		model.trigger("setEdge", source, target);
@@ -393,7 +421,7 @@ function cimDiagramModel() {
 	    link.setAttributeNode(linkValue);
 	    source.appendChild(link);
 	    // set the new value
-	    link.attributes[0].value = "#" + target.attributes[0].value;
+	    link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;
 
 	    let key = link.localName + link.attributes[0].value;
 	    let val = model.linksMap.get(key);
@@ -428,31 +456,31 @@ function cimDiagramModel() {
 				source: targetObj,
 				target: sources[i]
 			    });
-			    resultKeys.set(targetObj.attributes[0].value + sources[i].attributes[0].value, 1);
+			    resultKeys.set(targetObj.attributes.getNamedItem("rdf:ID").value + sources[i].attributes.getNamedItem("rdf:ID").value, 1);
 			} else {
 			    result.push({
 				source: sources[i],
 				target: targetObj
 			    });
-			    resultKeys.set(sources[i].attributes[0].value + targetObj.attributes[0].value, 1);
+			    resultKeys.set(sources[i].attributes.getNamedItem("rdf:ID").value + targetObj.attributes.getNamedItem("rdf:ID").value, 1);
 			}
 		    }
 		}
 		// handle inverse relation
-		let allObjs = model.linksMap.get(invLinkName+"#"+sources[i].attributes[0].value);
+		let allObjs = model.linksMap.get(invLinkName+"#"+sources[i].attributes.getNamedItem("rdf:ID").value);
 		if (typeof(allObjs) === "undefined") {
 		    continue;
 		}
 		for (let j = 0; j < allObjs.length; j++) {
 		    if (invert === false) {
-			if (typeof(resultKeys.get(allObjs[j].attributes[0].value + sources[i].attributes[0].value)) === "undefined") {
+			if (typeof(resultKeys.get(allObjs[j].attributes.getNamedItem("rdf:ID").value + sources[i].attributes.getNamedItem("rdf:ID").value)) === "undefined") {
 			    result.push({
 				source: allObjs[j],
 				target: sources[i]
 			    });
 			}
 		    } else {
-			if (typeof(resultKeys.get(sources[i].attributes[0].value + allObjs[j].attributes[0].value)) === "undefined") {
+			if (typeof(resultKeys.get(sources[i].attributes.getNamedItem("rdf:ID").value + allObjs[j].attributes.getNamedItem("rdf:ID").value)) === "undefined") {
 			    result.push({
 				source: sources[i],
 				target: allObjs[j]
@@ -525,12 +553,12 @@ function cimDiagramModel() {
 	    let doEdges = [];
 	    if (arguments.length === 0) {
 		doEdges = model.diagramObjectPointGraphs.get(model.activeDiagramName);
-	    if (typeof(doEdges) === "undefined") {
-		let ioEdges = model.getDiagramObjectGraph();
-		let allDiagramObjects = ioEdges.map(el => el.target);
-		doEdges = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
-		model.diagramObjectPointGraphs.set(model.activeDiagramName, doEdges);
-	    }
+		if (typeof(doEdges) === "undefined") {
+		    let ioEdges = model.getDiagramObjectGraph();
+		    let allDiagramObjects = ioEdges.map(el => el.target);
+		    doEdges = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
+		    model.diagramObjectPointGraphs.set(model.activeDiagramName, doEdges);
+		}
 	    } else {
 		doEdges = model.getGraph(diagObjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
 	    }

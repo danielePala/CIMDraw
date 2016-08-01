@@ -93,6 +93,14 @@
 	 $("#cim-diagram-elements").show();
      });
 
+     // listen to 'addToDiagram' event 
+     self.parent.on("addToDiagram", function() {
+	 if (self.status === "DRAG") {
+	     self.disableAll();
+	     self.enableDrag();
+	 }
+     });
+
      // modality for drag+zoom
      d3.select("body")
        .on("keydown", function() {
@@ -199,8 +207,8 @@
 	   .on("click", function (d) {
 	       let hashComponents = window.location.hash.substring(1).split("/");
 	       let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-	       if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
-		       riot.route(basePath + "/" + d.attributes[0].value);
+	       if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
+		       riot.route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
 	       }
 	   });
 	 if (typeof(zoomComp) === "undefined") {
@@ -247,6 +255,29 @@
 	       let svg = d3.select("svg");
 	       let path = svg.selectAll("svg > path");
 	       let circle = svg.selectAll("svg > circle");
+	       
+	       // TEST: directly connect terminals
+	       if (typeof(termToChange) !== "undefined") {
+		   let cn = opts.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		   d3.select("svg").selectAll("svg > path").attr("d", null);
+		   d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
+		   
+		   if (typeof(cn) === "undefined") {
+		       cn = opts.model.cimObject("cim:ConnectivityNode");
+		       opts.model.setAttribute(cn, "cim:IdentifiedObject.name", "new1");
+		   }
+		   d3.select("svg").on("mousemove", null);
+		   // update the model
+		   let schemaLinks = opts.model.getSchemaLinks(termToChange.localName);
+		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
+		   opts.model.setLink(termToChange, schemaLink, cn);
+		   opts.model.setLink(d, schemaLink, cn);
+		   self.parent.drawConnectivityNodes([cn]); // test
+		   self.parent.forceTick();
+		   termToChange = undefined;
+		   return;
+	       }
+
 	       svg.on("mousemove", mousemoved);
 	       termToChange = d;
 	       function mousemoved() {

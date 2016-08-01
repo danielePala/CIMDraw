@@ -26,7 +26,7 @@
 	    <div class="row center-block">
 		<div class="col-md-12" id="cim-file-input-container">
 		    <form enctype="multipart/form-data" action="/api/upload" method="POST">
-			<input id="cim-file-input" name="cim-file" type="file" class="file" multiple data-show-preview="false" data-show-upload="false">
+			<input id="cim-file-input" name="cim-file" type="file" class="file" multiple data-show-preview="false" data-show-upload="true">
 		    </form>
 		</div>
 	    </div>
@@ -132,17 +132,6 @@
 		 });
 	     }
 	 });
-
-	 /*
-	 self.cimModel.on("changedDiagram", function() {
-	     let hashComponents = window.location.hash.split("/");
-	     let end = window.location.hash.length;
-	     if (hashComponents.length === 4) {
-		 end = window.location.hash.lastIndexOf("/");
-	     }
-	     $('.selectpicker').selectpicker('val', decodeURI(window.location.hash.substring(0, end)));
-	 });
-	 */
 
 	 // here we show a certain diagram
 	 riot.route('/*/diagrams/*', function(file, name) {	

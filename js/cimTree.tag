@@ -46,7 +46,7 @@
      });
 
      self.parent.on("showDiagram", function(file, name, element) {
-	 if (name !== self.diagramName) {
+	 if (decodeURI(name) !== self.diagramName) {
 	     self.render(name);
 	 }
 	 if (typeof(element) !== "undefined") {
@@ -69,7 +69,7 @@
      self.model.on("setAttribute", function(object, attrName, value) {
 	 if (attrName === "cim:IdentifiedObject.name") {
 	     let type = object.localName;
-	     let target = d3.select("div.tree").selectAll("div.tree > ul > li." + type + "s > ul > li > ul#" + object.attributes[0].value);
+	     let target = d3.select("div.tree").selectAll("div.tree > ul > li." + type + "s > ul > li > ul#" + object.attributes.getNamedItem("rdf:ID").value);
 	     if (target.empty() === false) {
 		 let a = d3.select(target.node().parentNode).select("a");
 		 a.html(value);
@@ -86,7 +86,8 @@
      render(diagramName) {
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
-	 self.createTree(self.model.getGraphicObjects);
+	 $("#showAllObjects").prop("checked", false);
+	 $("#showAllObjects").change();
      }
 
      createTree(getObjects) {
@@ -94,30 +95,30 @@
 	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
 
 	 let allBusbarSections = getObjects("cim:BusbarSection");
-	 console.log("extracted busbarSections");
+	 console.log("[" + Date.now() + "] extracted busbarSections");
 	 let allPowerTransformers = getObjects("cim:PowerTransformer");
-	 console.log("extracted power transformers");
+	 console.log("[" + Date.now() + "] extracted power transformers");
 	 let allPowerTransformerEnds = getObjects("cim:PowerTransformerEnd");
-	 console.log("extracted power transformer ends");
+	 console.log("[" + Date.now() + "] extracted power transformer ends");
 	 let allACLines = getObjects("cim:ACLineSegment");
-	 console.log("extracted acLines");
+	 console.log("[" + Date.now() + "] extracted acLines");
 	 let allBreakers = getObjects("cim:Breaker");
-	 console.log("extracted breakers");
+	 console.log("[" + Date.now() + "] extracted breakers");
 	 let allDisconnectors = getObjects("cim:Disconnector");
-	 console.log("extracted disconnectors");
+	 console.log("[" + Date.now() + "] extracted disconnectors");
 	 let allLoadBreakSwitches = getObjects("cim:LoadBreakSwitch");
-	 console.log("extracted load break switches");
+	 console.log("[" + Date.now() + "] extracted load break switches");
 	 let allEnergySources = getObjects("cim:EnergySource")
 	     .concat(getObjects("cim:SynchronousMachine"));
-	 console.log("extracted energy sources");
+	 console.log("[" + Date.now() + "] extracted energy sources");
 	 let allEnergyConsumers = getObjects("cim:EnergyConsumer")
 	                              .concat(getObjects("cim:ConformLoad"))
 	                              .concat(getObjects("cim:NonConformLoad"));
-	 console.log("extracted energy consumers");
+	 console.log("[" + Date.now() + "] extracted energy consumers");
 	 let allSubstations = self.model.getEquipmentContainers("cim:Substation");
-	 console.log("extracted substations");
+	 console.log("[" + Date.now() + "] extracted substations");
 	 let allLines = self.model.getEquipmentContainers("cim:Line");
-	 console.log("extracted lines");
+	 console.log("[" + Date.now() + "] extracted lines");
 	 
 	 let cimNetwork = d3.select("div.tree > ul.CIMNetwork");
 	 this.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
@@ -131,7 +132,8 @@
 	 this.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 // TODO: add these as sub-elements of transformer 
 	 this.createElements(cimNetwork, "PowerTransformerEnd", "Transformer Windings", allPowerTransformerEnds);
-	 this.createElements(cimNetwork, "Line", "Lines", allLines);	 
+	 this.createElements(cimNetwork, "Line", "Lines", allLines);
+	 console.log("[" + Date.now() + "] drawn tree");
      }
 
      createElements(cimNetwork, name, printName, data) {
@@ -163,7 +165,7 @@
 	 let elementTopContainer = elements
 		.selectAll("li." + name)
 		.data(data, function(d) {
-		    return d.attributes[0].value;
+		    return d.attributes.getNamedItem("rdf:ID").value;
 		})
 		.enter()
 		.append("li")
@@ -174,14 +176,14 @@
 			    .attr("role", "button")
 			    .attr("data-toggle", "collapse")
 			    .attr("href", function(d) {
-				return "#" + d.attributes[0].value;
+				return "#" + d.attributes.getNamedItem("rdf:ID").value;
 			    })
 	    		    .on("click", function (d) {
 				// change address to 'this object'
 				let hashComponents = window.location.hash.substring(1).split("/");
 				let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-				if (window.location.hash.substring(1) !== basePath + "/" + d.attributes[0].value) {
-				    riot.route(basePath + "/" + d.attributes[0].value);
+				if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
+				    riot.route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
 				}
 				// check if we are changing some link
 				let linkToChange = d3.select("#cimTarget");
@@ -209,7 +211,7 @@
 	 let elementEnter = elementTopContainer
 		.append("ul")
 		.attr("id", function(d) {
-		    return d.attributes[0].value;
+		    return d.attributes.getNamedItem("rdf:ID").value;
 		})
 		.attr("class", "collapse");
 	 elementEnter
@@ -268,7 +270,8 @@
 		    .on("click", function (d) {
 			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
 			let target = cimModel.getLink(source, "cim:" + d.attributes[0].value.substring(1));
-			let targetUUID = target.attributes[0].value;
+			let targetUUID = target.attributes.getNamedItem("rdf:resource").value;
+			console.log(targetUUID);
 			
 			if ($(targetUUID).parent().parent().is(":visible") === false) {
 			    $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
@@ -310,7 +313,7 @@
      }
 
      moveTo(uuid) {
-	 let target = null;
+	 let target = null, targetChild = null;
 	 let hoverD = self.model.getObject(uuid);
 	 // handle connectivity nodes
 	 if (hoverD.nodeName === "cim:ConnectivityNode") {
@@ -320,11 +323,17 @@
 	     if (typeof(busbarSection) === "undefined") {
 		 return;
 	     }
-	     let busbarUUID = busbarSection.attributes[0].value;
-	     target = d3.select(".tree").select("#" + busbarUUID).node().parentNode;
+	     let busbarUUID = busbarSection.attributes.getNamedItem("rdf:ID").value;
+
+	     targetChild = d3.select(".tree").select("#" + busbarUUID).node(); 
 	 } else {
-	     target = d3.select(".tree").select("#" + uuid).node().parentNode;
+	     targetChild = d3.select(".tree").select("#" + uuid).node();
 	 }
+
+	 if (targetChild === null) {
+	     return;
+	 }
+	 target = targetChild.parentNode;
 	 
 	 let targetParent = $(target).parent();
 	 d3.select(".CIMNetwork").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");

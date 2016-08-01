@@ -22,7 +22,7 @@
 
      // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
-	 if (name !== self.diagramName) {
+	 if (decodeURI(name) !== self.diagramName) {
              self.render(name);
 	 }
          if (typeof(element) !== "undefined") {
@@ -57,7 +57,6 @@
 	 let xAxis = d3.svg.axis().scale(xScale).orient("bottom");
 	 d3.select("svg").selectAll("#yAxisG").call(yAxis);
 	 d3.select("svg").selectAll("#xAxisG").call(xAxis);
-	 self.updateEdges(newx, newy, newZoom, []);
      });
 
      // listen to 'createObject' event from model
@@ -69,13 +68,13 @@
      self.model.on("setAttribute", function(object, attrName, value) {
 	 if (attrName === "cim:IdentifiedObject.name") {
 	     let type = object.localName;
-	     let uuid = object.attributes[0].value;
+	     let uuid = object.attributes.getNamedItem("rdf:ID").value;
 	     // special case for busbars
 	     if (object.nodeName === "cim:BusbarSection") {
 		 let terminal = self.model.getConductingEquipmentGraph([object]).map(el => el.target)[0];
 		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 		 type = cn.localName;
-		 uuid = cn.attributes[0].value;
+		 uuid = cn.attributes.getNamedItem("rdf:ID").value;
 	     }
 	     let types = d3.select("svg").selectAll("svg > g > g." + type + "s");
 	     let target = types.select("#" + uuid);
@@ -103,55 +102,58 @@
 	 d3.select("svg").select("g").selectAll("g:not(.edges)").remove();
 	 self.nodes = [];
 	 self.edges = [];
-	 
+	 self.nodeGraphic = new Map(); 
+	 self.termGraphic = new Map(); 
+	 self.edgeGraphic = new Map(); 
+
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
 	 let allConnectivityNodes = self.model.getConnectivityNodes();
-	 console.log("extracted connectivity nodes");
+	 console.log("[" + Date.now() + "] extracted connectivity nodes");
 	 let allACLines = self.model.getGraphicObjects("cim:ACLineSegment");
-	 console.log("extracted acLines");
+	 console.log("[" + Date.now() + "] extracted acLines");
 	 let allBreakers = self.model.getGraphicObjects("cim:Breaker");
-	 console.log("extracted breakers");
+	 console.log("[" + Date.now() + "] extracted breakers");
 	 let allDisconnectors = self.model.getGraphicObjects("cim:Disconnector");
-	 console.log("extracted disconnectors");
+	 console.log("[" + Date.now() + "] extracted disconnectors");
 	 let allLoadBreakSwitches = self.model.getGraphicObjects("cim:LoadBreakSwitch");
-	 console.log("extracted load break switches");
+	 console.log("[" + Date.now() + "] extracted load break switches");
 	 let allEnergySources = self.model.getGraphicObjects("cim:EnergySource")
 	     .concat(self.model.getGraphicObjects("cim:SynchronousMachine"));
-	 console.log("extracted energy sources");
+	 console.log("[" + Date.now() + "] extracted energy sources");
 	 let allEnergyConsumers = self.model.getGraphicObjects("cim:EnergyConsumer")
 				      .concat(self.model.getGraphicObjects("cim:ConformLoad"))
 				      .concat(self.model.getGraphicObjects("cim:NonConformLoad"));
-	 console.log("extracted energy consumers");
+	 console.log("[" + Date.now() + "] extracted energy consumers");
 	 let allPowerTransformers = self.model.getGraphicObjects("cim:PowerTransformer");
-	 console.log("extracted power transformers");
+	 console.log("[" + Date.now() + "] extracted power transformers");
 	 let allBusbarSections = self.model.getGraphicObjects("cim:BusbarSection");
-	 console.log("extracted busbarSections");
+	 console.log("[" + Date.now() + "] extracted busbarSections");
 
 	 // AC Lines
 	 let aclineEnter = this.drawACLines(allACLines);
-	 console.log("drawn acLines");
+	 console.log("[" + Date.now() + "] drawn acLines");
 	 // breakers
 	 let breakerEnter = this.drawBreakers(allBreakers);
-	 console.log("drawn breakers");
+	 console.log("[" + Date.now() + "] drawn breakers");
 	 // disconnectors
 	 let discEnter = this.drawDisconnectors(allDisconnectors);
-	 console.log("drawn disconnectors");
+	 console.log("[" + Date.now() + "] drawn disconnectors");
 	 // load break switches
 	 let lbsEnter = this.drawLoadBreakSwitches(allLoadBreakSwitches);
-	 console.log("drawn load break switches");
+	 console.log("[" + Date.now() + "] drawn load break switches");
 	 // energy sources
 	 let ensrcEnter = this.drawEnergySources(allEnergySources);
-	 console.log("drawn energy sources");
+	 console.log("[" + Date.now() + "] drawn energy sources");
 	 // energy consumers
 	 let enconsEnter = this.drawEnergyConsumers(allEnergyConsumers);
-	 console.log("drawn energy consumers");
+	 console.log("[" + Date.now() + "] drawn energy consumers");
 	 // power transformers
 	 let trafoEnter = this.drawPowerTransformers(allPowerTransformers);
-	 console.log("drawn power transformers");
+	 console.log("[" + Date.now() + "] drawn power transformers");
 	 // connectivity nodes
 	 let cnEnter = this.drawConnectivityNodes(allConnectivityNodes);
-	 console.log("drawn connectivity nodes");
+	 console.log("[" + Date.now() + "] drawn connectivity nodes");
 
 	 this.nodes = allConnectivityNodes
 		.concat(allACLines)
@@ -165,28 +167,28 @@
 	 // ac line terminals
 	 let termSelection = this.createTerminals(aclineEnter);
 	 this.createMeasurements(termSelection);
-	 console.log("drawn acline terminals");
+	 console.log("[" + Date.now() + "] drawn acline terminals");
 	 // breaker terminals
 	 this.createTerminals(breakerEnter);
-	 console.log("drawn breaker terminals");
+	 console.log("[" + Date.now() + "] drawn breaker terminals");
 	 // disconnector terminals
 	 this.createTerminals(discEnter);
-	 console.log("drawn disconnector terminals");
+	 console.log("[" + Date.now() + "] drawn disconnector terminals");
 	 // load break switch terminals
 	 this.createTerminals(lbsEnter);
-	 console.log("drawn load break switch terminals");
+	 console.log("[" + Date.now() + "] drawn load break switch terminals");
 	 // energy source terminals
 	 termSelection = this.createTerminals(ensrcEnter, 50);
 	 this.createMeasurements(termSelection);
-	 console.log("drawn energy source terminals");
+	 console.log("[" + Date.now() + "] drawn energy source terminals");
 	 // energy consumer terminals
 	 termSelection = this.createTerminals(enconsEnter);
 	 this.createMeasurements(termSelection);
-	 console.log("drawn energy consumer terminals");
+	 console.log("[" + Date.now() + "] drawn energy consumer terminals");
 	 // power transformer terminals
 	 termSelection = this.createTerminals(trafoEnter, 50);
 	 this.createMeasurements(termSelection);
-	 console.log("drawn power transformer terminals");
+	 console.log("[" + Date.now() + "] drawn power transformer terminals");
 
 	 // handle mouseover
 	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
@@ -201,7 +203,7 @@
 	 function dragend(d) {
 	     let dobjs = self.model.getDiagramObjectGraph([d]);
 	     if (dobjs.length > 0) {
-		 self.moveTo(d.attributes[0].value);
+		 self.moveTo(d.attributes.getNamedItem("rdf:ID").value);
 	     } else {
 		 // add object to diagram
 		 self.addToDiagram(d);
@@ -223,14 +225,14 @@
 	 d3.select("svg").select("g > g.edges")
 	   .selectAll("g.edge")
 	   .data(edges, function(d) {
-	       return d.source.attributes[0].value+d.target.attributes[0].value;
+	       return d.source.attributes.getNamedItem("rdf:ID").value+d.target.attributes.getNamedItem("rdf:ID").value;
 	   })
 	   .enter()
 	   .append("g")
 	   .attr("class", "edge")
 	   .attr("id", function(d) {
 	       self.edgeGraphic.set(d, this);
-	       return d.source.attributes[0].value+d.target.attributes[0].value;
+	       return d.source.attributes.getNamedItem("rdf:ID").value+d.target.attributes.getNamedItem("rdf:ID").value;
 	   })
 	   .append("path")
 	   .attr("fill", "none")
@@ -255,20 +257,19 @@
 		     let unitSymbol = self.model.getEnum(measurement, "cim:Measurement.unitSymbol").attributes[0].textContent.split("#")[1].split(".")[1];
 		     let valueObject = self.model.getGraph([measurement], "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source)[0];
 		     let actLine = "";
+		     let value = "n.a."
 		     if (typeof(valueObject) !== "undefined") {
-			 let value = "n.a."
 			 if(typeof(self.model.getAttribute(valueObject, "cim:AnalogValue.value")) !== "undefined") {
 			     value = self.model.getAttribute(valueObject, "cim:AnalogValue.value").textContent;
 			 }
-			 
-			 actLine = actLine + type;
-			 actLine = actLine + " (phase: " + phases + ")";
-			 actLine = actLine + ": ";
-			 actLine = actLine + parseFloat(value).toFixed(2);
-			 actLine = actLine + " [" + unitMultiplier + unitSymbol + "]";
-			 actLine = actLine + "<br>";
-			 tooltipLines.push(actLine);
 		     }
+		     actLine = actLine + type;
+		     actLine = actLine + " (phase: " + phases + ")";
+		     actLine = actLine + ": ";
+		     actLine = actLine + parseFloat(value).toFixed(2);
+		     actLine = actLine + " [" + unitMultiplier + unitSymbol + "]";
+		     actLine = actLine + "<br>";
+		     tooltipLines.push(actLine);   
 		 }
 		 tooltipLines.sort();
 		 for (let i in tooltipLines) {
@@ -289,8 +290,13 @@
 		 }
 		 tooltip = tooltip + "<b>Power flow results</b><br><br>";
 		 for (let sv of svs) {
-		     let p = self.model.getAttribute(sv, "cim:SvPowerFlow.p").textContent;
-		     let q = self.model.getAttribute(sv, "cim:SvPowerFlow.q").textContent;
+		     let p = 0.0, q = 0.0;
+		     if (typeof(self.model.getAttribute(sv, "cim:SvPowerFlow.p")) !== "undefined") { 
+			 p = self.model.getAttribute(sv, "cim:SvPowerFlow.p").textContent;
+		     }
+		     if (typeof(self.model.getAttribute(sv, "cim:SvPowerFlow.q")) !== "undefined") {
+			 q = self.model.getAttribute(sv, "cim:SvPowerFlow.q").textContent;
+		     }
 		     let actLine = "Active Power: " + parseFloat(p).toFixed(2) + " [kW]";
 		     actLine = actLine + "<br>";
 		     actLine = actLine + "Reactive power: " + parseFloat(q).toFixed(2) + " [kVAr]";
@@ -327,13 +333,21 @@
 	     } 
 	     let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
 	     if (points.length > 0) {
+		 if (typeof(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.xPosition")) === "undefined") {
+		     console.log(points[0]);
+		 }
 		 d.x = parseInt(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.xPosition").innerHTML);
 		 d.y = parseInt(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.yPosition").innerHTML);
 		 for (let point in points) {
+		     let seqNum = 1;
+		     let seqAttr = self.model.getAttribute(points[point], "cim:DiagramObjectPoint.sequenceNumber");
+		     if (typeof(seqAttr) !== "undefined") {
+			 seqNum = parseInt(seqAttr.innerHTML);
+		     }
 		     lineData.push({
 			 x: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.xPosition").innerHTML) - d.x,
 			 y: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.yPosition").innerHTML) - d.y,
-			 seq: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.sequenceNumber").innerHTML)
+			 seq: seqNum // x and y are mandatory, seq is optional so we must handle the cases when it is absent
 		     });
 		 }
 		 lineData.sort(function(a, b){return a.seq-b.seq});
@@ -376,13 +390,13 @@
 	 
 	 let selection = d3.select("svg").select("g." + types).selectAll("g." + type)
 			   .data(data, function(d) {
-			       return d.attributes[0].value;
+			       return d.attributes.getNamedItem("rdf:ID").value;
 			   })
 			   .enter()
 			   .append("g")
 			   .attr("class", type)
 			   .attr("id", function(d) {
-			       return d.attributes[0].value;
+			       return d.attributes.getNamedItem("rdf:ID").value;
 			   })
 			   .on("contextmenu", d3.contextMenu(menu));
 	 return selection; 
@@ -600,18 +614,18 @@
 			.attr("class", type + "s");
 	 }
 
-	 let selection = substations.selectAll("g#" + container.attributes[0].value);
+	 let selection = substations.selectAll("g#" + container.attributes.getNamedItem("rdf:ID").value);
 	 if (selection.empty()) {
-	     selection = substations.selectAll("g#" + container.attributes[0].value)
+	     selection = substations.selectAll("g#" + container.attributes.getNamedItem("rdf:ID").value)
 				    .data([container], function(d) {
-				        return d.attributes[0].value;
+				        return d.attributes.getNamedItem("rdf:ID").value;
 				    })
 				    .enter()
 	                            .append("g")
 	                            .attr("class", type)
 	                            .attr("id", function(d) {
 					self.calculateContainer(d);
-					return d.attributes[0].value;
+					return d.attributes.getNamedItem("rdf:ID").value;
 				    });
 
 	     	 selection.append("rect")
@@ -652,7 +666,7 @@
 	 let allChildNodes = [];
 	 let equipments = self.model.getGraph([d], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
 	 for (let equipment of equipments) {
-	     let childNode = d3.select("svg").select("#" + equipment.attributes[0].value);
+	     let childNode = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value);
 	     childNode.select("path").attr("stroke-width", 30);
 	     allChildNodes.push(childNode.node());
 	 }
@@ -674,7 +688,7 @@
 		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 		 equipment = cn;
 	     }
-	     allChildNodes.push(d3.select("svg").select("#" + equipment.attributes[0].value).node());
+	     allChildNodes.push(d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value).node());
 	 }
 	 d.x = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().x+d3.select(dd).datum().x}) - 30;
 	 d.y = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().y+d3.select(dd).datum().y}) - 30;
@@ -734,12 +748,11 @@
 					    }
 					    d.rotation = d3.select(this.parentNode).datum().rotation;
 					    self.nodes.push(d);
-					    if (typeof(cn) !== "undefined") {
+					    if (typeof(cn) !== "undefined" && typeof(self.nodeGraphic.get(cn)) !== "undefined") {
 						let newEdge = {source: cn, target: d};
 						self.edges.push(newEdge); // add a new edge to the connectivity graph
-						self.createEdges([newEdge]);
 					    }
-					    return d.attributes[0].value;
+					    return d.attributes.getNamedItem("rdf:ID").value;
 					})
 					.attr("class", function(d) {
 					    return d.localName;
@@ -776,10 +789,10 @@
 		     termToChange.x = eqX + end.x;
 		     termToChange.y = eqY + end.y;			
 		 }
-		 if(typeof(cnToChange) !== "undefined") {
+		 /*if(typeof(cnToChange) !== "undefined") {
 		     cnToChange.x = termToChange.x;
 		     cnToChange.y = termToChange.y + 20;
-		 }
+		 }*/
 	     }
 	 }
 
@@ -796,129 +809,116 @@
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; })
 		      .interpolate("linear");
-	 let self = this;
-
+	 
+	 for (let d of allConnectivityNodes) {
+	     d.x = undefined;
+	     d.y = undefined;
+	     d.rotation = 0;
+	     let lineData = [];
+	     let xcalc = 0;
+	     let ycalc = 0;
+	     // extract equipments
+	     // filter by lineData, because there may be some elements which are on the diagram but we don't draw
+	     let equipments = self.model.getEquipments(d).filter(el => typeof(el.lineData) !== "undefined" || el.localName === "BusbarSection");
+	     // let's try to get a busbar section
+	     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+	     let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target);
+	     if (dobjs.length === 0) {
+		 if (typeof(busbarSection) !== "undefined") {
+		     dobjs = self.model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
+		     let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation");
+		     if (typeof(rotation) !== "undefined") {
+			 d.rotation = parseInt(rotation.innerHTML);
+		     }
+		 } else if (equipments.length > 0) {
+		     let points = [];
+		     for (let eq of equipments) {
+			 if (typeof(eq.lineData) === "undefined") {
+			     console.log(eq);
+			 }
+			 let endx = eq.x + eq.lineData[eq.lineData.length-1].x;
+			 let endy = eq.y + eq.lineData[eq.lineData.length-1].y;
+			 points.push({x: eq.x, y: eq.y, eq: eq}, {x: endx, y: endy, eq: eq});
+		     }
+		     let min = Infinity;
+		     let p1min = points[0], p2min = points[0];
+		     for (let p1 of points) {
+			 for (let p2 of points) {
+			     if (p1.eq === p2.eq) {
+				 continue;
+			     }
+			     let dist = self.distance2(p1, p2);
+			     if (dist < min) {
+				 min = dist;
+				 p1min = p1;
+				 p2min = p2;
+			     }
+			 }
+		     }
+		     xcalc = (p1min.x+p2min.x)/2;
+		     ycalc = (p1min.y+p2min.y)/2;
+		 }
+	     } else {
+		 let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation"); 
+		 if (typeof(rotation) !== "undefined") {
+		     d.rotation = parseInt(rotation.innerHTML);
+		 }
+	     }
+	     let points = self.model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
+	     if (points.length > 0) {
+		 for (let point of points) {
+		     let seqNum = self.model.getAttribute(point, "cim:DiagramObjectPoint.sequenceNumber");
+		     if (typeof(seqNum) === "undefined") {
+			 seqNum = 1;
+		     } else {
+			 seqNum = parseInt(seqNum.innerHTML);
+		     }
+		     lineData.push({
+			 x: parseInt(self.model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML),
+			 y: parseInt(self.model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML),
+			 seq: seqNum
+		     });
+		 }
+		 lineData.sort(function(a, b){return a.seq-b.seq});
+		 d.x = lineData[0].x;
+		 d.y = lineData[0].y;
+		 // relative values
+		 for (let point of lineData) {
+		     point.x = point.x - d.x;
+		     point.y = point.y - d.y;
+		 }
+	     } else {
+		 lineData.push({x:-5, y:-5, seq:1});
+		 lineData.push({x:5, y:-5, seq:2});
+		 lineData.push({x:5, y:5, seq:3});
+		 lineData.push({x:-5, y:5, seq:4});
+		 lineData.push({x:-5, y:-5, seq:5});
+		 d.x = xcalc;
+		 d.y = ycalc;
+	     }
+	     d.lineData = lineData;
+	 }
+	 
+	 
 	 if (d3.select("svg").select("g.ConnectivityNodes").empty()) {
 	     d3.select("svg").select("g").append("g")
 	       .attr("class", "ConnectivityNodes");
 	 }
 	 
-	 let cnUpdate = d3.select("svg").select("g.ConnectivityNodes").selectAll("g.ConnectivityNode")
-			 .data(allConnectivityNodes, function (d) {
-			     d.rotation = 0;
-			     let lineData = [];
-			     let xcalc = 0;
-			     let ycalc = 0;
-			     let equipments = self.model.getEquipments(d);
-			     // let's try to get a busbar section
-			     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-			     let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target);
-			     if (dobjs.length === 0) {
-				 if (typeof(busbarSection) != "undefined") {
-				     dobjs = self.model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
-				     let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation");
-				     if (typeof(rotation) !== "undefined") {
-					 d.rotation = parseInt(rotation.innerHTML);
-				     }
-				 } else if (equipments.length > 0) {
-				     if (equipments.length === 1) {
-					 if (typeof(equipments[0].x) === "undefined") { 
-					 } else {
-					     xcalc = equipments[0].lineData[0].x + equipments[0].x;
-					     ycalc = equipments[0].lineData[0].y + equipments[0].y;
-					 }
-				     } else {
-					 if (typeof(equipments[0].x) === "undefined" || typeof(equipments[1].x) === "undefined") {
-					 } else {
-					     let x1 = equipments[0].x;
-					     let y1 = equipments[0].y;
-					     let x2 = equipments[1].x;
-					     let y2 = equipments[1].y;
-					     let start1 = equipments[0].lineData[0];
-					     let end1 = equipments[0].lineData[equipments[0].lineData.length-1];
-					     let start2 = equipments[1].lineData[0];
-					     let end2 = equipments[1].lineData[equipments[1].lineData.length-1];
-
-					     let start1x = start1.x + x1;
-					     let start1y = start1.y + y1;
-					     let end1x = end1.x + x1;
-					     let end1y = end1.y + y1;
-					     let start2x = start2.x + x2;
-					     let start2y = start2.y + y2;
-					     let end2x = end2.x + x2;
-					     let end2y = end2.y + y2;
-
-					     let d1 = ((start1x-start2x)*(start1x-start2x))+((start1y-start2y)*(start1y-start2y));
-					     let d2 = ((start1x-end2x)*(start1x-end2x))+((start1y-end2y)*(start1y-end2y));
-					     let d3 = ((end1x-start2x)*(end1x-start2x))+((end1y-start2y)*(end1y-start2y));
-					     let d4 = ((end1x-end2x)*(end1x-end2x))+((end1y-end2y)*(end1y-end2y));
-
-					     let min = Math.min(d1, d2, d3, d4);
-					     if (min === d1) {
-						 xcalc = (start1x+start2x)/2;
-						 ycalc = (start1y+start2y)/2;
-					     } else if (min === d2) {
-						 xcalc = (start1x+end2x)/2;
-						 ycalc = (start1y+end2y)/2;
-					     } else if (min === d3) {
-						 xcalc = (end1x+start2x)/2;
-						 ycalc = (end1y+start2y)/2;
-					     } else if (min === d4) {
-						 xcalc = (end1x+end2x)/2;
-						 ycalc = (end1y+end2y)/2;
-					     }
-					 }
-				     }
-				 }
-			     } else {
-				 let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation"); 
-				 if (typeof(rotation) !== "undefined") {
-				     d.rotation = parseInt(rotation.innerHTML);
-				 }
-			     }
-			     let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
-			     if (points.length > 0) {
-				 for (let point in points) {
-				     let seqNum = self.model.getAttribute(points[point], "cim:DiagramObjectPoint.sequenceNumber");
-				     if (typeof(seqNum) === "undefined") {
-					 seqNum = 0;
-				     } else {
-					 seqNum = parseInt(seqNum.innerHTML);
-				     }
-				     lineData.push({
-					 x: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.xPosition").innerHTML),
-					 y: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.yPosition").innerHTML),
-					 seq: seqNum
-				     });
-				 }
-				 lineData.sort(function(a, b){return a.seq-b.seq});
-				 d.x = lineData[0].x;
-				 d.y = lineData[0].y;
-				 // relative values
-				 for (let point of lineData) {
-				     point.x = point.x - d.x;
-				     point.y = point.y - d.y;
-				 }
-			     } else {
-				 lineData.push({x:-5, y:-5, seq:1});
-				 lineData.push({x:5, y:-5, seq:2});
-				 lineData.push({x:5, y:5, seq:3});
-				 lineData.push({x:-5, y:5, seq:4});
-				 lineData.push({x:-5, y:-5, seq:5});
-				 d.x = xcalc;
-				 d.y = ycalc;
-			     }
-			     d.lineData = lineData;
-			     return d.attributes[0].value;
-			 });
+	 let cnUpdate = d3.select("svg")
+			  .select("g.ConnectivityNodes")
+			  .selectAll("g.ConnectivityNode")
+			  .data(allConnectivityNodes, function (d) {
+			      return d.attributes.getNamedItem("rdf:ID").value;
+			  });
 
 	 let cnEnter = cnUpdate.enter()
-			 .append("g")
-			 .attr("class", "ConnectivityNode")
-			 .attr("id", function(d) {
-			     return d.attributes[0].value;
-			 });
-
+			       .append("g")
+			       .attr("class", "ConnectivityNode")
+			       .attr("id", function(d) {
+				   return d.attributes.getNamedItem("rdf:ID").value;
+			       });
+	 
 	 cnUpdate.select("path").attr("d", function(d) {
 	     return line(d3.select(this.parentNode).datum().lineData);
 	 });
@@ -929,10 +929,21 @@
 		})
 		.attr("stroke", "black")
 		.attr("stroke-width", 2);
-
+	 
+	 // for busbars, show the name
 	 cnEnter.append("text")
 	        .style("text-anchor", "end")
-	        .attr("font-size", 8)
+	        .attr("font-size", 8);
+	 updateText(cnEnter.select("text"));
+	 updateText(cnUpdate.select("text"));
+
+	 function updateText(selection) {
+	     selection.filter(function(d) {
+		 let equipments = self.model.getEquipments(d);
+		 // let's try to get a busbar section
+		 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+		 return typeof(busbarSection) !== "undefined";
+	     })
 	        .attr("x", function(d) {
 		    let lineData = d3.select(this.parentNode).datum().lineData;
 		    let end = lineData[lineData.length-1];
@@ -947,17 +958,20 @@
 		    let equipments = self.model.getEquipments(d);
 		    // let's try to get a busbar section
 		    let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-		    if (typeof(busbarSection) != "undefined") {    
+		    if (typeof(busbarSection) !== "undefined") {    
 			let name = self.model.getAttribute(busbarSection, "cim:IdentifiedObject.name");
 			if (typeof(name) !== "undefined") {
 			    return name.innerHTML;
 			}
 		    }
 		    return "";
-		});
+		})  
+	 };
 	 
 	 cnEnter.each(function(d) {
-	     self.nodeGraphic.set(d, this);
+	     if (typeof(d.x) !== "undefined") {
+		 self.nodeGraphic.set(d, this);
+	     }
 	 });
 	 return cnEnter;
      }
@@ -1123,7 +1137,7 @@
 		      .attr("id", function(d, i) {
 			  d.x = d3.select(this.parentNode).datum().x + parseInt(d3.select(this.firstChild).attr("cx"));
 			  d.y = d3.select(this.parentNode).datum().y + parseInt(d3.select(this.firstChild).attr("cy"));
-			  return d.attributes[0].value;
+			  return d.attributes.getNamedItem("rdf:ID").value;
 		      });
 	 };
      }
@@ -1134,14 +1148,14 @@
 	 let xoffset = transform.translate[0];
 	 let yoffset = transform.translate[1];
 	 let svgZoom = transform.scale[0];
-	 object.x = (m[0] - transform.translate[0]) / svgZoom;
+	 object.x = (m[0] - xoffset) / svgZoom;
 	 object.px = object.x;
-	 object.y = (m[1] - transform.translate[1]) / svgZoom;
+	 object.y = (m[1] - yoffset) / svgZoom;
 	 object.py = object.y;
 	 
-	 let lineData = [{x: object.x, y: object.y, seq:1}]; // always OK except acline and busbar
+	 let lineData = [{x: 0, y: 0, seq:1}]; // always OK except acline and busbar
 	 if (object.nodeName === "cim:ACLineSegment") {
-	     lineData.push({x: object.x + 150, y: object.y, seq:2});
+	     lineData.push({x: 150, y: 0, seq:2});
 	     self.model.addToActiveDiagram(object, lineData);
 	     let aclineEnter = self.drawACLines([object]);
 	     handleTerminals(aclineEnter);
@@ -1180,24 +1194,40 @@
 	 }
 	 // handle busbars
 	 if (object.nodeName === "cim:BusbarSection") {
-	     lineData.push({x: object.x + 150, y: object.y, seq:2});
+	     lineData.push({x: 150, y: 0, seq:2});
 	     self.model.addToActiveDiagram(object, lineData);
 	     let terminal = self.model.getGraph([object], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true).map(el => el.target);
 	     let cn = self.model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 	     self.drawConnectivityNodes([cn]);
-	     self.edges.forEach(function (link) {
-		 link.p = self.closestPoint(link.source, link.target);
-	     });
+
+	     let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
+	     let eqTerminals = self.model.getTerminals(equipments);
+	     for (let eqTerminal of eqTerminals) {
+		 let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 if (eqCn === cn) {
+		     let newEdge = {source: cn, target: eqTerminal};
+		     newEdge.p = self.closestPoint(cn, eqTerminal);
+		     self.edges.push(newEdge); // add a new edge to the connectivity graph
+		     self.createEdges([newEdge]);
+		 }
+	     }   
 	 }
 	 
 	 self.forceTick();
+	 self.trigger("addToDiagram");
 
 	 function handleTerminals(selection) {
 	     let terminals = self.model.getTerminals([object]);
 	     for (let terminal of terminals) {
 		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 		 if (typeof(cn) !== "undefined") {
-		     self.drawConnectivityNodes([cn]);
+		     let equipments = self.model.getEquipments(cn);
+		     // let's try to get a busbar section
+		     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+		     equipments = equipments.filter(el => el !== busbarSection);
+		     if (equipments.length > 1) {
+			 self.drawConnectivityNodes([cn]);
+		     }
 		 }
 	     }
 	     self.createTerminals(selection);
@@ -1217,6 +1247,7 @@
 	 if (arguments.length === 3) {
 	     links = self.edges;
 	 }
+
 	 links.forEach(function (link) {
 	     let graphicEdge = self.edgeGraphic.get(link);
 	     d3.select(graphicEdge)
@@ -1232,6 +1263,7 @@
 	       });
 	 });
 
+
 	 function rotateTerm(term) {
 	     let graphicTerm = self.termGraphic.get(term);
 	     let circle = d3.select(graphicTerm).select("circle");
@@ -1243,7 +1275,8 @@
 	     let newX = baseX + cRot.x;
 	     let newY = baseY + cRot.y;
 	     return {x: newX, y: newY};
-	 }	 
+	 }
+
      }
 
      /** rotate a point of a given amount (in degrees) */
@@ -1258,6 +1291,12 @@
 	 let rotate = svgroot.createSVGTransform();
 	 rotate.setRotate(rotation,0,0);
 	 return pt.matrixTransform(rotate.matrix);
+     }
+
+     distance2(p1, p2) {
+	 let dx = p1.x - p2.x, 
+	     dy = p1.y - p2.y; 
+	 return dx * dx + dy * dy;
      }
     </script>
 
