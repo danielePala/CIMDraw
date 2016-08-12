@@ -1,52 +1,17 @@
-<cimDiagramControls>
-    <style>
-     #cim-diagram-controls { display: none }
-     #cim-diagram-elements { display: none }
-    </style>
-
-    <div class="container-fluid">
-	<div class="row center-block">
-	    <div class="col-md-12">
-		<div class="btn-toolbar" role="toolbar">
-		    <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-controls">
-			<label class="btn btn-default active" id="selectLabel">
-			    <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked>select</input>
-			</label>
-			<label class="btn btn-default" id="forceLabel">
-			    <input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)</input>
-			</label>
-			<label class="btn btn-default" id="connectLabel">
-			    <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input>
-			</label>
-		    </div>
-		    <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-elements">
-			<label class="btn btn-default" id="aclineLabel">
-			    <input type="radio" id="addACLine" name="tool" value="addACLine" autocomplete="off">AC Line Segment</input>
-			</label>
-			<label class="btn btn-default" id="breakerLabel">
-			    <input type="radio" id="addBreaker" name="tool" value="addBreaker" autocomplete="off">breaker</input>
-			</label>
-		    </div>
-		</div>
-		</div>
-	    </div>
-	</div>
-    </div>
-    
-    <script>
+riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row center-block"> <div class="col-md-12"> <div class="btn-toolbar" role="toolbar"> <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-controls"> <label class="btn btn-default active" id="selectLabel"> <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked>select</input> </label> <label class="btn btn-default" id="forceLabel"> <input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)</input> </label> <label class="btn btn-default" id="connectLabel"> <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input> </label> </div> <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-elements"> <label class="btn btn-default" id="aclineLabel"> <input type="radio" id="addACLine" name="tool" value="addACLine" autocomplete="off">AC Line Segment</input> </label> <label class="btn btn-default" id="breakerLabel"> <input type="radio" id="addBreaker" name="tool" value="addBreaker" autocomplete="off">breaker</input> </label> </div> </div> </div> </div> </div> </div>', '#cim-diagram-controls { display: none } #cim-diagram-elements { display: none }', '', function(opts) {
      "use strict";
      let self = this;
      let zoomComp = d3.zoom();
      let zoomEnabled = false;
      let termToChange = undefined;
-     
+
      self.on("mount", function() {
-	 // setup diagram buttons
+
 	 $("#select").change(function() {
 	     self.disableAll();
 	     self.enableDrag();
 	 });
-	 
+
 	 $("#force").change(function() {
 	     self.disableAll();
 	     self.enableForce();
@@ -61,20 +26,17 @@
 	     self.disableAll();
 	     self.enableAddACLine();
 	 });
-	 
+
 	 $("#addBreaker").change(function() {
 	     self.disableAll();
 	     self.enableAddBreaker();
 	 });
      });
 
-     // listen to 'transform' event
      self.parent.on("transform", function() {
-	 //console.log(d3.select("svg").select("g").attr("transform"));
-	 //console.log(zoomComp.transform(d3.select("svg").select("g"), d3.zoomIdentity));
+
      });
-     
-     // listen to 'render' event
+
      self.parent.on("render", function() {
 	 self.force = d3.forceSimulation(self.parent.nodes)
 			.force("link", d3.forceLink(self.parent.edges))
@@ -88,7 +50,6 @@
 	 $("#cim-diagram-elements").show();
      });
 
-     // listen to 'addToDiagram' event 
      self.parent.on("addToDiagram", function() {
 	 if (self.status === "DRAG") {
 	     self.disableAll();
@@ -96,13 +57,12 @@
 	 }
      });
 
-     // modality for drag+zoom
      d3.select("body")
        .on("keydown", function() {
 	   if (typeof(d3.event) === "undefined") {
 	       return;
 	   }
-	   // trap the ctrl key being pressed
+
 	   if (d3.event.ctrlKey) {
 	       self.disableAll();
 	       self.enableZoom();
@@ -111,48 +71,48 @@
        .on("keyup", function() {
 	   self.disableZoom();
 	   if (self.status === "DRAG") {
-	       if (d3.event.keyCode === 17) { // "Control"
+	       if (d3.event.keyCode === 17) {
 		   self.enableDrag();
 	       }
 	   }
 	   if (self.status === "FORCE") {
-	       if (d3.event.keyCode === 17) { // "Control"
+	       if (d3.event.keyCode === 17) {
 		   self.enableForce();
 	       }
 	   }
 	   if (self.status === "CONNECT") {
-	       if (d3.event.keyCode === 27) { // "Escape"
+	       if (d3.event.keyCode === 27) {
 		   d3.select("svg").on("mousemove", null);
 		   d3.select("svg").selectAll("svg > path").attr("d", null);
 		   d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
 		   termToChange = undefined;
 	       }
-	       if (d3.event.keyCode === 17) { // "Control"
+	       if (d3.event.keyCode === 17) {
 		   self.enableConnect();
 	       }
 	   }
 	   if (self.status === "ACLINE") {
-	       if (d3.event.keyCode === 17) { // "Control"
+	       if (d3.event.keyCode === 17) {
 		   self.enableAddACLine();
 	       }
 	   }
 	   if (self.status === "BREAKER") {
-	       if (d3.event.keyCode === 17) { // "Control"
+	       if (d3.event.keyCode === 17) {
 		   self.enableAddBreaker();
 	       }
 	   }
        });
 
-     disableAll() {
+     this.disableAll = function() {
 	 self.disableDrag();
 	 self.disableZoom();
 	 self.disableForce();
 	 self.disableConnect();
 	 self.disableAddACLine();
 	 self.disableAddBreaker();
-     }
-     
-     enableDrag() {
+     }.bind(this)
+
+     this.enableDrag = function() {
 	 self.disableDrag();
 	 d3.select(self.root).selectAll("label:not(#selectLabel)").classed("active", false);
 	 $("#select").click();
@@ -169,26 +129,26 @@
 			  opts.model.updateActiveDiagram(d, d.lineData);
 		      });
 	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").call(drag);
-     }
+     }.bind(this)
 
-     disableDrag() {
+     this.disableDrag = function() {
 	 let drag = d3.drag()
 		      .on("drag", null);
 	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").call(drag);
-     }
+     }.bind(this)
 
-     enableForce() {
+     this.enableForce = function() {
 	 d3.select(self.root).selectAll("label:not(#forceLabel)").classed("active", false);
 	 $("#force").click();
 	 self.status = "FORCE";
-	 self.force.restart(); 
-     }
+	 self.force.restart();
+     }.bind(this)
 
-     disableForce() {
-	 self.force.stop();    
-     }
-     
-     enableZoom() {
+     this.disableForce = function() {
+	 self.force.stop();
+     }.bind(this)
+
+     this.enableZoom = function() {
 	 $("#zoom").click();
 	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
 	   .on("click", function (d) {
@@ -202,26 +162,26 @@
 	     zoomComp = d3.zoom();
 	 }
 	 zoomComp.on("zoom", this.zooming);
-	 // enable zooming on svg node
+
 	 d3.select("svg").call(zoomComp);
 	 zoomEnabled = true;
-     }
+     }.bind(this)
 
-     disableZoom() {
+     this.disableZoom = function() {
 	 if (zoomEnabled===true) {
 	     d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on("click", null);
 	     zoomComp.on("zoom", null);
 	     d3.select("svg").call(zoomComp);
 	     zoomEnabled = false;
 	 }
-     }
+     }.bind(this)
 
-     zooming() {
+     this.zooming = function() {
 	 d3.select("svg").select("g").attr("transform", d3.event.transform);
 	 this.parent.trigger("transform");
-     }
+     }.bind(this)
 
-     enableConnect() {
+     this.enableConnect = function() {
 	 d3.select(self.root).selectAll("label:not(#connectLabel)").classed("active", false);
          $("#connect").click();
 	 self.status = "CONNECT";
@@ -231,28 +191,27 @@
 	       let line = d3.line()
 		            .x(function(d) { return d.x; })
 		            .y(function(d) { return d.y; });
-	       
+
 	       let svg = d3.select("svg");
 	       let path = svg.selectAll("svg > path");
 	       let circle = svg.selectAll("svg > circle");
-	       
-	       // TEST: directly connect terminals
+
 	       if (typeof(termToChange) !== "undefined") {
 		   let cn = opts.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 		   d3.select("svg").selectAll("svg > path").attr("d", null);
 		   d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
-		   
+
 		   if (typeof(cn) === "undefined") {
 		       cn = opts.model.cimObject("cim:ConnectivityNode");
 		       opts.model.setAttribute(cn, "cim:IdentifiedObject.name", "new1");
 		   }
 		   d3.select("svg").on("mousemove", null);
-		   // update the model
+
 		   let schemaLinks = opts.model.getSchemaLinks(termToChange.localName);
 		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
 		   opts.model.setLink(termToChange, schemaLink, cn);
 		   opts.model.setLink(d, schemaLink, cn);
-		   self.parent.drawConnectivityNodes([cn]); // test
+		   self.parent.drawConnectivityNodes([cn]);
 		   self.parent.forceTick();
 		   termToChange = undefined;
 		   return;
@@ -281,23 +240,23 @@
 	       d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
 	       if (typeof(termToChange) !== "undefined") {
 		   d3.select("svg").on("mousemove", null);
-		   // update the model
+
 		   let schemaLinks = opts.model.getSchemaLinks(termToChange.localName);
 		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
 		   opts.model.setLink(termToChange, schemaLink, d);
 		   termToChange = undefined;
 	       }
 	   });
-     }
+     }.bind(this)
 
-     disableConnect() {
+     this.disableConnect = function() {
 	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g > g.Terminal")
 	   .on("click", null);
 	 d3.select("svg").selectAll("svg > g > g.ConnectivityNodes > g.ConnectivityNode")
 	   .on("click", null);
-     }
+     }.bind(this)
 
-     enableAddACLine() {
+     this.enableAddACLine = function() {
 	 d3.select(self.root).selectAll("label:not(#aclineLabel)").classed("active", false);
 	 $("#addACLine").click();
 	 self.status = "ACLINE";
@@ -305,13 +264,13 @@
 	 function clicked() {
 	     opts.model.createObject("cim:ACLineSegment");
 	  }
-     }
+     }.bind(this)
 
-     disableAddACLine() {
+     this.disableAddACLine = function() {
 	 d3.select("svg").on("click", null);
-     }
-     
-     enableAddBreaker() {
+     }.bind(this)
+
+     this.enableAddBreaker = function() {
 	 d3.select(self.root).selectAll("label:not(#breakerLabel)").classed("active", false);
 	 $("#addBreaker").click();
 	 self.status = "BREAKER";
@@ -319,13 +278,11 @@
 	 function clicked() {
 	     opts.model.createObject("cim:Breaker");
 	  }
-     }
+     }.bind(this)
 
-     disableAddBreaker() {
+     this.disableAddBreaker = function() {
 	 d3.select("svg").on("click", null);
-     }
+     }.bind(this)
 
-    </script>
-
-</cimDiagramControls>
+});
 

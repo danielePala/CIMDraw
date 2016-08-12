@@ -1,30 +1,11 @@
-<cimTree>
-    <div class="app-tree" id="app-tree">
-	<div class="tree">
-	    <form class="form-inline">
-		<div class="form-group">
-		    <input type="search" class="form-control" id="cim-search-key" placeholder="Search...">
-		</div>
-		<button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button>
-	    </form>
-	    <form>
-		<div class="checkbox">
-		    <label>
-			<input type="checkbox" id="showAllObjects"> Show all objects
-		    </label>
-		</div>
-	    </form>
-	    <ul class="CIMNetwork list-group"></ul>
-	</div>
-    </div>
-    <script>
+riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <form class="form-inline"> <div class="form-group"> <input type="search" class="form-control" id="cim-search-key" placeholder="Search..."> </div> <button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button> </form> <form> <div class="checkbox"> <label> <input type="checkbox" id="showAllObjects"> Show all objects </label> </div> </form> <ul class="CIMNetwork list-group"></ul> </div> </div>', '', '', function(opts) {
      "use strict";
-     
-     this.model = opts.model;	
+
+     this.model = opts.model;
      let self = this;
 
      self.on("mount", function() {
-	 // setup search button
+
 	 $("#cimTreeSearchBtn").on("click", function() {
 	     let searchKey = document.getElementById("cim-search-key").value;
 	     $(".CIMNetwork>li>ul").each(function() {
@@ -47,7 +28,7 @@
 
      self.parent.on("showDiagram", function(file, name, element) {
 	 if (decodeURI(name) !== self.diagramName) {
-	     d3/*.behavior*/.drag().on("drag.end", null);
+	     d3 .drag().on("drag.end", null);
 	     self.render(name);
 	 }
 	 if (typeof(element) !== "undefined") {
@@ -55,7 +36,6 @@
 	 }
      });
 
-     // listen to 'createObject' event from model
      self.model.on("createObject", function(object) {
 	 let cimNetwork = d3.select("div.tree").selectAll("div.tree > ul.CIMNetwork");
 	 if (object.nodeName === "cim:Breaker") {
@@ -66,7 +46,6 @@
 	 }
      });
 
-     // listen to 'setAttribute' event from model
      self.model.on("setAttribute", function(object, attrName, value) {
 	 if (attrName === "cim:IdentifiedObject.name") {
 	     let type = object.localName;
@@ -84,15 +63,15 @@
 	 $("#showAllObjects").change();
      });
 
-     render(diagramName) {
+     this.render = function(diagramName) {
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
 	 $("#showAllObjects").prop("checked", false);
 	 $("#showAllObjects").change();
-     }
+     }.bind(this)
 
-     createTree(getObjects) {
-	 // clear all
+     this.createTree = function(getObjects) {
+
 	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
 
 	 let allBusbarSections = getObjects("cim:BusbarSection");
@@ -118,7 +97,7 @@
 	 console.log("[" + Date.now() + "] extracted substations");
 	 let allLines = self.model.getEquipmentContainers("cim:Line");
 	 console.log("[" + Date.now() + "] extracted lines");
-	 
+
 	 let cimNetwork = d3.select("div.tree > ul.CIMNetwork");
 	 this.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
 	 this.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
@@ -131,9 +110,9 @@
 	 this.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 this.createElements(cimNetwork, "Line", "Lines", allLines);
 	 console.log("[" + Date.now() + "] drawn tree");
-     }
+     }.bind(this)
 
-     createElements(cimNetwork, name, printName, data) {
+     this.createElements = function(cimNetwork, name, printName, data) {
 	 let elementsTopContainer = cimNetwork.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
 	 if (elementsTopContainer.empty()) {
@@ -176,19 +155,19 @@
 				return "#" + d.attributes.getNamedItem("rdf:ID").value;
 			    })
 	    		    .on("click", function (d) {
-				// change address to 'this object'
+
 				let hashComponents = window.location.hash.substring(1).split("/");
 				let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 				if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
 				    riot.route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
 				}
-				// check if we are changing some link
+
 				let linkToChange = d3.select("#cimTarget");
 				if (linkToChange.empty() === false) {
 				    let target = d3.select(linkToChange.node().parentNode.parentNode).datum();
 				    let targetLink = linkToChange.datum();
 				    cimModel.setLink(target, targetLink, d);
-				    
+
 				    linkToChange.select("button").html(function (dd) {
 					return cimModel.getAttribute(d, "cim:IdentifiedObject.name").textContent;
 				    });
@@ -202,7 +181,7 @@
 				}
 				return "unnamed";
 			    })
-			    .call(d3/*.behavior*/.drag().on("drag.end", function(d) {
+			    .call(d3 .drag().on("drag.end", function(d) {
 			        cimModel.trigger("dragend", d);
 			    }));
 	 let elementEnter = elementTopContainer
@@ -214,13 +193,13 @@
 	 elementEnter
 		.selectAll("li.attribute")
 		.data(function(d) {
-		    return cimModel.getSchemaAttributes(d.localName); 
+		    return cimModel.getSchemaAttributes(d.localName);
 		})
 		.enter()
 		.append("li")
 		.attr("class", "attribute")
 		.html(function (d) {
-		    return d.attributes[0].value.substring(1).split(".")[1] + ": "; 
+		    return d.attributes[0].value.substring(1).split(".")[1] + ": ";
 		})
 		.append("span")
 		.attr("contenteditable", "true")
@@ -231,7 +210,7 @@
 		    if (typeof(value) !== "undefined") {
 			ret = value.innerHTML;
 		    }
-		    return ret; 
+		    return ret;
 		})
 		.on("input", function(d) {
 		    let object = d3.select(d3.select(this).node().parentNode.parentNode).datum();
@@ -242,24 +221,24 @@
 		    if (typeof(d3.event) === "undefined") {
 			return;
 		    }
-		    // trap the return key being pressed
+
 		    if (d3.event.keyCode === 13) {
 			d3.event.preventDefault();
 		    }
 		});
-	 // add links
+
 	 let elementLink = elementEnter
 	        .selectAll("li.link")
 	        .data(function(d) {
 		    return cimModel.getSchemaLinks(d.localName)
 				   .filter(el => cimModel.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
-				   .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal"); 
+				   .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal");
 		})
 	        .enter()
 	        .append("li")
 		.attr("class", "link")
 	        .html(function (d) {
-		    return d.attributes[0].value.substring(1).split(".")[1] + ": "; 
+		    return d.attributes[0].value.substring(1).split(".")[1] + ": ";
 		});
 	 elementLink.append("button")
 		    .attr("class","btn btn-default btn-xs")
@@ -269,7 +248,7 @@
 			let target = cimModel.getLink(source, "cim:" + d.attributes[0].value.substring(1));
 			let targetUUID = target.attributes.getNamedItem("rdf:resource").value;
 			console.log(targetUUID);
-			
+
 			if ($(targetUUID).parent().parent().is(":visible") === false) {
 			    $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
 				$(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top));
@@ -289,7 +268,7 @@
 		    .html(function (d) {
 			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
 			let target = cimModel.getLink(source, "cim:" + d.attributes[0].value.substring(1));
-			// TODO: maybe the inverse link is set
+
 			if (typeof(target) === "undefined") {
 			    return "none";
 			}
@@ -307,31 +286,30 @@
 		    })
 	            .html("change");
 
-	 // handle power transfomer ends
 	 elementEnter.each(function(d, i) {
 	     let trafoEnds = cimModel.getGraph([d], "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer");
 	     if (trafoEnds.length > 0) {
 		 self.createElements(d3.select(this), "PowerTransformerEnd"+i, "Transformer Windings", trafoEnds.map(el => el.source));
 	     }
 	 });
-	     
-	 return elementEnter;
-     }
 
-     moveTo(uuid) {
+	 return elementEnter;
+     }.bind(this)
+
+     this.moveTo = function(uuid) {
 	 let target = null, targetChild = null;
 	 let hoverD = self.model.getObject(uuid);
-	 // handle connectivity nodes
+
 	 if (hoverD.nodeName === "cim:ConnectivityNode") {
 	     let equipments = self.model.getEquipments(hoverD);
-	     // let's try to get a busbar section
+
 	     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 	     if (typeof(busbarSection) === "undefined") {
 		 return;
 	     }
 	     let busbarUUID = busbarSection.attributes.getNamedItem("rdf:ID").value;
 
-	     targetChild = d3.select(".tree").select("#" + busbarUUID).node(); 
+	     targetChild = d3.select(".tree").select("#" + busbarUUID).node();
 	 } else {
 	     targetChild = d3.select(".tree").select("#" + uuid).node();
 	 }
@@ -340,7 +318,7 @@
 	     return;
 	 }
 	 target = targetChild.parentNode;
-	 
+
 	 let targetParent = $(target).parent();
 	 d3.select(".CIMNetwork").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
 	 d3.select(target).select("a").attr("class", "btn btn-danger btn-xs");
@@ -353,7 +331,5 @@
 	     $(".tree").scrollTop($(".tree").scrollTop() + ($(target).offset().top - $(".tree").offset().top));
 	 }
 	 targetParent.collapse("show");
-     }
-    </script> 
-    
-</cimTree>
+     }.bind(this)
+});
