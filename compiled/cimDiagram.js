@@ -4,8 +4,6 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
      self.model = opts.model;
      self.nodes = [];
      self.edges = [];
-     self.nodeGraphic = new Map();
-     self.termGraphic = new Map();
 
      self.parent.on("showDiagram", function(file, name, element) {
 	 if (decodeURI(name) !== self.diagramName) {
@@ -81,8 +79,6 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	 d3.select("svg").select("g").selectAll("g:not(.edges)").remove();
 	 self.nodes = [];
 	 self.edges = [];
-	 self.nodeGraphic = new Map();
-	 self.termGraphic = new Map();
 
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
@@ -485,7 +481,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	 ensrcEnter.append("circle")
 		   .attr("r", 25)
 		   .attr("cx", 0)
-		   .attr("cy", 25)
+		   .attr("cy", -25)
 		   .attr("fill", "white")
 		   .attr("stroke", "blue")
 		   .attr("stroke-width", 4);
@@ -493,7 +489,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 		   .style("text-anchor", "middle")
 		   .attr("font-size", 8)
 		   .attr("x", 0)
-		   .attr("y", -10)
+		   .attr("y", -60)
 		   .text(function(d) {
 		       let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
 		       if (typeof(name) !== "undefined") {
@@ -501,6 +497,12 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 		       }
 		       return "";
 		   });
+	 ensrcEnter.append("text")
+	           .style("text-anchor", "middle")
+	           .attr("font-size", 64)
+	           .attr("x", 0)
+	           .attr("y", -4)
+	           .text("~");
 	 return ensrcEnter;
      }.bind(this)
 
@@ -670,7 +672,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 					})
 					.enter()
 					.append("g")
-					.attr("id", function(d, i) {
+					.each(function(d, i) {
 					    let cn = self.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 					    let lineData = d3.select(this.parentNode).datum().lineData;
 					    let start = lineData[0];
@@ -681,10 +683,23 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 						start = {x:0, y:0};
 						end = {x:0, y:heigth};
 					    }
+
+					    let eqRot = d3.select(this.parentNode).datum().rotation;
 					    let terminals = self.model.getTerminals(d3.select(this.parentNode).data());
 					    if (typeof(cn) !== "undefined" && terminals.length > 1) {
-						let dist1 = Math.pow((eqX+start.x-cn.x), 2)+Math.pow((eqY+start.y-cn.y), 2);
-						let dist2 = Math.pow((eqX+end.x-cn.x), 2)+Math.pow((eqY+end.y-cn.y), 2);
+						let dist1 = 0;
+						let dist2 = 0;
+
+						if (eqRot > 0) {
+						    let startRot = self.rotate(start, eqRot);
+						    let endRot = self.rotate(end, eqRot);
+						    dist1 = Math.pow((eqX+startRot.x-cn.x), 2)+Math.pow((eqY+startRot.y-cn.y), 2);
+						    dist2 = Math.pow((eqX+endRot.x-cn.x), 2)+Math.pow((eqY+endRot.y-cn.y), 2);
+						} else {
+						    dist1 = Math.pow((eqX+start.x-cn.x), 2)+Math.pow((eqY+start.y-cn.y), 2);
+						    dist2 = Math.pow((eqX+end.x-cn.x), 2)+Math.pow((eqY+end.y-cn.y), 2);
+						}
+
 						if (dist2 < dist1) {
 						    d.x = eqX + end.x;
 						    d.y = eqY + end.y;
@@ -704,12 +719,14 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 						}
 					    }
 					    d.rotation = d3.select(this.parentNode).datum().rotation;
-
 					    self.nodes.push(d);
-					    if (typeof(cn) !== "undefined" && typeof(self.nodeGraphic.get(cn)) !== "undefined") {
+					    if (typeof(cn) !== "undefined" && typeof(cn.lineData) !== "undefined") {
 						let newEdge = {source: cn, target: d};
 						self.edges.push(newEdge);
+						self.createEdges([newEdge]);
 					    }
+					})
+					.attr("id", function(d) {
 					    return d.attributes.getNamedItem("rdf:ID").value;
 					})
 					.attr("class", function(d) {
@@ -750,10 +767,6 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	     }
 	 }
 
-	 termSelection.each(function(d) {
-	     self.termGraphic.set(d, this);
-	 });
-
 	 return termSelection;
      }.bind(this)
 
@@ -784,12 +797,9 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 		 } else if (equipments.length > 0) {
 		     let points = [];
 		     for (let eq of equipments) {
-			 if (typeof(eq.lineData) === "undefined") {
-			     console.log(eq);
-			 }
 			 let endx = eq.x + eq.lineData[eq.lineData.length-1].x;
 			 let endy = eq.y + eq.lineData[eq.lineData.length-1].y;
-			 points.push({x: eq.x, y: eq.y, eq: eq}, {x: endx, y: endy, eq: eq});
+			 points.push({x: eq.x + eq.lineData[0].x, y: eq.y + eq.lineData[0].y, eq: eq}, {x: endx, y: endy, eq: eq});
 		     }
 		     let min = Infinity;
 		     let p1min = points[0], p2min = points[0];
@@ -878,7 +888,8 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 		    return line(d3.select(this.parentNode).datum().lineData);
 		})
 		.attr("stroke", "black")
-		.attr("stroke-width", 2);
+		.attr("stroke-width", 2)
+		.attr("fill", "none");
 
 	 cnEnter.append("text")
 	        .style("text-anchor", "end")
@@ -917,11 +928,6 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 		})
 	 };
 
-	 cnEnter.each(function(d) {
-	     if (typeof(d.x) !== "undefined") {
-		 self.nodeGraphic.set(d, this);
-	     }
-	 });
 	 return cnEnter;
      }.bind(this)
 
@@ -978,7 +984,11 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
      }.bind(this)
 
      this.closestPoint = function(source, point) {
-	 let pathNode = d3.select(self.nodeGraphic.get(source)).select("path").node();
+         let line = d3.line()
+	              .x(function(d) { return d.x; })
+	              .y(function(d) { return d.y; });
+	 let pathNode = d3.select(document.createElementNS('http://www.w3.org/2000/svg', 'svg')).append("path").attr("d", line(source.lineData)).node();
+
 	 if (pathNode === null) {
 	     return [0, 0];
 	 }
@@ -1060,7 +1070,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	     selection = d3.select("svg").selectAll("svg > g > g:not(.edges) > g");
 	 }
 
-	 let transform = d3.zoomTransform(d3.select("svg").select("g"));
+	 let transform = d3.zoomTransform(d3.select("svg").node());
 	 let xoffset = transform.x;
 	 let yoffset = transform.y;
 	 let svgZoom = transform.k;
@@ -1091,7 +1101,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 
      this.addToDiagram = function(object) {
 	 let m = d3.mouse(d3.select("svg").node());
-	 let transform = d3.zoomTransform(d3.select("svg").select("g"));
+	 let transform = d3.zoomTransform(d3.select("svg").node());
 	 let xoffset = transform.x;
 	 let yoffset = transform.y;
 	 let svgZoom = transform.k;
@@ -1205,13 +1215,10 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	       });
 
 	 function rotateTerm(term) {
-	     let graphicTerm =   self.termGraphic.get(term);
-	     let circle = d3.select(graphicTerm).select("circle");
-	     let cx = circle.attr("cx");
-	     let cy = circle.attr("cy");
-	     let baseX = term.x - cx;
-	     let baseY = term.y - cy;
-	     let cRot = self.rotate({x: cx, y: cy}, term.rotation);
+	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source)[0];
+	     let baseX = equipment.x;
+	     let baseY = equipment.y;
+	     let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);
 	     let newX = baseX + cRot.x;
 	     let newY = baseY + cRot.y;
 	     return {x: newX, y: newY};

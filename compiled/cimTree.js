@@ -181,7 +181,7 @@ riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <f
 				}
 				return "unnamed";
 			    })
-			    .call(d3 .drag().on("drag.end", function(d) {
+			    .call(d3.drag().on("end", function(d) {
 			        cimModel.trigger("dragend", d);
 			    }));
 	 let elementEnter = elementTopContainer

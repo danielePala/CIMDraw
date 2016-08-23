@@ -221,7 +221,7 @@ riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row c
 	       termToChange = d;
 	       function mousemoved() {
 		   let m = d3.mouse(this);
-		   let transform = d3.zoomTransform(d3.select("svg").select("g"));
+		   let transform = d3.zoomTransform(d3.select("svg").node());
 		   circle.attr("transform", function () {
 		       let mousex = m[0] + 10;
 		       let mousey = m[1] + 10;

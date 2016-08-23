@@ -202,7 +202,7 @@
 				}
 				return "unnamed";
 			    })
-			    .call(d3/*.behavior*/.drag().on("drag.end", function(d) {
+			    .call(d3.drag().on("end", function(d) {
 			        cimModel.trigger("dragend", d);
 			    }));
 	 let elementEnter = elementTopContainer

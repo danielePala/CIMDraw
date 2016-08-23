@@ -57,10 +57,11 @@ function cimDiagramModel() {
 		return el.attributes.getNamedItem("rdf:ID") !== null;
 	    });
 	    // build a map (UUID)->(object)
-	    model.dataMap = new Map(Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes.getNamedItem("rdf:ID").value, el]));
+	    model.dataMap = new Map();//Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes.getNamedItem("rdf:ID").value, el]));
 	    // build a map (link name, target UUID)->(source objects)
 	    for (let i in allObjects) {
-	      let object = allObjects[i];
+		let object = allObjects[i];
+		model.dataMap.set("#" + object.attributes.getNamedItem("rdf:ID").value, object);
 		if (typeof(object.attributes) !== "undefined") {
 		    let links = model.getLinks(object);
 		    for (let link of links) {
@@ -305,7 +306,7 @@ function cimDiagramModel() {
 	    }
 	    model.addLink(object, "cim:IdentifiedObject.DiagramObjects", dobj);
 	    model.addLink(dobj, "cim:DiagramObject.Diagram", model.activeDiagram);
-	    model.diagramObjectGraphs.get(model.activeDiagramName).push({source: object, target: dobj});
+//	    model.diagramObjectGraphs.get(model.activeDiagramName).push({source: object, target: dobj});
 	},
 
 	updateActiveDiagram(object, lineData) {
@@ -506,7 +507,7 @@ function cimDiagramModel() {
 			let graphicObjects = ioEdges.map(el => el.source);
 			ceEdges = model.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
 		    } 
-		    model.conductingEquipmentGraphs.set(model.activeDiagramName, ceEdges);
+		    //model.conductingEquipmentGraphs.set(model.activeDiagramName, ceEdges);
 		}
 	    } else {
 		if (typeof(model.activeDiagram) !== "undefined") {
@@ -534,7 +535,7 @@ function cimDiagramModel() {
 			allDiagramObjects = model.getGraph([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
 		    }
 		    ioEdges = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
-	 	    model.diagramObjectGraphs.set(model.activeDiagramName, ioEdges);
+	 	    //model.diagramObjectGraphs.set(model.activeDiagramName, ioEdges);
 		}
 	    } else {
 		if (typeof(model.activeDiagram) !== "undefined") {
@@ -557,7 +558,7 @@ function cimDiagramModel() {
 		    let ioEdges = model.getDiagramObjectGraph();
 		    let allDiagramObjects = ioEdges.map(el => el.target);
 		    doEdges = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
-		    model.diagramObjectPointGraphs.set(model.activeDiagramName, doEdges);
+		    //model.diagramObjectPointGraphs.set(model.activeDiagramName, doEdges);
 		}
 	    } else {
 		doEdges = model.getGraph(diagObjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
