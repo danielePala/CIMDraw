@@ -26,3 +26,7 @@ Finally, you can save the modified file ('Save as...') and also save the current
 The attributes shown in the tree are taken from the schema file located inside the 'rdf-schema' folder, and it is the ENTSO-E CGMES equipment schema with the addition of the 'Jumper' object.
 The attributes in the tree can be edited, but there is no control over the correctness of the values inserted.
 Also, the links between objects can be changed, again without correctness control.
+
+### License ###
+
+See the COPYING file.
