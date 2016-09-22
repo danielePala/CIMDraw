@@ -36,8 +36,6 @@
     <script>
      "use strict";
      let self = this;
-     let zoomComp = d3.zoom();
-     let zoomEnabled = false;
      let termToChange = undefined;
      
      self.on("mount", function() {
@@ -67,19 +65,9 @@
 	     self.enableAddBreaker();
 	 });
      });
-
-     // listen to 'transform' event
-     self.parent.on("transform", function() {
-	 //console.log(d3.select("svg").select("g").attr("transform"));
-	 //console.log(zoomComp.transform(d3.select("svg").select("g"), d3.zoomIdentity));
-     });
      
      // listen to 'render' event
      self.parent.on("render", function() {
-	 self.force = d3.forceSimulation(self.parent.nodes)
-			.force("link", d3.forceLink(self.parent.edges))
-			.on("tick", self.parent.forceTick)
-			.force("charge", d3.forceManyBody());
 	 self.disableForce();
 	 self.disableZoom();
 	 self.disableConnect();
@@ -131,12 +119,12 @@
 		   self.enableConnect();
 	       }
 	   }
-	   if (self.status === "ACLINE") {
+	   if (self.status === "cim:ACLineSegment") {
 	       if (d3.event.keyCode === 17) { // "Control"
 		   self.enableAddACLine();
 	       }
 	   }
-	   if (self.status === "BREAKER") {
+	   if (self.status === "cim:Breaker") {
 	       if (d3.event.keyCode === 17) { // "Control"
 		   self.enableAddBreaker();
 	       }
@@ -148,8 +136,7 @@
 	 self.disableZoom();
 	 self.disableForce();
 	 self.disableConnect();
-	 self.disableAddACLine();
-	 self.disableAddBreaker();
+	 self.disableAdd();
      }
      
      enableDrag() {
@@ -172,20 +159,26 @@
      }
 
      disableDrag() {
-	 let drag = d3.drag()
-		      .on("drag", null);
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").call(drag);
+	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on(".drag", null);
      }
 
      enableForce() {
+	 let equipments = d3.select("svg").selectAll("svg > g > g:not(.edges) > g");
+	 let terminals = equipments.selectAll("g.Terminal");
+	 self.d3force = d3.forceSimulation(equipments.data().concat(terminals.data()))
+			  .force("link", d3.forceLink(d3.select("svg").selectAll("svg > g > g.edges > g").data()))
+			  .on("tick", self.parent.forceTick)
+			  .force("charge", d3.forceManyBody());
 	 d3.select(self.root).selectAll("label:not(#forceLabel)").classed("active", false);
 	 $("#force").click();
 	 self.status = "FORCE";
-	 self.force.restart(); 
+	 self.d3force.restart(); 
      }
 
      disableForce() {
-	 self.force.stop();    
+	 if (typeof(self.d3force) !== "undefined") {
+	     self.d3force.stop();
+	 }
      }
      
      enableZoom() {
@@ -198,22 +191,15 @@
 		       riot.route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
 	       }
 	   });
-	 if (typeof(zoomComp) === "undefined") {
-	     zoomComp = d3.zoom();
-	 }
+	 let zoomComp = d3.zoom();
 	 zoomComp.on("zoom", this.zooming);
 	 // enable zooming on svg node
 	 d3.select("svg").call(zoomComp);
-	 zoomEnabled = true;
      }
 
      disableZoom() {
-	 if (zoomEnabled===true) {
-	     d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on("click", null);
-	     zoomComp.on("zoom", null);
-	     d3.select("svg").call(zoomComp);
-	     zoomEnabled = false;
-	 }
+	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on("click", null);
+	 d3.select("svg").on(".zoom", null);
      }
 
      zooming() {
@@ -252,8 +238,6 @@
 		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
 		   opts.model.setLink(termToChange, schemaLink, cn);
 		   opts.model.setLink(d, schemaLink, cn);
-		   self.parent.drawConnectivityNodes([cn]); // test
-		   self.parent.forceTick();
 		   termToChange = undefined;
 		   return;
 	       }
@@ -298,30 +282,24 @@
      }
 
      enableAddACLine() {
-	 d3.select(self.root).selectAll("label:not(#aclineLabel)").classed("active", false);
-	 $("#addACLine").click();
-	 self.status = "ACLINE";
-	 d3.select("svg").on("click", clicked);
-	 function clicked() {
-	     opts.model.createObject("cim:ACLineSegment");
-	  }
-     }
-
-     disableAddACLine() {
-	 d3.select("svg").on("click", null);
+	 self.enableAdd("cim:ACLineSegment", "aclineLabel", "addACLine");
      }
      
      enableAddBreaker() {
-	 d3.select(self.root).selectAll("label:not(#breakerLabel)").classed("active", false);
-	 $("#addBreaker").click();
-	 self.status = "BREAKER";
+	 self.enableAdd("cim:Breaker", "breakerLabel", "addBreaker");
+     }
+
+     enableAdd(type, label, button) {
+	 d3.select(self.root).selectAll("label:not(#" + label + ")").classed("active", false);
+	 $("#" + button).click();
+	 self.status = type;
 	 d3.select("svg").on("click", clicked);
 	 function clicked() {
-	     opts.model.createObject("cim:Breaker");
+	     opts.model.createObject(type);
 	  }
      }
 
-     disableAddBreaker() {
+     disableAdd() {
 	 d3.select("svg").on("click", null);
      }
 

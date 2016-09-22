@@ -1,8 +1,6 @@
 riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row center-block"> <div class="col-md-12"> <div class="btn-toolbar" role="toolbar"> <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-controls"> <label class="btn btn-default active" id="selectLabel"> <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked>select</input> </label> <label class="btn btn-default" id="forceLabel"> <input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)</input> </label> <label class="btn btn-default" id="connectLabel"> <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input> </label> </div> <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-elements"> <label class="btn btn-default" id="aclineLabel"> <input type="radio" id="addACLine" name="tool" value="addACLine" autocomplete="off">AC Line Segment</input> </label> <label class="btn btn-default" id="breakerLabel"> <input type="radio" id="addBreaker" name="tool" value="addBreaker" autocomplete="off">breaker</input> </label> </div> </div> </div> </div> </div> </div>', '#cim-diagram-controls { display: none } #cim-diagram-elements { display: none }', '', function(opts) {
      "use strict";
      let self = this;
-     let zoomComp = d3.zoom();
-     let zoomEnabled = false;
      let termToChange = undefined;
 
      self.on("mount", function() {
@@ -33,15 +31,7 @@ riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row c
 	 });
      });
 
-     self.parent.on("transform", function() {
-
-     });
-
      self.parent.on("render", function() {
-	 self.force = d3.forceSimulation(self.parent.nodes)
-			.force("link", d3.forceLink(self.parent.edges))
-			.on("tick", self.parent.forceTick)
-			.force("charge", d3.forceManyBody());
 	 self.disableForce();
 	 self.disableZoom();
 	 self.disableConnect();
@@ -91,12 +81,12 @@ riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row c
 		   self.enableConnect();
 	       }
 	   }
-	   if (self.status === "ACLINE") {
+	   if (self.status === "cim:ACLineSegment") {
 	       if (d3.event.keyCode === 17) {
 		   self.enableAddACLine();
 	       }
 	   }
-	   if (self.status === "BREAKER") {
+	   if (self.status === "cim:Breaker") {
 	       if (d3.event.keyCode === 17) {
 		   self.enableAddBreaker();
 	       }
@@ -108,8 +98,7 @@ riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row c
 	 self.disableZoom();
 	 self.disableForce();
 	 self.disableConnect();
-	 self.disableAddACLine();
-	 self.disableAddBreaker();
+	 self.disableAdd();
      }.bind(this)
 
      this.enableDrag = function() {
@@ -132,20 +121,26 @@ riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row c
      }.bind(this)
 
      this.disableDrag = function() {
-	 let drag = d3.drag()
-		      .on("drag", null);
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").call(drag);
+	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on(".drag", null);
      }.bind(this)
 
      this.enableForce = function() {
+	 let equipments = d3.select("svg").selectAll("svg > g > g:not(.edges) > g");
+	 let terminals = equipments.selectAll("g.Terminal");
+	 self.d3force = d3.forceSimulation(equipments.data().concat(terminals.data()))
+			  .force("link", d3.forceLink(d3.select("svg").selectAll("svg > g > g.edges > g").data()))
+			  .on("tick", self.parent.forceTick)
+			  .force("charge", d3.forceManyBody());
 	 d3.select(self.root).selectAll("label:not(#forceLabel)").classed("active", false);
 	 $("#force").click();
 	 self.status = "FORCE";
-	 self.force.restart();
+	 self.d3force.restart();
      }.bind(this)
 
      this.disableForce = function() {
-	 self.force.stop();
+	 if (typeof(self.d3force) !== "undefined") {
+	     self.d3force.stop();
+	 }
      }.bind(this)
 
      this.enableZoom = function() {
@@ -158,22 +153,15 @@ riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row c
 		       riot.route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
 	       }
 	   });
-	 if (typeof(zoomComp) === "undefined") {
-	     zoomComp = d3.zoom();
-	 }
+	 let zoomComp = d3.zoom();
 	 zoomComp.on("zoom", this.zooming);
 
 	 d3.select("svg").call(zoomComp);
-	 zoomEnabled = true;
      }.bind(this)
 
      this.disableZoom = function() {
-	 if (zoomEnabled===true) {
-	     d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on("click", null);
-	     zoomComp.on("zoom", null);
-	     d3.select("svg").call(zoomComp);
-	     zoomEnabled = false;
-	 }
+	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on("click", null);
+	 d3.select("svg").on(".zoom", null);
      }.bind(this)
 
      this.zooming = function() {
@@ -211,8 +199,6 @@ riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row c
 		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
 		   opts.model.setLink(termToChange, schemaLink, cn);
 		   opts.model.setLink(d, schemaLink, cn);
-		   self.parent.drawConnectivityNodes([cn]);
-		   self.parent.forceTick();
 		   termToChange = undefined;
 		   return;
 	       }
@@ -257,30 +243,24 @@ riot.tag2('cimdiagramcontrols', '<div class="container-fluid"> <div class="row c
      }.bind(this)
 
      this.enableAddACLine = function() {
-	 d3.select(self.root).selectAll("label:not(#aclineLabel)").classed("active", false);
-	 $("#addACLine").click();
-	 self.status = "ACLINE";
-	 d3.select("svg").on("click", clicked);
-	 function clicked() {
-	     opts.model.createObject("cim:ACLineSegment");
-	  }
-     }.bind(this)
-
-     this.disableAddACLine = function() {
-	 d3.select("svg").on("click", null);
+	 self.enableAdd("cim:ACLineSegment", "aclineLabel", "addACLine");
      }.bind(this)
 
      this.enableAddBreaker = function() {
-	 d3.select(self.root).selectAll("label:not(#breakerLabel)").classed("active", false);
-	 $("#addBreaker").click();
-	 self.status = "BREAKER";
+	 self.enableAdd("cim:Breaker", "breakerLabel", "addBreaker");
+     }.bind(this)
+
+     this.enableAdd = function(type, label, button) {
+	 d3.select(self.root).selectAll("label:not(#" + label + ")").classed("active", false);
+	 $("#" + button).click();
+	 self.status = type;
 	 d3.select("svg").on("click", clicked);
 	 function clicked() {
-	     opts.model.createObject("cim:Breaker");
+	     opts.model.createObject(type);
 	  }
      }.bind(this)
 
-     this.disableAddBreaker = function() {
+     this.disableAdd = function() {
 	 d3.select("svg").on("click", null);
      }.bind(this)
 

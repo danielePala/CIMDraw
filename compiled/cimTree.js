@@ -1,4 +1,4 @@
-riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <form class="form-inline"> <div class="form-group"> <input type="search" class="form-control" id="cim-search-key" placeholder="Search..."> </div> <button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button> </form> <form> <div class="checkbox"> <label> <input type="checkbox" id="showAllObjects"> Show all objects </label> </div> </form> <ul class="CIMNetwork list-group"></ul> </div> </div>', '', '', function(opts) {
+riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <form class="form-inline"> <div class="form-group"> <input type="search" class="form-control" id="cim-search-key" placeholder="Search..."> </div> <button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button> </form> <form> <div class="checkbox"> <label> <input type="checkbox" id="showAllObjects"> Show all objects </label> </div> </form> <ul class="nav nav-tabs" role="tablist"> <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Components</a></li> <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Assets</a></li> </ul> <div class="tab-content"> <div role="tabpanel" class="tab-pane active" id="home"> <ul class="CIMNetwork list-group"></ul> </div> <div role="tabpanel" class="tab-pane" id="profile">...</div> </div> </div> </div>', '.tree { max-height: 800px; min-width: 300px; overflow: scroll; resize: horizontal; }', '', function(opts) {
      "use strict";
 
      this.model = opts.model;
@@ -19,21 +19,23 @@ riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <f
 
 	 $("#showAllObjects").change(function() {
 	     if (this.checked === true) {
-		 self.createTree(self.model.getObjects);
+		 self.createTree(self.model.getObjects, self.model.getObjects);
 	     } else {
-		 self.createTree(self.model.getGraphicObjects);
+		 self.createTree(self.model.getGraphicObjects, self.model.getEquipmentContainers);
 	     }
 	 });
      });
 
      self.parent.on("showDiagram", function(file, name, element) {
+	 self.parent.trigger("rendering");
 	 if (decodeURI(name) !== self.diagramName) {
-	     d3 .drag().on("drag.end", null);
+	     d3.drag().on("drag.end", null);
 	     self.render(name);
 	 }
 	 if (typeof(element) !== "undefined") {
 	     self.moveTo(element);
 	 }
+	 self.parent.trigger("rendered");
      });
 
      self.model.on("createObject", function(object) {
@@ -70,10 +72,12 @@ riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <f
 	 $("#showAllObjects").change();
      }.bind(this)
 
-     this.createTree = function(getObjects) {
+     this.createTree = function(getObjects, getContainers) {
 
 	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
 
+	 let allBaseVoltages = self.model.getObjects("cim:BaseVoltage");
+	 console.log("[" + Date.now() + "] extracted base voltages");
 	 let allBusbarSections = getObjects("cim:BusbarSection");
 	 console.log("[" + Date.now() + "] extracted busbarSections");
 	 let allPowerTransformers = getObjects("cim:PowerTransformer");
@@ -86,6 +90,10 @@ riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <f
 	 console.log("[" + Date.now() + "] extracted disconnectors");
 	 let allLoadBreakSwitches = getObjects("cim:LoadBreakSwitch");
 	 console.log("[" + Date.now() + "] extracted load break switches");
+	 let allJumpers = getObjects("cim:Jumper");
+	 console.log("[" + Date.now() + "] extracted jumpers");
+	 let allJunctions = getObjects("cim:Junction");
+	 console.log("[" + Date.now() + "] extracted junctions");
 	 let allEnergySources = getObjects("cim:EnergySource")
 	     .concat(getObjects("cim:SynchronousMachine"));
 	 console.log("[" + Date.now() + "] extracted energy sources");
@@ -93,22 +101,25 @@ riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <f
 	                              .concat(getObjects("cim:ConformLoad"))
 	                              .concat(getObjects("cim:NonConformLoad"));
 	 console.log("[" + Date.now() + "] extracted energy consumers");
-	 let allSubstations = self.model.getEquipmentContainers("cim:Substation");
+	 let allSubstations = getContainers("cim:Substation");
 	 console.log("[" + Date.now() + "] extracted substations");
-	 let allLines = self.model.getEquipmentContainers("cim:Line");
+	 let allLines = getContainers("cim:Line");
 	 console.log("[" + Date.now() + "] extracted lines");
 
-	 let cimNetwork = d3.select("div.tree > ul.CIMNetwork");
-	 this.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
-	 this.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
-	 this.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
-	 this.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
-	 this.createElements(cimNetwork, "EnergySource", "Energy Sources", allEnergySources);
-	 this.createElements(cimNetwork, "EnergyConsumer", "Loads", allEnergyConsumers);
-	 this.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
-	 this.createElements(cimNetwork, "Substation", "Substations", allSubstations);
-	 this.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
-	 this.createElements(cimNetwork, "Line", "Lines", allLines);
+	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul.CIMNetwork");
+	 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
+	 self.createElements(cimNetwork, "BaseVoltage", "Base Voltages", allBaseVoltages);
+	 self.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
+	 self.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
+	 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
+	 self.createElements(cimNetwork, "Jumper", "Jumpers", allJumpers);
+	 self.createElements(cimNetwork, "Junction", "Junctions", allJunctions);
+	 self.createElements(cimNetwork, "EnergySource", "Energy Sources", allEnergySources);
+	 self.createElements(cimNetwork, "EnergyConsumer", "Loads", allEnergyConsumers);
+	 self.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
+	 self.createElements(cimNetwork, "Substation", "Substations", allSubstations);
+	 self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
+	 self.createElements(cimNetwork, "Line", "Lines", allLines);
 	 console.log("[" + Date.now() + "] drawn tree");
      }.bind(this)
 
@@ -198,6 +209,11 @@ riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <f
 		.enter()
 		.append("li")
 		.attr("class", "attribute")
+		.attr("title", function(d) {
+		    return [].filter.call(d.children, function(el) {
+			return el.nodeName === "rdfs:comment"
+		    })[0].textContent;
+		})
 		.html(function (d) {
 		    return d.attributes[0].value.substring(1).split(".")[1] + ": ";
 		})
@@ -286,12 +302,14 @@ riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <f
 		    })
 	            .html("change");
 
-	 elementEnter.each(function(d, i) {
-	     let trafoEnds = cimModel.getGraph([d], "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer");
-	     if (trafoEnds.length > 0) {
-		 self.createElements(d3.select(this), "PowerTransformerEnd"+i, "Transformer Windings", trafoEnds.map(el => el.source));
-	     }
-	 });
+	 if (name === "PowerTransformer") {
+	     elementEnter.each(function(d, i) {
+		 let trafoEnds = cimModel.getGraph([d], "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer");
+		 if (trafoEnds.length > 0) {
+		     self.createElements(d3.select(this), "PowerTransformerEnd"+i, "Transformer Windings", trafoEnds.map(el => el.source));
+		 }
+	     });
+	 }
 
 	 return elementEnter;
      }.bind(this)

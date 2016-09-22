@@ -45,22 +45,21 @@ function cimDiagramModel() {
 
 	buildModel(data, callback) {
 	    model.data = data;
+	    model.dataMap = new Map();
 	    model.linksMap = new Map();
-	    model.conductingEquipmentGraphs = new Map();
-	    model.diagramObjectGraphs = new Map();
-	    model.diagramObjectPointGraphs = new Map();
 	    model.activeDiagramName = "none";
 	    model.schemaAttributesMap = new Map();
 	    model.schemaLinksMap = new Map();
 
-	    let allObjects = [].filter.call(data.children[0].children, function(el) {
-		return el.attributes.getNamedItem("rdf:ID") !== null;
-	    });
-	    // build a map (UUID)->(object)
-	    model.dataMap = new Map();//Array.prototype.slice.call(allObjects, 0).map(el => ["#" + el.attributes.getNamedItem("rdf:ID").value, el]));
-	    // build a map (link name, target UUID)->(source objects)
-	    for (let i in allObjects) {
-		let object = allObjects[i];
+	    // build a map (UUID)->(object) and a map (link name, target UUID)->(source objects)
+	    for (let i in data.children[0].children) {
+		let object = data.children[0].children[i];
+		if (typeof(object.attributes) === "undefined") {
+		    continue;
+		}
+		if (object.attributes.getNamedItem("rdf:ID") === null) {
+		    continue;
+		}
 		model.dataMap.set("#" + object.attributes.getNamedItem("rdf:ID").value, object);
 		if (typeof(object.attributes) !== "undefined") {
 		    let links = model.getLinks(object);
@@ -88,6 +87,56 @@ function cimDiagramModel() {
 	save() {
 	    var oSerializer = new XMLSerializer();
 	    var sXML = oSerializer.serializeToString(model.data);
+	    return sXML;
+	},
+
+	// serialize the current diagram.
+	export() {
+	    let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2010/CIM-schema-cim15#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
+	    let parser = new DOMParser();
+	    let data = parser.parseFromString(emptyFile, "application/xml");
+	    // fill the file
+	    data.children[0].appendChild(model.activeDiagram);
+	    let allDiagramObjects = model.getGraph([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
+	    for (let diagramObject of allDiagramObjects) {
+		data.children[0].appendChild(diagramObject);
+	    }
+	    let allEquipments = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects").map(el => el.source);
+	    for (let equipment of allEquipments) {
+		data.children[0].appendChild(equipment);
+	    }
+	    let allDiagramObjectPoints = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
+	    for (let diagramObjectPoint of allDiagramObjectPoints) {
+		data.children[0].appendChild(diagramObjectPoint);
+	    }
+	    let allTerminals = model.getTerminals(allEquipments);
+	    for (let terminal of allTerminals) {
+		data.children[0].appendChild(terminal);
+	    }
+	    let allConnectivityNodes = model.getConnectivityNodes();
+	    for (let connectivityNode of allConnectivityNodes) {
+		data.children[0].appendChild(connectivityNode);
+	    }
+	    let allSubstations = model.getEquipmentContainers("cim:Substation");
+	    for (let substation of allSubstations) {
+		data.children[0].appendChild(substation);
+	    }
+	    let allLines = model.getEquipmentContainers("cim:Line");
+	    for (let line of allLines) {
+		data.children[0].appendChild(line);
+	    }
+	    let allBaseVoltages = model.getGraph(allEquipments, "ConductingEquipment.BaseVoltage", "BaseVoltage.ConductingEquipment").map(el => el.source)
+	    console.log(allBaseVoltages);
+	    for (let baseVoltage of allBaseVoltages) {
+		data.children[0].appendChild(baseVoltage);
+	    }
+	    let allTrafoEnds = model.getGraph(allEquipments, "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer").map(el => el.source);
+	    for (let trafoEnd of allTrafoEnds) {
+		data.children[0].appendChild(trafoEnd);
+	    }
+		
+	    var oSerializer = new XMLSerializer();
+	    var sXML = oSerializer.serializeToString(data);
 	    return sXML;
 	},
 
@@ -259,6 +308,9 @@ function cimDiagramModel() {
 
 	// get a specific attribute of a given object.
 	getAttribute(object, attrName) {
+	    if (typeof(object) === "undefined") {
+		return "undefined";
+	    }
 	    let attributes = model.getAttributes(object);
 	    return attributes.filter(el => el.nodeName === attrName)[0];
 	},
@@ -282,12 +334,16 @@ function cimDiagramModel() {
 	    let newElement = model.cimObject(type);
 	    model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
 	    // create two terminals (not always right)
-	    let term1 = model.cimObject("cim:Terminal");
-	    let term2 = model.cimObject("cim:Terminal");	    
-	    model.addLink(newElement, "cim:ConductingEquipment.Terminals", term1);
-	    model.addLink(newElement, "cim:ConductingEquipment.Terminals", term2);
+	    model.createTerminal(newElement);
+	    model.createTerminal(newElement);
 	    
 	    model.trigger("createObject", newElement);
+	},
+
+	// add a terminal to a given object
+	createTerminal(object) {
+	    let term = model.cimObject("cim:Terminal");
+	    model.addLink(object, "cim:ConductingEquipment.Terminals", term);
 	},
 
 	// add an object to the active diagram
@@ -306,7 +362,6 @@ function cimDiagramModel() {
 	    }
 	    model.addLink(object, "cim:IdentifiedObject.DiagramObjects", dobj);
 	    model.addLink(dobj, "cim:DiagramObject.Diagram", model.activeDiagram);
-//	    model.diagramObjectGraphs.get(model.activeDiagramName).push({source: object, target: dobj});
 	},
 
 	updateActiveDiagram(object, lineData) {
@@ -364,7 +419,11 @@ function cimDiagramModel() {
 	// get all the links of a given object which are actually set.
 	getLinks(object) {
 	    return [].filter.call(object.children, function(el) {
-		return (el.attributes.length > 0) && (el.attributes.getNamedItem("rdf:resource").value.charAt(0) === "#");
+		let resource = el.attributes.getNamedItem("rdf:resource");
+		if (el.attributes.length === 0 || resource === null) {
+		    return false;
+		}
+		return (resource.value.charAt(0) === "#");
 	    });
 	},
 
@@ -500,15 +559,11 @@ function cimDiagramModel() {
 	getConductingEquipmentGraph(identObjs) {
 	    let ceEdges = [];
 	    if (arguments.length === 0) {
-		ceEdges = model.conductingEquipmentGraphs.get(model.activeDiagramName);
-		if (typeof(ceEdges) === "undefined") {
-		    if (typeof(model.activeDiagram) !== "undefined") {
-			let ioEdges = model.getDiagramObjectGraph();
-			let graphicObjects = ioEdges.map(el => el.source);
-			ceEdges = model.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
-		    } 
-		    //model.conductingEquipmentGraphs.set(model.activeDiagramName, ceEdges);
-		}
+		if (typeof(model.activeDiagram) !== "undefined") {
+		    let ioEdges = model.getDiagramObjectGraph();
+		    let graphicObjects = ioEdges.map(el => el.source);
+		    ceEdges = model.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
+		} 
 	    } else {
 		if (typeof(model.activeDiagram) !== "undefined") {
 		    let ioEdges = model.getDiagramObjectGraph(identObjs);
@@ -528,15 +583,11 @@ function cimDiagramModel() {
 	getDiagramObjectGraph(identObjs) {
 	    let ioEdges = [];
 	    if (arguments.length === 0) {
-		ioEdges = model.diagramObjectGraphs.get(model.activeDiagramName);
-		if (typeof(ioEdges) === "undefined") {
-		    let allDiagramObjects = []; 
-		    if (typeof(model.activeDiagram) !== "undefined") {
-			allDiagramObjects = model.getGraph([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
-		    }
-		    ioEdges = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
-	 	    //model.diagramObjectGraphs.set(model.activeDiagramName, ioEdges);
+		let allDiagramObjects = []; 
+		if (typeof(model.activeDiagram) !== "undefined") {
+		    allDiagramObjects = model.getGraph([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
 		}
+		ioEdges = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
 	    } else {
 		if (typeof(model.activeDiagram) !== "undefined") {
 		    ioEdges = model.getGraph(identObjs, "IdentifiedObject.DiagramObjects", "DiagramObject.IdentifiedObject", true);
@@ -553,13 +604,9 @@ function cimDiagramModel() {
 	getDiagramObjectPointGraph(diagObjs) {
 	    let doEdges = [];
 	    if (arguments.length === 0) {
-		doEdges = model.diagramObjectPointGraphs.get(model.activeDiagramName);
-		if (typeof(doEdges) === "undefined") {
-		    let ioEdges = model.getDiagramObjectGraph();
-		    let allDiagramObjects = ioEdges.map(el => el.target);
-		    doEdges = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
-		    //model.diagramObjectPointGraphs.set(model.activeDiagramName, doEdges);
-		}
+		let ioEdges = model.getDiagramObjectGraph();
+		let allDiagramObjects = ioEdges.map(el => el.target);
+		doEdges = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
 	    } else {
 		doEdges = model.getGraph(diagObjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
 	    }

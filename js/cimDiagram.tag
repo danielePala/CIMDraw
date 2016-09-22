@@ -1,4 +1,30 @@
 <cimDiagram>
+    <style>
+     .app-diagram {
+	 max-height: 800px;
+     }
+
+     path.domain {
+	 fill: none;
+	 stroke: black;
+     }
+
+     g.tick > line {
+	 stroke: black;
+	 stroke-dasharray: 1 5;
+     }
+
+     svg {
+	 width: 1800px;
+	 height: 800px;
+     }
+
+     .tooltip-inner {
+	 max-width: 250px;
+	 width: 250px;
+     }
+    </style>
+    
     <cimDiagramControls model={model}></cimDiagramControls>
     <div class="app-diagram">
 	<svg>
@@ -14,24 +40,24 @@
      "use strict";
      let self = this;
      self.model = opts.model;
-     self.nodes = [];
-     self.edges = [];
 
      // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
+	 self.parent.trigger("rendering");
 	 if (decodeURI(name) !== self.diagramName) {
              self.render(name);
 	 }
          if (typeof(element) !== "undefined") {
              self.moveTo(element);
          }
+	 self.parent.trigger("rendered");
      });
 
      // listen to 'mount' event
      self.on("mount", function() {
 	 // setup xy axes
 	 let xScale = d3.scaleLinear().domain([0, 1800]).range([0,1800]);
-	 let yScale = d3.scaleLinear().domain([0, 800]).range([0,800]);
+	 let yScale = d3.scaleLinear().domain([0, 800]).range([0, 800]);
 	 let yAxis = d3.axisRight(yScale);
 	 let xAxis = d3.axisBottom(xScale);
 	 d3.select("svg").append("g").attr("id", "yAxisG").call(yAxis);
@@ -47,8 +73,8 @@
 	 let svgWidth = parseInt(d3.select("svg").style("width"));
 	 let svgHeight = parseInt(d3.select("svg").style("height"));
 	 // manage axes
-	 let xScale = d3.scaleLinear().domain([-newx/newZoom, (svgWidth-newx)/newZoom]).range([0,svgWidth]);
-	 let yScale = d3.scaleLinear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0,svgHeight]);
+	 let xScale = d3.scaleLinear().domain([-newx/newZoom, (svgWidth-newx)/newZoom]).range([0, svgWidth]);
+	 let yScale = d3.scaleLinear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0, svgHeight]);
 	 let yAxis = d3.axisRight(yScale);
 	 let xAxis = d3.axisBottom(xScale);
 	 d3.select("svg").select("#yAxisG").call(yAxis);
@@ -80,15 +106,16 @@
 
      // listen to 'setEdge' event from model
      self.model.on("setEdge", function(cn, term) {
-	 let edgeToChange = self.edges.filter(el => el.target === term)[0];
+	 let edgeToChange = d3.select("svg").selectAll("svg > g > g.edges > g").data().filter(el => el.target === term)[0];
 	 if (typeof(edgeToChange) === "undefined") {
 	     edgeToChange = {source: cn, target: term};
-	     self.edges.push(edgeToChange);
 	     self.createEdges([edgeToChange]);
 	 } else {
 	     edgeToChange.source = cn;
 	 }
-	 edgeToChange.p = self.closestPoint(cn, term);
+	 if (typeof(cn.lineData) === "undefined") {
+	     self.drawConnectivityNodes([cn]);
+	 }
 	 self.forceTick();
      });
 
@@ -96,9 +123,11 @@
      render(diagramName) {
 	 // clear all
 	 d3.select("svg").select("g").selectAll("g:not(.edges)").remove();
-	 self.nodes = [];
-	 self.edges = [];
 
+	 // DEBUG
+	 //let alleq = self.model.getConductingEquipmentGraph().map(el => el.source.nodeName);
+	 //console.log(new Set(alleq));
+	 
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
 	 let allConnectivityNodes = self.model.getConnectivityNodes();
@@ -111,6 +140,8 @@
 	 console.log("[" + Date.now() + "] extracted disconnectors");
 	 let allLoadBreakSwitches = self.model.getGraphicObjects("cim:LoadBreakSwitch");
 	 console.log("[" + Date.now() + "] extracted load break switches");
+	 let allJumpers = self.model.getGraphicObjects("cim:Jumper");
+	 console.log("[" + Date.now() + "] extracted jumpers");
 	 let allEnergySources = self.model.getGraphicObjects("cim:EnergySource")
 	     .concat(self.model.getGraphicObjects("cim:SynchronousMachine"));
 	 console.log("[" + Date.now() + "] extracted energy sources");
@@ -124,38 +155,32 @@
 	 console.log("[" + Date.now() + "] extracted busbarSections");
 
 	 // AC Lines
-	 let aclineEnter = this.drawACLines(allACLines);
+	 let aclineEnter = self.drawACLines(allACLines);
 	 console.log("[" + Date.now() + "] drawn acLines");
 	 // breakers
-	 let breakerEnter = this.drawBreakers(allBreakers);
+	 let breakerEnter = self.drawBreakers(allBreakers);
 	 console.log("[" + Date.now() + "] drawn breakers");
 	 // disconnectors
-	 let discEnter = this.drawDisconnectors(allDisconnectors);
+	 let discEnter = self.drawDisconnectors(allDisconnectors);
 	 console.log("[" + Date.now() + "] drawn disconnectors");
 	 // load break switches
-	 let lbsEnter = this.drawLoadBreakSwitches(allLoadBreakSwitches);
+	 let lbsEnter = self.drawLoadBreakSwitches(allLoadBreakSwitches);
 	 console.log("[" + Date.now() + "] drawn load break switches");
+	 // jumpers
+	 let jumpsEnter = self.drawJumpers(allJumpers);
+	 console.log("[" + Date.now() + "] drawn jumpers");
 	 // energy sources
-	 let ensrcEnter = this.drawEnergySources(allEnergySources);
+	 let ensrcEnter = self.drawEnergySources(allEnergySources);
 	 console.log("[" + Date.now() + "] drawn energy sources");
 	 // energy consumers
-	 let enconsEnter = this.drawEnergyConsumers(allEnergyConsumers);
+	 let enconsEnter = self.drawEnergyConsumers(allEnergyConsumers);
 	 console.log("[" + Date.now() + "] drawn energy consumers");
 	 // power transformers
-	 let trafoEnter = this.drawPowerTransformers(allPowerTransformers);
+	 let trafoEnter = self.drawPowerTransformers(allPowerTransformers);
 	 console.log("[" + Date.now() + "] drawn power transformers");
 	 // connectivity nodes
-	 let cnEnter = this.drawConnectivityNodes(allConnectivityNodes);
+	 let cnEnter = self.drawConnectivityNodes(allConnectivityNodes);
 	 console.log("[" + Date.now() + "] drawn connectivity nodes");
-
-	 this.nodes = allConnectivityNodes
-		.concat(allACLines)
-		.concat(allBreakers)
-		.concat(allDisconnectors)
-		.concat(allLoadBreakSwitches)
-		.concat(allEnergySources)
-		.concat(allEnergyConsumers)
-		.concat(allPowerTransformers);
 
 	 // ac line terminals
 	 let termSelection = this.createTerminals(aclineEnter);
@@ -170,6 +195,9 @@
 	 // load break switch terminals
 	 this.createTerminals(lbsEnter);
 	 console.log("[" + Date.now() + "] drawn load break switch terminals");
+	 // jumper terminals
+	 this.createTerminals(jumpsEnter);
+	 console.log("[" + Date.now() + "] drawn jumper terminals");
 	 // energy source terminals
 	 termSelection = this.createTerminals(ensrcEnter, 50);
 	 this.createMeasurements(termSelection);
@@ -206,22 +234,15 @@
 	 function mouseOut(d) {
 	     d3.select(this).selectAll("rect").remove();	     
 	 }
-
-	 // create edges
-	 self.createEdges(self.edges);
+	
 	 self.forceTick();
-
 	 self.trigger("render");
      }
 
      createEdges(edges) {
-	 d3.select("svg").select("g > g.edges")
-	   .selectAll("g.edge")
-	   .data(edges, function(d) {
-	       return d.source.attributes.getNamedItem("rdf:ID").value+d.target.attributes.getNamedItem("rdf:ID").value;
-	   })
-	   .enter()
+	 d3.select("svg > g > g.edges")
 	   .append("g")
+	   .data(edges)
 	   .attr("class", "edge")
 	   .attr("id", function(d) {
 	       return d.source.attributes.getNamedItem("rdf:ID").value+d.target.attributes.getNamedItem("rdf:ID").value;
@@ -325,9 +346,6 @@
 	     } 
 	     let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
 	     if (points.length > 0) {
-		 if (typeof(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.xPosition")) === "undefined") {
-		     console.log(points[0]);
-		 }
 		 d.x = parseInt(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.xPosition").innerHTML);
 		 d.y = parseInt(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.yPosition").innerHTML);
 		 for (let point in points) {
@@ -352,7 +370,7 @@
 	     d.lineData = lineData;
 	 }
 
-	 var menu = [
+	 let menu = [
 	     {
 		 title: 'Rotate',
 		 action: function(elm, d, i) {
@@ -374,9 +392,12 @@
 			 return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
 		     }).remove();
 		     selection.remove();
+		     
+		     // not so easy: remove terminals. Move to model.js
+		     selection.datum().remove();
 		 }
 	     }
-	 ]
+	 ];
 	 
 	 let selection = d3.select("svg").select("g." + types).selectAll("g." + type)
 			   .data(data, function(d) {
@@ -446,6 +467,11 @@
      // Draw all load break switches
      drawLoadBreakSwitches(allLoadBreakSwitches) {
 	 return this.drawSwitches(allLoadBreakSwitches, "LoadBreakSwitch", "black");
+     }
+
+     // Draw all jumpers
+     drawJumpers(allJumpers) {
+	 return this.drawSwitches(allJumpers, "Jumper", "steelblue");
      }
 
      drawSwitches(allSwitches, type, color) {
@@ -702,6 +728,13 @@
 	 }
 	 let termSelection = eqSelection.selectAll("g")
 					.data(function(d) {
+					    /*
+					       let numTerm = getNumTerm(d);
+					       let diffTerm = numTerm - self.model.getTerminals([d]).length;
+					       for (let i = 0; i < diffTerm; i++) {
+					       self.model.createTerminal(d);
+					       }
+					    */
 					    return self.model.getTerminals([d]);
 					})
 					.enter()
@@ -753,10 +786,8 @@
 						}
 					    }
 					    d.rotation = d3.select(this.parentNode).datum().rotation;
-					    self.nodes.push(d);
 					    if (typeof(cn) !== "undefined" && typeof(cn.lineData) !== "undefined") {
 						let newEdge = {source: cn, target: d};
-						self.edges.push(newEdge); // add a new edge to the connectivity graph
 						self.createEdges([newEdge]);
 					    }
 					})
@@ -885,11 +916,11 @@
 		     point.y = point.y - d.y;
 		 }
 	     } else {
-		 lineData.push({x:-5, y:-5, seq:1});
-		 lineData.push({x:5, y:-5, seq:2});
-		 lineData.push({x:5, y:5, seq:3});
-		 lineData.push({x:-5, y:5, seq:4});
-		 lineData.push({x:-5, y:-5, seq:5});
+		 lineData.push({x:-1, y:-1, seq:1});
+		 lineData.push({x:1, y:-1, seq:2});
+		 lineData.push({x:1, y:1, seq:3});
+		 lineData.push({x:-1, y:1, seq:4});
+		 lineData.push({x:-1, y:-1, seq:5});
 		 d.x = xcalc;
 		 d.y = ycalc;
 	     }
@@ -990,6 +1021,7 @@
 	 // clear substations and lines
 	 d3.select("svg").selectAll("svg > g > g.Substations > g").remove();
 	 d3.select("svg").selectAll("svg > g > g.ACLineSegments > g > path").attr("stroke-width", 2);
+	 d3.select("svg").selectAll("svg > g > g > g").selectAll("rect").remove();
 	 let hoverD = this.model.getObject(uuid);
 	 // handle busbars
 	 if (hoverD.nodeName === "cim:BusbarSection") {
@@ -1027,6 +1059,7 @@
          let line = d3.line()
 	              .x(function(d) { return d.x; })
 	              .y(function(d) { return d.y; });
+	 
 	 let pathNode = d3.select(document.createElementNS('http://www.w3.org/2000/svg', 'svg')).append("path").attr("d", line(source.lineData)).node(); 
 	 
 	 if (pathNode === null) {
@@ -1153,53 +1186,48 @@
 	 object.px = object.x;
 	 object.y = (m[1] - yoffset) / svgZoom;
 	 object.py = object.y;
+	 let selection = null;
 	 
 	 let lineData = [{x: 0, y: 0, seq:1}]; // always OK except acline and busbar
-	 if (object.nodeName === "cim:ACLineSegment") {
+	 if (object.nodeName === "cim:ACLineSegment" || object.nodeName === "cim:BusbarSection") {
 	     lineData.push({x: 150, y: 0, seq:2});
-	     self.model.addToActiveDiagram(object, lineData);
-	     let aclineEnter = self.drawACLines([object]);
-	     handleTerminals(aclineEnter);
-	     aclineEnter.on("mouseover.hover", self.hover)
-			.on("mouseout", mouseOut);
+	 }
+	 self.model.addToActiveDiagram(object, lineData);
+
+	 if (object.nodeName === "cim:ACLineSegment") {
+	     selection = self.drawACLines([object]);
 	 }
 	 if (object.nodeName === "cim:Breaker") {
-	     self.model.addToActiveDiagram(object, lineData);
-	     let breakerEnter = self.drawBreakers([object]);
-	     handleTerminals(breakerEnter);
+	     selection = self.drawBreakers([object]);
 	 }
 	 if (object.nodeName === "cim:Disconnector") {
-	     self.model.addToActiveDiagram(object, lineData);
-	     let discEnter = self.drawDisconnectors([object]);
-	     handleTerminals(discEnter);
+	     selection = self.drawDisconnectors([object]);
 	 }
          if (object.nodeName === "cim:LoadBreakSwitch") {
-	     self.model.addToActiveDiagram(object, lineData);
-	     let lbsEnter = self.drawLoadBreakSwitches([object]);
-	     handleTerminals(lbsEnter);
+	     selection = self.drawLoadBreakSwitches([object]);
 	 }
 	 if (object.nodeName === "cim:EnergySource" || object.nodeName === "cim:SynchronousMachine") {
-	     self.model.addToActiveDiagram(object, lineData);
-	     let ensrcEnter = self.drawEnergySources([object]);
-	     handleTerminals(ensrcEnter);
+	     selection = self.drawEnergySources([object]);
 	 }
 	 if (object.nodeName === "cim:EnergyConsumer"|| object.nodeName === "cim:ConformLoad" || object.nodeName === "cim:NonConformLoad") {
-	     self.model.addToActiveDiagram(object, lineData);
-	     let enconsEnter = self.drawEnergyConsumers([object]);
-	     handleTerminals(enconsEnter);
+	     selection = self.drawEnergyConsumers([object]);
 	 }
 	 if (object.nodeName === "cim:PowerTransformer") {
-	     self.model.addToActiveDiagram(object, lineData);
-	     let trafoEnter = self.drawPowerTransformers([object]);
-	     handleTerminals(trafoEnter);
+	     selection = self.drawPowerTransformers([object]);
+	 }
+
+	 if (selection !== null) {
+	     handleTerminals(selection);
+	     selection.on("mouseover.hover", self.hover)
+		      .on("mouseout", mouseOut);
 	 }
 	 // handle busbars
 	 if (object.nodeName === "cim:BusbarSection") {
-	     lineData.push({x: 150, y: 0, seq:2});
-	     self.model.addToActiveDiagram(object, lineData);
 	     let terminal = self.model.getGraph([object], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true).map(el => el.target);
 	     let cn = self.model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-	     self.drawConnectivityNodes([cn]);
+	     selection = self.drawConnectivityNodes([cn]);
+	     selection.on("mouseover.hover", self.hover)
+		      .on("mouseout", mouseOut);
 
 	     let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
 	     let eqTerminals = self.model.getTerminals(equipments);
@@ -1207,8 +1235,6 @@
 		 let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 		 if (eqCn === cn) {
 		     let newEdge = {source: cn, target: eqTerminal};
-		     newEdge.p = self.closestPoint(cn, eqTerminal);
-		     self.edges.push(newEdge); // add a new edge to the connectivity graph
 		     self.createEdges([newEdge]);
 		 }
 	     }   
@@ -1224,10 +1250,20 @@
 		 if (typeof(cn) !== "undefined") {
 		     let equipments = self.model.getEquipments(cn);
 		     // let's try to get a busbar section
-		     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+		     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];		     
 		     equipments = equipments.filter(el => el !== busbarSection);
 		     if (equipments.length > 1) {
 			 self.drawConnectivityNodes([cn]);
+
+			 let eqTerminals = self.model.getTerminals(equipments);
+			 for (let eqTerminal of eqTerminals) {
+			     let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+			     if (eqCn === cn) {
+				 let newEdge = {source: cn, target: eqTerminal};
+				 self.createEdges([newEdge]);
+			     }
+			 }
+			 
 		     }
 		 }
 	     }

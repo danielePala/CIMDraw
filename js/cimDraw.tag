@@ -1,4 +1,20 @@
 <cimDraw>
+    <style>
+     .center-block {
+	 width: 600px;
+	 text-align: center;
+     }
+     
+     .diagramTools {
+	 margin-bottom: 20px;
+     }
+     
+     .app-container {
+	 display: flex;
+	 flex-flow: row nowrap;
+     }     
+    </style>
+    
     <nav class="navbar navbar-default">
 	<div class="container-fluid">
 	    <div class="navbar-header">
@@ -8,6 +24,7 @@
 		<p class="navbar-text" id="cim-filename"></p>
 		<a class="btn btn-default navbar-btn navbar-left" href="" role="button" id="cim-home-container">Change file</a>
 		<a class="btn btn-default navbar-btn navbar-left" role="button" id="cim-save" download="file.xml">Save as...</a>
+		<a class="btn btn-default navbar-btn navbar-left" role="button" id="cim-export" download="diagram.xml">Export current diagram</a>
 		<select id="cim-diagrams" class="selectpicker navbar-left navbar-form" onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
 		    <option disabled="disabled">Select a diagram</option>
 		</select>
@@ -72,10 +89,34 @@
 	    </div>
 	</div>
     </div>
+
+    <!-- Modal for loading info -->
+    <div class="modal fade" id="loadingDiagramModal" tabindex="-1" role="dialog" aria-labelledby="loadingDiagramModalLabel">
+	<div class="modal-dialog" role="document">
+	    <div class="modal-content">
+		<div class="modal-body">
+		    <p id="loadingDiagramMsg">loading...</p>
+		</div>
+	    </div>
+	</div>
+    </div>
+    
     <script>
      "use strict";
      let self = this;
      self.cimModel = cimDiagramModel();
+     let childrenRendering = 0;
+     
+     self.on("rendering", function() {
+	 childrenRendering = childrenRendering + 1;
+     });
+
+     self.on("rendered", function() {
+	 childrenRendering = childrenRendering - 1;
+	 if (childrenRendering === 0) {
+	     $("#loadingDiagramModal").modal("hide");
+	 }
+     });
      
      self.on("mount", function() {
 	 console.log("start router");
@@ -93,6 +134,7 @@
 	     $("#cim-load-container").hide();
 	     $("#cim-home-container").hide();
 	     $("#cim-save").hide();
+	     $("#cim-export").hide();
 	     $(".selectpicker").selectpicker("hide");
 	     // main logic
 	     $("#cim-file-input").fileinput("reset");
@@ -136,7 +178,10 @@
 	 // here we show a certain diagram
 	 riot.route('/*/diagrams/*', function(file, name) {	
 	     $("#cim-local-file-component").hide();
-	     loadDiagram(file, name);
+	     $("#loadingDiagramModal").modal("show");
+	     $("#loadingDiagramModal").on("shown.bs.modal", function(e) {
+		 loadDiagram(file, name);		 
+	     });
 	 });
 
 	 // creates a new model if it doesn't exist, and shows a diagram.
@@ -152,6 +197,15 @@
 		 $('.selectpicker').selectpicker('val', decodeURI("#" + file + "/diagrams/" + name));
 		 self.trigger("showDiagram", file, name, element);
 		 $("#app-container").show();
+
+		 // allow exporting a copy of the diagram 
+		 $("#cim-export").on("click", function() {
+		     let out = self.cimModel.export();
+		     let blob = new Blob([out], {type : 'text/xml'});
+		     let objectURL = URL.createObjectURL(blob);
+		     $("#cim-export").attr("href", objectURL);
+		 });
+		 $("#cim-export").show();
 	     };
 	 };
 
