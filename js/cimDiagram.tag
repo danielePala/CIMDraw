@@ -392,9 +392,8 @@
 			 return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
 		     }).remove();
 		     selection.remove();
-		     
-		     // not so easy: remove terminals. Move to model.js
-		     selection.datum().remove();
+		     // delete from model
+		     self.model.deleteObject(selection.datum());
 		 }
 	     }
 	 ];

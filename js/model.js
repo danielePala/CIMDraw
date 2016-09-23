@@ -340,6 +340,47 @@ function cimDiagramModel() {
 	    model.trigger("createObject", newElement);
 	},
 
+	// delete an object: also, delete its terminals and graphic objects
+	deleteObject(object) {
+	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
+	    // delete terminals, if any
+	    let terminals = model.getTerminals([object]);
+	    for (let terminal of terminals) {
+		model.deleteObject(terminal);
+	    }
+	    // delete graphic objects, if any
+	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.target);
+	    let points = model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
+	    for (let dobj of dobjs) {
+		model.deleteObject(dobj);
+	    }
+	    for (let point of points) {
+		model.deleteObject(point);
+	    }
+	    // all the links to 'object' must be deleted
+	    let keysToDelete = [];
+	    for (let [linkAndTarget, sources] of model.linksMap) {
+		if (linkAndTarget.endsWith(objUUID)) {
+		    let invLinkName = "cim:" + linkAndTarget.split("#")[0];
+		    for (let source of sources) {
+			let invLink = model.getLink(source, invLinkName);
+			invLink.remove();
+			keysToDelete.push(linkAndTarget);
+		    }
+		}
+	    }
+	    // update the 'linksMap' map
+	    for (let keyToDelete of keysToDelete) {
+		model.linksMap.delete(keyToDelete);
+	    }
+	    // update the 'dataMap' map
+	    model.dataMap.delete("#" + objUUID);
+	    // delete the object
+	    object.remove();
+
+	    model.trigger("deleteObject", objUUID);
+	},
+
 	// add a terminal to a given object
 	createTerminal(object) {
 	    let term = model.cimObject("cim:Terminal");
@@ -462,6 +503,7 @@ function cimDiagramModel() {
 		let invLink = model.getLink(actTarget, invLinkName);
 		if (typeof(invLink) !== "undefined") {
 		    invLink.remove();
+		    // TODO: remove from linksMap
 		}
 		// set the new value
 		link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;

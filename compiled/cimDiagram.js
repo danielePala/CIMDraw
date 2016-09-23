@@ -339,7 +339,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 		     }).remove();
 		     selection.remove();
 
-		     selection.datum().remove();
+		     self.model.deleteObject(selection.datum());
 		 }
 	     }
 	 ];

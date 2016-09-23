@@ -39,12 +39,26 @@ riot.tag2('cimtree', '<div class="app-tree" id="app-tree"> <div class="tree"> <f
      });
 
      self.model.on("createObject", function(object) {
-	 let cimNetwork = d3.select("div.tree").selectAll("div.tree > ul.CIMNetwork");
+	 let cimNetwork = d3.select("div.tree").selectAll("ul.CIMNetwork");
 	 if (object.nodeName === "cim:Breaker") {
 	     self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
 	 }
 	 if (object.nodeName === "cim:ACLineSegment") {
 	     self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
+	 }
+     });
+
+     self.model.on("deleteObject", function(objectUUID) {
+	 let cimObject = d3.select("div.tree").selectAll("ul.CIMNetwork").select("ul#" + objectUUID).node();
+	 if (cimObject !== null) {
+	     let cimObjectContainer = cimObject.parentNode;
+
+	     let elementsTopContainer = d3.select(cimObjectContainer.parentNode.parentNode);
+	     let elementCount = parseInt(elementsTopContainer.select("span").html());
+	     elementCount = elementCount - 1;
+	     elementsTopContainer.select("span").html(elementCount);
+
+	     cimObjectContainer.remove();
 	 }
      });
 
