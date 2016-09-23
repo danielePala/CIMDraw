@@ -10,6 +10,7 @@ The code uses many ES6 features, so you will need a modern browser to run it (Fi
 ### Installing ###
 
 In order to use the application, just serve it with your favourite web server and view it with your browser.
+Alternatively, simply open 'index.html' in your browser, no web server installation needed.
 
 ### Using ###
 
