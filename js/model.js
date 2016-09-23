@@ -76,7 +76,7 @@ function cimDiagramModel() {
 	    }
 	    
 	    // let's read a schema file
-	    let rdfs = "/rdf-schema/EquipmentProfileRDFSAugmented-v2_4_15-7Aug2014.rdf";
+	    let rdfs = "rdf-schema/EquipmentProfileRDFSAugmented-v2_4_15-7Aug2014.rdf";
 	    d3.xml(rdfs, function(schemaData) {
 		model.schemaData = schemaData;
 		callback(null);
