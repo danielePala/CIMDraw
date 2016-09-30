@@ -58,9 +58,9 @@
 
 	 $("#showAllObjects").change(function() {
 	     if (this.checked === true) {
-		 self.createTree(self.model.getObjects, self.model.getObjects);
+		 self.createTree(self.model.getObjects1, self.model.getObjects);
 	     } else {
-		 self.createTree(self.model.getGraphicObjects, self.model.getEquipmentContainers);
+		 self.createTree(self.model.getGraphicObjects1, self.model.getEquipmentContainers);
 	     }
 	 });
      });
@@ -90,16 +90,13 @@
 
      // listen to 'deleteObject' event from model
      self.model.on("deleteObject", function(objectUUID) {
-	 let cimObject = d3.select("div.tree").selectAll("ul.CIMNetwork").select("ul#" + objectUUID).node();
-	 if (cimObject !== null) {
-	     let cimObjectContainer = cimObject.parentNode;
-	     // update element count
-	     let elementsTopContainer = d3.select(cimObjectContainer.parentNode.parentNode);
-	     let elementCount = parseInt(elementsTopContainer.select("span").html());
-	     elementCount = elementCount - 1;
-	     elementsTopContainer.select("span").html(elementCount);
+	 self.deleteObject(objectUUID);
+     });
 
-	     cimObjectContainer.remove();
+     // listen to 'deleteFromDiagram' event from model
+     self.model.on("deleteFromDiagram", function(objectUUID) {
+	 if ($("#showAllObjects").prop('checked') === false) {
+	     self.deleteObject(objectUUID);
 	 }
      });
 
@@ -132,31 +129,48 @@
 	 // clear all
 	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
 
+	 let allEquipments = getObjects([
+	     "cim:BaseVoltage",
+	     "cim:BusbarSection",
+	     "cim:PowerTransformer",
+	     "cim:ACLineSegment",
+	     "cim:Breaker",
+	     "cim:Disconnector",
+	     "cim:LoadBreakSwitch",
+	     "cim:Jumper",
+	     "cim:Junction",
+	     "cim:EnergySource",
+	     "cim:SynchronousMachine",
+	     "cim:EnergyConsumer",
+	     "cim:ConformLoad",
+	     "cim:NonConformLoad"
+	     ]);
+
 	 // base voltages don't depend on diagram
-	 let allBaseVoltages = self.model.getObjects("cim:BaseVoltage");
+	 let allBaseVoltages = allEquipments["cim:BaseVoltage"]; 
 	 console.log("[" + Date.now() + "] extracted base voltages");
-	 let allBusbarSections = getObjects("cim:BusbarSection");
+	 let allBusbarSections = allEquipments["cim:BusbarSection"]; 
 	 console.log("[" + Date.now() + "] extracted busbarSections");
-	 let allPowerTransformers = getObjects("cim:PowerTransformer");
+	 let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
 	 console.log("[" + Date.now() + "] extracted power transformers");
-	 let allACLines = getObjects("cim:ACLineSegment");
+	 let allACLines = allEquipments["cim:ACLineSegment"]; 
 	 console.log("[" + Date.now() + "] extracted acLines");
-	 let allBreakers = getObjects("cim:Breaker");
+	 let allBreakers = allEquipments["cim:Breaker"]; 
 	 console.log("[" + Date.now() + "] extracted breakers");
-	 let allDisconnectors = getObjects("cim:Disconnector");
+	 let allDisconnectors = allEquipments["cim:Disconnector"]; 
 	 console.log("[" + Date.now() + "] extracted disconnectors");
-	 let allLoadBreakSwitches = getObjects("cim:LoadBreakSwitch");
+	 let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
 	 console.log("[" + Date.now() + "] extracted load break switches");
-	 let allJumpers = getObjects("cim:Jumper");
+	 let allJumpers = allEquipments["cim:Jumper"]; 
 	 console.log("[" + Date.now() + "] extracted jumpers");
-	 let allJunctions = getObjects("cim:Junction");
+	 let allJunctions = allEquipments["cim:Junction"]; 
 	 console.log("[" + Date.now() + "] extracted junctions");
-	 let allEnergySources = getObjects("cim:EnergySource")
-	     .concat(getObjects("cim:SynchronousMachine"));
+	 let allEnergySources = allEquipments["cim:EnergySource"] 
+	     .concat(allEquipments["cim:SynchronousMachine"]);
 	 console.log("[" + Date.now() + "] extracted energy sources");
-	 let allEnergyConsumers = getObjects("cim:EnergyConsumer")
-	                              .concat(getObjects("cim:ConformLoad"))
-	                              .concat(getObjects("cim:NonConformLoad"));
+	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"] 
+	                              .concat(allEquipments["cim:ConformLoad"])
+	                              .concat(allEquipments["cim:NonConformLoad"]);
 	 console.log("[" + Date.now() + "] extracted energy consumers");
 	 let allSubstations = getContainers("cim:Substation");
 	 console.log("[" + Date.now() + "] extracted substations");
@@ -368,7 +382,20 @@
 		 }
 	     });
 	 }
-	     
+
+	 // add extra link to PQ application
+	 let pqLink = elementEnter.append("li")
+				  .attr("class", "link");
+	 pqLink.append("button")
+	       .attr("class","btn btn-default btn-xs")
+	       .attr("type", "submit")
+	       .on("click", function (d) {
+		   let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
+		   let sourceUUID = source.attributes.getNamedItem("rdf:ID").value;
+		   window.open("http://ric302107:8080/ClientRest/uuid/uuid.jsp?uuid=" + sourceUUID);
+	       })
+	       .html("View in CIM Datastore");
+	 	     
 	 return elementEnter;
      }
 
@@ -408,6 +435,21 @@
 	 }
 	 targetParent.collapse("show");
      }
+     
+     deleteObject(objectUUID) {
+	 let cimObject = d3.select("div.tree").selectAll("ul.CIMNetwork").select("ul#" + objectUUID).node();
+	 if (cimObject !== null) {
+	     let cimObjectContainer = cimObject.parentNode;
+	     // update element count
+	     let elementsTopContainer = d3.select(cimObjectContainer.parentNode.parentNode);
+	     let elementCount = parseInt(elementsTopContainer.select("span").html());
+	     elementCount = elementCount - 1;
+	     elementsTopContainer.select("span").html(elementCount);
+
+	     cimObjectContainer.remove();
+	 }
+     }
+     
     </script> 
     
 </cimTree>

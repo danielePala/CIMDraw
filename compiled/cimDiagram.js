@@ -38,6 +38,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	 let xAxis = d3.axisBottom(xScale);
 	 d3.select("svg").select("#yAxisG").call(yAxis);
 	 d3.select("svg").select("#xAxisG").call(xAxis);
+
      });
 
      self.model.on("createObject", function(object) {
@@ -83,26 +84,40 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	 self.diagramName = decodeURI(diagramName);
 	 let allConnectivityNodes = self.model.getConnectivityNodes();
 	 console.log("[" + Date.now() + "] extracted connectivity nodes");
-	 let allACLines = self.model.getGraphicObjects("cim:ACLineSegment");
+
+	 let allEquipments = self.model.getGraphicObjects1(["cim:ACLineSegment",
+						   "cim:Breaker",
+						   "cim:Disconnector",
+						   "cim:LoadBreakSwitch",
+						   "cim:Jumper",
+						   "cim:EnergySource",
+						   "cim:SynchronousMachine",
+						   "cim:EnergyConsumer",
+						   "cim:ConformLoad",
+						   "cim:NonConformLoad",
+						   "cim:PowerTransformer",
+						   "cim:BusbarSection"]);
+
+	 let allACLines = allEquipments["cim:ACLineSegment"];
 	 console.log("[" + Date.now() + "] extracted acLines");
-	 let allBreakers = self.model.getGraphicObjects("cim:Breaker");
+	 let allBreakers = allEquipments["cim:Breaker"];
 	 console.log("[" + Date.now() + "] extracted breakers");
-	 let allDisconnectors = self.model.getGraphicObjects("cim:Disconnector");
+	 let allDisconnectors = allEquipments["cim:Disconnector"];
 	 console.log("[" + Date.now() + "] extracted disconnectors");
-	 let allLoadBreakSwitches = self.model.getGraphicObjects("cim:LoadBreakSwitch");
+	 let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"];
 	 console.log("[" + Date.now() + "] extracted load break switches");
-	 let allJumpers = self.model.getGraphicObjects("cim:Jumper");
+	 let allJumpers = allEquipments["cim:Jumper"];
 	 console.log("[" + Date.now() + "] extracted jumpers");
-	 let allEnergySources = self.model.getGraphicObjects("cim:EnergySource")
-	     .concat(self.model.getGraphicObjects("cim:SynchronousMachine"));
+	 let allEnergySources = allEquipments["cim:EnergySource"]
+	     .concat(allEquipments["cim:SynchronousMachine"]);
 	 console.log("[" + Date.now() + "] extracted energy sources");
-	 let allEnergyConsumers = self.model.getGraphicObjects("cim:EnergyConsumer")
-				      .concat(self.model.getGraphicObjects("cim:ConformLoad"))
-				      .concat(self.model.getGraphicObjects("cim:NonConformLoad"));
+	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"]
+				      .concat(allEquipments["cim:ConformLoad"])
+				      .concat(allEquipments["cim:NonConformLoad"]);
 	 console.log("[" + Date.now() + "] extracted energy consumers");
-	 let allPowerTransformers = self.model.getGraphicObjects("cim:PowerTransformer");
+	 let allPowerTransformers = allEquipments["cim:PowerTransformer"];
 	 console.log("[" + Date.now() + "] extracted power transformers");
-	 let allBusbarSections = self.model.getGraphicObjects("cim:BusbarSection");
+	 let allBusbarSections = allEquipments["cim:BusbarSection"];
 	 console.log("[" + Date.now() + "] extracted busbarSections");
 
 	 let aclineEnter = self.drawACLines(allACLines);
@@ -133,7 +148,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	 console.log("[" + Date.now() + "] drawn connectivity nodes");
 
 	 let termSelection = this.createTerminals(aclineEnter);
-	 this.createMeasurements(termSelection);
+	 self.createMeasurements(termSelection);
 	 console.log("[" + Date.now() + "] drawn acline terminals");
 
 	 this.createTerminals(breakerEnter);
@@ -149,15 +164,15 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	 console.log("[" + Date.now() + "] drawn jumper terminals");
 
 	 termSelection = this.createTerminals(ensrcEnter, 50);
-	 this.createMeasurements(termSelection);
+	 self.createMeasurements(termSelection);
 	 console.log("[" + Date.now() + "] drawn energy source terminals");
 
 	 termSelection = this.createTerminals(enconsEnter);
-	 this.createMeasurements(termSelection);
+	 self.createMeasurements(termSelection);
 	 console.log("[" + Date.now() + "] drawn energy consumer terminals");
 
 	 termSelection = this.createTerminals(trafoEnter, 50);
-	 this.createMeasurements(termSelection);
+	 self.createMeasurements(termSelection);
 	 console.log("[" + Date.now() + "] drawn power transformer terminals");
 
 	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
@@ -185,15 +200,61 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 
 	 self.forceTick();
 	 self.trigger("render");
+
+	 allConnectivityNodes = self.model.getObjects("cim:ConnectivityNode");
+	 console.log(allConnectivityNodes.length);
+	 let topos = allConnectivityNodes.reduce(function(r, v) {
+	     let cnTerminals = self.model.getGraph([v], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode").map(el => el.source);
+	     let switches = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source).filter(function(el) {
+		 return self.model.getAllSuper(el.localName).indexOf("Switch") > -1;
+	     });
+	     switches = switches.filter(function(el) {
+
+		 let status = self.model.getAttribute(el, "cim:Switch.normalOpen").textContent;
+		 return (status === "true");
+	     });
+	     let swTerminals = self.model.getGraph(switches, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment").map(el => el.source);
+	     let swCns = self.model.getGraph(swTerminals, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source);
+	     swCns.push(v);
+	     r.push(new Set(swCns));
+	     return r;
+	 }, []);
+
+	 let oldSize = topos.length;
+	 let newSize = 0;
+	 while (oldSize !== newSize) {
+	     oldSize = topos.length;
+	     topos = topos.reduce(function(r, v) {
+		 let merged = false;
+		 for (let i in r) {
+		     let topo = r[i];
+		     let intersection = new Set([...v].filter(x => topo.has(x)));
+		     if (intersection.size > 0) {
+			 merged = true;
+			 r[i] = new Set([...topo].concat([...v]));
+		     }
+		 }
+		 if (merged === false) {
+		     r.push(v);
+		 }
+		 return r;
+	     }, []);
+	     newSize = topos.length;
+	 }
+	 console.log(topos);
      }.bind(this)
 
      this.createEdges = function(edges) {
-	 d3.select("svg > g > g.edges")
+	 d3.select("svg").select("g > g.edges")
+	   .selectAll("g.edge")
+	   .data(edges, function(d) {
+	       return d.source.attributes[0].value+d.target.attributes[0].value;
+	   })
+	   .enter()
 	   .append("g")
-	   .data(edges)
 	   .attr("class", "edge")
 	   .attr("id", function(d) {
-	       return d.source.attributes.getNamedItem("rdf:ID").value+d.target.attributes.getNamedItem("rdf:ID").value;
+	       return d.source.attributes[0].value+d.target.attributes[0].value;
 	   })
 	   .append("path")
 	   .attr("fill", "none")
@@ -340,6 +401,19 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 		     selection.remove();
 
 		     self.model.deleteObject(selection.datum());
+		 }
+	     },
+	     {
+		 title: 'Delete from current diagram',
+		 action: function(elm, d, i) {
+		     let selection = d3.select(elm);
+		     let terminals = self.model.getTerminals(selection.data());
+		     d3.select("svg").selectAll("svg > g > g.edges > g").filter(function(d) {
+			 return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
+		     }).remove();
+		     selection.remove();
+
+		     self.model.deleteFromDiagram(selection.datum());
 		 }
 	     }
 	 ];
@@ -661,6 +735,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	 if (arguments.length === 1) {
 	     heigth = 30;
 	 }
+	 let allEdges = [];
 	 let termSelection = eqSelection.selectAll("g")
 					.data(function(d) {
 
@@ -717,7 +792,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 					    d.rotation = d3.select(this.parentNode).datum().rotation;
 					    if (typeof(cn) !== "undefined" && typeof(cn.lineData) !== "undefined") {
 						let newEdge = {source: cn, target: d};
-						self.createEdges([newEdge]);
+						allEdges.push(newEdge);
 					    }
 					})
 					.attr("id", function(d) {
@@ -726,6 +801,7 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 					.attr("class", function(d) {
 					    return d.localName;
 					});
+	 self.createEdges(allEdges);
 	 termSelection.append("circle")
 		      .attr("r", 5)
 		      .style("fill","black")
@@ -1195,6 +1271,12 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
      }.bind(this)
 
      this.updateEdges = function(xoffset, yoffset, svgZoom, links) {
+
+	 let svgWidth = parseInt(d3.select("svg").style("width"));
+	 let svgHeight = parseInt(d3.select("svg").style("height"));
+	 let xScale = d3.scaleLinear().domain([-xoffset/svgZoom, (svgWidth-xoffset)/svgZoom]).range([0, svgWidth]);
+	 let yScale = d3.scaleLinear().domain([-yoffset/svgZoom, (svgHeight-yoffset)/svgZoom]).range([0, svgHeight]);
+
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; });
@@ -1203,27 +1285,31 @@ riot.tag2('cimdiagram', '<cimdiagramcontrols model="{model}"></cimDiagramControl
 	 }
 
 	 links.select("path")
-	       .attr("d", function(d) {
-		   let tarRot = {x: d.target.x, y: d.target.y};
-		   if (d.target.rotation > 0) {
-		       tarRot = rotateTerm(d.target);
-		   }
-		   d.p = self.closestPoint(d.source, tarRot);
-		   let lineData = [{x: d.p[0] + d.source.x, y: d.p[1] + d.source.y}, tarRot];
-		   return line(lineData);
-	       });
+		      .attr("d", function(d) {
+			  let tarRot = {x: d.target.x, y: d.target.y};
+			  let lineSource = {x: d.source.x, y: d.source.y};
 
-	 function rotateTerm(term) {
-	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source)[0];
-	     let baseX = equipment.x;
-	     let baseY = equipment.y;
-	     let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);
-	     let newX = baseX + cRot.x;
-	     let newY = baseY + cRot.y;
-	     return {x: newX, y: newY};
-	 }
+				  if (d.target.rotation > 0) {
+				      tarRot = rotateTerm(d.target);
+				  }
+				  d.p = self.closestPoint(d.source, tarRot);
+				  lineSource.x = lineSource.x + d.p[0];
+				  lineSource.y = lineSource.y + d.p[1];
 
+			  let lineData = [lineSource, tarRot];
+			  return line(lineData);
+		      });
      }.bind(this)
+
+     function rotateTerm(term) {
+	 let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source)[0];
+	 let baseX = equipment.x;
+	 let baseY = equipment.y;
+	 let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);
+	 let newX = baseX + cRot.x;
+	 let newY = baseY + cRot.y;
+	 return {x: newX, y: newY};
+     }
 
      this.rotate = function(p, rotation) {
 	 let svgroot = d3.select("svg").node();

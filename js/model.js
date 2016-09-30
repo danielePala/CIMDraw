@@ -162,6 +162,21 @@ function cimDiagramModel() {
 	    });
 	},
 
+	getObjects1(types) {
+	    let ret = {};
+ 	    let allObjects = model.data.children[0].children;
+	    for (let type of types) {
+		ret[type] = [];
+	    }
+	    ret = [].reduce.call(allObjects, function(r, v) {
+		if (typeof(r[v.nodeName]) !== "undefined") {
+		    r[v.nodeName].push(v);
+		}
+		return r;
+	    }, ret);
+	    return ret;
+	},
+
 	getSchemaObject(type) {
 	    let allSchemaObjects = model.schemaData.children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
@@ -240,8 +255,24 @@ function cimDiagramModel() {
 
 	// Get the objects of a given type that have at least one
 	// DiagramObject in the current diagram.
+	getGraphicObjects1(types) {
+	    let ret = {};
+ 	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
+	    let allObjectsSet = new Set(allObjects); // we want uniqueness
+	    for (let type of types) {
+		ret[type] = [];
+	    }
+	    ret = [...allObjectsSet].reduce(function(r, v) {
+		if (typeof(r[v.nodeName]) !== "undefined") {
+		    r[v.nodeName].push(v);
+		}
+		return r;
+	    }, ret);
+	    return ret;
+	},
+
 	getGraphicObjects(type) {
-	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
+ 	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
 	    let allObjectsSet = new Set(allObjects); // we want uniqueness
 	    return [...allObjectsSet].filter(function(el) {
 		return el.nodeName === type;
@@ -271,9 +302,7 @@ function cimDiagramModel() {
 
 	// Get the equipment containers that belong to the current diagram.
 	getEquipmentContainers(type) {
-	    let self = this;
 	    let allContainers = model.getObjects(type);
-	    let allGraphicObjects = model.getDiagramObjectGraph().map(el => el.source);
 	    return allContainers.filter(function(container) {
 		let allContainedObjects = model.getGraph([container], "EquipmentContainers.Equipment", "Equipment.EquipmentContainer").map(el => el.source);
 		let graphicContainedObjects = model.getDiagramObjectGraph(allContainedObjects);
@@ -344,11 +373,64 @@ function cimDiagramModel() {
 	deleteObject(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
 	    // delete terminals, if any
-	    let terminals = model.getTerminals([object]);
+	    /*let terminals = model.getTerminals([object]);
 	    for (let terminal of terminals) {
 		model.deleteObject(terminal);
 	    }
-	    // delete graphic objects, if any
+	    // delete graphic objects, if any (TODO: must search in ALL the diagrams)
+	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.target);
+	    let points = model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
+	    for (let dobj of dobjs) {
+		model.deleteObject(dobj);
+	    }
+	    for (let point of points) {
+		model.deleteObject(point);
+	    }*/
+	    // all the links to 'object' must be deleted
+	    let keysToDelete = [];
+	    let sourcesToDelete = [];
+	    for (let [linkAndTarget, sources] of model.linksMap) {
+		if (linkAndTarget.endsWith(objUUID)) {
+		    let invLinkName = "cim:" + linkAndTarget.split("#")[0];
+		    for (let source of sources) {
+			let invLink = model.getLink(source, invLinkName);
+			invLink.remove();
+			keysToDelete.push(linkAndTarget);
+			if (["cim:Terminal", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(source.nodeName)) {
+			    sourcesToDelete.push(source);
+			}
+		    }
+		}
+		let idx = sources.indexOf(object);
+		if (idx > -1) {
+		    console.log(linkAndTarget.split("#")[1]);
+		    let target = model.dataMap.get("#" + linkAndTarget.split("#")[1]);
+		    sources.splice(idx, 1);
+		    if (["cim:Terminal", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(target.nodeName)) {
+			model.deleteObject(target);
+		    }
+		    
+		}
+	    }
+	    // update the 'linksMap' map
+	    for (let keyToDelete of keysToDelete) {
+		model.linksMap.delete(keyToDelete);
+	    }
+	    for (let sourceToDelete of sourcesToDelete) {
+		model.deleteObject(sourceToDelete);
+	    }
+	    
+	    // update the 'dataMap' map
+	    model.dataMap.delete("#" + objUUID);
+	    // delete the object
+	    object.remove();
+
+	    model.trigger("deleteObject", objUUID);
+	},
+
+	// delete an object from the current diagram
+	deleteFromDiagram(object) {
+	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
 	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.target);
 	    let points = model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
 	    for (let dobj of dobjs) {
@@ -357,28 +439,7 @@ function cimDiagramModel() {
 	    for (let point of points) {
 		model.deleteObject(point);
 	    }
-	    // all the links to 'object' must be deleted
-	    let keysToDelete = [];
-	    for (let [linkAndTarget, sources] of model.linksMap) {
-		if (linkAndTarget.endsWith(objUUID)) {
-		    let invLinkName = "cim:" + linkAndTarget.split("#")[0];
-		    for (let source of sources) {
-			let invLink = model.getLink(source, invLinkName);
-			invLink.remove();
-			keysToDelete.push(linkAndTarget);
-		    }
-		}
-	    }
-	    // update the 'linksMap' map
-	    for (let keyToDelete of keysToDelete) {
-		model.linksMap.delete(keyToDelete);
-	    }
-	    // update the 'dataMap' map
-	    model.dataMap.delete("#" + objUUID);
-	    // delete the object
-	    object.remove();
-
-	    model.trigger("deleteObject", objUUID);
+	    model.trigger("deleteFromDiagram", objUUID);
 	},
 
 	// add a terminal to a given object
