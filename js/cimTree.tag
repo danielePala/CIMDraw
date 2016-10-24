@@ -237,6 +237,11 @@
 				return "#" + d.attributes.getNamedItem("rdf:ID").value;
 			    })
 	    		    .on("click", function (d) {
+				// if necessary, generate attributes and links
+				let elementEnter = d3.select(this.parentNode).select("ul").node();
+				if (elementEnter.childNodes.length === 0) {
+				    self.generateAttrsAndLinks(d3.select(elementEnter));
+				}
 				// change address to 'this object'
 				let hashComponents = window.location.hash.substring(1).split("/");
 				let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
@@ -271,11 +276,15 @@
 		.attr("id", function(d) {
 		    return d.attributes.getNamedItem("rdf:ID").value;
 		})
-		.attr("class", "collapse");
+		.attr("class", "collapse")	     
+	 return elementEnter;
+     }
+
+     generateAttrsAndLinks(elementEnter) {
 	 elementEnter
 		.selectAll("li.attribute")
 		.data(function(d) {
-		    return cimModel.getSchemaAttributes(d.localName); 
+		    return self.model.getSchemaAttributes(d.localName); 
 		})
 		.enter()
 		.append("li")
@@ -293,7 +302,7 @@
 		.html(function (d) {
 		    let ret = "none";
 		    let object = d3.select(d3.select(this).node().parentNode.parentNode).datum();
-		    let value = cimModel.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
+		    let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
 		    if (typeof(value) !== "undefined") {
 			ret = value.innerHTML;
 		    }
@@ -302,7 +311,7 @@
 		.on("input", function(d) {
 		    let object = d3.select(d3.select(this).node().parentNode.parentNode).datum();
 		    let attrName = "cim:" + d.attributes[0].value.substring(1);
-		    cimModel.setAttribute(object, attrName, d3.select(this).html());
+		    self.model.setAttribute(object, attrName, d3.select(this).html());
 		})
 		.on("keydown", function() {
 		    if (typeof(d3.event) === "undefined") {
@@ -317,8 +326,8 @@
 	 let elementLink = elementEnter
 	        .selectAll("li.link")
 	        .data(function(d) {
-		    return cimModel.getSchemaLinks(d.localName)
-				   .filter(el => cimModel.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
+		    return self.model.getSchemaLinks(d.localName)
+				   .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
 				   .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal"); 
 		})
 	        .enter()
@@ -332,7 +341,7 @@
 		    .attr("type", "submit")
 		    .on("click", function (d) {
 			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
-			let target = cimModel.getLink(source, "cim:" + d.attributes[0].value.substring(1));
+			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
 			let targetUUID = target.attributes.getNamedItem("rdf:resource").value;
 			console.log(targetUUID);
 			
@@ -354,12 +363,12 @@
 		    })
 		    .html(function (d) {
 			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
-			let target = cimModel.getLink(source, "cim:" + d.attributes[0].value.substring(1));
+			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
 			// TODO: maybe the inverse link is set
 			if (typeof(target) === "undefined") {
 			    return "none";
 			}
-			let name = cimModel.getAttribute(cimModel.resolveLink(target), "cim:IdentifiedObject.name");
+			let name = self.model.getAttribute(self.model.resolveLink(target), "cim:IdentifiedObject.name");
 			if (typeof(name) !== "undefined") {
 			    return name.innerHTML;
 			}
@@ -374,9 +383,10 @@
 	            .html("change");
 
 	 // handle power transfomer ends
+	 let name = d3.select(elementEnter.node().parentNode).attr("class");
 	 if (name === "PowerTransformer") {
 	     elementEnter.each(function(d, i) {
-		 let trafoEnds = cimModel.getGraph([d], "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer");
+		 let trafoEnds = self.model.getGraph([d], "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer");
 		 if (trafoEnds.length > 0) {
 		     self.createElements(d3.select(this), "PowerTransformerEnd"+i, "Transformer Windings", trafoEnds.map(el => el.source));
 		 }
@@ -395,8 +405,6 @@
 		   window.open("http://ric302107:8080/ClientRest/uuid/uuid.jsp?uuid=" + sourceUUID);
 	       })
 	       .html("View in CIM Datastore");
-	 	     
-	 return elementEnter;
      }
 
      moveTo(uuid) {

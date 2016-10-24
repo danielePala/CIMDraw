@@ -568,7 +568,7 @@
 		})
 		.attr("fill", function(d) {
 		    let value = "0"; // default is OPEN
-		    // check the status of this disconnector
+		    // check the status of this switch
 		    let measurement = self.model.getGraph([d], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source)[0];
 		    if (typeof(measurement) !== "undefined") {
 			let valueObject = self.model.getGraph([measurement], "Discrete.DiscreteValues", "DiscreteValue.Discrete").map(el => el.source)[0];
