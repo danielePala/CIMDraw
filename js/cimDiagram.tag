@@ -26,7 +26,7 @@
     </style>
     
     <cimDiagramControls model={model}></cimDiagramControls>
-    <div class="app-diagram">
+    <div class="app-diagram">	
 	<svg>
 	    <path stroke-width="1" stroke="black" fill="none"></path>
 	    <circle r="3.5" cy="-10" cx="-10"></circle>
@@ -34,24 +34,21 @@
 		<g class="edges"></g>
 	    </g>
 	</svg>
-    </div>
-
+    </div>    
     <script>
      "use strict";
      let self = this;
      self.model = opts.model;
 
      // listen to 'showDiagram' event from parent
-     self.parent.on("showDiagram", function(file, name, element) {
-	 self.parent.trigger("rendering");
+     showDiagram(file, name, element) {
 	 if (decodeURI(name) !== self.diagramName) {
-             self.render(name);
+	     self.render(name);
 	 }
          if (typeof(element) !== "undefined") {
-             self.moveTo(element);
+	     self.moveTo(element);
          }
-	 self.parent.trigger("rendered");
-     });
+     }
 
      // listen to 'mount' event
      self.on("mount", function() {
@@ -121,8 +118,22 @@
 	 self.forceTick();
      });
 
-     /** Main rendering function */
      render(diagramName) {
+	 let diagramRender = self.renderGenerator(diagramName);
+	 function periodic() {
+	     let ret = diagramRender.next().value;
+	     if (typeof(ret) !== "undefined") {
+		 $("#loadingDiagramMsg").append("<br>" + ret);
+		 setTimeout(periodic, 1);
+	     } else {
+		 self.parent.trigger("loaded");
+	     }
+	 };
+	 periodic();
+     }
+
+     /** Main rendering function */
+     self.renderGenerator = function*(diagramName) {
 	 // clear all
 	 d3.select("svg").select("g").selectAll("g:not(.edges)").remove();
 
@@ -133,8 +144,8 @@
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
 	 let allConnectivityNodes = self.model.getConnectivityNodes();
-	 console.log("[" + Date.now() + "] extracted connectivity nodes");
-
+	 yield "[" + Date.now() + "] DIAGRAM: extracted connectivity nodes";
+	 
 	 let allEquipments = self.model.getGraphicObjects1(["cim:ACLineSegment",
 						   "cim:Breaker",
 						   "cim:Disconnector",
@@ -147,85 +158,76 @@
 						   "cim:NonConformLoad",
 						   "cim:PowerTransformer",
 						   "cim:BusbarSection"]);
-	 
 	 let allACLines = allEquipments["cim:ACLineSegment"];
-	 console.log("[" + Date.now() + "] extracted acLines");
 	 let allBreakers = allEquipments["cim:Breaker"];
-	 console.log("[" + Date.now() + "] extracted breakers");
 	 let allDisconnectors = allEquipments["cim:Disconnector"]; 
-	 console.log("[" + Date.now() + "] extracted disconnectors");
 	 let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
-	 console.log("[" + Date.now() + "] extracted load break switches");
 	 let allJumpers = allEquipments["cim:Jumper"]; 
-	 console.log("[" + Date.now() + "] extracted jumpers");
 	 let allEnergySources = allEquipments["cim:EnergySource"] 
 	     .concat(allEquipments["cim:SynchronousMachine"]);
-	 console.log("[" + Date.now() + "] extracted energy sources");
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"]
 				      .concat(allEquipments["cim:ConformLoad"])
 				      .concat(allEquipments["cim:NonConformLoad"]);
-	 console.log("[" + Date.now() + "] extracted energy consumers");
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"];
-	 console.log("[" + Date.now() + "] extracted power transformers");
 	 let allBusbarSections = allEquipments["cim:BusbarSection"];
-	 console.log("[" + Date.now() + "] extracted busbarSections");
-
+	 yield "[" + Date.now() + "] DIAGRAM: extracted equipments";
+	 
 	 // AC Lines
 	 let aclineEnter = self.drawACLines(allACLines);
-	 console.log("[" + Date.now() + "] drawn acLines");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn acLines";
 	 // breakers
 	 let breakerEnter = self.drawBreakers(allBreakers);
-	 console.log("[" + Date.now() + "] drawn breakers");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn breakers";
 	 // disconnectors
 	 let discEnter = self.drawDisconnectors(allDisconnectors);
-	 console.log("[" + Date.now() + "] drawn disconnectors");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn disconnectors";
 	 // load break switches
 	 let lbsEnter = self.drawLoadBreakSwitches(allLoadBreakSwitches);
-	 console.log("[" + Date.now() + "] drawn load break switches");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn load break switches";
 	 // jumpers
 	 let jumpsEnter = self.drawJumpers(allJumpers);
-	 console.log("[" + Date.now() + "] drawn jumpers");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn jumpers";
 	 // energy sources
 	 let ensrcEnter = self.drawEnergySources(allEnergySources);
-	 console.log("[" + Date.now() + "] drawn energy sources");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn energy sources";
 	 // energy consumers
 	 let enconsEnter = self.drawEnergyConsumers(allEnergyConsumers);
-	 console.log("[" + Date.now() + "] drawn energy consumers");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn energy consumers";
 	 // power transformers
 	 let trafoEnter = self.drawPowerTransformers(allPowerTransformers);
-	 console.log("[" + Date.now() + "] drawn power transformers");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformers";
 	 // connectivity nodes
 	 let cnEnter = self.drawConnectivityNodes(allConnectivityNodes);
-	 console.log("[" + Date.now() + "] drawn connectivity nodes");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn connectivity nodes";
 
 	 // ac line terminals
-	 let termSelection = this.createTerminals(aclineEnter);
+	 let termSelection = self.createTerminals(aclineEnter);
 	 self.createMeasurements(termSelection);
-	 console.log("[" + Date.now() + "] drawn acline terminals");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn acline terminals";
 	 // breaker terminals
-	 this.createTerminals(breakerEnter);
-	 console.log("[" + Date.now() + "] drawn breaker terminals");
+	 self.createTerminals(breakerEnter);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn breaker terminals";
 	 // disconnector terminals
-	 this.createTerminals(discEnter);
-	 console.log("[" + Date.now() + "] drawn disconnector terminals");
+	 self.createTerminals(discEnter);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn disconnector terminals";
 	 // load break switch terminals
-	 this.createTerminals(lbsEnter);
-	 console.log("[" + Date.now() + "] drawn load break switch terminals");
+	 self.createTerminals(lbsEnter);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn load break switch terminals";
 	 // jumper terminals
-	 this.createTerminals(jumpsEnter);
-	 console.log("[" + Date.now() + "] drawn jumper terminals");
+	 self.createTerminals(jumpsEnter);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn jumper terminals";
 	 // energy source terminals
-	 termSelection = this.createTerminals(ensrcEnter, 50);
+	 termSelection = self.createTerminals(ensrcEnter, 50);
 	 self.createMeasurements(termSelection);
-	 console.log("[" + Date.now() + "] drawn energy source terminals");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn energy source terminals";
 	 // energy consumer terminals
-	 termSelection = this.createTerminals(enconsEnter);
+	 termSelection = self.createTerminals(enconsEnter);
 	 self.createMeasurements(termSelection);
-	 console.log("[" + Date.now() + "] drawn energy consumer terminals");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn energy consumer terminals";
 	 // power transformer terminals
-	 termSelection = this.createTerminals(trafoEnter, 50);
+	 termSelection = self.createTerminals(trafoEnter, 50);
 	 self.createMeasurements(termSelection);
-	 console.log("[" + Date.now() + "] drawn power transformer terminals");
+	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformer terminals";
 
 	 // handle mouseover
 	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
@@ -698,6 +700,7 @@
 		       }
 		       return "";
 		   });
+	 
 	 return trafoEnter;
      }
 

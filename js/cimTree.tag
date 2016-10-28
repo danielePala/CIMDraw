@@ -36,7 +36,7 @@
 	    </div>
 	    
 	</div>
-    </div>
+    </div>    
     <script>
      "use strict";
      
@@ -65,8 +65,7 @@
 	 });
      });
 
-     self.parent.on("showDiagram", function(file, name, element) {
-	 self.parent.trigger("rendering");
+     showDiagram(file, name, element) {
 	 if (decodeURI(name) !== self.diagramName) {
 	     d3.drag().on("drag.end", null);
 	     self.render(name);
@@ -74,8 +73,7 @@
 	 if (typeof(element) !== "undefined") {
 	     self.moveTo(element);
 	 }
-	 self.parent.trigger("rendered");
-     });
+     }
 
      // listen to 'createObject' event from model
      self.model.on("createObject", function(object) {
@@ -118,6 +116,20 @@
 	 $("#showAllObjects").change();
      });
 
+     createTree(getObjects, getContainers) {
+	 let treeRender = self.createTreeGenerator(getObjects, getContainers);
+	 function periodic() {
+	     let ret = treeRender.next().value;
+	     if (typeof(ret) !== "undefined") {
+		 $("#loadingDiagramMsg").append("<br>" + ret);
+		 setTimeout(periodic, 1);
+	     } else {
+		 self.parent.trigger("loaded");
+	     }
+	 };
+	 periodic();
+     }
+     
      render(diagramName) {
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
@@ -125,7 +137,7 @@
 	 $("#showAllObjects").change();
      }
 
-     createTree(getObjects, getContainers) {
+     self.createTreeGenerator = function*(getObjects, getContainers) {
 	 // clear all
 	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
 
@@ -144,38 +156,29 @@
 	     "cim:EnergyConsumer",
 	     "cim:ConformLoad",
 	     "cim:NonConformLoad"
-	     ]);
+	 ]);
 
 	 // base voltages don't depend on diagram
-	 let allBaseVoltages = allEquipments["cim:BaseVoltage"]; 
-	 console.log("[" + Date.now() + "] extracted base voltages");
+	 let allBaseVoltages = self.model.getObjects("cim:BaseVoltage"); 
 	 let allBusbarSections = allEquipments["cim:BusbarSection"]; 
-	 console.log("[" + Date.now() + "] extracted busbarSections");
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
-	 console.log("[" + Date.now() + "] extracted power transformers");
 	 let allACLines = allEquipments["cim:ACLineSegment"]; 
-	 console.log("[" + Date.now() + "] extracted acLines");
 	 let allBreakers = allEquipments["cim:Breaker"]; 
-	 console.log("[" + Date.now() + "] extracted breakers");
 	 let allDisconnectors = allEquipments["cim:Disconnector"]; 
-	 console.log("[" + Date.now() + "] extracted disconnectors");
 	 let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
-	 console.log("[" + Date.now() + "] extracted load break switches");
 	 let allJumpers = allEquipments["cim:Jumper"]; 
-	 console.log("[" + Date.now() + "] extracted jumpers");
 	 let allJunctions = allEquipments["cim:Junction"]; 
-	 console.log("[" + Date.now() + "] extracted junctions");
 	 let allEnergySources = allEquipments["cim:EnergySource"] 
 	     .concat(allEquipments["cim:SynchronousMachine"]);
-	 console.log("[" + Date.now() + "] extracted energy sources");
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"] 
 	                              .concat(allEquipments["cim:ConformLoad"])
 	                              .concat(allEquipments["cim:NonConformLoad"]);
-	 console.log("[" + Date.now() + "] extracted energy consumers");
+	 yield "[" + Date.now() + "] TREE: extracted equipments";
+	 
 	 let allSubstations = getContainers("cim:Substation");
-	 console.log("[" + Date.now() + "] extracted substations");
+	 yield "[" + Date.now() + "] TREE: extracted substations";
 	 let allLines = getContainers("cim:Line");
-	 console.log("[" + Date.now() + "] extracted lines");
+	 yield "[" + Date.now() + "] TREE: extracted lines";
 	 
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul.CIMNetwork");
 	 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
@@ -191,7 +194,6 @@
 	 self.createElements(cimNetwork, "Substation", "Substations", allSubstations);
 	 self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 self.createElements(cimNetwork, "Line", "Lines", allLines);
-	 console.log("[" + Date.now() + "] drawn tree");
      }
 
      createElements(cimNetwork, name, printName, data) {

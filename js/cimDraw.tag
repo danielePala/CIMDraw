@@ -91,11 +91,11 @@
     </div>
 
     <!-- Modal for loading info -->
-    <div class="modal fade" id="loadingDiagramModal" tabindex="-1" role="dialog" aria-labelledby="loadingDiagramModalLabel">
+    <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingDiagramModalLabel" data-backdrop="static">
 	<div class="modal-dialog" role="document">
 	    <div class="modal-content">
 		<div class="modal-body">
-		    <p id="loadingDiagramMsg">loading...</p>
+		    <p id="loadingDiagramMsg">loading diagram...</p>
 		</div>
 	    </div>
 	</div>
@@ -105,16 +105,15 @@
      "use strict";
      let self = this;
      self.cimModel = cimDiagramModel();
-     let childrenRendering = 0;
+     let diagramsToLoad = 2;
      
-     self.on("rendering", function() {
-	 childrenRendering = childrenRendering + 1;
-     });
-
-     self.on("rendered", function() {
-	 childrenRendering = childrenRendering - 1;
-	 if (childrenRendering === 0) {
-	     $("#loadingDiagramModal").modal("hide");
+     self.on("loaded", function() {
+	 console.log(diagramsToLoad);
+	 diagramsToLoad = diagramsToLoad - 1;
+	 if (diagramsToLoad === 0) {
+	     $("#loadingModal").modal("hide");
+	     $("#loadingDiagramMsg").text("loading diagram...");
+	     diagramsToLoad = 2;
 	 }
      });
      
@@ -161,26 +160,36 @@
 	     $("#cim-local-file-component").hide();
 	     $("#app-container").hide();
 	     // main logic
-	     if (typeof(cimFile.name) !== "undefined") {
-		 d3.select("#cim-filename").html(cimFile.name);
-		 self.cimModel.load(cimFile, cimFileReader, function() {
-		     loadDiagramList(cimFile.name);
-		 }); 
-	     } else {
-		 let hashComponents = window.location.hash.substring(1).split("/");
-		 let file = hashComponents[0];
-		 self.cimModel.loadRemote("/" + file, function() {
-		     loadDiagramList(file);
-		 });
-	     }
+	     $("#loadingDiagramMsg").text("loading CIM network...");
+	     $("#loadingModal").off("shown.bs.modal");
+	     $("#loadingModal").modal("show");
+	     $("#loadingModal").on("shown.bs.modal", function(e) {	 
+		 if (typeof(cimFile.name) !== "undefined") {
+		     d3.select("#cim-filename").html(cimFile.name);
+		     self.cimModel.load(cimFile, cimFileReader, function() {
+			 loadDiagramList(cimFile.name);
+			 $("#loadingModal").modal("hide");
+		     }); 
+		 } else {
+		     let hashComponents = window.location.hash.substring(1).split("/");
+		     let file = hashComponents[0];
+		     self.cimModel.loadRemote("/" + file, function() {
+			 loadDiagramList(file);
+			 $("#loadingModal").modal("hide");
+		     });
+		 }
+	     });
 	 });
 
 	 // here we show a certain diagram
 	 riot.route('/*/diagrams/*', function(file, name) {	
 	     $("#cim-local-file-component").hide();
-	     $("#loadingDiagramModal").modal("show");
-	     $("#loadingDiagramModal").on("shown.bs.modal", function(e) {
-		 loadDiagram(file, name);		 
+	     $("#loadingDiagramMsg").text("loading diagram...");
+	     $("#loadingModal").off("shown.bs.modal");
+	     $("#loadingModal").modal("show");
+	     $("#loadingModal").on("shown.bs.modal", function(e) {
+		 console.log("shown.bs.modal");
+		 loadDiagram(file, name);
 	     });
 	 });
 
@@ -195,7 +204,9 @@
 		 self.cimModel.selectDiagram(decodeURI(name));
 		 loadDiagramList(decodeURI(file));
 		 $('.selectpicker').selectpicker('val', decodeURI("#" + file + "/diagrams/" + name));
-		 self.trigger("showDiagram", file, name, element);
+		 for (let i of Object.keys(self.tags)) {
+		     self.tags[i].showDiagram(file, name, element);
+		 }
 		 $("#app-container").show();
 
 		 // allow exporting a copy of the diagram 
@@ -209,7 +220,7 @@
 	     };
 	 };
 
-	 function loadDiagramList(filename) {
+	 function loadDiagramList(filename) { 
 	     // allow saving a copy of the file 
 	     $("#cim-save").on("click", function() {
 		 let out = self.cimModel.save();
@@ -232,7 +243,7 @@
 	     }
 	     $(".selectpicker").selectpicker("refresh");
 	 };
-
+	 
 	 riot.route("/*/diagrams/*/*", function(file, name, element) {
 	     $("#cim-local-file-component").hide();
 	     loadDiagram(file, name, element);
