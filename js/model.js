@@ -1,18 +1,18 @@
 "use strict";
 
 function cimDiagramModel() {
-    //let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2010/CIM-schema-cim15#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
+    let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2010/CIM-schema-cim15#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
     
     let model = {	
 	// load a CIM file from the local filesystem.
 	load(file, reader, callback) {
-	    /*if (arguments.length === 1) {
+	    if (reader === null) {
 		let parser = new DOMParser();
 		let data = parser.parseFromString(emptyFile, "application/xml");
 		model.buildModel(data, callback);
-		model.fileName = "new1"; //TODO: should be parametrized
+		model.fileName = file.name; //TODO: should be parametrized
 		return;
-	    }*/
+	    }
 	    
 	    if (model.fileName !== file.name) {
 		reader.onload = function(e) {

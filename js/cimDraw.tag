@@ -29,7 +29,7 @@
 		    <option disabled="disabled">Select a diagram</option>
 		</select>
 	    </div>
-	</div><!-- /.container-fluid -->
+	</div>
     </nav>
     
     <div class="container-fluid">
@@ -43,7 +43,7 @@
 	    <div class="row center-block">
 		<div class="col-md-12" id="cim-file-input-container">
 		    <form enctype="multipart/form-data" action="/api/upload" method="POST">
-			<input id="cim-file-input" name="cim-file" type="file" class="file" multiple data-show-preview="false" data-show-upload="true">
+			<input id="cim-file-input" name="cim-file" type="file" class="file" multiple data-show-preview="false" data-show-upload="false">
 		    </form>
 		</div>
 	    </div>
@@ -53,6 +53,17 @@
 		    <a class="btn btn-primary btn-lg" role="button" id="cim-load">Load</a>
 		</div>
 	    </div>
+	    <div class="row center-block">
+		<div class="col-md-12">
+		    <label class="control-label">or</label>
+		</div>
+	    </div>
+	    <div class="row center-block">
+		<div class="col-md-12" id="cim-create-new-container">
+		    <a class="btn btn-primary btn-lg" role="button" id="cim-create-new">Create new</a>
+		</div>
+	    </div>
+	    
 	</div>
 	
 	<div class="row diagramTools">
@@ -68,7 +79,7 @@
 	</div>
 
 
-	<!-- Modal -->
+	<!-- Modal for loading a specific diagram -->
 	<div class="modal fade" id="newDiagramModal" tabindex="-1" role="dialog" aria-labelledby="newDiagramModalLabel">
 	    <div class="modal-dialog" role="document">
 		<div class="modal-content">
@@ -88,19 +99,20 @@
 		</div>
 	    </div>
 	</div>
-    </div>
 
-    <!-- Modal for loading info -->
-    <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingDiagramModalLabel" data-backdrop="static">
-	<div class="modal-dialog" role="document">
-	    <div class="modal-content">
-		<div class="modal-body">
-		    <p id="loadingDiagramMsg">loading diagram...</p>
+	<!-- Modal for loading diagram list -->
+	<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingDiagramModalLabel" data-backdrop="static">
+	    <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		    <div class="modal-body">
+			<p id="loadingDiagramMsg">loading diagram...</p>
+		    </div>
 		</div>
 	    </div>
 	</div>
+   
     </div>
-    
+
     <script>
      "use strict";
      let self = this;
@@ -108,7 +120,6 @@
      let diagramsToLoad = 2;
      
      self.on("loaded", function() {
-	 console.log(diagramsToLoad);
 	 diagramsToLoad = diagramsToLoad - 1;
 	 if (diagramsToLoad === 0) {
 	     $("#loadingModal").modal("hide");
@@ -118,12 +129,17 @@
      });
      
      self.on("mount", function() {
-	 console.log("start router");
 	 riot.route.stop(); // clear all the old router callbacks
 	 let cimFile = {};
 	 let cimFileReader = {};
 	 $(".selectpicker").selectpicker({container: "body"});
 
+	 $("#cim-create-new-container").on("click", function() {
+	     cimFile = {name: "new1"};
+	     cimFileReader = null;
+	     riot.route("/" + cimFile.name + "/diagrams");
+	 });
+	 
 	 // This is the initial route ("the home page").
 	 riot.route(function(name) {
 	     // things to show
@@ -155,7 +171,7 @@
 	 riot.route('/*/diagrams', function() {
 	     // things to show
 	     $("#cim-home-container").show();
-	     $(".selectpicker").selectpicker("show"); // TODO: should wait for diagram list
+	     $(".selectpicker").selectpicker("show"); 
 	     // things to hide
 	     $("#cim-local-file-component").hide();
 	     $("#app-container").hide();
@@ -188,7 +204,6 @@
 	     $("#loadingModal").off("shown.bs.modal");
 	     $("#loadingModal").modal("show");
 	     $("#loadingModal").on("shown.bs.modal", function(e) {
-		 console.log("shown.bs.modal");
 		 loadDiagram(file, name);
 	     });
 	 });
