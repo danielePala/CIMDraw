@@ -10,7 +10,7 @@ function cimDiagramModel() {
 		let parser = new DOMParser();
 		let data = parser.parseFromString(emptyFile, "application/xml");
 		model.buildModel(data, callback);
-		model.fileName = file.name; //TODO: should be parametrized
+		model.fileName = file.name;
 		return;
 	    }
 	    

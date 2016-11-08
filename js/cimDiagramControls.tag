@@ -19,14 +19,18 @@
 			    <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input>
 			</label>
 		    </div>
-		    <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-elements">
-			<label class="btn btn-default" id="aclineLabel">
-			    <input type="radio" id="addACLine" name="tool" value="addACLine" autocomplete="off">AC Line Segment</input>
-			</label>
-			<label class="btn btn-default" id="breakerLabel">
-			    <input type="radio" id="addBreaker" name="tool" value="addBreaker" autocomplete="off">breaker</input>
-			</label>
+
+		    <div class="btn-group" role="group">
+			<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+			    <span id="addElement">Insert element</span>
+			    <span class="caret"></span>
+			</button>
+			<ul class="dropdown-menu">
+			    <li id="addACLine"><a>AC Line Segment</a></li>
+			    <li id="addBreaker"><a>Breaker</a></li>
+			</ul>
 		    </div>
+		    
 		</div>
 		</div>
 	    </div>
@@ -39,6 +43,17 @@
      let termToChange = undefined;
      
      self.on("mount", function() {
+
+	 $("#addACLine").on("click", function(e) {
+	     self.disableAll();
+	     self.enableAddACLine();
+	 });
+
+	 $("#addBreaker").on("click", function(e) {
+	     self.disableAll();
+	     self.enableAddBreaker();
+	 });
+	 
 	 // setup diagram buttons
 	 $("#select").change(function() {
 	     self.disableAll();
@@ -54,16 +69,7 @@
 	     self.disableAll();
 	     self.enableConnect();
 	 });
-
-	 $("#addACLine").change(function() {
-	     self.disableAll();
-	     self.enableAddACLine();
-	 });
 	 
-	 $("#addBreaker").change(function() {
-	     self.disableAll();
-	     self.enableAddBreaker();
-	 });
      });
      
      // listen to 'render' event
@@ -168,7 +174,7 @@
 	 self.d3force = d3.forceSimulation(equipments.data().concat(terminals.data()))
 			  .force("link", d3.forceLink(d3.select("svg").selectAll("svg > g > g.edges > g").data()))
 			  .on("tick", self.parent.forceTick)
-			  .force("charge", d3.forceManyBody());
+			  .force("charge", d3.forceCollide(5));
 	 d3.select(self.root).selectAll("label:not(#forceLabel)").classed("active", false);
 	 $("#force").click();
 	 self.status = "FORCE";
@@ -282,16 +288,16 @@
      }
 
      enableAddACLine() {
-	 self.enableAdd("cim:ACLineSegment", "aclineLabel", "addACLine");
+	 self.enableAdd("cim:ACLineSegment", "AC Line Segment");
      }
      
      enableAddBreaker() {
-	 self.enableAdd("cim:Breaker", "breakerLabel", "addBreaker");
+	 self.enableAdd("cim:Breaker", "Breaker");
      }
 
-     enableAdd(type, label, button) {
-	 d3.select(self.root).selectAll("label:not(#" + label + ")").classed("active", false);
-	 $("#" + button).click();
+     enableAdd(type, text) {
+	 d3.select(self.root).selectAll("label").classed("active", false);
+	 $("#addElement").text(text);
 	 self.status = type;
 	 d3.select("svg").on("click", clicked);
 	 function clicked() {
@@ -300,6 +306,7 @@
      }
 
      disableAdd() {
+	 $("#addElement").text("Insert element");
 	 d3.select("svg").on("click", null);
      }
 
