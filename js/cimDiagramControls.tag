@@ -237,6 +237,9 @@
 		   if (typeof(cn) === "undefined") {
 		       cn = opts.model.cimObject("cim:ConnectivityNode");
 		       opts.model.setAttribute(cn, "cim:IdentifiedObject.name", "new1");
+		       cn.x = (termToChange.x + d.x)/2;
+		       cn.y = (termToChange.y + d.y)/2;
+		       opts.model.addToActiveDiagram(cn, [{x: 0, y: 0, seq: 1}]);
 		   }
 		   d3.select("svg").on("mousemove", null);
 		   // update the model
