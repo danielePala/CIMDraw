@@ -2,9 +2,15 @@
     <style>
      .tree {
 	 max-height: 800px;
-	 min-width: 300px;
+	 min-width: 500px;
 	 overflow: scroll;
 	 resize: horizontal;
+     }
+
+     .cim-tree-attribute-name {
+	 width: 150px;
+	 text-align: left;
+	 max-width: 150px;
      }
     </style>
 
@@ -278,12 +284,13 @@
 		.attr("id", function(d) {
 		    return d.attributes.getNamedItem("rdf:ID").value;
 		})
-		.attr("class", "collapse")	     
+		.attr("class", "collapse")
+		.style("list-style-type", "none");
 	 return elementEnter;
      }
 
      generateAttrsAndLinks(elementEnter) {
-	 elementEnter
+	 let elementDiv = elementEnter
 		.selectAll("li.attribute")
 		.data(function(d) {
 		    return self.model.getSchemaAttributes(d.localName); 
@@ -296,34 +303,34 @@
 			return el.nodeName === "rdfs:comment"
 		    })[0].textContent;
 		})
+		.append("div").attr("class", "input-group input-group-sm");
+	 elementDiv.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
 		.html(function (d) {
-		    return d.attributes[0].value.substring(1).split(".")[1] + ": "; 
-		})
-		.append("span")
-		.attr("contenteditable", "true")
-		.html(function (d) {
-		    let ret = "none";
-		    let object = d3.select(d3.select(this).node().parentNode.parentNode).datum();
-		    let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
-		    if (typeof(value) !== "undefined") {
-			ret = value.innerHTML;
-		    }
-		    return ret; 
-		})
-		.on("input", function(d) {
-		    let object = d3.select(d3.select(this).node().parentNode.parentNode).datum();
-		    let attrName = "cim:" + d.attributes[0].value.substring(1);
-		    self.model.setAttribute(object, attrName, d3.select(this).html());
-		})
-		.on("keydown", function() {
-		    if (typeof(d3.event) === "undefined") {
-			return;
-		    }
-		    // trap the return key being pressed
-		    if (d3.event.keyCode === 13) {
-			d3.event.preventDefault();
-		    }
+		    return d.attributes[0].value.substring(1).split(".")[1]; 
 		});
+	 elementDiv.append("input")
+		   .attr("class", "form-control")
+		   .each(function (d) {
+		       this.value = "none";
+		       let object = d3.select(this.parentNode.parentNode.parentNode).datum();
+		       let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
+		       if (typeof(value) !== "undefined") {
+			   this.value = value.innerHTML;
+		       }
+		   })
+		   .attr("type", "text")
+		   .on("keydown", function(d) {
+		       if (typeof(d3.event) === "undefined") {
+			   return;
+		       }
+		       // trap the return key being pressed
+		       if (d3.event.keyCode === 13) {
+			   d3.event.preventDefault();
+			   let object = d3.select(this.parentNode.parentNode.parentNode).datum();
+			   let attrName = "cim:" + d.attributes[0].value.substring(1);
+			   self.model.setAttribute(object, attrName, this.value);
+		       }
+		   });
 	 // add links
 	 let elementLink = elementEnter
 	        .selectAll("li.link")
