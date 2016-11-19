@@ -300,6 +300,7 @@
 
      enableAdd(type, text) {
 	 d3.select(self.root).selectAll("label").classed("active", false);
+	 $("input").prop('checked', false);
 	 $("#addElement").text(text);
 	 self.status = type;
 	 d3.select("svg").on("click", clicked);
