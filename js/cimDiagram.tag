@@ -80,11 +80,6 @@
 	 //self.updateEdges(newx, newy, newZoom);
      });
 
-     // listen to 'createObject' event from model
-     self.model.on("createObject", function(object) {
-	 self.addToDiagram(object);
-     });
-
      // listen to 'setAttribute' event from model
      self.model.on("setAttribute", function(object, attrName, value) {
 	 if (attrName === "cim:IdentifiedObject.name") {
@@ -93,6 +88,9 @@
 	     // special case for busbars
 	     if (object.nodeName === "cim:BusbarSection") {
 		 let terminal = self.model.getConductingEquipmentGraph([object]).map(el => el.target)[0];
+		 if (typeof(terminal) === "undefined") {
+		     return;
+		 }
 		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 		 type = cn.localName;
 		 uuid = cn.attributes.getNamedItem("rdf:ID").value;
@@ -103,17 +101,113 @@
 	 }
      });
 
+     // listen to 'addToActiveDiagram' event from model
+     self.model.on("addToActiveDiagram", function(object) {
+	 let selection = null;
+	 if (object.nodeName === "cim:ACLineSegment") {
+	     selection = self.drawACLines([object]);
+	 }
+	 if (object.nodeName === "cim:Breaker") {
+	     selection = self.drawBreakers([object]);
+	 }
+	 if (object.nodeName === "cim:Disconnector") {
+	     selection = self.drawDisconnectors([object]);
+	 }
+         if (object.nodeName === "cim:LoadBreakSwitch") {
+	     selection = self.drawLoadBreakSwitches([object]);
+	 }
+	 if (object.nodeName === "cim:Jumper") {
+	     selection = self.drawJumpers([object]);
+	 }
+	 if (object.nodeName === "cim:Junction") {
+	     selection = self.drawJunctions([object]);
+	 }
+	 if (object.nodeName === "cim:EnergySource" || object.nodeName === "cim:SynchronousMachine") {
+	     selection = self.drawEnergySources([object]);
+	 }
+	 if (object.nodeName === "cim:EnergyConsumer"|| object.nodeName === "cim:ConformLoad" || object.nodeName === "cim:NonConformLoad") {
+	     selection = self.drawEnergyConsumers([object]);
+	 }
+	 if (object.nodeName === "cim:PowerTransformer") {
+	     selection = self.drawPowerTransformers([object]);
+	 }
+	 if (object.nodeName === "cim:ConnectivityNode") {
+	     self.drawConnectivityNodes([object]);
+	 }
+	 
+	 if (selection !== null) {
+	     handleTerminals(selection);
+	     selection.on("mouseover.hover", self.hover)
+		      .on("mouseout", mouseOut);
+	 }
+	 // handle busbars
+	 if (object.nodeName === "cim:BusbarSection") {
+	     let terminal = self.model.getGraph([object], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true).map(el => el.target);
+	     let cn = self.model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+	     selection = self.drawConnectivityNodes([cn]);
+	     selection.on("mouseover.hover", self.hover)
+		      .on("mouseout", mouseOut);
+
+	     let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
+	     let eqTerminals = self.model.getTerminals(equipments);
+	     for (let eqTerminal of eqTerminals) {
+		 let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 if (eqCn === cn) {
+		     let newEdge = {source: cn, target: eqTerminal};
+		     self.createEdges([newEdge]);
+		 }
+	     }   
+	 }
+	 
+	 self.forceTick();
+	 self.trigger("addToDiagram");
+
+	 function handleTerminals(selection) {
+	     let terminals = self.model.getTerminals([object]);
+	     for (let terminal of terminals) {
+		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 if (typeof(cn) !== "undefined") {
+		     let equipments = self.model.getEquipments(cn);
+		     // let's try to get a busbar section
+		     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];		     
+		     equipments = equipments.filter(el => el !== busbarSection);
+		     if (equipments.length > 1) {
+			 self.drawConnectivityNodes([cn]);
+
+			 let eqTerminals = self.model.getTerminals(equipments);
+			 for (let eqTerminal of eqTerminals) {
+			     let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+			     if (eqCn === cn) {
+				 let newEdge = {source: cn, target: eqTerminal};
+				 self.createEdges([newEdge]);
+			     }
+			 }
+			 
+		     }
+		 }
+	     }
+	     self.createTerminals(selection);
+	 }
+
+	 function mouseOut(d) {
+	     d3.select(this).selectAll("rect").remove();	     
+	 }
+     });
+
      // listen to 'setEdge' event from model
+     // this function checks if the terminal belongs to the current diagram
+     // TODO: should check also the connectivity node
      self.model.on("setEdge", function(cn, term) {
 	 let edgeToChange = d3.select("svg").selectAll("svg > g > g.edges > g").data().filter(el => el.target === term)[0];
 	 if (typeof(edgeToChange) === "undefined") {
-	     edgeToChange = {source: cn, target: term};
-	     self.createEdges([edgeToChange]);
+	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+	     equipment = self.model.getConductingEquipmentGraph(equipment).map(el => el.source);
+	     if (equipment.length > 1) {
+		 edgeToChange = {source: cn, target: term};
+		 self.createEdges([edgeToChange]);
+	     }
 	 } else {
 	     edgeToChange.source = cn;
-	 }
-	 if (typeof(cn.lineData) === "undefined") {
-	     self.drawConnectivityNodes([cn]);
 	 }
 	 self.forceTick();
      });
@@ -147,22 +241,24 @@
 	 yield "[" + Date.now() + "] DIAGRAM: extracted connectivity nodes";
 	 
 	 let allEquipments = self.model.getGraphicObjects1(["cim:ACLineSegment",
-						   "cim:Breaker",
-						   "cim:Disconnector",
-						   "cim:LoadBreakSwitch",
-						   "cim:Jumper",
-						   "cim:EnergySource",
-						   "cim:SynchronousMachine",
-						   "cim:EnergyConsumer",
-						   "cim:ConformLoad",
-						   "cim:NonConformLoad",
-						   "cim:PowerTransformer",
-						   "cim:BusbarSection"]);
+							    "cim:Breaker",
+							    "cim:Disconnector",
+							    "cim:LoadBreakSwitch",
+							    "cim:Jumper",
+							    "cim:Junction",
+							    "cim:EnergySource",
+							    "cim:SynchronousMachine",
+							    "cim:EnergyConsumer",
+							    "cim:ConformLoad",
+							    "cim:NonConformLoad",
+							    "cim:PowerTransformer",
+							    "cim:BusbarSection"]);
 	 let allACLines = allEquipments["cim:ACLineSegment"];
 	 let allBreakers = allEquipments["cim:Breaker"];
 	 let allDisconnectors = allEquipments["cim:Disconnector"]; 
 	 let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
 	 let allJumpers = allEquipments["cim:Jumper"]; 
+	 let allJunctions = allEquipments["cim:Junction"];
 	 let allEnergySources = allEquipments["cim:EnergySource"] 
 	     .concat(allEquipments["cim:SynchronousMachine"]);
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"]
@@ -187,6 +283,9 @@
 	 // jumpers
 	 let jumpsEnter = self.drawJumpers(allJumpers);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn jumpers";
+	 // junctions
+	 let junctsEnter = self.drawJunctions(allJunctions);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn junctions";
 	 // energy sources
 	 let ensrcEnter = self.drawEnergySources(allEnergySources);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy sources";
@@ -216,6 +315,9 @@
 	 // jumper terminals
 	 self.createTerminals(jumpsEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn jumper terminals";
+	 // junction terminals
+	 self.createTerminals(junctsEnter);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn junction terminals";
 	 // energy source terminals
 	 termSelection = self.createTerminals(ensrcEnter, 50);
 	 self.createMeasurements(termSelection);
@@ -551,6 +653,11 @@
      // Draw all jumpers
      drawJumpers(allJumpers) {
 	 return this.drawSwitches(allJumpers, "Jumper", "steelblue");
+     }
+
+     // Draw all junctions
+     drawJunctions(allJunctions) {
+	 return this.drawSwitches(allJunctions, "Junction", "red");
      }
 
      drawSwitches(allSwitches, type, color) {
@@ -1268,93 +1375,12 @@
 	 object.px = object.x;
 	 object.y = (m[1] - yoffset) / svgZoom;
 	 object.py = object.y;
-	 let selection = null;
 	 
 	 let lineData = [{x: 0, y: 0, seq:1}]; // always OK except acline and busbar
 	 if (object.nodeName === "cim:ACLineSegment" || object.nodeName === "cim:BusbarSection") {
 	     lineData.push({x: 150, y: 0, seq:2});
 	 }
 	 self.model.addToActiveDiagram(object, lineData);
-
-	 if (object.nodeName === "cim:ACLineSegment") {
-	     selection = self.drawACLines([object]);
-	 }
-	 if (object.nodeName === "cim:Breaker") {
-	     selection = self.drawBreakers([object]);
-	 }
-	 if (object.nodeName === "cim:Disconnector") {
-	     selection = self.drawDisconnectors([object]);
-	 }
-         if (object.nodeName === "cim:LoadBreakSwitch") {
-	     selection = self.drawLoadBreakSwitches([object]);
-	 }
-	 if (object.nodeName === "cim:EnergySource" || object.nodeName === "cim:SynchronousMachine") {
-	     selection = self.drawEnergySources([object]);
-	 }
-	 if (object.nodeName === "cim:EnergyConsumer"|| object.nodeName === "cim:ConformLoad" || object.nodeName === "cim:NonConformLoad") {
-	     selection = self.drawEnergyConsumers([object]);
-	 }
-	 if (object.nodeName === "cim:PowerTransformer") {
-	     selection = self.drawPowerTransformers([object]);
-	 }
-
-	 if (selection !== null) {
-	     handleTerminals(selection);
-	     selection.on("mouseover.hover", self.hover)
-		      .on("mouseout", mouseOut);
-	 }
-	 // handle busbars
-	 if (object.nodeName === "cim:BusbarSection") {
-	     let terminal = self.model.getGraph([object], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true).map(el => el.target);
-	     let cn = self.model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-	     selection = self.drawConnectivityNodes([cn]);
-	     selection.on("mouseover.hover", self.hover)
-		      .on("mouseout", mouseOut);
-
-	     let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
-	     let eqTerminals = self.model.getTerminals(equipments);
-	     for (let eqTerminal of eqTerminals) {
-		 let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-		 if (eqCn === cn) {
-		     let newEdge = {source: cn, target: eqTerminal};
-		     self.createEdges([newEdge]);
-		 }
-	     }   
-	 }
-	 
-	 self.forceTick();
-	 self.trigger("addToDiagram");
-
-	 function handleTerminals(selection) {
-	     let terminals = self.model.getTerminals([object]);
-	     for (let terminal of terminals) {
-		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-		 if (typeof(cn) !== "undefined") {
-		     let equipments = self.model.getEquipments(cn);
-		     // let's try to get a busbar section
-		     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];		     
-		     equipments = equipments.filter(el => el !== busbarSection);
-		     if (equipments.length > 1) {
-			 self.drawConnectivityNodes([cn]);
-
-			 let eqTerminals = self.model.getTerminals(equipments);
-			 for (let eqTerminal of eqTerminals) {
-			     let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-			     if (eqCn === cn) {
-				 let newEdge = {source: cn, target: eqTerminal};
-				 self.createEdges([newEdge]);
-			     }
-			 }
-			 
-		     }
-		 }
-	     }
-	     self.createTerminals(selection);
-	 }
-
-	 function mouseOut(d) {
-	     d3.select(this).selectAll("rect").remove();	     
-	 }
      }
 
      /** Update the given links. If links is absent, update all links */     

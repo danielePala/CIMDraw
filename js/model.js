@@ -362,11 +362,22 @@ function cimDiagramModel() {
 	createObject(type) {
 	    let newElement = model.cimObject(type);
 	    model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
-	    // create two terminals (not always right)
-	    model.createTerminal(newElement);
-	    model.createTerminal(newElement);
-	    
+	    let term = model.createTerminal(newElement);
+	    // create second terminal if needed
+	    if (type === "cim:ACLineSegment" ||
+		type === "cim:Breaker" ||
+		type === "cim:Disconnector" ||
+		type === "cim:LoadBreakSwitch" ||
+		type === "cim:Jumper" ||
+		type === "cim:Junction") {
+		model.createTerminal(newElement);
+	    }
+	    if (type === "cim:BusbarSection") {
+		let cn = model.cimObject("cim:ConnectivityNode");
+		model.addLink(term, "cim:Terminal.ConnectivityNode", cn);
+	    }
 	    model.trigger("createObject", newElement);
+	    return newElement;
 	},
 
 	// delete an object: also, delete its terminals and graphic objects
@@ -446,6 +457,7 @@ function cimDiagramModel() {
 	createTerminal(object) {
 	    let term = model.cimObject("cim:Terminal");
 	    model.addLink(object, "cim:ConductingEquipment.Terminals", term);
+	    return term;
 	},
 
 	// add an object to the active diagram
@@ -464,6 +476,7 @@ function cimDiagramModel() {
 	    }
 	    model.addLink(object, "cim:IdentifiedObject.DiagramObjects", dobj);
 	    model.addLink(dobj, "cim:DiagramObject.Diagram", model.activeDiagram);
+	    model.trigger("addToActiveDiagram", object);
 	},
 
 	updateActiveDiagram(object, lineData) {
@@ -568,12 +581,12 @@ function cimDiagramModel() {
 		}
 		// set the new value
 		link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;
-	    }
-	    if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
-		model.trigger("setEdge", source, target);
-	    }
-	    if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
-		model.trigger("setEdge", target, source);
+		if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
+		    model.trigger("setEdge", source, target);
+		}
+		if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
+		    model.trigger("setEdge", target, source);
+		}
 	    }
 	},
 
@@ -592,6 +605,12 @@ function cimDiagramModel() {
 		model.linksMap.set(key, [source]);
 	    } else {
 		val.push(source);
+	    }
+	    if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
+		model.trigger("setEdge", source, target);
+	    }
+	    if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
+		model.trigger("setEdge", target, source);
 	    }
 	},
 

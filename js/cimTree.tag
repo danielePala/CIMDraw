@@ -81,16 +81,44 @@
 	 }
      }
 
+     // listen to 'addToActiveDiagram' event from model
+     self.model.on("addToActiveDiagram", function(object) {
+	 if ($("#showAllObjects").prop('checked') === false) {
+	     self.addNewObject(object);
+	 }
+     });
+     
      // listen to 'createObject' event from model
      self.model.on("createObject", function(object) {
-	 let cimNetwork = d3.select("div.tree").selectAll("ul.CIMNetwork");
-	 if (object.nodeName === "cim:Breaker") {
-	     self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
+	 if ($("#showAllObjects").prop('checked') === true) {
+	     self.addNewObject(object);
 	 }
+     });
+
+     addNewObject(object) {
+	 let cimNetwork = d3.select("div.tree").selectAll("ul.CIMNetwork");
 	 if (object.nodeName === "cim:ACLineSegment") {
 	     self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
 	 }
-     });
+	 if (object.nodeName === "cim:Breaker") {
+	     self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
+	 }
+	 if (object.nodeName === "cim:Disconnector") {
+	     self.createElements(cimNetwork, "Disconnector", "Disconnectors", [object]);
+	 }
+	 if (object.nodeName === "cim:LoadBreakSwitch") {
+	     self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", [object]);
+	 }
+	 if (object.nodeName === "cim:Jumper") {
+	     self.createElements(cimNetwork, "Jumper", "Jumpers", [object]);
+	 }
+	 if (object.nodeName === "cim:Junction") {
+	     self.createElements(cimNetwork, "Junction", "Junctions", [object]);
+	 }
+	 if (object.nodeName === "cim:BusbarSection") {
+	     self.createElements(cimNetwork, "BusbarSection", "Nodes", [object]);
+	 }
+     }
 
      // listen to 'deleteObject' event from model
      self.model.on("deleteObject", function(objectUUID) {

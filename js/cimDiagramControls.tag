@@ -28,6 +28,11 @@
 			<ul class="dropdown-menu">
 			    <li id="addACLine"><a>AC Line Segment</a></li>
 			    <li id="addBreaker"><a>Breaker</a></li>
+			    <li id="addDisconnector"><a>Disconnector</a></li>
+			    <li id="addLoadBreakSwitch"><a>LoadBreakSwitch</a></li>
+			    <li id="addJumper"><a>Jumper</a></li>
+			    <li id="addJunction"><a>Junction</a></li>
+			    <li id="addBusbar"><a>Node</a></li>
 			</ul>
 		    </div>
 		    
@@ -49,11 +54,36 @@
 	     self.enableAddACLine();
 	 });
 
-	 $("#addBreaker").on("click", function(e) {
+ 	 $("#addBreaker").on("click", function(e) {
 	     self.disableAll();
 	     self.enableAddBreaker();
 	 });
+
+	 $("#addDisconnector").on("click", function(e) {
+	     self.disableAll();
+	     self.enableAddDisconnector();
+	 });
+
+	 $("#addLoadBreakSwitch").on("click", function(e) {
+	     self.disableAll();
+	     self.enableAddLoadBreakSwitch();
+	 });
+
+	 $("#addJumper").on("click", function(e) {
+	     self.disableAll();
+	     self.enableAddJumper();
+	 });
 	 
+	 $("#addJunction").on("click", function(e) {
+	     self.disableAll();
+	     self.enableAddJunction();
+	 });
+
+	 $("#addBusbar").on("click", function(e) {
+	     self.disableAll();
+	     self.enableAddBusbar();
+	 });
+
 	 // setup diagram buttons
 	 $("#select").change(function() {
 	     self.disableAll();
@@ -298,6 +328,26 @@
 	 self.enableAdd("cim:Breaker", "Breaker");
      }
 
+     enableAddDisconnector() {
+	 self.enableAdd("cim:Disconnector", "Disconnector");
+     }
+
+     enableAddLoadBreakSwitch() {
+	 self.enableAdd("cim:LoadBreakSwitch", "Load Break Switch");
+     }
+
+     enableAddJumper() {
+	 self.enableAdd("cim:Jumper", "Jumper");
+     }
+
+     enableAddJunction() {
+	 self.enableAdd("cim:Junction", "Junction");
+     }
+
+     enableAddBusbar() {
+	 self.enableAdd("cim:BusbarSection", "Node");
+     }
+
      enableAdd(type, text) {
 	 d3.select(self.root).selectAll("label").classed("active", false);
 	 $("input").prop('checked', false);
@@ -305,7 +355,8 @@
 	 self.status = type;
 	 d3.select("svg").on("click", clicked);
 	 function clicked() {
-	     opts.model.createObject(type);
+	     let newObject = opts.model.createObject(type);
+	     self.parent.addToDiagram(newObject);
 	  }
      }
 
