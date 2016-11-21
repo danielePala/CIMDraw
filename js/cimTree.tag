@@ -8,9 +8,8 @@
      }
 
      .cim-tree-attribute-name {
-	 width: 150px;
 	 text-align: left;
-	 max-width: 150px;
+	 min-width: 170px;
      }
     </style>
 
@@ -136,11 +135,14 @@
      self.model.on("setAttribute", function(object, attrName, value) {
 	 if (attrName === "cim:IdentifiedObject.name") {
 	     let type = object.localName;
-	     let target = d3.select("div.tree").selectAll("div.tree > ul > li." + type + "s > ul > li > ul#" + object.attributes.getNamedItem("rdf:ID").value);
+	     let target = d3.select("div.tree")
+			    .selectAll("div.tree > div > div > ul > li." +
+				       type + "s > ul > li > ul#" + object.attributes.getNamedItem("rdf:ID").value);
 	     if (target.empty() === false) {
 		 let a = d3.select(target.node().parentNode).select("a");
 		 a.html(value);
 	     }
+	     $("[cim-target=\"" + object.attributes.getNamedItem("rdf:ID").value + "\"]").html(value);
 	 }
      });
 
@@ -293,6 +295,8 @@
 				    
 				    linkToChange.select("button").html(function (dd) {
 					return cimModel.getAttribute(d, "cim:IdentifiedObject.name").textContent;
+				    }).attr("cim-target", function() {
+					return d.attributes.getNamedItem("rdf:ID").value;
 				    });
 				    linkToChange.attr("id", null);
 				}
@@ -369,18 +373,19 @@
 		})
 	        .enter()
 	        .append("li")
-		.attr("class", "link")
-	        .html(function (d) {
-		    return d.attributes[0].value.substring(1).split(".")[1] + ": "; 
+		.attr("class", "link").append("div").attr("class", "input-group input-group-sm");
+	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
+		.html(function (d) {
+		    return d.attributes[0].value.substring(1).split(".")[1]; 
 		});
-	 elementLink.append("button")
+	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn");
+	 elementLinkBtn.append("button")
 		    .attr("class","btn btn-default btn-xs")
 		    .attr("type", "submit")
 		    .on("click", function (d) {
 			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
 			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
 			let targetUUID = target.attributes.getNamedItem("rdf:resource").value;
-			console.log(targetUUID);
 			
 			if ($(targetUUID).parent().parent().is(":visible") === false) {
 			    $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
@@ -405,13 +410,23 @@
 			if (typeof(target) === "undefined") {
 			    return "none";
 			}
-			let name = self.model.getAttribute(self.model.resolveLink(target), "cim:IdentifiedObject.name");
+			let targetObj = self.model.resolveLink(target);
+			let name = self.model.getAttribute(targetObj, "cim:IdentifiedObject.name");
 			if (typeof(name) !== "undefined") {
 			    return name.innerHTML;
 			}
 			return "unnamed";
+		    }).attr("cim-target", function(d) {
+			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
+			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
+			// TODO: maybe the inverse link is set
+			if (typeof(target) === "undefined") {
+			    return "none";
+			}
+			let targetObj = self.model.resolveLink(target);
+			return targetObj.attributes.getNamedItem("rdf:ID").value;
 		    });
-	 elementLink.append("button")
+	 elementLinkBtn.append("button")
 	            .attr("class","btn btn-default btn-xs")
 	            .attr("type", "submit")
 	            .on("click", function (d) {
@@ -431,6 +446,7 @@
 	 }
 
 	 // add extra link to PQ application
+	 /*
 	 let pqLink = elementEnter.append("li")
 				  .attr("class", "link");
 	 pqLink.append("button")
@@ -442,6 +458,7 @@
 		   window.open("http://ric302107:8080/ClientRest/uuid/uuid.jsp?uuid=" + sourceUUID);
 	       })
 	       .html("View in CIM Datastore");
+	 */
      }
 
      moveTo(uuid) {
