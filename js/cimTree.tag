@@ -407,6 +407,7 @@
 			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
 			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
 			// TODO: maybe the inverse link is set
+			self.model.getInvLink(d);
 			if (typeof(target) === "undefined") {
 			    return "none";
 			}
