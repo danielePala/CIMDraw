@@ -279,17 +279,6 @@
 				return "#" + d.attributes.getNamedItem("rdf:ID").value;
 			    })
 	    		    .on("click", function (d) {
-				// if necessary, generate attributes and links
-				let elementEnter = d3.select(this.parentNode).select("div").node();
-				if (elementEnter.childNodes.length === 0) {
-				    self.generateAttrsAndLinks(d3.select(elementEnter));
-				}
-				// change address to 'this object'
-				let hashComponents = window.location.hash.substring(1).split("/");
-				let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-				if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
-				    riot.route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
-				}
 				// check if we are changing some link
 				let linkToChange = d3.select("#cimTarget");
 				if (linkToChange.empty() === false) {
@@ -303,6 +292,24 @@
 					return d.attributes.getNamedItem("rdf:ID").value;
 				    });
 				    linkToChange.attr("id", null);
+				    // we need to undo the collapse logic
+				    $(this).parent().find("div").on("shown.bs.collapse", function() {
+					$(this).parent().find("div").collapse("hide");
+					$(this).parent().find("div").off("shown.bs.collapse");
+				    });
+				    
+				} else {
+				    // if necessary, generate attributes and links
+				    let elementEnter = d3.select(this.parentNode).select("div").node();
+				    if (elementEnter.childNodes.length === 0) {
+					self.generateAttrsAndLinks(d3.select(elementEnter));
+				    }
+				    // change address to 'this object'
+				    let hashComponents = window.location.hash.substring(1).split("/");
+				    let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+				    if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
+					riot.route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
+				    }
 				}
 			    })
 			    .html(function (d) {
@@ -321,7 +328,6 @@
 		    return d.attributes.getNamedItem("rdf:ID").value;
 		})
 		.attr("class", "row collapse");
-		//.style("list-style-type", "none");
 	 return elementEnter;
      }
 
@@ -347,11 +353,12 @@
 	 elementDiv.append("input")
 		   .attr("class", "form-control")
 		   .each(function (d) {
-		       this.value = "none";
 		       let object = d3.select(this.parentNode.parentNode.parentNode).datum();
 		       let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
 		       if (typeof(value) !== "undefined") {
 			   this.value = value.innerHTML;
+		       } else { 
+			   d3.select(this).attr("placeholder", "none");
 		       }
 		   })
 		   .attr("type", "text")
@@ -387,25 +394,27 @@
 		    .attr("class","btn btn-default btn-xs")
 		    .attr("type", "submit")
 		    .on("click", function (d) {
-			let source = d3.select(d3.select(this).node().parentNode.parentNode.parentNode.parentNode).datum();
-			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
-			let targetUUID = target.attributes.getNamedItem("rdf:resource").value;
-			
+			let targetUUID = "#" + d3.select(this).attr("cim-target"); 
 			if ($(targetUUID).parent().parent().is(":visible") === false) {
 			    $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
-				$(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top));
-				let hashComponents = window.location.hash.substring(1).split("/");
-				let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-				riot.route(basePath + "/" + targetUUID.substring(1));
+				scrollAndRouteTo(targetUUID);
 				$(targetUUID).parent().parent().off("shown.bs.collapse");
 			    });
 			} else {
-			    $(".tree").scrollTop($(".tree").scrollTop() + ($(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top));
+			    scrollAndRouteTo(targetUUID);
+			}
+			$(targetUUID).parent().parent().collapse("show");
+
+			function scrollAndRouteTo(targetUUID) {
+			    $(".tree").scrollTop(
+				$(".tree").scrollTop() + (
+				    $(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top
+				)
+			    );
 			    let hashComponents = window.location.hash.substring(1).split("/");
 			    let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 			    riot.route(basePath + "/" + targetUUID.substring(1));
-			}
-			$(targetUUID).parent().parent().collapse("show");
+			};
 		    })
 		    .html(function (d) {
 			let source = d3.select(d3.select(this).node().parentNode.parentNode.parentNode.parentNode).datum();
