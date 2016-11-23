@@ -292,12 +292,12 @@
 					return d.attributes.getNamedItem("rdf:ID").value;
 				    });
 				    linkToChange.attr("id", null);
-				    // we need to undo the collapse logic
-				    $(this).parent().find("div").on("shown.bs.collapse", function() {
-					$(this).parent().find("div").collapse("hide");
-					$(this).parent().find("div").off("shown.bs.collapse");
+				    self.scrollAndRouteTo("#" + target.attributes.getNamedItem("rdf:ID").value);
+				    // we need to disable the collapse logic
+				    $(this).parent().find("div").on("show.bs.collapse hide.bs.collapse", function(e) {
+					e.preventDefault();
+					$(this).parent().find("div").off("show.bs.collapse hide.bs.collapse");
 				    });
-				    
 				} else {
 				    // if necessary, generate attributes and links
 				    let elementEnter = d3.select(this.parentNode).select("div").node();
@@ -395,26 +395,7 @@
 		    .attr("type", "submit")
 		    .on("click", function (d) {
 			let targetUUID = "#" + d3.select(this).attr("cim-target"); 
-			if ($(targetUUID).parent().parent().is(":visible") === false) {
-			    $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
-				scrollAndRouteTo(targetUUID);
-				$(targetUUID).parent().parent().off("shown.bs.collapse");
-			    });
-			} else {
-			    scrollAndRouteTo(targetUUID);
-			}
-			$(targetUUID).parent().parent().collapse("show");
-
-			function scrollAndRouteTo(targetUUID) {
-			    $(".tree").scrollTop(
-				$(".tree").scrollTop() + (
-				    $(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top
-				)
-			    );
-			    let hashComponents = window.location.hash.substring(1).split("/");
-			    let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-			    riot.route(basePath + "/" + targetUUID.substring(1));
-			};
+			self.scrollAndRouteTo(targetUUID);
 		    })
 		    .html(function (d) {
 			let source = d3.select(d3.select(this).node().parentNode.parentNode.parentNode.parentNode).datum();
@@ -526,6 +507,29 @@
 
 	     cimObjectContainer.remove();
 	 }
+     }
+
+     scrollAndRouteTo(targetUUID) {
+	 if ($(targetUUID).parent().parent().is(":visible") === false) {
+	     $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
+		 self.scrollAndRouteToVisible(targetUUID);
+		 $(targetUUID).parent().parent().off("shown.bs.collapse");
+	     });
+	 } else {
+	     self.scrollAndRouteToVisible(targetUUID);
+	 }
+	 $(targetUUID).parent().parent().collapse("show");
+     }
+
+     scrollAndRouteToVisible(targetUUID) {
+	 $(".tree").scrollTop(
+	     $(".tree").scrollTop() + (
+		 $(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top
+	     )
+	 );
+	 let hashComponents = window.location.hash.substring(1).split("/");
+	 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+	 riot.route(basePath + "/" + targetUUID.substring(1));
      }
      
     </script> 
