@@ -11,6 +11,10 @@
 	 text-align: left;
 	 min-width: 170px;
      }
+
+     .cim-tree-link-btn {
+	 float: left;
+     }
     </style>
 
     <div class="app-tree" id="app-tree">
@@ -137,7 +141,7 @@
 	     let type = object.localName;
 	     let target = d3.select("div.tree")
 			    .selectAll("div.tree > div > div > ul > li." +
-				       type + "s > ul > li > ul#" + object.attributes.getNamedItem("rdf:ID").value);
+				       type + "s > ul > li > div#" + object.attributes.getNamedItem("rdf:ID").value);
 	     if (target.empty() === false) {
 		 let a = d3.select(target.node().parentNode).select("a");
 		 a.html(value);
@@ -276,7 +280,7 @@
 			    })
 	    		    .on("click", function (d) {
 				// if necessary, generate attributes and links
-				let elementEnter = d3.select(this.parentNode).select("ul").node();
+				let elementEnter = d3.select(this.parentNode).select("div").node();
 				if (elementEnter.childNodes.length === 0) {
 				    self.generateAttrsAndLinks(d3.select(elementEnter));
 				}
@@ -312,24 +316,24 @@
 			        cimModel.trigger("dragend", d);
 			    }));
 	 let elementEnter = elementTopContainer
-		.append("ul")
+		.append("div")
 		.attr("id", function(d) {
 		    return d.attributes.getNamedItem("rdf:ID").value;
 		})
-		.attr("class", "collapse")
-		.style("list-style-type", "none");
+		.attr("class", "row collapse");
+		//.style("list-style-type", "none");
 	 return elementEnter;
      }
 
      generateAttrsAndLinks(elementEnter) {
 	 let elementDiv = elementEnter
-		.selectAll("li.attribute")
+		.selectAll("div.attribute")
 		.data(function(d) {
 		    return self.model.getSchemaAttributes(d.localName); 
 		})
 		.enter()
-		.append("li")
-		.attr("class", "attribute")
+		.append("div")
+		.attr("class", "attribute col-sm-12")
 		.attr("title", function(d) {
 		    return [].filter.call(d.children, function(el) {
 			return el.nodeName === "rdfs:comment"
@@ -365,20 +369,20 @@
 		   });
 	 // add links
 	 let elementLink = elementEnter
-	        .selectAll("li.link")
+	        .selectAll("div.link")
 	        .data(function(d) {
 		    return self.model.getSchemaLinks(d.localName)
 				   .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
 				   .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal"); 
 		})
 	        .enter()
-	        .append("li")
-		.attr("class", "link").append("div").attr("class", "input-group input-group-sm");
+	        .append("div")
+		.attr("class", "link col-sm-12").append("div").attr("class", "input-group input-group-sm");
 	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
 		.html(function (d) {
 		    return d.attributes[0].value.substring(1).split(".")[1]; 
 		});
-	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn");
+	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-link-btn");
 	 elementLinkBtn.append("button")
 		    .attr("class","btn btn-default btn-xs")
 		    .attr("type", "submit")
