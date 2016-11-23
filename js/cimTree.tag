@@ -289,7 +289,7 @@
 				// check if we are changing some link
 				let linkToChange = d3.select("#cimTarget");
 				if (linkToChange.empty() === false) {
-				    let target = d3.select(linkToChange.node().parentNode.parentNode).datum();
+				    let target = d3.select(linkToChange.node().parentNode.parentNode.parentNode.parentNode).datum();
 				    let targetLink = linkToChange.datum();
 				    cimModel.setLink(target, targetLink, d);
 				    
@@ -383,7 +383,7 @@
 		    .attr("class","btn btn-default btn-xs")
 		    .attr("type", "submit")
 		    .on("click", function (d) {
-			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
+			let source = d3.select(d3.select(this).node().parentNode.parentNode.parentNode.parentNode).datum();
 			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
 			let targetUUID = target.attributes.getNamedItem("rdf:resource").value;
 			
@@ -404,10 +404,12 @@
 			$(targetUUID).parent().parent().collapse("show");
 		    })
 		    .html(function (d) {
-			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
+			let source = d3.select(d3.select(this).node().parentNode.parentNode.parentNode.parentNode).datum();
 			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
 			// TODO: maybe the inverse link is set
-			self.model.getInvLink(d);
+			let invLink = self.model.getInvLink(d);
+			console.log(self.model.getGraph([source], d.attributes[0].value.substring(1), invLink.attributes[0].value.substring(1)));
+			
 			if (typeof(target) === "undefined") {
 			    return "none";
 			}

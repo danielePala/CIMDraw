@@ -619,16 +619,17 @@ function cimDiagramModel() {
 	    return model.dataMap.get(link.attributes[0].value);
 	},
 
+	// returns the inverse of a given link
 	getInvLink(link) {
-	    console.log(link);
 	    let invRoleName = [].filter.call(link.children, function(el) {
 		return el.nodeName === "cims:inverseRoleName";
 	    })[0];
-	    console.log(invRoleName);
-	    let invRoleNameString = invRoleName.attributes[0]
-	    [].filter.call(allSchemaObjects, function(el) {
-		return el.attributes[0].value.startsWith("#" +  + ".");
-	    })
+	    let allSchemaObjects = model.schemaData.children[0].children;
+	    let invRoleNameString = invRoleName.attributes[0].value;
+	    let invRole = [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value.startsWith(invRoleNameString);
+	    })[0];
+	    return invRole;
 	},
 
 	// returns all relations between given sources and other objects,
