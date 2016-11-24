@@ -15,6 +15,10 @@
      .cim-tree-link-btn {
 	 float: left;
      }
+
+     ul {
+	 list-style-type: none;
+     }
     </style>
 
     <div class="app-tree" id="app-tree">
@@ -141,7 +145,7 @@
 	     let type = object.localName;
 	     let target = d3.select("div.tree")
 			    .selectAll("div.tree > div > div > ul > li." +
-				       type + "s > ul > li > div#" + object.attributes.getNamedItem("rdf:ID").value);
+				       type + "s > ul > li > ul#" + object.attributes.getNamedItem("rdf:ID").value);
 	     if (target.empty() === false) {
 		 let a = d3.select(target.node().parentNode).select("a");
 		 a.html(value);
@@ -294,13 +298,13 @@
 				    linkToChange.attr("id", null);
 				    self.scrollAndRouteTo("#" + target.attributes.getNamedItem("rdf:ID").value);
 				    // we need to disable the collapse logic
-				    $(this).parent().find("div").on("show.bs.collapse hide.bs.collapse", function(e) {
+				    $(this).parent().find("ul").on("show.bs.collapse hide.bs.collapse", function(e) {
 					e.preventDefault();
-					$(this).parent().find("div").off("show.bs.collapse hide.bs.collapse");
+					$(this).parent().find("ul").off("show.bs.collapse hide.bs.collapse");
 				    });
 				} else {
 				    // if necessary, generate attributes and links
-				    let elementEnter = d3.select(this.parentNode).select("div").node();
+				    let elementEnter = d3.select(this.parentNode).select("ul").node();
 				    if (elementEnter.childNodes.length === 0) {
 					self.generateAttrsAndLinks(d3.select(elementEnter));
 				    }
@@ -323,23 +327,23 @@
 			        cimModel.trigger("dragend", d);
 			    }));
 	 let elementEnter = elementTopContainer
-		.append("div")
+		.append("ul")
 		.attr("id", function(d) {
 		    return d.attributes.getNamedItem("rdf:ID").value;
 		})
-		.attr("class", "row collapse");
+		.attr("class", "collapse");
 	 return elementEnter;
      }
 
      generateAttrsAndLinks(elementEnter) {
 	 let elementDiv = elementEnter
-		.selectAll("div.attribute")
+		.selectAll("li.attribute")
 		.data(function(d) {
 		    return self.model.getSchemaAttributes(d.localName); 
 		})
 		.enter()
-		.append("div")
-		.attr("class", "attribute col-sm-12")
+		.append("li")
+		.attr("class", "attribute")
 		.attr("title", function(d) {
 		    return [].filter.call(d.children, function(el) {
 			return el.nodeName === "rdfs:comment"
@@ -376,52 +380,48 @@
 		   });
 	 // add links
 	 let elementLink = elementEnter
-	        .selectAll("div.link")
+	        .selectAll("li.link")
 	        .data(function(d) {
 		    return self.model.getSchemaLinks(d.localName)
 				   .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
 				   .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal"); 
 		})
 	        .enter()
-	        .append("div")
-		.attr("class", "link col-sm-12").append("div").attr("class", "input-group input-group-sm");
+	        .append("li")
+		.attr("class", "link").append("div").attr("class", "input-group input-group-sm");
 	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
 		.html(function (d) {
 		    return d.attributes[0].value.substring(1).split(".")[1]; 
 		});
 	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-link-btn");
 	 elementLinkBtn.append("button")
-		    .attr("class","btn btn-default btn-xs")
-		    .attr("type", "submit")
-		    .on("click", function (d) {
-			let targetUUID = "#" + d3.select(this).attr("cim-target"); 
-			self.scrollAndRouteTo(targetUUID);
-		    })
-		    .html(function (d) {
-			let source = d3.select(d3.select(this).node().parentNode.parentNode.parentNode.parentNode).datum();
-			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
-			// TODO: maybe the inverse link is set
-			let invLink = self.model.getInvLink(d);
-			console.log(self.model.getGraph([source], d.attributes[0].value.substring(1), invLink.attributes[0].value.substring(1)));
-			
-			if (typeof(target) === "undefined") {
-			    return "none";
-			}
-			let targetObj = self.model.resolveLink(target);
-			let name = self.model.getAttribute(targetObj, "cim:IdentifiedObject.name");
-			if (typeof(name) !== "undefined") {
-			    return name.innerHTML;
-			}
-			return "unnamed";
-		    }).attr("cim-target", function(d) {
-			let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
-			let target = self.model.getLink(source, "cim:" + d.attributes[0].value.substring(1));
-			// TODO: maybe the inverse link is set
-			if (typeof(target) === "undefined") {
-			    return "none";
-			}
-			let targetObj = self.model.resolveLink(target);
-			return targetObj.attributes.getNamedItem("rdf:ID").value;
+		       .attr("class","btn btn-default btn-xs")
+		       .attr("type", "submit")
+		       .on("click", function (d) {
+			   let targetUUID = "#" + d3.select(this).attr("cim-target"); 
+			   self.scrollAndRouteTo(targetUUID);
+		       })
+		       .attr("cim-target", function(d) {
+			   let source = d3.select(d3.select(this).node().parentNode.parentNode.parentNode.parentNode).datum();
+			   let invLink = self.model.getInvLink(d);
+			   let graph = self.model.getGraph([source], d.attributes[0].value.substring(1), invLink.attributes[0].value.substring(1));
+			   let targetObj = graph.map(el => el.source)[0];
+			   if (typeof(targetObj) === "undefined") {
+			       return "none";
+			   }
+			   return targetObj.attributes.getNamedItem("rdf:ID").value;
+		       })
+		       .html(function (d) {
+			   let targetObj = self.model.getObject(d3.select(this).attr("cim-target"));
+			   console.log(targetObj);
+			   if (typeof(targetObj) === "undefined") {
+			       return "none";
+			   }
+			   let name = self.model.getAttribute(targetObj, "cim:IdentifiedObject.name");
+			   if (typeof(name) !== "undefined") {
+			       return name.innerHTML;
+			   }
+			   return "unnamed";
 		    });
 	 elementLinkBtn.append("button")
 	            .attr("class","btn btn-default btn-xs")
@@ -512,25 +512,26 @@
      scrollAndRouteTo(targetUUID) {
 	 if ($(targetUUID).parent().parent().is(":visible") === false) {
 	     $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
-		 self.scrollAndRouteToVisible(targetUUID);
+		 scrollAndRouteToVisible(targetUUID);
 		 $(targetUUID).parent().parent().off("shown.bs.collapse");
 	     });
 	 } else {
-	     self.scrollAndRouteToVisible(targetUUID);
+	     scrollAndRouteToVisible(targetUUID);
 	 }
 	 $(targetUUID).parent().parent().collapse("show");
+
+	 function scrollAndRouteToVisible(targetUUID) {
+	     $(".tree").scrollTop(
+		 $(".tree").scrollTop() + (
+		     $(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top
+		 )
+	     );
+	     let hashComponents = window.location.hash.substring(1).split("/");
+	     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+	     riot.route(basePath + "/" + targetUUID.substring(1));
+	 };
      }
 
-     scrollAndRouteToVisible(targetUUID) {
-	 $(".tree").scrollTop(
-	     $(".tree").scrollTop() + (
-		 $(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top
-	     )
-	 );
-	 let hashComponents = window.location.hash.substring(1).split("/");
-	 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-	 riot.route(basePath + "/" + targetUUID.substring(1));
-     }
      
     </script> 
     
