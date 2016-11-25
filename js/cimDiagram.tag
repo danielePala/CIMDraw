@@ -443,12 +443,13 @@
 		     if (typeof(valueObject) !== "undefined") {
 			 if(typeof(self.model.getAttribute(valueObject, "cim:AnalogValue.value")) !== "undefined") {
 			     value = self.model.getAttribute(valueObject, "cim:AnalogValue.value").textContent;
+			     value = parseFloat(value).toFixed(2);
 			 }
 		     }
 		     actLine = actLine + type;
 		     actLine = actLine + " (phase: " + phases + ")";
 		     actLine = actLine + ": ";
-		     actLine = actLine + parseFloat(value).toFixed(2);
+		     actLine = actLine + value;
 		     actLine = actLine + " [" + unitMultiplier + unitSymbol + "]";
 		     actLine = actLine + "<br>";
 		     tooltipLines.push(actLine);   
