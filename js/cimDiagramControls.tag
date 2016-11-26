@@ -275,8 +275,9 @@
 		   // update the model
 		   let schemaLinks = opts.model.getSchemaLinks(termToChange.localName);
 		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
-		   opts.model.setLink(termToChange, schemaLink, cn);
-		   opts.model.setLink(d, schemaLink, cn);
+		   let schemaLinkName = "cim:" + schemaLink.attributes[0].value.substring(1);
+		   opts.model.setLink(termToChange, schemaLinkName, cn);
+		   opts.model.setLink(d, schemaLinkName, cn);
 		   termToChange = undefined;
 		   return;
 	       }
@@ -307,7 +308,8 @@
 		   // update the model
 		   let schemaLinks = opts.model.getSchemaLinks(termToChange.localName);
 		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
-		   opts.model.setLink(termToChange, schemaLink, d);
+		   let schemaLinkName = "cim:" + schemaLink.attributes[0].value.substring(1);
+		   opts.model.setLink(termToChange, schemaLinkName, d);
 		   termToChange = undefined;
 	       }
 	   });

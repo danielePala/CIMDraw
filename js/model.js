@@ -550,9 +550,10 @@ function cimDiagramModel() {
 	},
 
 	// get a specific link of a given object.
+	// If the link is many-valued, it mey return more than one element
 	getLink(object, linkName) {
 	    let links = model.getLinks(object);
-	    return links.filter(el => el.nodeName === linkName)[0];
+	    return links.filter(el => el.nodeName === linkName);
 	},
 
 	// get a specific enum of a given object.
@@ -562,35 +563,26 @@ function cimDiagramModel() {
 	},
 
 	// set a specific link of a given object.
-	setLink(source, linkSchema, target) {
-	    let linkName = "cim:" + linkSchema.attributes[0].value.substring(1);
-	    let link = model.getLink(source, linkName);
-	    if (typeof(link) === "undefined") {
-		model.addLink(source, linkName, target);
-	    } else {
-		// handle inverse relation
-		let invLinkName = [].filter.call(linkSchema.children, function(el) {
-		    return el.localName === "inverseRoleName";
-		})[0].attributes[0].value;
-		invLinkName = "cim:" + invLinkName.substring(1);
-		let actTarget = model.dataMap.get(link.attributes[0].value);
-		let invLink = model.getLink(actTarget, invLinkName);
-		if (typeof(invLink) !== "undefined") {
-		    invLink.remove();
-		    // TODO: remove from linksMap
-		}
-		// set the new value
-		link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;
-		if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
-		    model.trigger("setEdge", source, target);
-		}
-		if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
-		    model.trigger("setEdge", target, source);
-		}
+	// If a link with the same name already exists, it is removed.
+	setLink(source, linkName, target) {
+	    let invLinkSchema = self.model.getInvLink(linkName);
+	    let invLinkName = "cim:" + invLink.attributes[0].value.substring(1);
+	    let graph = self.model.getGraph([source], linkName, invLinkName);
+	    let oldTargets = graph.map(el => el.source);
+	    for (let oldTarget of oldTargets) {
+		model.removeLink(source, linkName, oldTarget);
 	    }
+	    model.addLink(source, linkName, target);
 	},
 
 	addLink(source, linkName, target) {
+	    let invLink = self.model.getInvLink(linkName);
+	    let invLinkName = "cim:" + invLink.attributes[0].value.substring(1);
+	    let graph = self.model.getGraph([source], linkName, invLinkName);
+	    // see if the link is already set
+	    if (graph.length > 0) {
+		return;
+	    }
 	    let link = model.data.createElementNS("http://iec.ch/TC57/2010/CIM-schema-cim15#", linkName);
 	    let linkValue = model.data.createAttribute("rdf:resource");
 	    linkValue.nodeValue = "#";
@@ -614,6 +606,33 @@ function cimDiagramModel() {
 	    }
 	},
 
+	// TODO: should trigger an event
+	removeLink(source, linkName, target) {
+	    let link = model.getLink(source, linkName);
+	    let invLinkSchema = self.model.getInvLink(linkName);
+	    let invLinkName = "cim:" + invLinkSchema.attributes[0].value.substring(1);
+	    let invLink = model.getLink(target, invLinkName);
+	    removeLinkInternal(link, target);
+	    removeLinkInternal(invLink, source);
+
+	    function removeLinkInternal(link, target) {
+		// the link may be many-valued
+		for (let linkEntry of link) {
+		    let targetUUID = linkEntry.attributes.getNamedItem("rdf:resource").value;
+		    if (targetUUID === target.attributes.getNamedItem("rdf:ID").value) {
+			linkEntry.remove();
+			let linksMapKey = link.nodeName + targetUUID;
+			let linksMapValue = model.linksMap.get(linksMapKey);
+			if (linksMapValue.length === 1) {
+			    model.linksMap.delete(linksMapKey);
+			} else {
+			    linksMapValue.splice(linksMapValue.indexOf(source), 1);
+			}
+		    }
+		}
+	    };
+	},
+
 	// resolve a given link.
 	resolveLink(link) {
 	    return model.dataMap.get(link.attributes[0].value);
@@ -621,11 +640,14 @@ function cimDiagramModel() {
 
 	// returns the inverse of a given link
 	getInvLink(link) {
-	    let invRoleName = [].filter.call(link.children, function(el) {
-		return el.nodeName === "cims:inverseRoleName";
-	    })[0];
+	    let invRoleNameString = link;
+	    if (typeof(link) !== "string") {
+		let invRoleName = [].filter.call(link.children, function(el) {
+		    return el.nodeName === "cims:inverseRoleName";
+		})[0];
+		invRoleNameString = invRoleName.attributes[0].value;
+	    }
 	    let allSchemaObjects = model.schemaData.children[0].children;
-	    let invRoleNameString = invRoleName.attributes[0].value;
 	    let invRole = [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value.startsWith(invRoleNameString);
 	    })[0];

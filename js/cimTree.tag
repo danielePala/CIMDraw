@@ -319,11 +319,13 @@
 				// check if we are changing some link
 				let linkToChange = d3.select("#cimTarget");
 				if (linkToChange.empty() === false) {
-				    let target = d3.select(linkToChange.node().parentNode.parentNode.parentNode.parentNode).datum();
+				    let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).datum(); 
 				    let targetLink = linkToChange.datum();
-				    cimModel.setLink(target, targetLink, d);
+				    let targetLinkName = "cim:" + targetLink.attributes[0].value.substring(1);
+				    cimModel.setLink(target, targetLinkName, d);
 				    
 				    linkToChange.select("button").html(function (dd) {
+					d3.select(this).attr("disabled", null);
 					return cimModel.getAttribute(d, "cim:IdentifiedObject.name").textContent;
 				    }).attr("cim-target", function() {
 					return d.attributes.getNamedItem("rdf:ID").value;
@@ -390,7 +392,7 @@
 	 elementDiv.append("input")
 		   .attr("class", "form-control")
 		   .each(function (d) {
-		       let object = d3.select(this.parentNode.parentNode.parentNode).datum();
+		       let object = d3.select($(this).parents("ul").first().get(0)).datum(); 
 		       let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
 		       if (typeof(value) !== "undefined") {
 			   this.value = value.innerHTML;
@@ -406,7 +408,7 @@
 		       // trap the return key being pressed
 		       if (d3.event.keyCode === 13) {
 			   d3.event.preventDefault();
-			   let object = d3.select(this.parentNode.parentNode.parentNode).datum();
+			   let object = d3.select($(this).parents("ul").first().get(0)).datum(); 
 			   let attrName = "cim:" + d.attributes[0].value.substring(1);
 			   self.model.setAttribute(object, attrName, this.value);
 		       }
@@ -435,7 +437,7 @@
 			   self.scrollAndRouteTo(targetUUID);
 		       })
 		       .attr("cim-target", function(d) {
-			   let source = d3.select(d3.select(this).node().parentNode.parentNode.parentNode.parentNode).datum();
+			   let source = d3.select($(this).parents("ul").first().get(0)).datum();
 			   let invLink = self.model.getInvLink(d);
 			   let graph = self.model.getGraph([source], d.attributes[0].value.substring(1), invLink.attributes[0].value.substring(1));
 			   let targetObj = graph.map(el => el.source)[0];
@@ -447,6 +449,7 @@
 		       .html(function (d) {
 			   let targetObj = self.model.getObject(d3.select(this).attr("cim-target"));
 			   if (typeof(targetObj) === "undefined") {
+			       d3.select(this).attr("disabled", "disabled");
 			       return "none";
 			   }
 			   let name = self.model.getAttribute(targetObj, "cim:IdentifiedObject.name");
@@ -462,7 +465,18 @@
 			$(this).parent().attr("id", "cimTarget");
 		    })
 	            .html("change");
+	 elementLinkBtn.append("button")
+	            .attr("class","btn btn-default btn-xs")
+	            .attr("type", "submit")
+	            .on("click", function (d) {
+			let source = d3.select($(this).parents("ul").first().get(0)).datum();
+			let linkName = d.attributes[0].value.substring(1);
+			let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+			cimModel.removeLink(source, linkName, target);
+		    })
+	            .html("remove");
 
+	 
 	 // handle power transfomer ends
 	 let name = d3.select(elementEnter.node().parentNode).attr("class");
 	 if (name === "PowerTransformer") {
