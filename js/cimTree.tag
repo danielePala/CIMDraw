@@ -232,12 +232,45 @@
 	 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
 	 self.createElements(cimNetwork, "Jumper", "Jumpers", allJumpers);
 	 self.createElements(cimNetwork, "Junction", "Junctions", allJunctions);
-	 self.createElements(cimNetwork, "EnergySource", "Energy Sources", allEnergySources);
-	 self.createElements(cimNetwork, "EnergyConsumer", "Loads", allEnergyConsumers);
+	 let allGenerators = self.createTopContainer(cimNetwork, "Generator", "Generators", allEnergySources);
+	 self.createElements(allGenerators, "EnergySource", "Energy Sources", allEquipments["cim:EnergySource"]);
+	 self.createElements(allGenerators, "SynchronousMachine", "Synchronous Machines", allEquipments["cim:SynchronousMachine"]);
+	 let allLoads = self.createTopContainer(cimNetwork, "Load", "Loads", allEnergyConsumers);
+	 self.createElements(allLoads, "EnergyConsumer", "Energy Consumers", allEquipments["cim:EnergyConsumer"]);
+	 self.createElements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
+	 self.createElements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
 	 self.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
 	 self.createElements(cimNetwork, "Substation", "Substations", allSubstations);
 	 self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 self.createElements(cimNetwork, "Line", "Lines", allLines);
+     }
+
+     createTopContainer(cimNetwork, name, printName, data) {
+	 let elementsTopContainer = cimNetwork.select("li." + name + "s");
+	 let elements = elementsTopContainer.select("ul#" + name + "sList");
+	 if (elementsTopContainer.empty()) {
+	     elementsTopContainer = cimNetwork
+		.append("li")
+		.attr("class", name + "s" + " list-group-item");
+	     elementsTopContainer.append("a")
+				 .attr("class", "btn btn-primary btn-xs")
+				 .attr("role", "button")
+				 .attr("data-toggle", "collapse")
+				 .attr("href", "#" + name + "sList")
+				 .html(printName);
+	     elementsTopContainer.append("span")
+				 .attr("class", "badge")
+				 .html(data.length);
+	     elements = elementsTopContainer
+		.append("ul")
+		.attr("id", name + "sList")
+		.attr("class", "collapse");
+	 } else {
+	     let elementCount = parseInt(elementsTopContainer.select("span").html());
+	     elementCount = elementCount + data.length;
+	     elementsTopContainer.select("span").html(elementCount);
+	 }
+	 return elements;
      }
 
      createElements(cimNetwork, name, printName, data) {
@@ -413,7 +446,6 @@
 		       })
 		       .html(function (d) {
 			   let targetObj = self.model.getObject(d3.select(this).attr("cim-target"));
-			   console.log(targetObj);
 			   if (typeof(targetObj) === "undefined") {
 			       return "none";
 			   }
@@ -480,19 +512,9 @@
 	     return;
 	 }
 	 target = targetChild.parentNode;
-	 
-	 let targetParent = $(target).parent();
 	 d3.select(".CIMNetwork").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
 	 d3.select(target).select("a").attr("class", "btn btn-danger btn-xs");
-	 if (targetParent.is(":visible") === false) {
-	     targetParent.on("shown.bs.collapse", function() {
-		 $(".tree").scrollTop($(".tree").scrollTop() + ($(target).offset().top - $(".tree").offset().top));
-		 targetParent.off("shown.bs.collapse");
-	     });
-	 } else {
-	     $(".tree").scrollTop($(".tree").scrollTop() + ($(target).offset().top - $(".tree").offset().top));
-	 }
-	 targetParent.collapse("show");
+	 self.scrollAndRouteTo("#" + uuid);
      }
      
      deleteObject(objectUUID) {
@@ -510,15 +532,15 @@
      }
 
      scrollAndRouteTo(targetUUID) {
-	 if ($(targetUUID).parent().parent().is(":visible") === false) {
-	     $(targetUUID).parent().parent().on("shown.bs.collapse", function() {
+	 if ($(targetUUID).parents(".collapse:not(.in)").last().length !== 0) {
+	     $(targetUUID).parents(".collapse:not(.in)").last().on("shown.bs.collapse", function() {
 		 scrollAndRouteToVisible(targetUUID);
-		 $(targetUUID).parent().parent().off("shown.bs.collapse");
+		 $(targetUUID).parents(".collapse:not(.in)").last().off("shown.bs.collapse");
 	     });
 	 } else {
 	     scrollAndRouteToVisible(targetUUID);
 	 }
-	 $(targetUUID).parent().parent().collapse("show");
+	 $(targetUUID).parents(".collapse:not(.in)").collapse("show");
 
 	 function scrollAndRouteToVisible(targetUUID) {
 	     $(".tree").scrollTop(
