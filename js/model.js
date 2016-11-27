@@ -75,11 +75,15 @@ function cimDiagramModel() {
 		} 
 	    }
 	    
-	    // let's read a schema file
-	    let rdfs = "rdf-schema/EquipmentProfileRDFSAugmented-v2_4_15-7Aug2014.rdf";
-	    d3.xml(rdfs, function(schemaData) {
-		model.schemaData = schemaData;
-		callback(null);
+	    // let's read schema files
+	    let rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
+	    let rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
+	    d3.xml(rdfsEQ, function(schemaDataEQ) {
+		model.schemaDataEQ = schemaDataEQ;
+		d3.xml(rdfsDL, function(schemaDataDL) {
+		    model.schemaDataDL = schemaDataDL;
+		    callback(null);
+		});
 	    });
 	},
 
@@ -178,7 +182,7 @@ function cimDiagramModel() {
 	},
 
 	getSchemaObject(type) {
-	    let allSchemaObjects = model.schemaData.children[0].children;
+	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value === "#" + type;
 	    })[0];
@@ -187,7 +191,7 @@ function cimDiagramModel() {
 	getSchemaAttributes(type) {
 	    let ret = model.schemaAttributesMap.get(type);
 	    if (typeof(ret) === "undefined") {
-		let allSchemaObjects = model.schemaData.children[0].children;
+		let allSchemaObjects = model.schemaDataEQ.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
@@ -215,7 +219,7 @@ function cimDiagramModel() {
 	getSchemaLinks(type) {
 	    let ret = model.schemaLinksMap.get(type);
 	    if (typeof(ret) === "undefined") {
-		let allSchemaObjects = model.schemaData.children[0].children;
+		let allSchemaObjects = model.schemaDataEQ.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
@@ -642,10 +646,18 @@ function cimDiagramModel() {
 		})[0];
 		invRoleNameString = invRoleName.attributes[0].value;
 	    }
-	    let allSchemaObjects = model.schemaData.children[0].children;
+	    // search in EQ schema
+	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
 	    let invRole = [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value.startsWith(invRoleNameString);
 	    })[0];
+	    // if fail, search in DL schema
+	    if (typeof(invRole) === "undefined") {
+		allSchemaObjects = model.schemaDataDL.children[0].children;
+		invRole = [].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith(invRoleNameString);
+		})[0];
+	    }
 	    return invRole;
 	},
 
