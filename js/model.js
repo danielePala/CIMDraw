@@ -565,9 +565,9 @@ function cimDiagramModel() {
 	// set a specific link of a given object.
 	// If a link with the same name already exists, it is removed.
 	setLink(source, linkName, target) {
-	    let invLinkSchema = self.model.getInvLink(linkName);
-	    let invLinkName = "cim:" + invLink.attributes[0].value.substring(1);
-	    let graph = self.model.getGraph([source], linkName, invLinkName);
+	    let invLinkSchema = model.getInvLink("#" + linkName.split(":")[1]);
+	    let invLinkName = "cim:" + invLinkSchema.attributes[0].value.substring(1);
+	    let graph = model.getGraph([source], linkName, invLinkName);
 	    let oldTargets = graph.map(el => el.source);
 	    for (let oldTarget of oldTargets) {
 		model.removeLink(source, linkName, oldTarget);
@@ -576,9 +576,9 @@ function cimDiagramModel() {
 	},
 
 	addLink(source, linkName, target) {
-	    let invLink = self.model.getInvLink(linkName);
+	    let invLink = model.getInvLink("#" + linkName.split(":")[1]);
 	    let invLinkName = "cim:" + invLink.attributes[0].value.substring(1);
-	    let graph = self.model.getGraph([source], linkName, invLinkName);
+	    let graph = model.getGraph([source], linkName, invLinkName);
 	    // see if the link is already set
 	    if (graph.length > 0) {
 		return;
@@ -598,22 +598,17 @@ function cimDiagramModel() {
 	    } else {
 		val.push(source);
 	    }
-	    if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
-		model.trigger("setEdge", source, target);
-	    }
-	    if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
-		model.trigger("setEdge", target, source);
-	    }
+	    model.trigger("addLink", source, linkName, target);
 	},
 
-	// TODO: should trigger an event
 	removeLink(source, linkName, target) {
 	    let link = model.getLink(source, linkName);
-	    let invLinkSchema = self.model.getInvLink(linkName);
+	    let invLinkSchema = model.getInvLink("#" + linkName.split(":")[1]);
 	    let invLinkName = "cim:" + invLinkSchema.attributes[0].value.substring(1);
 	    let invLink = model.getLink(target, invLinkName);
 	    removeLinkInternal(link, target);
 	    removeLinkInternal(invLink, source);
+	    model.trigger("removeLink", source, linkName, target);
 
 	    function removeLinkInternal(link, target) {
 		// the link may be many-valued

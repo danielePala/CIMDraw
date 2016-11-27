@@ -194,10 +194,23 @@
 	 }
      });
 
-     // listen to 'setEdge' event from model
+     // listen to 'addLink' event from model
      // this function checks if the terminal belongs to the current diagram
      // TODO: should check also the connectivity node
-     self.model.on("setEdge", function(cn, term) {
+     self.model.on("addLink", function(source, linkName, target) {
+	 let cn = undefined;
+	 let term = undefined;
+	 if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
+	     cn = source;
+	     term = target;
+	 } else {
+	     if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
+		 term = source;
+		 cn = target;
+	     } else {
+		 return;
+	     }
+	 }
 	 let edgeToChange = d3.select("svg").selectAll("svg > g > g.edges > g").data().filter(el => el.target === term)[0];
 	 if (typeof(edgeToChange) === "undefined") {
 	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);

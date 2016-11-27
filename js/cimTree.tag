@@ -154,6 +154,43 @@
 	 }
      });
 
+     // listen to 'addLink' event from model
+     self.model.on("addLink", function(source, linkName, target) {
+	 let sourceUUID = source.attributes.getNamedItem("rdf:ID").value;
+	 let sourceNode = d3.select(".tree").select("#" + sourceUUID);
+	 let removeBtn = sourceNode.selectAll("#cimRemoveBtn").filter(function(d) {
+	     return (d.attributes[0].value === "#" + linkName.split(":")[1]);
+	 });
+	 let linkBtn = sourceNode.selectAll("#cimLinkBtn").filter(function(d) {
+	     return (d.attributes[0].value === "#" + linkName.split(":")[1]);
+	 });
+
+	 linkBtn.html(function() {
+	     return self.model.getAttribute(target, "cim:IdentifiedObject.name").textContent;
+	 }).attr("cim-target", function() {
+	     return target.attributes.getNamedItem("rdf:ID").value;
+	 }).attr("disabled", null);
+	 sourceNode.selectAll("#cimTarget").attr("id", null);
+	 removeBtn.attr("disabled", null);
+     });
+
+     // listen to 'removeLink' event from model
+     self.model.on("removeLink", function(source, linkName, target) {
+	 let sourceUUID = source.attributes.getNamedItem("rdf:ID").value;
+	 let sourceNode = d3.select(".tree").select("#" + sourceUUID);
+	 let removeBtn = sourceNode.selectAll("#cimRemoveBtn").filter(function(d) {
+	     return (d.attributes[0].value === "#" + linkName.split(":")[1]);
+	 });
+	 let linkBtn = sourceNode.selectAll("#cimLinkBtn").filter(function(d) {
+	     return (d.attributes[0].value === "#" + linkName.split(":")[1]);
+	 });
+	 removeBtn.attr("disabled", "disabled");
+	 linkBtn.html("none")
+		.attr("cim-target", "none")
+		.attr("disabled", "disabled");
+     });
+     
+     // listen to 'createdDiagram' event from model
      self.model.on("createdDiagram", function() {
 	 self.diagramName = decodeURI(self.model.activeDiagramName);
 	 $("#showAllObjects").prop("checked", true);
@@ -319,18 +356,10 @@
 				// check if we are changing some link
 				let linkToChange = d3.select("#cimTarget");
 				if (linkToChange.empty() === false) {
-				    let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).datum(); 
-				    let targetLink = linkToChange.datum();
+				    let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0]; 
+				    let targetLink = linkToChange.data()[0];
 				    let targetLinkName = "cim:" + targetLink.attributes[0].value.substring(1);
 				    cimModel.setLink(target, targetLinkName, d);
-				    
-				    linkToChange.select("button").html(function (dd) {
-					d3.select(this).attr("disabled", null);
-					return cimModel.getAttribute(d, "cim:IdentifiedObject.name").textContent;
-				    }).attr("cim-target", function() {
-					return d.attributes.getNamedItem("rdf:ID").value;
-				    });
-				    linkToChange.attr("id", null);
 				    self.scrollAndRouteTo("#" + target.attributes.getNamedItem("rdf:ID").value);
 				    // we need to disable the collapse logic
 				    $(this).parent().find("ul").on("show.bs.collapse hide.bs.collapse", function(e) {
@@ -392,7 +421,7 @@
 	 elementDiv.append("input")
 		   .attr("class", "form-control")
 		   .each(function (d) {
-		       let object = d3.select($(this).parents("ul").first().get(0)).datum(); 
+		       let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
 		       let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
 		       if (typeof(value) !== "undefined") {
 			   this.value = value.innerHTML;
@@ -408,7 +437,7 @@
 		       // trap the return key being pressed
 		       if (d3.event.keyCode === 13) {
 			   d3.event.preventDefault();
-			   let object = d3.select($(this).parents("ul").first().get(0)).datum(); 
+			   let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
 			   let attrName = "cim:" + d.attributes[0].value.substring(1);
 			   self.model.setAttribute(object, attrName, this.value);
 		       }
@@ -431,13 +460,14 @@
 	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-link-btn");
 	 elementLinkBtn.append("button")
 		       .attr("class","btn btn-default btn-xs")
+	 	       .attr("id", "cimLinkBtn")
 		       .attr("type", "submit")
 		       .on("click", function (d) {
 			   let targetUUID = "#" + d3.select(this).attr("cim-target"); 
 			   self.scrollAndRouteTo(targetUUID);
 		       })
 		       .attr("cim-target", function(d) {
-			   let source = d3.select($(this).parents("ul").first().get(0)).datum();
+			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
 			   let invLink = self.model.getInvLink(d);
 			   let graph = self.model.getGraph([source], d.attributes[0].value.substring(1), invLink.attributes[0].value.substring(1));
 			   let targetObj = graph.map(el => el.source)[0];
@@ -466,15 +496,22 @@
 		    })
 	            .html("change");
 	 elementLinkBtn.append("button")
-	            .attr("class","btn btn-default btn-xs")
-	            .attr("type", "submit")
-	            .on("click", function (d) {
-			let source = d3.select($(this).parents("ul").first().get(0)).datum();
-			let linkName = d.attributes[0].value.substring(1);
-			let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
-			cimModel.removeLink(source, linkName, target);
-		    })
-	            .html("remove");
+	               .attr("class","btn btn-default btn-xs")
+	               .attr("type", "submit")
+		       .attr("id", "cimRemoveBtn")
+	               .on("click", function (d) {
+			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
+			   let linkName = "cim:" + d.attributes[0].value.substring(1);
+			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+			   self.model.removeLink(source, linkName, target);
+		       })
+	               .html(function() {
+			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+			   if (typeof(target) === "undefined") {
+			       d3.select(this).attr("disabled", "disabled");
+			   }
+			   return "remove";
+		       });
 
 	 
 	 // handle power transfomer ends
