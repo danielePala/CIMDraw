@@ -28,6 +28,7 @@
 		<select id="cim-diagrams" class="selectpicker navbar-left navbar-form" onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
 		    <option disabled="disabled">Select a diagram</option>
 		</select>
+		<cimStateEstimator model={cimModel}></cimStateEstimator>
 	    </div>
 	</div>
     </nav>
@@ -219,9 +220,11 @@
 		 self.cimModel.selectDiagram(decodeURI(name));
 		 loadDiagramList(decodeURI(file));
 		 $('.selectpicker').selectpicker('val', decodeURI("#" + file + "/diagrams/" + name));
-		 for (let i of Object.keys(self.tags)) {
+		 /*for (let i of Object.keys(self.tags)) {
 		     self.tags[i].showDiagram(file, name, element);
 		 }
+		 */
+		 self.trigger("showDiagram", file, name, element);
 		 $("#app-container").show();
 
 		 // allow exporting a copy of the diagram 

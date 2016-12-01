@@ -78,7 +78,8 @@
 	 });
      });
 
-     showDiagram(file, name, element) {
+     // listen to 'showDiagram' event from parent
+     self.parent.on("showDiagram", function(file, name, element) {
 	 if (decodeURI(name) !== self.diagramName) {
 	     d3.drag().on("drag.end", null);
 	     self.render(name);
@@ -86,7 +87,7 @@
 	 if (typeof(element) !== "undefined") {
 	     self.moveTo(element);
 	 }
-     }
+     });
 
      // listen to 'addToActiveDiagram' event from model
      self.model.on("addToActiveDiagram", function(object) {
