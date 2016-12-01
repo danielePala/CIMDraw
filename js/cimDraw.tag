@@ -28,7 +28,6 @@
 		<select id="cim-diagrams" class="selectpicker navbar-left navbar-form" onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
 		    <option disabled="disabled">Select a diagram</option>
 		</select>
-		<cimStateEstimator model={cimModel}></cimStateEstimator>
 	    </div>
 	</div>
     </nav>
