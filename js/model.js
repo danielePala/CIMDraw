@@ -130,7 +130,6 @@ function cimDiagramModel() {
 		data.children[0].appendChild(line);
 	    }
 	    let allBaseVoltages = model.getGraph(allEquipments, "ConductingEquipment.BaseVoltage", "BaseVoltage.ConductingEquipment").map(el => el.source)
-	    console.log(allBaseVoltages);
 	    for (let baseVoltage of allBaseVoltages) {
 		data.children[0].appendChild(baseVoltage);
 	    }
