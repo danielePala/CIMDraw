@@ -387,54 +387,43 @@ function cimDiagramModel() {
 	// delete an object: also, delete its terminals and graphic objects
 	deleteObject(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
-	    // delete terminals, if any
-	    /*let terminals = model.getTerminals([object]);
-	    for (let terminal of terminals) {
-		model.deleteObject(terminal);
-	    }
-	    // delete graphic objects, if any (TODO: must search in ALL the diagrams)
-	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.target);
-	    let points = model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
-	    for (let dobj of dobjs) {
-		model.deleteObject(dobj);
-	    }
-	    for (let point of points) {
-		model.deleteObject(point);
-	    }*/
 	    // all the links to 'object' must be deleted
-	    let keysToDelete = [];
-	    let sourcesToDelete = [];
+	    let objsToDelete = [];
 	    for (let [linkAndTarget, sources] of model.linksMap) {
-		if (linkAndTarget.endsWith(objUUID)) {
-		    let invLinkName = "cim:" + linkAndTarget.split("#")[0];
+		let linkName = "cim:" + linkAndTarget.split("#")[0];
+		// delete links pointing to 'object'
+		if (linkAndTarget.endsWith(objUUID)) { 
 		    for (let source of sources) {
-			let invLink = model.getLink(source, invLinkName);
-			invLink.remove();
-			keysToDelete.push(linkAndTarget);
-			if (["cim:Terminal", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(source.nodeName)) {
-			    sourcesToDelete.push(source);
+			model.removeLink(source, linkName, object);
+			if (["cim:Terminal", "cim:DiagramObjectPoint"].indexOf(source.nodeName) > -1) {
+			    objsToDelete.push(source);
+			}
+			// this check is to avoid infinite recursion
+			if (object.nodeName !== "cim:DiagramObjectPoint") {
+			    if ("cim:DiagramObject" === source.nodeName) {
+				objsToDelete.push(source);
+			    }
 			}
 		    }
 		}
-		let idx = sources.indexOf(object);
-		if (idx > -1) {
-		    console.log(linkAndTarget.split("#")[1]);
+		// delete links of 'object'
+		if (sources.indexOf(object) > -1) {
 		    let target = model.dataMap.get("#" + linkAndTarget.split("#")[1]);
-		    sources.splice(idx, 1);
-		    if (["cim:Terminal", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(target.nodeName)) {
-			model.deleteObject(target);
+		    model.removeLink(object, linkName, target);
+		    if (["cim:Terminal", "cim:DiagramObjectPoint"].indexOf(target.nodeName) > -1) {
+			objsToDelete.push(target);
 		    }
-		    
+		    // this check is to avoid infinite recursion
+		    if (object.nodeName !== "cim:DiagramObjectPoint") {
+			if ("cim:DiagramObject" === target.nodeName) {
+			    objsToDelete.push(target);
+			}
+		    }
 		}
 	    }
-	    // update the 'linksMap' map
-	    for (let keyToDelete of keysToDelete) {
-		model.linksMap.delete(keyToDelete);
+	    for (let objToDelete of objsToDelete) {
+		model.deleteObject(objToDelete);
 	    }
-	    for (let sourceToDelete of sourcesToDelete) {
-		model.deleteObject(sourceToDelete);
-	    }
-	    
 	    // update the 'dataMap' map
 	    model.dataMap.delete("#" + objUUID);
 	    // delete the object
