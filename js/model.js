@@ -372,18 +372,29 @@ function cimDiagramModel() {
 		type === "cim:Disconnector" ||
 		type === "cim:LoadBreakSwitch" ||
 		type === "cim:Jumper" ||
-		type === "cim:Junction") {
+		type === "cim:Junction" ||
+		type === "cim:PowerTransformer") {
 		model.createTerminal(newElement);
 	    }
 	    if (type === "cim:BusbarSection") {
 		let cn = model.cimObject("cim:ConnectivityNode");
 		model.addLink(term, "cim:Terminal.ConnectivityNode", cn);
 	    }
+	    if (type === "cim:PowerTransformer") {
+		// TODO: the number of windings should be configurable
+		let w1 = model.cimObject("cim:PowerTransformerEnd");
+		let w2 = model.cimObject("cim:PowerTransformerEnd");
+		model.setAttribute(w1, "cim:IdentifiedObject.name", "winding1");
+		model.setAttribute(w2, "cim:IdentifiedObject.name", "winding2");
+		model.addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w1);
+		model.addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w2);
+	    }
 	    model.trigger("createObject", newElement);
 	    return newElement;
 	},
 
 	// delete an object: also, delete its terminals and graphic objects
+	// TODO: delete transformer windings and handle BusbarSections
 	deleteObject(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
 	    // all the links to 'object' must be deleted

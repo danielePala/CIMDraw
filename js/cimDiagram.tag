@@ -98,9 +98,7 @@
 	     let types = d3.select("svg").selectAll("svg > g > g." + type + "s");
 	     let target = types.select("#" + uuid);
 	     target.select("text").html(value);
-	 } else {
-	     console.log(object, attrName, value);
-	 }
+	 } 
      });
 
      // listen to 'addToActiveDiagram' event from model
@@ -140,7 +138,7 @@
 	     case "cim:NonConformLoad":
 		 selection = self.drawNonConformLoads([object]);
 		 break;
-	     case"cim:PowerTransformer":
+	     case "cim:PowerTransformer":
 		 selection = self.drawPowerTransformers([object]);
 		 break;
 	     case "cim:ConnectivityNode":
@@ -199,7 +197,11 @@
 		     }
 		 }
 	     }
-	     self.createTerminals(selection);
+	     if (object.nodeName === "cim:PowerTransformer") {
+		 self.createTerminals(selection, 50);
+	     } else {
+		 self.createTerminals(selection);
+	     }
 	 }
 
 	 function mouseOut(d) {
@@ -224,11 +226,12 @@
 		 return;
 	     }
 	 }
+	 console.log(source, linkName, target);
 	 let edgeToChange = d3.select("svg").selectAll("svg > g > g.edges > g").data().filter(el => el.target === term)[0];
 	 if (typeof(edgeToChange) === "undefined") {
 	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
 	     equipment = self.model.getConductingEquipmentGraph(equipment).map(el => el.source);
-	     if (equipment.length > 1) {
+	     if (equipment.length > 0) {
 		 edgeToChange = {source: cn, target: term};
 		 self.createEdges([edgeToChange]);
 	     }

@@ -146,6 +146,9 @@
 		 loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
 		 self.createElements(loads, "NonConformLoad", "Non Conform Loads", [object]);
 		 break;
+	     case "cim:PowerTransformer":
+		 self.createElements(cimNetwork, "PowerTransformer", "Transformers", [object]);
+		 break;
 	     case "cim:BusbarSection":
 		 self.createElements(cimNetwork, "BusbarSection", "Nodes", [object]);
 		 break;

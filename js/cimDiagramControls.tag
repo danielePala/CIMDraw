@@ -44,6 +44,8 @@
 			    <li id="addEnergyConsumer" onclick={enableAddEnergyConsumer}><a>Energy Consumer</a></li>
 			    <li id="addConformLoad" onclick={enableAddConformLoad}><a>Conform Load</a></li>
 			    <li id="addNonConformLoad" onclick={enableAddNonConformLoad}><a>Non Conform Load</a></li>
+			    <li class="dropdown-header">Transformers</li>
+			    <li id="addTwoWindingTransformer" onclick={enableAddTwoWindingTransformer}><a>Two-winding Transformer</a></li>
 			</ul>
 		    </div>
 		    
@@ -345,6 +347,10 @@
 	 self.enableAdd("cim:BusbarSection", "Node");
      }
 
+     enableAddTwoWindingTransformer() {
+	 self.enableAdd("cim:PowerTransformer", "Two-winding Transformer");
+     }
+     
      enableAdd(type, text) {
 	 self.disableAll();
 	 d3.select(self.root).selectAll("label").classed("active", false);
