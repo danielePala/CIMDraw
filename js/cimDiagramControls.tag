@@ -26,13 +26,24 @@
 			    <span class="caret"></span>
 			</button>
 			<ul class="dropdown-menu">
-			    <li id="addACLine"><a>AC Line Segment</a></li>
-			    <li id="addBreaker"><a>Breaker</a></li>
-			    <li id="addDisconnector"><a>Disconnector</a></li>
-			    <li id="addLoadBreakSwitch"><a>LoadBreakSwitch</a></li>
-			    <li id="addJumper"><a>Jumper</a></li>
-			    <li id="addJunction"><a>Junction</a></li>
-			    <li id="addBusbar"><a>Node</a></li>
+			    <li class="dropdown-header">Busses</li>
+			    <li id="addBusbar" onclick={enableAddBusbar}><a>Node</a></li>
+			    <li class="dropdown-header">Branches</li>
+			    <li id="addACLine" onclick={enableAddACLine}><a>AC Line Segment</a></li>
+			    <li class="dropdown-header">Switches</li>
+			    <li id="addBreaker" onclick={enableAddBreaker}><a>Breaker</a></li>
+			    <li id="addDisconnector" onclick={enableAddDisconnector}><a>Disconnector</a></li>
+			    <li id="addLoadBreakSwitch" onclick={enableAddLoadBreakSwitch}><a>Load Break Switch</a></li>
+			    <li id="addJumper" onclick={enableAddJumper}><a>Jumper</a></li>
+			    <li class="dropdown-header">Connectors</li>
+			    <li id="addJunction" onclick={enableAddJunction}><a>Junction</a></li>
+			    <li class="dropdown-header">Generators</li>
+			    <li id="addEnergySource" onclick={enableAddEnergySource}><a>Energy Source</a></li>
+			    <li id="addSynchronousMachine" onclick={enableAddSynchronousMachine}><a>Synchronous Machine</a></li>
+			    <li class="dropdown-header">Loads</li>
+			    <li id="addEnergyConsumer" onclick={enableAddEnergyConsumer}><a>Energy Consumer</a></li>
+			    <li id="addConformLoad" onclick={enableAddConformLoad}><a>Conform Load</a></li>
+			    <li id="addNonConformLoad" onclick={enableAddNonConformLoad}><a>Non Conform Load</a></li>
 			</ul>
 		    </div>
 		    
@@ -48,42 +59,6 @@
      let termToChange = undefined;
      
      self.on("mount", function() {
-
-	 $("#addACLine").on("click", function(e) {
-	     self.disableAll();
-	     self.enableAddACLine();
-	 });
-
- 	 $("#addBreaker").on("click", function(e) {
-	     self.disableAll();
-	     self.enableAddBreaker();
-	 });
-
-	 $("#addDisconnector").on("click", function(e) {
-	     self.disableAll();
-	     self.enableAddDisconnector();
-	 });
-
-	 $("#addLoadBreakSwitch").on("click", function(e) {
-	     self.disableAll();
-	     self.enableAddLoadBreakSwitch();
-	 });
-
-	 $("#addJumper").on("click", function(e) {
-	     self.disableAll();
-	     self.enableAddJumper();
-	 });
-	 
-	 $("#addJunction").on("click", function(e) {
-	     self.disableAll();
-	     self.enableAddJunction();
-	 });
-
-	 $("#addBusbar").on("click", function(e) {
-	     self.disableAll();
-	     self.enableAddBusbar();
-	 });
-
 	 // setup diagram buttons
 	 $("#select").change(function() {
 	     self.disableAll();
@@ -346,11 +321,32 @@
 	 self.enableAdd("cim:Junction", "Junction");
      }
 
+     enableAddEnergySource() {
+	 self.enableAdd("cim:EnergySource", "Energy Source");
+     }
+
+     enableAddSynchronousMachine() {
+	 self.enableAdd("cim:SynchronousMachine", "Synchronous Machine");
+     }
+
+     enableAddEnergyConsumer() {
+	 self.enableAdd("cim:EnergyConsumer", "Energy Consumer");
+     }
+
+     enableAddConformLoad() {
+	 self.enableAdd("cim:ConformLoad", "Conform Load");
+     }
+
+     enableAddNonConformLoad() {
+	 self.enableAdd("cim:NonConformLoad", "Non Conform Load");
+     }
+
      enableAddBusbar() {
 	 self.enableAdd("cim:BusbarSection", "Node");
      }
 
      enableAdd(type, text) {
+	 self.disableAll();
 	 d3.select(self.root).selectAll("label").classed("active", false);
 	 $("input").prop('checked', false);
 	 $("#addElement").text(text);

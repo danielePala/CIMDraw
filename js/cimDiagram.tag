@@ -104,35 +104,46 @@
      // listen to 'addToActiveDiagram' event from model
      self.model.on("addToActiveDiagram", function(object) {
 	 let selection = null;
-	 if (object.nodeName === "cim:ACLineSegment") {
-	     selection = self.drawACLines([object]);
-	 }
-	 if (object.nodeName === "cim:Breaker") {
-	     selection = self.drawBreakers([object]);
-	 }
-	 if (object.nodeName === "cim:Disconnector") {
-	     selection = self.drawDisconnectors([object]);
-	 }
-         if (object.nodeName === "cim:LoadBreakSwitch") {
-	     selection = self.drawLoadBreakSwitches([object]);
-	 }
-	 if (object.nodeName === "cim:Jumper") {
-	     selection = self.drawJumpers([object]);
-	 }
-	 if (object.nodeName === "cim:Junction") {
-	     selection = self.drawJunctions([object]);
-	 }
-	 if (object.nodeName === "cim:EnergySource" || object.nodeName === "cim:SynchronousMachine") {
-	     selection = self.drawEnergySources([object]);
-	 }
-	 if (object.nodeName === "cim:EnergyConsumer"|| object.nodeName === "cim:ConformLoad" || object.nodeName === "cim:NonConformLoad") {
-	     selection = self.drawEnergyConsumers([object]);
-	 }
-	 if (object.nodeName === "cim:PowerTransformer") {
-	     selection = self.drawPowerTransformers([object]);
-	 }
-	 if (object.nodeName === "cim:ConnectivityNode") {
-	     self.drawConnectivityNodes([object]);
+	 switch (object.nodeName) {	 
+	     case "cim:ACLineSegment":
+		 selection = self.drawACLines([object]);
+		 break;
+	     case "cim:Breaker":
+		 selection = self.drawBreakers([object]);
+		 break;
+	     case "cim:Disconnector":
+		 selection = self.drawDisconnectors([object]);
+		 break;
+             case "cim:LoadBreakSwitch":
+		 selection = self.drawLoadBreakSwitches([object]);
+		 break;
+	     case "cim:Jumper":
+		 selection = self.drawJumpers([object]);
+		 break;
+	     case "cim:Junction":
+		 selection = self.drawJunctions([object]);
+		 break;
+	     case "cim:EnergySource":
+		 selection = self.drawEnergySources([object]);
+		 break;
+	     case "cim:SynchronousMachine":
+		 selection = self.drawSynchronousMachines([object]);
+		 break;
+	     case "cim:EnergyConsumer":
+		 selection = self.drawEnergyConsumers([object]);
+		 break;
+	     case "cim:ConformLoad":
+		 selection = self.drawConformLoads([object]);
+		 break;
+	     case "cim:NonConformLoad":
+		 selection = self.drawNonConformLoads([object]);
+		 break;
+	     case"cim:PowerTransformer":
+		 selection = self.drawPowerTransformers([object]);
+		 break;
+	     case "cim:ConnectivityNode":
+		 selection = self.drawConnectivityNodes([object]);
+		 break;
 	 }
 	 
 	 if (selection !== null) {
@@ -272,11 +283,11 @@
 	 let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
 	 let allJumpers = allEquipments["cim:Jumper"]; 
 	 let allJunctions = allEquipments["cim:Junction"];
-	 let allEnergySources = allEquipments["cim:EnergySource"] 
-	     .concat(allEquipments["cim:SynchronousMachine"]);
-	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"]
-				      .concat(allEquipments["cim:ConformLoad"])
-				      .concat(allEquipments["cim:NonConformLoad"]);
+	 let allEnergySources = allEquipments["cim:EnergySource"];
+	 let allSynchronousMachines = allEquipments["cim:SynchronousMachine"];
+	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"];
+	 let allConformLoads = allEquipments["cim:ConformLoad"];
+	 let allNonConformLoads = allEquipments["cim:NonConformLoad"];
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"];
 	 let allBusbarSections = allEquipments["cim:BusbarSection"];
 	 yield "[" + Date.now() + "] DIAGRAM: extracted equipments";
@@ -302,9 +313,18 @@
 	 // energy sources
 	 let ensrcEnter = self.drawEnergySources(allEnergySources);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy sources";
+	 // synchronous machines
+	 let syncEnter = self.drawSynchronousMachines(allSynchronousMachines);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machines";	 
 	 // energy consumers
 	 let enconsEnter = self.drawEnergyConsumers(allEnergyConsumers);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy consumers";
+	 // conform loads
+	 let confEnter = self.drawConformLoads(allConformLoads);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn conform loads";
+	 // non conform loads
+	 let nonconfEnter = self.drawNonConformLoads(allNonConformLoads);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn non conform loads";
 	 // power transformers
 	 let trafoEnter = self.drawPowerTransformers(allPowerTransformers);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformers";
@@ -335,10 +355,22 @@
 	 termSelection = self.createTerminals(ensrcEnter, 50);
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy source terminals";
+	 // synchronous machine terminals
+	 termSelection = self.createTerminals(syncEnter, 50);
+	 self.createMeasurements(termSelection);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machine terminals";
 	 // energy consumer terminals
 	 termSelection = self.createTerminals(enconsEnter);
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy consumer terminals";
+	 // conform load terminals
+	 termSelection = self.createTerminals(confEnter);
+	 self.createMeasurements(termSelection);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn conform load terminals";
+	 // non conform load terminals
+	 termSelection = self.createTerminals(nonconfEnter);
+	 self.createMeasurements(termSelection);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn non conform load terminals";
 	 // power transformer terminals
 	 termSelection = self.createTerminals(trafoEnter, 50);
 	 self.createMeasurements(termSelection);
@@ -651,27 +683,27 @@
 
      // Draw all Breakers
      drawBreakers(allBreakers) {
-	 return this.drawSwitches(allBreakers, "Breaker", "green");
+	 return self.drawSwitches(allBreakers, "Breaker", "green");
      }
 
      // Draw all Disconnectors
      drawDisconnectors(allDisconnectors) {
-	 return this.drawSwitches(allDisconnectors, "Disconnector", "blue");
+	 return self.drawSwitches(allDisconnectors, "Disconnector", "blue");
      }
 
      // Draw all load break switches
      drawLoadBreakSwitches(allLoadBreakSwitches) {
-	 return this.drawSwitches(allLoadBreakSwitches, "LoadBreakSwitch", "black");
+	 return self.drawSwitches(allLoadBreakSwitches, "LoadBreakSwitch", "black");
      }
 
      // Draw all jumpers
      drawJumpers(allJumpers) {
-	 return this.drawSwitches(allJumpers, "Jumper", "steelblue");
+	 return self.drawSwitches(allJumpers, "Jumper", "steelblue");
      }
 
      // Draw all junctions
      drawJunctions(allJunctions) {
-	 return this.drawSwitches(allJunctions, "Junction", "red");
+	 return self.drawSwitches(allJunctions, "Junction", "red");
      }
 
      drawSwitches(allSwitches, type, color) {
@@ -732,63 +764,88 @@
 
      // Draw all EnergySources
      drawEnergySources(allEnergySources) {
-	 let ensrcEnter = this.createSelection("EnergySource", allEnergySources);
-	 
-	 ensrcEnter.append("circle")
-		   .attr("r", 25)
-		   .attr("cx", 0) 
-		   .attr("cy", -25)
-		   .attr("fill", "white")
-		   .attr("stroke", "blue")
-		   .attr("stroke-width", 4);
-	 ensrcEnter.append("text")
-		   .style("text-anchor", "middle")
-		   .attr("font-size", 8)
-		   .attr("x", 0)
-		   .attr("y", -60)
-		   .text(function(d) {
-		       let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
-		       if (typeof(name) !== "undefined") {
-			   return name.innerHTML;
-		       }
-		       return "";
-		   });
-	 ensrcEnter.append("text")
-	           .style("text-anchor", "middle")
-	           .attr("font-size", 64)
-	           .attr("x", 0)
-	           .attr("y", -4)
-	           .text("~");
-	 return ensrcEnter;
+	 return self.drawGenerators(allEnergySources, "EnergySource");
+     }
+
+     // Draw all SynchronousMachines
+     drawSynchronousMachines(allSynchronousMachines) {
+	 return self.drawGenerators(allSynchronousMachines, "SynchronousMachine");
      }
 
      // Draw all EnergyConsumers
      drawEnergyConsumers(allEnergyConsumers) {
+	 return self.drawLoads(allEnergyConsumers, "EnergyConsumer");
+     }
+
+     // Draw all ConformLoads
+     drawConformLoads(allConformLoads) {
+	 return self.drawLoads(allConformLoads, "ConformLoad");
+     }
+
+     // Draw all NonConformLoads
+     drawNonConformLoads(allNonConformLoads) {
+	 return self.drawLoads(allNonConformLoads, "NonConformLoad");
+     }
+     
+     // Draw all generators
+     drawGenerators(allGens, type) {
+	 let genEnter = self.createSelection(type, allGens);
+	 
+	 genEnter.append("circle")
+		 .attr("r", 25)
+		 .attr("cx", 0) 
+		 .attr("cy", -25)
+		 .attr("fill", "white")
+		 .attr("stroke", "blue")
+		 .attr("stroke-width", 4);
+	 genEnter.append("text")
+		 .style("text-anchor", "middle")
+		 .attr("font-size", 8)
+		 .attr("x", 0)
+		 .attr("y", -60)
+		 .text(function(d) {
+		     let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
+		     if (typeof(name) !== "undefined") {
+			 return name.innerHTML;
+		     }
+		     return "";
+		 });
+	 genEnter.append("text")
+	         .style("text-anchor", "middle")
+	         .attr("font-size", 64)
+	         .attr("x", 0)
+	         .attr("y", -4)
+	         .text("~");
+	 return genEnter;
+     }
+
+     // Draw all loads
+     drawLoads(allLoads, type) {
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; });
-	 let enconsEnter = this.createSelection("EnergyConsumer", allEnergyConsumers);
+	 let loadEnter = self.createSelection(type, allLoads);
 
-	 enconsEnter.append("path")
-		     .attr("d", function(d) {
-			 return line([{x: -15, y:0, seq:1}, {x:15, y:0, seq:2}, {x:0, y:20, seq:3}, {x: -15, y:0, seq:4}]);
-		     })
-		     .attr("fill", "white")
-		     .attr("stroke", "black")
-		     .attr("stroke-width", 4);
-	 enconsEnter.append("text")
-		    .style("text-anchor", "middle")
-		    .attr("font-size", 8)
-		    .attr("x", 0) 
-		    .attr("y", 30)
-		    .text(function(d) {
-			let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
-			if (typeof(name) !== "undefined") {
-			    return name.innerHTML;
+	 loadEnter.append("path")
+		  .attr("d", function(d) {
+		      return line([{x: -15, y:0, seq:1}, {x:15, y:0, seq:2}, {x:0, y:20, seq:3}, {x: -15, y:0, seq:4}]);
+		  })
+		  .attr("fill", "white")
+		  .attr("stroke", "black")
+		  .attr("stroke-width", 4);
+	 loadEnter.append("text")
+		  .style("text-anchor", "middle")
+		  .attr("font-size", 8)
+		  .attr("x", 0) 
+		  .attr("y", 30)
+		  .text(function(d) {
+		      let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
+		      if (typeof(name) !== "undefined") {
+			  return name.innerHTML;
 			}
-			return "";
-		    });
-	 return enconsEnter;
+		      return "";
+		  });
+	 return loadEnter;
      }
 
      // Draw all PowerTransformers

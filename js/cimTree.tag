@@ -104,27 +104,51 @@
 
      addNewObject(object) {
 	 let cimNetwork = d3.select("div.tree").selectAll("ul.CIMNetwork");
-	 if (object.nodeName === "cim:ACLineSegment") {
-	     self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
-	 }
-	 if (object.nodeName === "cim:Breaker") {
-	     self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
-	 }
-	 if (object.nodeName === "cim:Disconnector") {
-	     self.createElements(cimNetwork, "Disconnector", "Disconnectors", [object]);
-	 }
-	 if (object.nodeName === "cim:LoadBreakSwitch") {
-	     self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", [object]);
-	 }
-	 if (object.nodeName === "cim:Jumper") {
-	     self.createElements(cimNetwork, "Jumper", "Jumpers", [object]);
-	 }
-	 if (object.nodeName === "cim:Junction") {
-	     self.createElements(cimNetwork, "Junction", "Junctions", [object]);
-	 }
-	 if (object.nodeName === "cim:BusbarSection") {
-	     self.createElements(cimNetwork, "BusbarSection", "Nodes", [object]);
-	 }
+	 let generators = undefined;
+	 let loads = undefined;
+	 switch (object.nodeName) {
+	     case "cim:ACLineSegment":
+		 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
+		 break;
+	     case "cim:Breaker":
+		 self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
+		 break;
+	     case "cim:Disconnector":
+		 self.createElements(cimNetwork, "Disconnector", "Disconnectors", [object]);
+		 break;
+	     case "cim:LoadBreakSwitch":
+		 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", [object]);
+		 break;
+	     case "cim:Jumper":
+		 self.createElements(cimNetwork, "Jumper", "Jumpers", [object]);
+		 break;
+	     case "cim:Junction":
+		 self.createElements(cimNetwork, "Junction", "Junctions", [object]);
+		 break;
+	     case "cim:EnergySource":
+		 generators = self.createTopContainer(cimNetwork, "Generator", "Generators", [object]);
+		 self.createElements(generators, "EnergySource", "Energy Sources", [object]);
+		 break;
+	     case "cim:SynchronousMachine":
+		 generators = self.createTopContainer(cimNetwork, "Generator", "Generators", [object]);
+		 self.createElements(generators, "SynchronousMachine", "Synchronous Machines", [object]);
+		 break;
+	     case "cim:EnergyConsumer":
+		 loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
+		 self.createElements(loads, "EnergyConsumer", "Energy Consumers", [object]);
+		 break;
+	     case "cim:ConformLoad":
+		 loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
+		 self.createElements(loads, "ConformLoad", "Conform Loads", [object]);
+		 break;
+	     case "cim:NonConformLoad":
+		 loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
+		 self.createElements(loads, "NonConformLoad", "Non Conform Loads", [object]);
+		 break;
+	     case "cim:BusbarSection":
+		 self.createElements(cimNetwork, "BusbarSection", "Nodes", [object]);
+		 break;
+	 }	 
      }
 
      // listen to 'deleteObject' event from model
@@ -144,8 +168,7 @@
 	 if (attrName === "cim:IdentifiedObject.name") {
 	     let type = object.localName;
 	     let target = d3.select("div.tree")
-			    .selectAll("div.tree > div > div > ul > li." +
-				       type + "s > ul > li > ul#" + object.attributes.getNamedItem("rdf:ID").value);
+			    .selectAll("ul#" + object.attributes.getNamedItem("rdf:ID").value);
 	     if (target.empty() === false) {
 		 let a = d3.select(target.node().parentNode).select("a");
 		 a.html(value);

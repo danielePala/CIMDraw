@@ -8512,4 +8512,12 @@ Usage : Extended-Ward is a result of network reduction prior to the data exchang
 	<rdfs:comment  rdf:parseType="Literal">True if the flow into the terminal (load convention) is also flow into the control area.  For example, this attribute should be true if using the tie line terminal further away from the control area. For example to represent a tie to a shunt component (like a load or generator) in another area, this is the near end of a branch and this attribute would be specified as false.</rdfs:comment>
 	<rdf:type rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#Property"/>
 	 </rdf:Description>
+	<!-- CUSTOM ADDITIONS BELOW -->
+	 <rdf:Description rdf:about="#Jumper">
+	<rdfs:label xml:lang="en">Jumper</rdfs:label>
+	<rdfs:subClassOf rdf:resource="#Switch"/>
+	<rdfs:comment  rdf:parseType="Literal">A short section of conductor with negligible impedance which can be manually removed and replaced if the circuit is de-energized. Note that zero-impedance branches can be modelled by an ACLineSegment with a zero impedance ConductorType</rdfs:comment>
+	<cims:belongsToCategory rdf:resource="#Package_Wires"/>
+	<rdf:type rdf:resource="http://www.w3.org/2000/01/rdf-schema#Class"/>
+         </rdf:Description>
 </rdf:RDF>
