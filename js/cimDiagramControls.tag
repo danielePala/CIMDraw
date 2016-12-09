@@ -300,7 +300,7 @@
      }
 
      enableAddACLine() {
-	 self.enableAdd("cim:ACLineSegment", "AC Line Segment");
+	 self.enableAddMulti("cim:ACLineSegment", "AC Line Segment");
      }
      
      enableAddBreaker() {
@@ -344,7 +344,7 @@
      }
 
      enableAddBusbar() {
-	 self.enableAdd("cim:BusbarSection", "Node");
+	 self.enableAddMulti("cim:BusbarSection", "Node");
      }
 
      enableAddTwoWindingTransformer() {
@@ -362,6 +362,89 @@
 	     let newObject = opts.model.createObject(type);
 	     self.parent.addToDiagram(newObject);
 	  }
+     }
+
+     // test to draw multi-segment objects
+     enableAddMulti(type, text) {
+	 self.disableAll();
+	 d3.select(self.root).selectAll("label").classed("active", false);
+	 $("input").prop('checked', false);
+	 $("#addElement").text(text);
+	 self.status = type;
+	 d3.select("svg").on("click", clicked);
+	 d3.select("svg").on("contextmenu", finish);
+	 let newObject = undefined;
+	 function clicked() {
+	     let line = d3.line()
+		          .x(function(d) { return d.x; })
+		          .y(function(d) { return d.y; });
+	     
+	     let svg = d3.select("svg");
+	     let path = svg.selectAll("svg > path");
+	     let circle = svg.selectAll("svg > circle");
+	     function mousemoved() {
+		 let m = d3.mouse(this);
+		 let transform = d3.zoomTransform(d3.select("svg").node());
+		 circle.attr("transform", function () {
+		     let mousex = m[0] + 10;
+		     let mousey = m[1] + 10;
+		     return "translate(" + mousex + "," + mousey +")";
+		 });
+		 path.attr("d", function() {
+		     let lineData = [];
+		     for (let linePoint of newObject.lineData) {
+			 lineData.push({x: ((linePoint.x+newObject.x)*transform.k) + transform.x,
+					y: ((linePoint.y+newObject.y)*transform.k) + transform.y});
+		     }
+		     lineData.push({x: m[0], y: m[1]});
+		     return line(lineData);
+		 });
+	     }
+	     
+	     if (self.status === type) {
+		 svg.on("mousemove", mousemoved);
+		 newObject = opts.model.createObject(type);
+		 let m = d3.mouse(d3.select("svg").node());
+		 let transform = d3.zoomTransform(d3.select("svg").node());
+		 let xoffset = transform.x;
+		 let yoffset = transform.y;
+		 let svgZoom = transform.k;
+		 newObject.x = (m[0] - xoffset) / svgZoom;
+		 newObject.px = newObject.x;
+		 newObject.y = (m[1] - yoffset) / svgZoom;
+		 newObject.py = newObject.y;
+		 newObject.lineData = [{x: 0, y: 0, seq: 1}];
+		 self.status = "drawing"
+	     } else {
+		 let m = d3.mouse(d3.select("svg").node());
+		 let transform = d3.zoomTransform(d3.select("svg").node());
+		 let xoffset = transform.x;
+		 let yoffset = transform.y;
+		 let svgZoom = transform.k;
+		 let newx = ((m[0] - xoffset) / svgZoom) - newObject.x;
+		 let newy = ((m[1] - yoffset) / svgZoom) - newObject.y;
+		 let newSeq = newObject.lineData.length + 1;
+		 newObject.lineData.push({x: newx, y: newy, seq: newSeq});
+	     }
+	 };
+	 
+	 function finish() {
+	     d3.event.preventDefault();
+	     let m = d3.mouse(d3.select("svg").node());
+	     let transform = d3.zoomTransform(d3.select("svg").node());
+	     let xoffset = transform.x;
+	     let yoffset = transform.y;
+	     let svgZoom = transform.k;
+	     let newx = ((m[0] - xoffset) / svgZoom) - newObject.x;
+	     let newy = ((m[1] - yoffset) / svgZoom) - newObject.y;
+	     let newSeq = newObject.lineData.length + 1;
+	     newObject.lineData.push({x: newx, y: newy, seq: newSeq});
+	     opts.model.addToActiveDiagram(newObject, newObject.lineData);
+	     self.status = type;
+	     d3.select("svg").on("mousemove", null);
+	     d3.select("svg").selectAll("svg > path").attr("d", null);
+	     d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");	   
+	 };
      }
 
      disableAdd() {
