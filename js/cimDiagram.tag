@@ -41,14 +41,14 @@
      self.model = opts.model;
 
      // listen to 'showDiagram' event from parent
-     showDiagram(file, name, element) {
+     self.parent.on("showDiagram", function(file, name, element) {
 	 if (decodeURI(name) !== self.diagramName) {
 	     self.render(name);
 	 }
          if (typeof(element) !== "undefined") {
 	     self.moveTo(element);
          }
-     }
+     });
 
      // listen to 'mount' event
      self.on("mount", function() {
@@ -98,6 +98,8 @@
 	     let types = d3.select("svg").selectAll("svg > g > g." + type + "s");
 	     let target = types.select("#" + uuid);
 	     target.select("text").html(value);
+	 } else {
+	     console.log(object, attrName, value);
 	 }
      });
 
@@ -1176,11 +1178,7 @@
 		     point.y = point.y - d.y;
 		 }
 	     } else {
-		 lineData.push({x:-1, y:-1, seq:1});
-		 lineData.push({x:1, y:-1, seq:2});
-		 lineData.push({x:1, y:1, seq:3});
-		 lineData.push({x:-1, y:1, seq:4});
-		 lineData.push({x:-1, y:-1, seq:5});
+		 lineData.push({x:0, y:0, seq:1});
 		 d.x = xcalc;
 		 d.y = ycalc;
 	     }
@@ -1208,12 +1206,32 @@
 			       });
 	 
 	 cnUpdate.select("path").attr("d", function(d) {
-	     return line(d3.select(this.parentNode).datum().lineData);
+	     let lineData = d3.select(this.parentNode).data()[0].lineData
+	     if (lineData.length === 1) {
+		 let cx = lineData[0].x;
+		 let cy = lineData[0].y;
+		 lineData = [{x:cx-1, y:cy-1, seq:1},
+			     {x:cx+1, y:cy-1, seq:2},
+			     {x:cx+1, y:cy+1, seq:3},
+			     {x:cx-1, y:cy+1, seq:4},
+			     {x:cx-1, y:cy-1, seq:5}];
+	     }
+	     return line(lineData);
 	 });
 	 
 	 cnEnter.append("path")
 		.attr("d", function(d) {
-		    return line(d3.select(this.parentNode).datum().lineData);
+		    let lineData = d3.select(this.parentNode).data()[0].lineData
+		    if (lineData.length === 1) {
+			let cx = lineData[0].x;
+			let cy = lineData[0].y;
+			lineData = [{x:cx-1, y:cy-1, seq:1},
+				    {x:cx+1, y:cy-1, seq:2},
+				    {x:cx+1, y:cy+1, seq:3},
+				    {x:cx-1, y:cy+1, seq:4},
+				    {x:cx-1, y:cy-1, seq:5}];
+		    }
+		    return line(lineData);
 		})
 		.attr("stroke", "black")
 		.attr("stroke-width", 2)

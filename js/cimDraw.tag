@@ -219,9 +219,11 @@
 		 self.cimModel.selectDiagram(decodeURI(name));
 		 loadDiagramList(decodeURI(file));
 		 $('.selectpicker').selectpicker('val', decodeURI("#" + file + "/diagrams/" + name));
-		 for (let i of Object.keys(self.tags)) {
+		 /*for (let i of Object.keys(self.tags)) {
 		     self.tags[i].showDiagram(file, name, element);
 		 }
+		 */
+		 self.trigger("showDiagram", file, name, element);
 		 $("#app-container").show();
 
 		 // allow exporting a copy of the diagram 
