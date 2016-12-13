@@ -606,11 +606,14 @@ function cimDiagramModel() {
 
 	removeLink(source, linkName, target) {
 	    let link = model.getLink(source, linkName);
-	    let invLinkSchema = model.getInvLink("#" + linkName.split(":")[1]);
-	    let invLinkName = "cim:" + invLinkSchema.attributes[0].value.substring(1);
-	    let invLink = model.getLink(target, invLinkName);
 	    removeLinkInternal(link, target);
-	    removeLinkInternal(invLink, source);
+	    let invLinkSchema = model.getInvLink("#" + linkName.split(":")[1]);
+	    // remove inverse, if present in schema 
+	    if (typeof(invLinkSchema) !== "undefined") {
+		let invLinkName = "cim:" + invLinkSchema.attributes[0].value.substring(1);
+		let invLink = model.getLink(target, invLinkName);
+		removeLinkInternal(invLink, source);
+	    }
 	    model.trigger("removeLink", source, linkName, target);
 
 	    function removeLinkInternal(link, target) {

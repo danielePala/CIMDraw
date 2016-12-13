@@ -59,6 +59,8 @@
      "use strict";
      let self = this;
      let termToChange = undefined;
+     let quadtree = d3.quadtree();
+     let selected = [];
      
      self.on("mount", function() {
 	 // setup diagram buttons
@@ -81,6 +83,14 @@
      
      // listen to 'render' event
      self.parent.on("render", function() {
+	 // setup quadtree
+	 let points = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
+	 quadtree.x(function(d) {
+	     return d3.select(d).data()[0].x;
+	 }).y(function(d) {
+	     return d3.select(d).data()[0].y;
+	 }).addAll(points.nodes());
+	 // anble drag by default
 	 self.disableForce();
 	 self.disableZoom();
 	 self.disableConnect();
@@ -90,7 +100,8 @@
      });
 
      // listen to 'addToDiagram' event 
-     self.parent.on("addToDiagram", function() {
+     self.parent.on("addToDiagram", function(selection) {
+	 quadtree.add(selection.node()); // update the quadtree
 	 if (self.status === "DRAG") {
 	     self.disableAll();
 	     self.enableDrag();
@@ -158,25 +169,82 @@
 	 $("#select").click();
 	 self.status = "DRAG";
 	 let drag = d3.drag()
+		      .on("drag.start", function(d) {
+			  let dNode = d3.select(this).node();
+			  if (selected.indexOf(dNode) === -1) {
+			      deselectAll();
+			  }
+			  if (selected.length === 0) {
+			      selected.push(dNode);
+			      self.parent.hover(dNode);
+			  }
+			  quadtree.removeAll(selected); // update quadtree
+		      })
 		      .on("drag", function(d) {
-			  d.x = d3.event.x;
-			  d.px = d.x;
-			  d.y = d3.event.y;
-			  d.py = d.y;
-			  self.parent.forceTick(d3.select(this));
+			  let deltax = d3.event.x - d.x;
+			  let deltay = d3.event.y - d.y;
+			  for (let selNode of selected) {
+			      let dd = d3.select(selNode).data()[0];
+			      dd.x = dd.x + deltax;
+			      dd.px = dd.x;
+			      dd.y = dd.y + deltay;
+			      dd.py = dd.y;
+			  }
+			  self.parent.forceTick(d3.selectAll(selected));
 		      })
 		      .on("drag.end", function(d) {
 			  opts.model.updateActiveDiagram(d, d.lineData);
+			  quadtree.addAll(selected); // update quadtree
 		      });
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").call(drag);
+	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
+	 d3.select("svg").select("g.brush").call(d3.brush().on("start", deselectAll).on("end", selectInsideBrush));
+	 function deselectAll() {
+	     selected = [];
+	     d3.select("svg").selectAll("svg > g.diagram > g > g").selectAll("rect").remove();
+	 };
+	 function selectInsideBrush() {
+	     // hide the brush
+	     d3.select("svg").select("g.brush").selectAll("*:not(.overlay)").style("display", "none");
+	     // test quadtree
+	     let extent = d3.event.selection;
+	     if (extent === null) {
+		 return;
+	     }
+	     selected = [];
+	     let transform = d3.zoomTransform(d3.select("svg").node());
+	     let tx = transform.x;
+	     let ty = transform.y;
+	     let tZoom = transform.k;	     
+	     search(quadtree, extent[0][0] - tx, extent[0][1] - ty, extent[1][0] - tx, extent[1][1] - ty);
+	     for (let el of selected) {
+		     self.parent.hover(el);
+	     }
+	     // Find the nodes within the specified rectangle.
+	     function search(quadtree, x0, y0, x3, y3) {
+		 quadtree.visit(function(node, x1, y1, x2, y2) {
+		     if (!node.length) {
+			 do {
+			     var d = node.data;
+			     let dx = d3.select(d).data()[0].x;
+			     let dy = d3.select(d).data()[0].y;
+			     if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
+				 selected.push(d);
+			     }
+			 } while (node = node.next);
+		     }
+		     return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
+		 });
+	     }
+	 };
      }
 
      disableDrag() {
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on(".drag", null);
+	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").on(".drag", null);
+	 d3.select("svg").select("g.brush").on(".brush", null); 
      }
 
      enableForce() {
-	 let equipments = d3.select("svg").selectAll("svg > g > g:not(.edges) > g");
+	 let equipments = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
 	 let terminals = equipments.selectAll("g.Terminal");
 	 self.d3force = d3.forceSimulation(equipments.data().concat(terminals.data()))
 			  .force("link", d3.forceLink(d3.select("svg").selectAll("svg > g > g.edges > g").data()))
@@ -196,7 +264,7 @@
      
      enableZoom() {
 	 $("#zoom").click();
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
+	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g")
 	   .on("click", function (d) {
 	       let hashComponents = window.location.hash.substring(1).split("/");
 	       let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
@@ -211,12 +279,12 @@
      }
 
      disableZoom() {
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g").on("click", null);
+	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").on("click", null);
 	 d3.select("svg").on(".zoom", null);
      }
 
      zooming() {
-	 d3.select("svg").select("g").attr("transform", d3.event.transform);
+	 d3.select("svg").select("g.diagram").attr("transform", d3.event.transform);
 	 this.parent.trigger("transform");
      }
 
@@ -225,7 +293,7 @@
          $("#connect").click();
 	 self.status = "CONNECT";
 
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g > g.Terminal")
+	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
 	   .on("click", function (d) {
 	       let line = d3.line()
 		            .x(function(d) { return d.x; })
@@ -276,7 +344,7 @@
 		   });
 	       }
 	   });
-	 d3.select("svg").selectAll("svg > g > g.ConnectivityNodes > g.ConnectivityNode")
+	 d3.select("svg").selectAll("svg > g.diagram > g.ConnectivityNodes > g.ConnectivityNode")
 	   .on("click", function (d) {
 	       d3.select("svg").selectAll("svg > path").attr("d", null);
 	       d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
@@ -293,9 +361,9 @@
      }
 
      disableConnect() {
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g > g.Terminal")
+	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
 	   .on("click", null);
-	 d3.select("svg").selectAll("svg > g > g.ConnectivityNodes > g.ConnectivityNode")
+	 d3.select("svg").selectAll("svg > g.diagram > g.ConnectivityNodes > g.ConnectivityNode")
 	   .on("click", null);
      }
 
@@ -357,7 +425,7 @@
 	 $("input").prop('checked', false);
 	 $("#addElement").text(text);
 	 self.status = type;
-	 d3.select("svg").on("click", clicked);
+	 d3.select("svg").on("click.add", clicked);
 	 function clicked() {
 	     let newObject = opts.model.createObject(type);
 	     self.parent.addToDiagram(newObject);
@@ -371,7 +439,7 @@
 	 $("input").prop('checked', false);
 	 $("#addElement").text(text);
 	 self.status = type;
-	 d3.select("svg").on("click", clicked);
+	 d3.select("svg").on("click.add", clicked);
 	 d3.select("svg").on("contextmenu", finish);
 	 let newObject = undefined;
 	 function clicked() {
@@ -449,7 +517,7 @@
 
      disableAdd() {
 	 $("#addElement").text("Insert element");
-	 d3.select("svg").on("click", null);
+	 d3.select("svg").on("click.add", null);
      }
 
     </script>

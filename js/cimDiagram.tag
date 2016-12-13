@@ -15,7 +15,7 @@
      }
 
      svg {
-	 width: 1800px;
+	 width: 1200px;
 	 height: 800px;
      }
 
@@ -23,14 +23,21 @@
 	 max-width: 250px;
 	 width: 250px;
      }
+
+     .node {
+	 fill: none;
+	 stroke: #ccc;
+	 shape-rendering: crispEdges;
+     }
     </style>
     
     <cimDiagramControls model={model}></cimDiagramControls>
     <div class="app-diagram">	
-	<svg>
+	<svg width="1200" height="800">
 	    <path stroke-width="1" stroke="black" fill="none"></path>
 	    <circle r="3.5" cy="-10" cx="-10"></circle>
-	    <g>
+	    <g class="brush"></g>
+	    <g class="diagram">
 		<g class="edges"></g>
 	    </g>
 	</svg>
@@ -53,7 +60,7 @@
      // listen to 'mount' event
      self.on("mount", function() {
 	 // setup xy axes
-	 let xScale = d3.scaleLinear().domain([0, 1800]).range([0,1800]);
+	 let xScale = d3.scaleLinear().domain([0, 1200]).range([0,1200]);
 	 let yScale = d3.scaleLinear().domain([0, 800]).range([0, 800]);
 	 let yAxis = d3.axisRight(yScale);
 	 let xAxis = d3.axisBottom(xScale);
@@ -95,7 +102,7 @@
 		 type = cn.localName;
 		 uuid = cn.attributes.getNamedItem("rdf:ID").value;
 	     }
-	     let types = d3.select("svg").selectAll("svg > g > g." + type + "s");
+	     let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
 	     let target = types.select("#" + uuid);
 	     target.select("text").html(value);
 	 } 
@@ -148,17 +155,12 @@
 	 
 	 if (selection !== null) {
 	     handleTerminals(selection);
-	     selection.on("mouseover.hover", self.hover)
-		      .on("mouseout", mouseOut);
 	 }
 	 // handle busbars
 	 if (object.nodeName === "cim:BusbarSection") {
 	     let terminal = self.model.getGraph([object], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true).map(el => el.target);
 	     let cn = self.model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 	     selection = self.drawConnectivityNodes([cn]);
-	     selection.on("mouseover.hover", self.hover)
-		      .on("mouseout", mouseOut);
-
 	     let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
 	     let eqTerminals = self.model.getTerminals(equipments);
 	     for (let eqTerminal of eqTerminals) {
@@ -171,7 +173,7 @@
 	 }
 	 
 	 self.forceTick();
-	 self.trigger("addToDiagram");
+	 self.trigger("addToDiagram", selection);
 
 	 function handleTerminals(selection) {
 	     let terminals = self.model.getTerminals([object]);
@@ -204,9 +206,10 @@
 	     }
 	 }
 
+	 /*
 	 function mouseOut(d) {
 	     d3.select(this).selectAll("rect").remove();	     
-	 }
+	 }*/
      });
 
      // listen to 'addLink' event from model
@@ -226,8 +229,7 @@
 		 return;
 	     }
 	 }
-	 console.log(source, linkName, target);
-	 let edgeToChange = d3.select("svg").selectAll("svg > g > g.edges > g").data().filter(el => el.target === term)[0];
+	 let edgeToChange = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").data().filter(el => el.target === term)[0];
 	 if (typeof(edgeToChange) === "undefined") {
 	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
 	     equipment = self.model.getConductingEquipmentGraph(equipment).map(el => el.source);
@@ -258,7 +260,7 @@
      /** Main rendering function */
      self.renderGenerator = function*(diagramName) {
 	 // clear all
-	 d3.select("svg").select("g").selectAll("g:not(.edges)").remove();
+	 d3.select("svg").select("g.diagram").selectAll("g:not(.edges)").remove();
 
 	 // DEBUG
 	 //let alleq = self.model.getConductingEquipmentGraph().map(el => el.source.nodeName);
@@ -381,10 +383,6 @@
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformer terminals";
 
-	 // handle mouseover
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
-			    .on("mouseover.hover", self.hover)
-			    .on("mouseout", mouseOut);
 	 d3.select("svg").on("mouseover", function() {
 	     self.model.on("dragend", dragend);
 	 }).on("mouseout",function() {
@@ -408,6 +406,34 @@
 	 self.forceTick();
 	 self.trigger("render");
 
+	 // TEST quadtree...
+/*	 let quadtree = d3.quadtree()
+			  .x(function(d) {
+			      return d.x;
+			  })
+			  .y(function(d) {
+			      return d.y;
+			  })
+			  .addAll(allEnergyConsumers);
+	 d3.select("svg").select("g.diagram").selectAll(".node")
+	    .data(nodes(quadtree))
+	    .enter().append("rect")
+	    .attr("class", "node")
+	    .attr("x", function(d) { return d.x0; })
+	    .attr("y", function(d) { return d.y0; })
+	    .attr("width", function(d) { return d.y1 - d.y0; })
+	   .attr("height", function(d) { return d.x1 - d.x0; });
+	 // Collapse the quadtree into an array of rectangles.
+	 function nodes(quadtree) {
+	     var nodes = [];
+	     quadtree.visit(function(node, x0, y0, x1, y1) {
+		 node.x0 = x0, node.y0 = y0;
+		 node.x1 = x1, node.y1 = y1;
+		 nodes.push(node);
+	     });
+	     return nodes;
+	 };*/
+	 
 	 // test topo
 	 /*
 	 allConnectivityNodes = self.model.getObjects("cim:ConnectivityNode");
@@ -550,7 +576,7 @@
      createSelection(type, data) {
 	 let types = type + "s";
 	 if (d3.select("svg").select("g." + types).empty()) {
-	     d3.select("svg").select("g").append("g")
+	     d3.select("svg").select("g.diagram").append("g")
 	       .attr("class", types);
 	 }
 
@@ -608,7 +634,7 @@
 		 action: function(elm, d, i) {
 		     let selection = d3.select(elm);
 		     let terminals = self.model.getTerminals(selection.data());
-		     d3.select("svg").selectAll("svg > g > g.edges > g").filter(function(d) {
+		     d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
 			 return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
 		     }).remove();
 		     selection.remove();
@@ -621,7 +647,7 @@
 		 action: function(elm, d, i) {
 		     let selection = d3.select(elm);
 		     let terminals = self.model.getTerminals(selection.data());
-		     d3.select("svg").selectAll("svg > g > g.edges > g").filter(function(d) {
+		     d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
 			 return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
 		     }).remove();
 		     selection.remove();
@@ -1190,7 +1216,7 @@
 	 
 	 
 	 if (d3.select("svg").select("g.ConnectivityNodes").empty()) {
-	     d3.select("svg").select("g").append("g")
+	     d3.select("svg").select("g.diagram").append("g")
 	       .attr("class", "ConnectivityNodes");
 	 }
 	 
@@ -1281,11 +1307,8 @@
 	 return cnEnter;
      }
 
-     hover(hoverD) {
-	 d3.select("svg").selectAll("svg > g > g:not(.edges) > g")
-	   .filter(function (d) {
-	       return d === hoverD;
-	   }).each(function (d) {
+     hover(hoverD) {	   
+	   d3.select(hoverD).each(function (d) {
 	       d3.select(this).append("rect")
 		 .attr("x", this.getBBox().x)
 		 .attr("y", this.getBBox().y)
@@ -1294,15 +1317,16 @@
 		 .attr("stroke", "black")
 		 .attr("stroke-width", 2)
 		 .attr("stroke-dasharray", "5,5")
-		 .attr("fill", "none");	       
+		 .attr("fill", "none")
+		 .attr("class", "selection-rect");	       
 	   });
      }
 
      moveTo(uuid) {
 	 // clear substations and lines
-	 d3.select("svg").selectAll("svg > g > g.Substations > g").remove();
-	 d3.select("svg").selectAll("svg > g > g.ACLineSegments > g > path").attr("stroke-width", 2);
-	 d3.select("svg").selectAll("svg > g > g > g").selectAll("rect").remove();
+	 d3.select("svg").selectAll("svg > g.diagram > g.Substations > g").remove();
+	 d3.select("svg").selectAll("svg > g.diagram > g.ACLineSegments > g > path").attr("stroke-width", 2);
+	 d3.select("svg").selectAll("svg > g.diagram > g > g").selectAll("rect").remove();
 	 let hoverD = this.model.getObject(uuid);
 	 // handle busbars
 	 if (hoverD.nodeName === "cim:BusbarSection") {
@@ -1328,11 +1352,12 @@
 	 let newZoom = 1;
 	 let newx = -hoverD.x*newZoom + (svgWidth/2);
 	 let newy = -hoverD.y*newZoom + (svgHeight/2);
-	 var t = d3.zoomIdentity.translate(newx, newy).scale(1);
-	 d3.selectAll("svg").select("g").attr("transform", t);
+	 let t = d3.zoomIdentity.translate(newx, newy).scale(1);
+	 d3.selectAll("svg").select("g.diagram").attr("transform", t);
 	 d3.zoom().transform(d3.selectAll("svg"), t);
 	 self.trigger("transform");
-	 self.hover(hoverD);
+	 // highlight the element
+	 self.hover(d3.select("svg").selectAll("g#"+uuid).node());;
      }
 
      /** Calculate the closest point on a given busbar relative to a given point (a terminal) */
@@ -1425,7 +1450,7 @@
      forceTick(selection) {
 	 if (arguments.length === 0 || selection.alpha !== undefined) {
 	     // update everything
-	     selection = d3.select("svg").selectAll("svg > g > g:not(.edges) > g");
+	     selection = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
 	 }
 	     
 	 let transform = d3.zoomTransform(d3.select("svg").node());
@@ -1436,7 +1461,7 @@
 
 	 if (arguments.length === 1) {
 	     let terminals = self.model.getTerminals(selection.data());
-	     let links = d3.select("svg").selectAll("svg > g > g.edges > g").filter(function(d) {
+	     let links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
 		 return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
 	     });
 	     self.updateEdges(xoffset, yoffset, svgZoom, links);
@@ -1487,7 +1512,7 @@
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; }); 
 	 if (arguments.length === 3) {
-	     links = d3.select("svg").selectAll("svg > g > g.edges > g"); /*.filter(function(d) {
+	     links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g"); /*.filter(function(d) {
 		 return (typeof(d.p) === "undefined"); 
 	     });*/
 	 }

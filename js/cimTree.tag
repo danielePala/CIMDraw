@@ -579,13 +579,9 @@
 	     if (typeof(busbarSection) === "undefined") {
 		 return;
 	     }
-	     let busbarUUID = busbarSection.attributes.getNamedItem("rdf:ID").value;
-
-	     targetChild = d3.select(".tree").select("#" + busbarUUID).node(); 
-	 } else {
-	     targetChild = d3.select(".tree").select("#" + uuid).node();
-	 }
-
+	     uuid = busbarSection.attributes.getNamedItem("rdf:ID").value;
+	 } 
+	 targetChild = d3.select(".tree").select("#" + uuid).node();
 	 if (targetChild === null) {
 	     return;
 	 }
