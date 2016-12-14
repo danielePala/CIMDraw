@@ -98,7 +98,7 @@
 		     type = cn.localName;
 		     uuid = cn.attributes.getNamedItem("rdf:ID").value;
 		 }
-		 let types = d3.select("svg").selectAll("svg > g > g." + type + "s");
+		 let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
 		 let target = types.select("#" + uuid);
 		 target.select("text").html(value);
 		 break;
@@ -110,8 +110,6 @@
 		 console.log(terminal, termSelection);
 		 self.createMeasurements(termSelection);
 		 break;
-	     default:
-		 console.log(object, attrName, value);
 	 }
      });
 
