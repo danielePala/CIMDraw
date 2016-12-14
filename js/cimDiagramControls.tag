@@ -10,7 +10,7 @@
 		<div class="btn-toolbar" role="toolbar">
 		    <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-controls">
 			<label class="btn btn-default active" id="selectLabel">
-			    <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked>select</input>
+			    <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked="checked">select</input>
 			</label>
 			<label class="btn btn-default" id="forceLabel">
 			    <input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)</input>
@@ -49,7 +49,6 @@
 			</ul>
 		    </div>
 		    
-		</div>
 		</div>
 	    </div>
 	</div>

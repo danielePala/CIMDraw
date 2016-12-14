@@ -84,23 +84,35 @@
 
      // listen to 'setAttribute' event from model
      self.model.on("setAttribute", function(object, attrName, value) {
-	 if (attrName === "cim:IdentifiedObject.name") {
-	     let type = object.localName;
-	     let uuid = object.attributes.getNamedItem("rdf:ID").value;
-	     // special case for busbars
-	     if (object.nodeName === "cim:BusbarSection") {
-		 let terminal = self.model.getConductingEquipmentGraph([object]).map(el => el.target)[0];
-		 if (typeof(terminal) === "undefined") {
-		     return;
+	 switch (attrName) {
+	     case "cim:IdentifiedObject.name":
+		 let type = object.localName;
+		 let uuid = object.attributes.getNamedItem("rdf:ID").value;
+		 // special case for busbars
+		 if (object.nodeName === "cim:BusbarSection") {
+		     let terminal = self.model.getConductingEquipmentGraph([object]).map(el => el.target)[0];
+		     if (typeof(terminal) === "undefined") {
+			 return;
+		     }
+		     let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		     type = cn.localName;
+		     uuid = cn.attributes.getNamedItem("rdf:ID").value;
 		 }
-		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-		 type = cn.localName;
-		 uuid = cn.attributes.getNamedItem("rdf:ID").value;
-	     }
-	     let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
-	     let target = types.select("#" + uuid);
-	     target.select("text").html(value);
-	 } 
+		 let types = d3.select("svg").selectAll("svg > g > g." + type + "s");
+		 let target = types.select("#" + uuid);
+		 target.select("text").html(value);
+		 break;
+	     case "cim:AnalogValue.value":
+		 let analog = self.model.getGraph([object], "AnalogValue.Analog", "Analog.AnalogValues").map(el => el.source);
+		 let terminal = self.model.getGraph(analog, "Measurement.Terminal", "Terminal.Measurements").map(el => el.source)[0];
+		 let termUUID = terminal.attributes.getNamedItem("rdf:ID").value;
+		 let termSelection = d3.select("g#" + termUUID);
+		 console.log(terminal, termSelection);
+		 self.createMeasurements(termSelection);
+		 break;
+	     default:
+		 console.log(object, attrName, value);
+	 }
      });
 
      // listen to 'addToActiveDiagram' event from model

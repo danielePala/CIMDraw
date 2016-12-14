@@ -25,14 +25,14 @@
 	<div class="tree">
 	    <form class="form-inline">
 		<div class="form-group">
-		    <input type="search" class="form-control" id="cim-search-key" placeholder="Search...">
+		    <input type="search" class="form-control" id="cim-search-key" placeholder="Search..."></input>
 		</div>
 		<button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button>
 	    </form>
 	    <form>
 		<div class="checkbox">
 		    <label>
-			<input type="checkbox" id="showAllObjects"> Show all objects
+			<input type="checkbox" id="showAllObjects"> Show all objects</input>
 		    </label>
 		</div>
 	    </form>

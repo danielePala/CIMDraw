@@ -89,8 +89,8 @@ function cimDiagramModel() {
 
 	// serialize the current CIM file.
 	save() {
-	    var oSerializer = new XMLSerializer();
-	    var sXML = oSerializer.serializeToString(model.data);
+	    let oSerializer = new XMLSerializer();
+	    let sXML = oSerializer.serializeToString(model.data);
 	    return sXML;
 	},
 
@@ -137,7 +137,16 @@ function cimDiagramModel() {
 	    for (let trafoEnd of allTrafoEnds) {
 		data.children[0].appendChild(trafoEnd);
 	    }
-		
+	    // TODO: measurements can also be tied to power system resources (e.g. busbars), not only terminals
+	    let allMeasurements = model.getGraph(allTerminals, "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
+	    for (let measurement of allMeasurements) {
+		data.children[0].appendChild(measurement);
+	    }
+	    let allAnalogValues = model.getGraph(allMeasurements, "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source);
+	    for (let analogValue of allAnalogValues) {
+		data.children[0].appendChild(analogValue);
+	    }
+	    
 	    var oSerializer = new XMLSerializer();
 	    var sXML = oSerializer.serializeToString(data);
 	    return sXML;
