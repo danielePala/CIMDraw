@@ -100,10 +100,12 @@
 
      // listen to 'addToDiagram' event 
      self.parent.on("addToDiagram", function(selection) {
-	 quadtree.add(selection.node()); // update the quadtree
-	 if (self.status === "DRAG") {
-	     self.disableAll();
-	     self.enableDrag();
+	 if (selection.size() === 1) {
+	     quadtree.add(selection.node()); // update the quadtree
+	     if (self.status === "DRAG") {
+		 self.disableAll();
+		 self.enableDrag();
+	     }
 	 }
      });
 
@@ -214,7 +216,7 @@
 	     let tx = transform.x;
 	     let ty = transform.y;
 	     let tZoom = transform.k;	     
-	     search(quadtree, extent[0][0] - tx, extent[0][1] - ty, extent[1][0] - tx, extent[1][1] - ty);
+	     search(quadtree, (extent[0][0] - tx)/tZoom, (extent[0][1] - ty)/tZoom, (extent[1][0] - tx)/tZoom, (extent[1][1] - ty)/tZoom);
 	     for (let el of selected) {
 		     self.parent.hover(el);
 	     }

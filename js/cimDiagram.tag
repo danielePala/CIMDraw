@@ -1275,7 +1275,7 @@
 		    return "";
 		})  
 	 };
-	 
+
 	 return cnEnter;
      }
 

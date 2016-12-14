@@ -38,14 +38,16 @@
 	    </form>
 	    <!-- Nav tabs -->
 	    <ul class="nav nav-tabs" role="tablist">
-		<li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Components</a></li>
-		<li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Assets</a></li>
+		<li role="presentation" class="active"><a href="#components" aria-controls="components" role="tab" data-toggle="tab" id="componentsTab">Components</a></li>
+		<li role="presentation"><a href="#containers" aria-controls="containers" role="tab" data-toggle="tab" id="containersTab">Containers</a></li>
 	    </ul>
 	    <div class="tab-content">
-		<div role="tabpanel" class="tab-pane active" id="home">
-		    <ul class="CIMNetwork list-group"></ul>
+		<div role="tabpanel" class="tab-pane active" id="components">
+		    <ul class="list-group" id="CIMComponents"></ul>
 		</div>
-		<div role="tabpanel" class="tab-pane" id="profile">...</div>
+		<div role="tabpanel" class="tab-pane" id="containers">
+		    <ul class="list-group" id="CIMContainers"></ul>
+		</div>
 	    </div>
 	    
 	</div>
@@ -60,7 +62,7 @@
 	 // setup search button
 	 $("#cimTreeSearchBtn").on("click", function() {
 	     let searchKey = document.getElementById("cim-search-key").value;
-	     $(".CIMNetwork>li>ul").each(function() {
+	     $("#CIMComponents>li>ul").each(function() {
 		 let toShow = $(this).find(">li>a:contains(" + searchKey + ")");
 		 let toHide = $(this).find(">li>a:not(:contains(" + searchKey + "))");
 		 toShow.parent().show();
@@ -104,7 +106,7 @@
      });
 
      addNewObject(object) {
-	 let cimNetwork = d3.select("div.tree").selectAll("ul.CIMNetwork");
+	 let cimNetwork = d3.select("div.tree").selectAll("ul#CIMComponents");
 	 let generators = undefined;
 	 let loads = undefined;
 	 switch (object.nodeName) {
@@ -247,7 +249,7 @@
 
      self.createTreeGenerator = function*(getObjects, getContainers) {
 	 // clear all
-	 d3.select("#app-tree").selectAll(".CIMNetwork > li").remove();
+	 d3.select("#app-tree").selectAll("#CIMComponents > li").remove();
 
 	 let allEquipments = getObjects([
 	     "cim:BaseVoltage",
@@ -288,9 +290,10 @@
 	 let allLines = getContainers("cim:Line");
 	 yield "[" + Date.now() + "] TREE: extracted lines";
 	 
-	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul.CIMNetwork");
+	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
+	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
-	 self.createElements(cimNetwork, "BaseVoltage", "Base Voltages", allBaseVoltages);
+	 self.createElements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
 	 self.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
 	 self.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
 	 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
@@ -586,13 +589,17 @@
 	     return;
 	 }
 	 target = targetChild.parentNode;
-	 d3.select(".CIMNetwork").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+	 d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+	 // show the relevant tab
+	 let tabId = $(target).parents("div.tab-pane").first().attr("id") + "Tab";
+	 $("#" + tabId).tab("show");
 	 d3.select(target).select("a").attr("class", "btn btn-danger btn-xs");
+	 // TODO: wait for tab visibility if necessary
 	 self.scrollAndRouteTo("#" + uuid);
      }
      
      deleteObject(objectUUID) {
-	 let cimObject = d3.select("div.tree").selectAll("ul.CIMNetwork").select("ul#" + objectUUID).node();
+	 let cimObject = d3.select("div.tree").selectAll("ul#CIMComponents").select("ul#" + objectUUID).node();
 	 if (cimObject !== null) {
 	     let cimObjectContainer = cimObject.parentNode;
 	     // update element count
@@ -619,7 +626,7 @@
 	 function scrollAndRouteToVisible(targetUUID) {
 	     $(".tree").scrollTop(
 		 $(".tree").scrollTop() + (
-		     $(".CIMNetwork").find(targetUUID).parent().offset().top - $(".tree").offset().top
+		     $("#CIMComponents").find(targetUUID).parent().offset().top - $(".tree").offset().top
 		 )
 	     );
 	     let hashComponents = window.location.hash.substring(1).split("/");
