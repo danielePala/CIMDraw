@@ -294,6 +294,7 @@
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
 	 self.createElements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
+	 self.createAddButton(cimContainers, "BaseVoltage");
 	 self.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
 	 self.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
 	 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
@@ -307,9 +308,9 @@
 	 self.createElements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
 	 self.createElements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
 	 self.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
-	 self.createElements(cimNetwork, "Substation", "Substations", allSubstations);
+	 self.createElements(cimContainers, "Substation", "Substations", allSubstations);
 	 self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
-	 self.createElements(cimNetwork, "Line", "Lines", allLines);
+	 self.createElements(cimContainers, "Line", "Lines", allLines);
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
@@ -338,6 +339,17 @@
 	     elementsTopContainer.select("span").html(elementCount);
 	 }
 	 return elements;
+     }
+
+     createAddButton(cimContainer, name) {
+	 let elementsTopContainer = cimContainer.select("li." + name + "s");
+	 let elements = elementsTopContainer.select("ul#" + name + "sList");
+	 let addBtn = elements
+	     .insert("li", ":first-child")
+	     .append("button")
+	     .attr("class", "btn btn-default btn-xs")
+	     .attr("type", "submit");
+	 addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
      }
 
      createElements(cimNetwork, name, printName, data) {
@@ -594,7 +606,6 @@
 	 let tabId = $(target).parents("div.tab-pane").first().attr("id") + "Tab";
 	 $("#" + tabId).tab("show");
 	 d3.select(target).select("a").attr("class", "btn btn-danger btn-xs");
-	 // TODO: wait for tab visibility if necessary
 	 self.scrollAndRouteTo("#" + uuid);
      }
      
@@ -607,7 +618,6 @@
 	     let elementCount = parseInt(elementsTopContainer.select("span").html());
 	     elementCount = elementCount - 1;
 	     elementsTopContainer.select("span").html(elementCount);
-
 	     cimObjectContainer.remove();
 	 }
      }
@@ -626,7 +636,7 @@
 	 function scrollAndRouteToVisible(targetUUID) {
 	     $(".tree").scrollTop(
 		 $(".tree").scrollTop() + (
-		     $("#CIMComponents").find(targetUUID).parent().offset().top - $(".tree").offset().top
+		     $(".tree").find(targetUUID).parent().offset().top - $(".tree").offset().top
 		 )
 	     );
 	     let hashComponents = window.location.hash.substring(1).split("/");
