@@ -440,7 +440,6 @@
 	 $("#addElement").text(text);
 	 self.status = type;
 	 d3.select("svg").on("click.add", clicked);
-	 d3.select("svg").on("contextmenu", finish);
 	 let newObject = undefined;
 	 function clicked() {
 	     let line = d3.line()
@@ -470,6 +469,7 @@
 	     }
 	     
 	     if (self.status === type) {
+		 d3.select("svg").on("contextmenu.add", finish);
 		 svg.on("mousemove", mousemoved);
 		 newObject = opts.model.createObject(type);
 		 let m = d3.mouse(d3.select("svg").node());
@@ -511,13 +511,16 @@
 	     self.status = type;
 	     d3.select("svg").on("mousemove", null);
 	     d3.select("svg").selectAll("svg > path").attr("d", null);
-	     d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");	   
+	     d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
+	     // disable ourselves
+	     d3.select("svg").on("contextmenu.add", null);
 	 };
      }
 
      disableAdd() {
 	 $("#addElement").text("Insert element");
 	 d3.select("svg").on("click.add", null);
+	 d3.select("svg").on("contextmenu.add", null);
      }
 
     </script>
