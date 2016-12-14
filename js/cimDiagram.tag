@@ -24,11 +24,6 @@
 	 width: 250px;
      }
 
-     .node {
-	 fill: none;
-	 stroke: #ccc;
-	 shape-rendering: crispEdges;
-     }
     </style>
     
     <cimDiagramControls model={model}></cimDiagramControls>
@@ -205,11 +200,6 @@
 		 self.createTerminals(selection);
 	     }
 	 }
-
-	 /*
-	 function mouseOut(d) {
-	     d3.select(this).selectAll("rect").remove();	     
-	 }*/
      });
 
      // listen to 'addLink' event from model
@@ -405,34 +395,6 @@
 	
 	 self.forceTick();
 	 self.trigger("render");
-
-	 // TEST quadtree...
-/*	 let quadtree = d3.quadtree()
-			  .x(function(d) {
-			      return d.x;
-			  })
-			  .y(function(d) {
-			      return d.y;
-			  })
-			  .addAll(allEnergyConsumers);
-	 d3.select("svg").select("g.diagram").selectAll(".node")
-	    .data(nodes(quadtree))
-	    .enter().append("rect")
-	    .attr("class", "node")
-	    .attr("x", function(d) { return d.x0; })
-	    .attr("y", function(d) { return d.y0; })
-	    .attr("width", function(d) { return d.y1 - d.y0; })
-	   .attr("height", function(d) { return d.x1 - d.x0; });
-	 // Collapse the quadtree into an array of rectangles.
-	 function nodes(quadtree) {
-	     var nodes = [];
-	     quadtree.visit(function(node, x0, y0, x1, y1) {
-		 node.x0 = x0, node.y0 = y0;
-		 node.x1 = x1, node.y1 = y1;
-		 nodes.push(node);
-	     });
-	     return nodes;
-	 };*/
 	 
 	 // test topo
 	 /*
