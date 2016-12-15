@@ -322,7 +322,7 @@ function cimDiagramModel() {
 	    });
 	},
 
-	// get all the terminals of a given object.
+	// get all the terminals of given objects.
 	getTerminals(identObjs) {
 	    let terminals = model.getConductingEquipmentGraph(identObjs).map(el => el.target);
 	    let terminalsSet = new Set(terminals);

@@ -40,6 +40,7 @@
 	    <ul class="nav nav-tabs" role="tablist">
 		<li role="presentation" class="active"><a href="#components" aria-controls="components" role="tab" data-toggle="tab" id="componentsTab">Components</a></li>
 		<li role="presentation"><a href="#containers" aria-controls="containers" role="tab" data-toggle="tab" id="containersTab">Containers</a></li>
+		<li role="presentation"><a href="#measurements" aria-controls="measurements" role="tab" data-toggle="tab" id="measurementsTab">Measurements</a></li>
 	    </ul>
 	    <div class="tab-content">
 		<div role="tabpanel" class="tab-pane active" id="components">
@@ -47,6 +48,9 @@
 		</div>
 		<div role="tabpanel" class="tab-pane" id="containers">
 		    <ul class="list-group" id="CIMContainers"></ul>
+		</div>
+		<div role="tabpanel" class="tab-pane" id="measurements">
+		    <ul class="list-group" id="CIMMeasurements"></ul>
 		</div>
 	    </div>
 	    
@@ -250,7 +254,7 @@
      self.createTreeGenerator = function*(getObjects, getContainers) {
 	 // clear all
 	 d3.select("#app-tree").selectAll("#CIMComponents > li").remove();
-
+	 // get all equipments
 	 let allEquipments = getObjects([
 	     "cim:BaseVoltage",
 	     "cim:BusbarSection",
@@ -283,12 +287,20 @@
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"] 
 	                              .concat(allEquipments["cim:ConformLoad"])
 	                              .concat(allEquipments["cim:NonConformLoad"]);
-	 yield "[" + Date.now() + "] TREE: extracted equipments";
-	 
+	 yield "[" + Date.now() + "] TREE: extracted equipments";	 
 	 let allSubstations = getContainers("cim:Substation");
 	 yield "[" + Date.now() + "] TREE: extracted substations";
 	 let allLines = getContainers("cim:Line");
 	 yield "[" + Date.now() + "] TREE: extracted lines";
+
+	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
+	 // extract all measurements (can be tied to terminals or equipment
+	 for (let i of Object.keys(allEquipments)) {
+	     let terms = self.model.getTerminals(allEquipments[i]);
+	     let tMeasurements = self.model.getGraph(terms, "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
+	     let eqMeasurements = self.model.getGraph(allEquipments[i], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source);
+	     self.createElements(cimMeasurements, "Measurement", "Measurements", [...new Set(tMeasurements.concat(eqMeasurements))]);
+	 }  
 	 
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
