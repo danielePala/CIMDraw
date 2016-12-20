@@ -430,7 +430,7 @@
 				    let hashComponents = window.location.hash.substring(1).split("/");
 				    let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 				    if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
-					riot.route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
+					route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
 				    }
 				}
 			    })
@@ -653,7 +653,7 @@
 	     );
 	     let hashComponents = window.location.hash.substring(1).split("/");
 	     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-	     riot.route(basePath + "/" + targetUUID.substring(1));
+	     route(basePath + "/" + targetUUID.substring(1));
 	 };
      }
 

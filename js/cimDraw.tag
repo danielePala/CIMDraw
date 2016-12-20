@@ -129,7 +129,7 @@
      });
      
      self.on("mount", function() {
-	 riot.route.stop(); // clear all the old router callbacks
+	 route.stop(); // clear all the old router callbacks
 	 let cimFile = {};
 	 let cimFileReader = {};
 	 $(".selectpicker").selectpicker({container: "body"});
@@ -137,11 +137,11 @@
 	 $("#cim-create-new-container").on("click", function() {
 	     cimFile = {name: "new1"};
 	     cimFileReader = null;
-	     riot.route("/" + cimFile.name + "/diagrams");
+	     route("/" + cimFile.name + "/diagrams");
 	 });
 	 
 	 // This is the initial route ("the home page").
-	 riot.route(function(name) {
+	 route(function(name) {
 	     // things to show
 	     $("#cim-local-file-component").show();
 	     // things to hide
@@ -168,7 +168,7 @@
 	 });
 
 	 // here we choose a diagram to display
-	 riot.route('/*/diagrams', function() {
+	 route('/*/diagrams', function() {
 	     // things to show
 	     $("#cim-home-container").show();
 	     $(".selectpicker").selectpicker("show"); 
@@ -198,7 +198,7 @@
 	 });
 
 	 // here we show a certain diagram
-	 riot.route('/*/diagrams/*', function(file, name) {	
+	 route('/*/diagrams/*', function(file, name) {	
 	     $("#cim-local-file-component").hide();
 	     $("#loadingDiagramMsg").text("loading diagram...");
 	     $("#loadingModal").off("shown.bs.modal");
@@ -213,7 +213,7 @@
 	     self.cimModel.loadRemote("/" + file, showDiagram);
 	     function showDiagram(error) {
 		 if (error !== null) {
-		     riot.route("/");
+		     route("/");
 		     return;
 		 }
 		 self.cimModel.selectDiagram(decodeURI(name));
@@ -261,12 +261,12 @@
 	     $(".selectpicker").selectpicker("refresh");
 	 };
 	 
-	 riot.route("/*/diagrams/*/*", function(file, name, element) {
+	 route("/*/diagrams/*/*", function(file, name, element) {
 	     $("#cim-local-file-component").hide();
 	     loadDiagram(file, name, element);
 	 });
 
-	 riot.route("/*/createNew", function(file) {
+	 route("/*/createNew", function(file) {
 	     $("#newDiagramModal").modal("show");
 	     d3.select("#newDiagramBtn").on("click", function() {
 		 let diagramName = d3.select("#newDiagramName").node().value;
@@ -274,12 +274,12 @@
 		 let basePath = hashComponents[0] + "/diagrams/";
 		 let fullPath = basePath + diagramName;
 		 $('#newDiagramModal').modal("hide");
-		 riot.route(fullPath);
+		 route(fullPath);
 	     });
 	 });
 
 	 // start router
-	 riot.route.start(true);
+	 route.start(true);
      });
     </script>
 </cimDraw>
