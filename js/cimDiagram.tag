@@ -587,47 +587,6 @@
 	     }
 	     d.lineData = lineData;
 	 }
-
-	 let menu = [
-	     {
-		 title: 'Rotate',
-		 action: function(elm, d, i) {
-		     let selection = d3.select(elm);
-		     let terminals = self.model.getTerminals(selection.data());
-		     terminals.forEach(function (terminal) {
-			 terminal.rotation = terminal.rotation + 90;
-		     });
-		     d.rotation = d.rotation + 90;
-		     self.forceTick(selection);
-		 }
-	     },
-	     {
-		 title: 'Delete',
-		 action: function(elm, d, i) {
-		     let selection = d3.select(elm);
-		     let terminals = self.model.getTerminals(selection.data());
-		     d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
-			 return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
-		     }).remove();
-		     selection.remove();
-		     // delete from model
-		     self.model.deleteObject(selection.datum());
-		 }
-	     },
-	     {
-		 title: 'Delete from current diagram',
-		 action: function(elm, d, i) {
-		     let selection = d3.select(elm);
-		     let terminals = self.model.getTerminals(selection.data());
-		     d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
-			 return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
-		     }).remove();
-		     selection.remove();
-		     // delete from model
-		     self.model.deleteFromDiagram(selection.datum());
-		 }
-	     }
-	 ];
 	 
 	 let selection = d3.select("svg").select("g." + types).selectAll("g." + type)
 			   .data(data, function(d) {
@@ -638,8 +597,7 @@
 			   .attr("class", type)
 			   .attr("id", function(d) {
 			       return d.attributes.getNamedItem("rdf:ID").value;
-			   })
-			   .on("contextmenu", d3.contextMenu(menu));
+			   });
 	 return selection; 
      }
 

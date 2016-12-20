@@ -60,6 +60,46 @@
      let termToChange = undefined;
      let quadtree = d3.quadtree();
      let selected = [];
+     let menu = [
+	 {
+	     title: 'Rotate',
+	     action: function(elm, d, i) {
+		 let selection = d3.select(elm);
+		 let terminals = opts.model.getTerminals(selection.data());
+		 terminals.forEach(function (terminal) {
+		     terminal.rotation = terminal.rotation + 90;
+		 });
+		 d.rotation = d.rotation + 90;
+		 self.parent.forceTick(selection);
+	     }
+	 },
+	 {
+	     title: 'Delete',
+	     action: function(elm, d, i) {
+		 let selection = d3.select(elm);
+		 let terminals = opts.model.getTerminals(selection.data());
+		 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+		     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
+		 }).remove();
+		 selection.remove();
+		 // delete from model
+		 opts.model.deleteObject(selection.datum());
+	     }
+	 },
+	 {
+	     title: 'Delete from current diagram',
+	     action: function(elm, d, i) {
+		 let selection = d3.select(elm);
+		 let terminals = opts.model.getTerminals(selection.data());
+		 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+		     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
+		 }).remove();
+		 selection.remove();
+		 // delete from model
+		 opts.model.deleteFromDiagram(selection.datum());
+	     }
+	 }
+     ];
      
      self.on("mount", function() {
 	 // setup diagram buttons
@@ -89,6 +129,8 @@
 	 }).y(function(d) {
 	     return d3.select(d).data()[0].y;
 	 }).addAll(points.nodes());
+	 // setup context menu
+	 points.on("contextmenu", d3.contextMenu(menu));
 	 // anble drag by default
 	 self.disableForce();
 	 self.disableZoom();
@@ -106,6 +148,7 @@
 		 self.disableAll();
 		 self.enableDrag();
 	     }
+	     selection.on("contextmenu", d3.contextMenu(menu));
 	 }
      });
 
