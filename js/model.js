@@ -1,7 +1,7 @@
 "use strict";
 
 function cimDiagramModel() {
-    let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2010/CIM-schema-cim15#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
+    let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2013/CIM-schema-cim16#\" xmlns:entsoe=\"http://entsoe.eu/CIM/SchemaExtension/3/1#\" xmlns:md=\"http://iec.ch/TC57/61970-552/ModelDescription/1#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
     
     let model = {	
 	// load a CIM file from the local filesystem.
@@ -21,7 +21,24 @@ function cimDiagramModel() {
 		    model.buildModel(data, callback);
 		}
 		model.fileName = file.name;
-		reader.readAsText(file);
+
+		// initial test for zip file loading (ENTSO-E)
+		if (file.name.endsWith(".zip")) {
+		    let parser = new DOMParser();
+		    let data = {};
+		    JSZip.loadAsync(file).then(function (zip) {
+			zip.forEach(function (relativePath, zipEntry) {
+			    zipEntry.async("string")
+				.then(function success(content) {
+				    let parsed = parser.parseFromString(content, "application/xml");
+				    //model.data = parsed;
+				    //console.log(model.getObjects1(["md:FullModel"]));
+				});
+			});
+		    });
+		} else {
+		    reader.readAsText(file);
+		}
 	    } else {
 		callback(null);
 	    }
@@ -168,7 +185,7 @@ function cimDiagramModel() {
 
 	// Get the objects of a given type (doesn't filter by diagram).
 	getObjects(type) {
-	    let allObjects = model.data.children[0].children;
+	    let allObjects = model.getAllObjects();
 	    return [].filter.call(allObjects, function(el) {
 		return el.nodeName === type;
 	    });
@@ -176,7 +193,7 @@ function cimDiagramModel() {
 
 	getObjects1(types) {
 	    let ret = {};
- 	    let allObjects = model.data.children[0].children;
+ 	    let allObjects = model.getAllObjects();
 	    for (let type of types) {
 		ret[type] = [];
 	    }

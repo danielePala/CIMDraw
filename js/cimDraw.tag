@@ -42,8 +42,8 @@
 
 	    <div class="row center-block">
 		<div class="col-md-12" id="cim-file-input-container">
-		    <form enctype="multipart/form-data" action="/api/upload" method="POST">
-			<input id="cim-file-input" name="cim-file" type="file" class="file" multiple data-show-preview="false" data-show-upload="false">
+		    <form enctype="multipart/form-data" method="POST">
+			<input id="cim-file-input" name="cim-file" type="file" class="file" data-show-preview="false" data-show-upload="false">
 		    </form>
 		</div>
 	    </div>
@@ -219,10 +219,6 @@
 		 self.cimModel.selectDiagram(decodeURI(name));
 		 loadDiagramList(decodeURI(file));
 		 $('.selectpicker').selectpicker('val', decodeURI("#" + file + "/diagrams/" + name));
-		 /*for (let i of Object.keys(self.tags)) {
-		     self.tags[i].showDiagram(file, name, element);
-		 }
-		 */
 		 self.trigger("showDiagram", file, name, element);
 		 $("#app-container").show();
 
