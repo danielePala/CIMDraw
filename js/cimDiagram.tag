@@ -113,6 +113,16 @@
 	 }
      });
 
+     // listen to 'updateActiveDiagram' event from model
+     self.model.on("updateActiveDiagram", function(object) {
+	 let selection = null;
+	 switch (object.nodeName) {
+	     case "cim:ACLineSegment":
+		 selection = self.drawACLines([object]);
+		 break;
+	 }
+     });
+     
      // listen to 'addToActiveDiagram' event from model
      self.model.on("addToActiveDiagram", function(object) {
 	 let selection = null;
@@ -545,6 +555,8 @@
      }
 
      // bind data to an x,y array from Diagram Object Points
+     // returns a 2 element array: the first is the update selection
+     // and the second is the enter selection
      createSelection(type, data) {
 	 let types = type + "s";
 	 if (d3.select("svg").select("g." + types).empty()) {
@@ -553,52 +565,20 @@
 	 }
 
 	 for (let d of data) {
-	     let lineData = [];
-	     let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target);
-	     d.rotation = 0;
-	     if (dobjs.length > 0) {
-		 let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation");
-		 if (typeof(rotation) !== "undefined") {
-		     d.rotation = parseInt(rotation.innerHTML);
-		 }
-	     } 
-	     let points = self.model.getGraph(dobjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
-	     if (points.length > 0) {
-		 d.x = parseInt(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.xPosition").innerHTML);
-		 d.y = parseInt(self.model.getAttribute(points[0], "cim:DiagramObjectPoint.yPosition").innerHTML);
-		 for (let point in points) {
-		     let seqNum = 1;
-		     let seqAttr = self.model.getAttribute(points[point], "cim:DiagramObjectPoint.sequenceNumber");
-		     if (typeof(seqAttr) !== "undefined") {
-			 seqNum = parseInt(seqAttr.innerHTML);
-		     }
-		     lineData.push({
-			 x: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.xPosition").innerHTML) - d.x,
-			 y: parseInt(self.model.getAttribute(points[point], "cim:DiagramObjectPoint.yPosition").innerHTML) - d.y,
-			 seq: seqNum // x and y are mandatory, seq is optional so we must handle the cases when it is absent
-		     });
-		 }
-		 lineData.sort(function(a, b){return a.seq-b.seq});
-	     } else {
-		 lineData.push({x:0, y:0, seq:1});
-		 d.x = 0;
-		 d.y = 0;
-		 self.model.addToActiveDiagram(d, lineData);
-	     }
-	     d.lineData = lineData;
+	     self.calcLineData(d);
 	 }
 	 
-	 let selection = d3.select("svg").select("g." + types).selectAll("g." + type)
+	 let updateSel = d3.select("svg").select("g." + types).selectAll("g." + type)
 			   .data(data, function(d) {
 			       return d.attributes.getNamedItem("rdf:ID").value;
-			   })
-			   .enter()
-			   .append("g")
-			   .attr("class", type)
-			   .attr("id", function(d) {
-			       return d.attributes.getNamedItem("rdf:ID").value;
 			   });
-	 return selection; 
+	 let enterSel = updateSel.enter()
+				 .append("g")
+				 .attr("class", type)
+				 .attr("id", function(d) {
+				     return d.attributes.getNamedItem("rdf:ID").value;
+				 });
+	 return [updateSel, enterSel]; 
      }
 
      // Draw all ACLineSegments
@@ -607,14 +587,16 @@
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; });
 
-	 let aclineEnter = this.createSelection("ACLineSegment", allACLines);
+	 let aclineSel = self.createSelection("ACLineSegment", allACLines);
+	 let aclineUpdate = aclineSel[0];
+	 let aclineEnter = aclineSel[1];
 	 
 	 aclineEnter.append("path")
 		    .attr("d", function(d) {
-			if (this.parentNode.__data__.lineData.length === 1) {
-			    this.parentNode.__data__.lineData.push({x:150, y:0, seq:2});
+			if (d.lineData.length === 1) {
+			    d.lineData.push({x:150, y:0, seq:2});
 			}
-			return line(this.parentNode.__data__.lineData);
+			return line(d.lineData);
 		    })
 		    .attr("fill", "none")
 		    .attr("stroke", "darkred")
@@ -623,12 +605,12 @@
 		    .style("text-anchor", "middle")
 		    .attr("font-size", 8)
 		    .attr("x", function(d) {
-			let lineData = this.parentNode.__data__.lineData;
+			let lineData = d.lineData;
 			let end = lineData[lineData.length-1];
 			return (lineData[0].x + end.x)/2;
 		    })
 		    .attr("y", function(d) {
-			let lineData = this.parentNode.__data__.lineData;
+			let lineData = d.lineData;
 			let end = lineData[lineData.length-1];
 			return (lineData[0].y + end.y)/2;
 		    })
@@ -639,6 +621,18 @@
 			}
 			return "";
 		    });
+
+	 aclineUpdate.select("path")
+		     .attr("d", function(d) {
+			 if (d.lineData.length === 1) {
+			     d.lineData.push({x:150, y:0, seq:2});
+			 }
+			 return line(d.lineData);
+		     })
+	             .attr("fill", "none")
+	             .attr("stroke", "darkred")
+	             .attr("stroke-width", 2);
+		      
 	 return aclineEnter;
      }
 
@@ -672,7 +666,7 @@
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; });
 
-	 let swEnter = this.createSelection(type, allSwitches);
+	 let swEnter = self.createSelection(type, allSwitches)[1];
 	 
 	 swEnter.append("path")
 		.attr("d", function(d) {
@@ -750,7 +744,7 @@
      
      // Draw all generators
      drawGenerators(allGens, type) {
-	 let genEnter = self.createSelection(type, allGens);
+	 let genEnter = self.createSelection(type, allGens)[1];
 	 
 	 genEnter.append("circle")
 		 .attr("r", 25)
@@ -785,7 +779,7 @@
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; });
-	 let loadEnter = self.createSelection(type, allLoads);
+	 let loadEnter = self.createSelection(type, allLoads)[1];
 
 	 loadEnter.append("path")
 		  .attr("d", function(d) {
@@ -811,7 +805,7 @@
 
      // Draw all PowerTransformers
      drawPowerTransformers(allPowerTransformers) {
-	 let trafoEnter = this.createSelection("PowerTransformer", allPowerTransformers);
+	 let trafoEnter = this.createSelection("PowerTransformer", allPowerTransformers)[1];
 	 
 	 trafoEnter.append("circle")
 		   .attr("r", 15)
@@ -1056,94 +1050,100 @@
 	 return termSelection;
      }
 
+     calcLineData(d) {
+	 d.x = undefined;
+	 d.y = undefined;
+	 d.rotation = 0;
+	 let lineData = [];
+	 let xcalc = 0;
+	 let ycalc = 0;
+	 // extract equipments
+	 // filter by lineData, because there may be some elements which are on the diagram but we don't draw
+	 let equipments = self.model.getEquipments(d).filter(el => typeof(el.lineData) !== "undefined" || el.localName === "BusbarSection");
+	 // let's try to get a busbar section
+	 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+	 let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target);
+	 if (dobjs.length === 0) {
+	     if (typeof(busbarSection) !== "undefined") {
+		 dobjs = self.model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
+		 let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation");
+		 if (typeof(rotation) !== "undefined") {
+		     d.rotation = parseInt(rotation.innerHTML);
+		 }
+	     } else if (equipments.length > 0) {
+		 let points = [];
+		 for (let eq of equipments) {
+		     let endx = eq.x + eq.lineData[eq.lineData.length-1].x;
+		     let endy = eq.y + eq.lineData[eq.lineData.length-1].y;
+		     points.push({x: eq.x + eq.lineData[0].x, y: eq.y + eq.lineData[0].y, eq: eq}, {x: endx, y: endy, eq: eq});
+		 }
+		 let min = Infinity;
+		 let p1min = points[0], p2min = points[0];
+		 for (let p1 of points) {
+		     for (let p2 of points) {
+			 if (p1.eq === p2.eq) {
+			     continue;
+			 }
+			 let dist = self.distance2(p1, p2);
+			 if (dist < min) {
+			     min = dist;
+			     p1min = p1;
+			     p2min = p2;
+			 }
+		     }
+		 }
+		 xcalc = (p1min.x+p2min.x)/2;
+		 ycalc = (p1min.y+p2min.y)/2;
+	     }
+	 } else {
+	     let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation"); 
+	     if (typeof(rotation) !== "undefined") {
+		 d.rotation = parseInt(rotation.innerHTML);
+	     }
+	 }
+	 let points = self.model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
+	 if (points.length > 0) {
+	     for (let point of points) {
+		 let seqNum = self.model.getAttribute(point, "cim:DiagramObjectPoint.sequenceNumber");
+		 if (typeof(seqNum) === "undefined") {
+		     seqNum = 1;
+		 } else {
+		     seqNum = parseInt(seqNum.innerHTML);
+		 }
+		 lineData.push({
+		     x: parseInt(self.model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML),
+		     y: parseInt(self.model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML),
+		     seq: seqNum
+		 });
+	     }
+	     lineData.sort(function(a, b){return a.seq-b.seq});
+	     d.x = lineData[0].x;
+	     d.y = lineData[0].y;
+	     // relative values
+	     for (let point of lineData) {
+		 point.x = point.x - d.x;
+		 point.y = point.y - d.y;
+	     }
+	 } else {
+	     lineData.push({x:0, y:0, seq:1});
+	     d.x = xcalc;
+	     d.y = ycalc;
+	     self.model.addToActiveDiagram(d, lineData);
+	 }
+	 d.lineData = lineData;
+
+	 return lineData;
+     }
+     
      // Draw all ConnectivityNodes
      drawConnectivityNodes(allConnectivityNodes) {
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; }); 
 	 
-	 for (let d of allConnectivityNodes) {
-	     d.x = undefined;
-	     d.y = undefined;
-	     d.rotation = 0;
-	     let lineData = [];
-	     let xcalc = 0;
-	     let ycalc = 0;
-	     // extract equipments
-	     // filter by lineData, because there may be some elements which are on the diagram but we don't draw
-	     let equipments = self.model.getEquipments(d).filter(el => typeof(el.lineData) !== "undefined" || el.localName === "BusbarSection");
-	     // let's try to get a busbar section
-	     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-	     let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target);
-	     if (dobjs.length === 0) {
-		 if (typeof(busbarSection) !== "undefined") {
-		     dobjs = self.model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
-		     let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation");
-		     if (typeof(rotation) !== "undefined") {
-			 d.rotation = parseInt(rotation.innerHTML);
-		     }
-		 } else if (equipments.length > 0) {
-		     let points = [];
-		     for (let eq of equipments) {
-			 let endx = eq.x + eq.lineData[eq.lineData.length-1].x;
-			 let endy = eq.y + eq.lineData[eq.lineData.length-1].y;
-			 points.push({x: eq.x + eq.lineData[0].x, y: eq.y + eq.lineData[0].y, eq: eq}, {x: endx, y: endy, eq: eq});
-		     }
-		     let min = Infinity;
-		     let p1min = points[0], p2min = points[0];
-		     for (let p1 of points) {
-			 for (let p2 of points) {
-			     if (p1.eq === p2.eq) {
-				 continue;
-			     }
-			     let dist = self.distance2(p1, p2);
-			     if (dist < min) {
-				 min = dist;
-				 p1min = p1;
-				 p2min = p2;
-			     }
-			 }
-		     }
-		     xcalc = (p1min.x+p2min.x)/2;
-		     ycalc = (p1min.y+p2min.y)/2;
-		 }
-	     } else {
-		 let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation"); 
-		 if (typeof(rotation) !== "undefined") {
-		     d.rotation = parseInt(rotation.innerHTML);
-		 }
-	     }
-	     let points = self.model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
-	     if (points.length > 0) {
-		 for (let point of points) {
-		     let seqNum = self.model.getAttribute(point, "cim:DiagramObjectPoint.sequenceNumber");
-		     if (typeof(seqNum) === "undefined") {
-			 seqNum = 1;
-		     } else {
-			 seqNum = parseInt(seqNum.innerHTML);
-		     }
-		     lineData.push({
-			 x: parseInt(self.model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML),
-			 y: parseInt(self.model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML),
-			 seq: seqNum
-		     });
-		 }
-		 lineData.sort(function(a, b){return a.seq-b.seq});
-		 d.x = lineData[0].x;
-		 d.y = lineData[0].y;
-		 // relative values
-		 for (let point of lineData) {
-		     point.x = point.x - d.x;
-		     point.y = point.y - d.y;
-		 }
-	     } else {
-		 lineData.push({x:0, y:0, seq:1});
-		 d.x = xcalc;
-		 d.y = ycalc;
-	     }
-	     d.lineData = lineData;
+	 for (let cn of allConnectivityNodes) {
+	     self.calcLineData(cn);
 	 }
-	 
 	 
 	 if (d3.select("svg").select("g.ConnectivityNodes").empty()) {
 	     d3.select("svg").select("g.diagram").append("g")
@@ -1401,9 +1401,8 @@
 	 
 	 function updateElements(selection) {
 	     selection.attr("transform", function (d) {
-		 self.model.updateActiveDiagram(d, d.lineData);
 		 return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
-	     }).selectAll("g")
+	     }).selectAll("g.Terminal")
 		      .attr("id", function(d, i) {
 			  d.x = d3.select(this.parentNode).datum().x + parseInt(d3.select(this.firstChild).attr("cx"));
 			  d.y = d3.select(this.parentNode).datum().y + parseInt(d3.select(this.firstChild).attr("cy"));

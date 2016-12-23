@@ -518,6 +518,7 @@ function cimDiagramModel() {
 		    model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML = actLineData.x + object.x;
 		    model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML = actLineData.y + object.y;
 		}
+		model.trigger("updateActiveDiagram", object);
 	    } else {
 		model.addToActiveDiagram(object, object.lineData);
 	    }
