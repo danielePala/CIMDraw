@@ -638,7 +638,7 @@
 	 if ($(targetUUID).parents(".collapse:not(.in)").last().length !== 0) {
 	     $(targetUUID).parents(".collapse:not(.in)").last().on("shown.bs.collapse", function() {
 		 scrollAndRouteToVisible(targetUUID);
-		 $(targetUUID).parents(".collapse:not(.in)").last().off("shown.bs.collapse");
+		 $(this).off("shown.bs.collapse");
 	     });
 	 } else {
 	     scrollAndRouteToVisible(targetUUID);

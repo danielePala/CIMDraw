@@ -39,7 +39,7 @@
     </div>    
     <script>
      "use strict";
-     const SWITCH_HEIGHT = 22; // height of switches elements
+     const SWITCH_HEIGHT = 16; // height of switches elements
      let self = this;
      self.model = opts.model;
 
@@ -671,11 +671,11 @@
 	 
 	 swEnter.append("path")
 		.attr("d", function(d) {
-		    return line([{x:-5, y:6, seq:1},
-				 {x:5, y:6, seq:2},
-				 {x:5, y:16, seq:3},
-				 {x:-5, y:16, seq:4},
-				 {x:-5, y:6, seq:5}]);		    
+		    return line([{x:-5, y:3, seq:1},
+				 {x:5, y:3, seq:2},
+				 {x:5, y:13, seq:3},
+				 {x:-5, y:13, seq:4},
+				 {x:-5, y:3, seq:5}]);		    
 		})
 		.attr("fill", function(d) {
 		    let value = "0"; // default is OPEN
@@ -1014,7 +1014,7 @@
 					});
 	 self.createEdges(allEdges);
 	 termSelection.append("circle")
-		      .attr("r", 5)
+		      .attr("r", 2)
 		      .style("fill","black")
 		      .attr("cx", function(d, i) {	    
 			  return d3.select(this.parentNode).datum().x - d3.select(this.parentNode.parentNode).datum().x; 
