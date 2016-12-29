@@ -491,7 +491,7 @@
 		       // trap the return key being pressed
 		       if (d3.event.keyCode === 13) {
 			   d3.event.preventDefault();
-			   let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
+			   let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
 			   let attrName = "cim:" + d.attributes[0].value.substring(1);
 			   self.model.setAttribute(object, attrName, this.value);
 		       }

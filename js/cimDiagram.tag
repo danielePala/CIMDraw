@@ -39,6 +39,7 @@
     </div>    
     <script>
      "use strict";
+     const SWITCH_HEIGHT = 22; // height of switches elements
      let self = this;
      self.model = opts.model;
 
@@ -354,19 +355,19 @@
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn acline terminals";
 	 // breaker terminals
-	 self.createTerminals(breakerEnter);
+	 self.createTerminals(breakerEnter, SWITCH_HEIGHT);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn breaker terminals";
 	 // disconnector terminals
-	 self.createTerminals(discEnter);
+	 self.createTerminals(discEnter, SWITCH_HEIGHT);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn disconnector terminals";
 	 // load break switch terminals
-	 self.createTerminals(lbsEnter);
+	 self.createTerminals(lbsEnter, SWITCH_HEIGHT);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn load break switch terminals";
 	 // jumper terminals
-	 self.createTerminals(jumpsEnter);
+	 self.createTerminals(jumpsEnter, SWITCH_HEIGHT);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn jumper terminals";
 	 // junction terminals
-	 self.createTerminals(junctsEnter);
+	 self.createTerminals(junctsEnter, SWITCH_HEIGHT);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn junction terminals";
 	 // energy source terminals
 	 termSelection = self.createTerminals(ensrcEnter, 50);
@@ -670,11 +671,11 @@
 	 
 	 swEnter.append("path")
 		.attr("d", function(d) {
-		    return line([{x:-9, y:6, seq:1},
-				 {x:9, y:6, seq:2},
-				 {x:9, y:24, seq:3},
-				 {x:-9, y:24, seq:4},
-				 {x:-9, y:6, seq:5}]);		    
+		    return line([{x:-5, y:6, seq:1},
+				 {x:5, y:6, seq:2},
+				 {x:5, y:16, seq:3},
+				 {x:-5, y:16, seq:4},
+				 {x:-5, y:6, seq:5}]);		    
 		})
 		.attr("fill", function(d) {
 		    let value = "0"; // default is OPEN

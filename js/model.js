@@ -1,15 +1,17 @@
 "use strict";
 
 function cimDiagramModel() {
+    const cimNS = "http://iec.ch/TC57/2013/CIM-schema-cim16#";
     let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2013/CIM-schema-cim16#\" xmlns:entsoe=\"http://entsoe.eu/CIM/SchemaExtension/3/1#\" xmlns:md=\"http://iec.ch/TC57/61970-552/ModelDescription/1#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
-    
+
     let model = {	
 	// load a CIM file from the local filesystem.
 	load(file, reader, callback) {
+	    // should we create a new empty file?
 	    if (reader === null) {
 		let parser = new DOMParser();
 		let data = parser.parseFromString(emptyFile, "application/xml");
-		model.buildModel(data, callback);
+		model.buildModel({all: data}, callback);
 		model.fileName = file.name;
 		return;
 	    }
@@ -18,7 +20,7 @@ function cimDiagramModel() {
 		reader.onload = function(e) {
                     let parser = new DOMParser();
 		    let data = parser.parseFromString(reader.result, "application/xml");
-		    model.buildModel(data, callback);
+		    model.buildModel({all: data}, callback);
 		}
 		model.fileName = file.name;
 
@@ -30,9 +32,22 @@ function cimDiagramModel() {
 			zip.forEach(function (relativePath, zipEntry) {
 			    zipEntry.async("string")
 				.then(function success(content) {
-				    let parsed = parser.parseFromString(content, "application/xml");
-				    //model.data = parsed;
-				    //console.log(model.getObjects1(["md:FullModel"]));
+				    if (typeof(data.eq) === "undefined" || typeof(data.dl) === "undefined") {
+					let parsed = parser.parseFromString(content, "application/xml");
+					let fullModel = [].filter.call(parsed.children[0].children, function(el) {
+					    return el.nodeName === "md:FullModel";
+					})[0];
+					let profile = model.getAttribute(fullModel, "md:Model.profile");
+					if (profile.textContent.includes("Equipment")) {
+					    data.eq = parsed;
+					}
+					if (profile.textContent.includes("DiagramLayout")) {
+					    data.dl = parsed;
+					}
+				    }
+				    if (typeof(data.eq) !== "undefined" && typeof(data.dl) !== "undefined") {
+					model.buildModel(data, callback);
+				    }
 				});
 			});
 		    });
@@ -53,7 +68,7 @@ function cimDiagramModel() {
 			callback(error);
 			return;
 		    }
-		    model.buildModel(data, callback);
+		    model.buildModel({all: data}, callback);
 		});
 	    } else {
 		callback(null);
@@ -69,8 +84,9 @@ function cimDiagramModel() {
 	    model.schemaLinksMap = new Map();
 
 	    // build a map (UUID)->(object) and a map (link name, target UUID)->(source objects)
-	    for (let i in data.children[0].children) {
-		let object = data.children[0].children[i];
+	    let allObjects = model.getAllObjects();
+	    for (let i in allObjects) {
+		let object = allObjects[i];
 		if (typeof(object.attributes) === "undefined") {
 		    continue;
 		}
@@ -107,13 +123,12 @@ function cimDiagramModel() {
 	// serialize the current CIM file.
 	save() {
 	    let oSerializer = new XMLSerializer();
-	    let sXML = oSerializer.serializeToString(model.data);
+	    let sXML = oSerializer.serializeToString(model.data.all);
 	    return sXML;
 	},
 
 	// serialize the current diagram.
 	export() {
-	    let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2010/CIM-schema-cim15#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
 	    let parser = new DOMParser();
 	    let data = parser.parseFromString(emptyFile, "application/xml");
 	    // fill the file
@@ -349,7 +364,11 @@ function cimDiagramModel() {
 
 	// get all objects (doesn't filter by diagram).
 	getAllObjects() {
-	    return model.data.children[0].children;
+	    let ret = [];
+	    for (let i of Object.keys(model.data)) {
+		ret = ret.concat([...model.data[i].children[0].children]);
+	    }
+	    return ret;
 	},
 
 	// get an object given its UUID.
@@ -379,7 +398,7 @@ function cimDiagramModel() {
 	    if (typeof(attribute) !== "undefined") {
 		attribute.innerHTML = value;
 	    } else {
-		attribute = model.data.createElement(attrName);
+		attribute = object.ownerDocument.createElement(attrName);
 		attribute.innerHTML = value;
 		object.appendChild(attribute);
 	    }
@@ -541,10 +560,24 @@ function cimDiagramModel() {
 	    }
 	},
 
+	// get the document for the given CIM object
+	getDocument(cimObjName) {
+	    if (typeof(model.data.all) !== "undefined") {
+		return model.data.all;
+	    }
+	    // can be Diagram Layout or Equipment
+	    if (["cim:Diagram", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(cimObjName) > -1) {
+		return model.data.dl;
+	    } else {
+		return model.data.eq;
+	    }
+	},
+
 	cimObject(name) {
-	    let obj = model.data.createElementNS("http://iec.ch/TC57/2010/CIM-schema-cim15#", name);
-	    model.data.children[0].appendChild(obj);
-	    let objID = model.data.createAttribute("rdf:ID");
+	    let document = getDocument(name);
+	    let obj = document.createElementNS(cimNS, name);
+	    document.children[0].appendChild(obj);
+	    let objID = document.createAttribute("rdf:ID");
 	    objID.nodeValue = generateUUID();
 	    obj.setAttributeNode(objID);
 	    model.dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
@@ -613,8 +646,8 @@ function cimDiagramModel() {
 	    if (graph.length > 0) {
 		return;
 	    }
-	    let link = model.data.createElementNS("http://iec.ch/TC57/2010/CIM-schema-cim15#", linkName);
-	    let linkValue = model.data.createAttribute("rdf:resource");
+	    let link = source.ownerDocument.createElementNS(cimNS, linkName);
+	    let linkValue = source.ownerDocument.createAttribute("rdf:resource");
 	    linkValue.nodeValue = "#";
 	    link.setAttributeNode(linkValue);
 	    source.appendChild(link);
