@@ -41,7 +41,9 @@
     </div>    
     <script>
      "use strict";
-     const SWITCH_HEIGHT = 16; // height of switches elements
+     const SWITCH_HEIGHT = 16; // height of switch elements
+     const GEN_HEIGHT = 50;    // height of generator elements
+     const TRAFO_HEIGHT = 50;  // height of transformer elements
      let self = this;
      self.model = opts.model;
 
@@ -221,11 +223,7 @@
 		     }
 		 }
 	     }
-	     if (object.nodeName === "cim:PowerTransformer") {
-		 self.createTerminals(selection, 50);
-	     } else {
-		 self.createTerminals(selection);
-	     }
+	     self.createTerminals(selection);
 	 }
      });
 
@@ -361,26 +359,26 @@
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn acline terminals";
 	 // breaker terminals
-	 self.createTerminals(breakerEnter, SWITCH_HEIGHT);
+	 self.createTerminals(breakerEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn breaker terminals";
 	 // disconnector terminals
-	 self.createTerminals(discEnter, SWITCH_HEIGHT);
+	 self.createTerminals(discEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn disconnector terminals";
 	 // load break switch terminals
-	 self.createTerminals(lbsEnter, SWITCH_HEIGHT);
+	 self.createTerminals(lbsEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn load break switch terminals";
 	 // jumper terminals
-	 self.createTerminals(jumpsEnter, SWITCH_HEIGHT);
+	 self.createTerminals(jumpsEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn jumper terminals";
 	 // junction terminals
-	 self.createTerminals(junctsEnter, SWITCH_HEIGHT);
+	 self.createTerminals(junctsEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn junction terminals";
 	 // energy source terminals
-	 termSelection = self.createTerminals(ensrcEnter, 50);
+	 termSelection = self.createTerminals(ensrcEnter);
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy source terminals";
 	 // synchronous machine terminals
-	 termSelection = self.createTerminals(syncEnter, 50);
+	 termSelection = self.createTerminals(syncEnter);
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machine terminals";
 	 // energy consumer terminals
@@ -396,7 +394,7 @@
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn non conform load terminals";
 	 // power transformer terminals
-	 termSelection = self.createTerminals(trafoEnter, 50);
+	 termSelection = self.createTerminals(trafoEnter);
 	 self.createMeasurements(termSelection);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformer terminals";
 
@@ -942,9 +940,31 @@
 	 d.rotation = 0;
      }
 
-     createTerminals(eqSelection, heigth) {
-	 if (arguments.length === 1) {
-	     heigth = 30;
+     // Adds terminals to the objects contained in the selection.
+     // The elements must all be of the same type (e.g. switches, loads...)
+     createTerminals(eqSelection) {
+	 let height = 30;
+	 let objType = "none";
+	 if (eqSelection.size() > 0) {
+	     objType = eqSelection.data()[0].nodeName;
+	 }
+	 switch (objType) {
+	     case "cim:Breaker":
+	     case "cim:Disconnector":
+	     case "cim:LoadBreakSwitch":
+	     case "cim:Jumper":
+	     case "cim:Junction":
+		 height = SWITCH_HEIGHT;
+		 break;
+	     case "cim:EnergySource":
+	     case "cim:SynchronousMachine":
+		 height = GEN_HEIGHT;
+		 break;
+	     case "cim:PowerTransformer":
+		 height = TRAFO_HEIGHT;
+		 break;
+	     default:
+		 height = 30;
 	 }
 	 let allEdges = [];
 	 let termSelection = eqSelection.selectAll("g")
@@ -969,7 +989,7 @@
 					    let eqY = d3.select(this.parentNode).datum().y;
 					    if (lineData.length === 1) {
 						start = {x:0, y:0};
-						end = {x:0, y:heigth};
+						end = {x:0, y:height};
 					    }
 
 					    let eqRot = d3.select(this.parentNode).datum().rotation;
@@ -1000,7 +1020,7 @@
 					    } else {
 						if (lineData.length === 1) {
 						    d.x = eqX;
-						    d.y = eqY + heigth*i;						    
+						    d.y = eqY + height*i;						    
 						} else {
 						    d.x = eqX + start.x*(1-i)+end.x*i;
 						    d.y = eqY + start.y*(1-i)+end.y*i;

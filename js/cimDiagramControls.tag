@@ -76,14 +76,23 @@
 	 {
 	     title: 'Delete',
 	     action: function(elm, d, i) {
-		 let selection = d3.select(elm);
+		 if (selected.indexOf(elm) === -1) {
+		     self.deselectAll();
+		     selected.push(elm);
+		     self.parent.hover(elm);
+		 }
+		 quadtree.removeAll(selected); // update quadtree
+		 let selection = d3.selectAll(selected);
+		 
 		 let terminals = opts.model.getTerminals(selection.data());
 		 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
 		     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
 		 }).remove();
 		 selection.remove();
 		 // delete from model
-		 opts.model.deleteObject(selection.datum());
+		 for (let datum of selection.data()) {
+		     opts.model.deleteObject(datum);
+		 }
 	     }
 	 },
 	 {
@@ -217,6 +226,11 @@
 	 self.disableConnect();
 	 self.disableAdd();
      }
+
+     deselectAll() {
+	 selected = [];
+	 d3.select("svg").selectAll("svg > g.diagram > g > g").selectAll("rect").remove();
+     }
      
      enableDrag() {
 	 self.disableDrag();
@@ -225,13 +239,12 @@
 	 self.status = "DRAG";
 	 let drag = d3.drag()
 		      .on("drag.start", function(d) {
-			  let dNode = d3.select(this).node();
-			  if (selected.indexOf(dNode) === -1) {
-			      deselectAll();
+			  if (selected.indexOf(this) === -1) {
+			      self.deselectAll();
 			  }
 			  if (selected.length === 0) {
-			      selected.push(dNode);
-			      self.parent.hover(dNode);
+			      selected.push(this);
+			      self.parent.hover(this);
 			  }
 			  quadtree.removeAll(selected); // update quadtree
 		      })
@@ -252,11 +265,8 @@
 			  quadtree.addAll(selected); // update quadtree
 		      });
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
-	 d3.select("svg").select("g.brush").call(d3.brush().on("start", deselectAll).on("end", selectInsideBrush));
-	 function deselectAll() {
-	     selected = [];
-	     d3.select("svg").selectAll("svg > g.diagram > g > g").selectAll("rect").remove();
-	 };
+	 d3.select("svg").select("g.brush").call(d3.brush().on("start", self.deselectAll).on("end", selectInsideBrush));
+
 	 function selectInsideBrush() {
 	     // hide the brush
 	     d3.select("svg").select("g.brush").selectAll("*:not(.overlay)").style("display", "none");

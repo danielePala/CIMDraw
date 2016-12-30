@@ -443,14 +443,19 @@ function cimDiagramModel() {
 	deleteObject(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
 	    // all the links to 'object' must be deleted
+	    let linksToDelete = [];
 	    let objsToDelete = [];
 	    for (let [linkAndTarget, sources] of model.linksMap) {
 		let linkName = "cim:" + linkAndTarget.split("#")[0];
 		// delete links pointing to 'object'
 		if (linkAndTarget.endsWith(objUUID)) { 
 		    for (let source of sources) {
-			model.removeLink(source, linkName, object);
-			if (["cim:Terminal", "cim:DiagramObjectPoint"].indexOf(source.nodeName) > -1) {
+			linksToDelete.push({s: source, l: linkName, t: object});
+			//model.removeLink(source, linkName, object);
+			if ("cim:Terminal" === source.nodeName && object.nodeName !== "cim:ConnectivityNode") {
+			    objsToDelete.push(source);
+			}
+			if ("cim:DiagramObjectPoint" === source.nodeName) {
 			    objsToDelete.push(source);
 			}
 			// this check is to avoid infinite recursion
@@ -464,8 +469,12 @@ function cimDiagramModel() {
 		// delete links of 'object'
 		if (sources.indexOf(object) > -1) {
 		    let target = model.dataMap.get("#" + linkAndTarget.split("#")[1]);
-		    model.removeLink(object, linkName, target);
-		    if (["cim:Terminal", "cim:DiagramObjectPoint"].indexOf(target.nodeName) > -1) {
+		    linksToDelete.push({s: object, l: linkName, t: target});
+		    //model.removeLink(object, linkName, target);
+		    if ("cim:Terminal" === target.nodeName && object.nodeName !== "cim:ConnectivityNode") {
+			objsToDelete.push(target);
+		    }
+		    if ("cim:DiagramObjectPoint" === target.nodeName) {
 			objsToDelete.push(target);
 		    }
 		    // this check is to avoid infinite recursion
@@ -475,6 +484,9 @@ function cimDiagramModel() {
 			}
 		    }
 		}
+	    }
+	    for (let linkToDelete of linksToDelete) {
+		model.removeLink(linkToDelete.s, linkToDelete.l, linkToDelete.t);
 	    }
 	    for (let objToDelete of objsToDelete) {
 		model.deleteObject(objToDelete);
@@ -680,10 +692,10 @@ function cimDiagramModel() {
 		// the link may be many-valued
 		for (let linkEntry of link) {
 		    let targetUUID = linkEntry.attributes.getNamedItem("rdf:resource").value;
-		    if (targetUUID === target.attributes.getNamedItem("rdf:ID").value) {
-			linkEntry.remove();
-			let linksMapKey = link.nodeName + targetUUID;
+		    if (targetUUID === "#" + target.attributes.getNamedItem("rdf:ID").value) {
+			let linksMapKey = linkEntry.localName + targetUUID;
 			let linksMapValue = model.linksMap.get(linksMapKey);
+			linkEntry.remove();
 			if (linksMapValue.length === 1) {
 			    model.linksMap.delete(linksMapKey);
 			} else {
