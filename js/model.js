@@ -574,7 +574,7 @@ function cimDiagramModel() {
 	},
 
 	cimObject(name) {
-	    let document = getDocument(name);
+	    let document = model.getDocument(name);
 	    let obj = document.createElementNS(cimNS, name);
 	    document.children[0].appendChild(obj);
 	    let objID = document.createAttribute("rdf:ID");

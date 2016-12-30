@@ -160,42 +160,53 @@
 	   }
 	   // trap the ctrl key being pressed
 	   if (d3.event.ctrlKey) {
-	       self.disableAll();
+	       //self.disableAll();
+	       self.disableDrag();
+	       self.disableZoom();
+	       self.disableForce();
+	       self.disableConnect();
 	       self.enableZoom();
 	   }
        })
        .on("keyup", function() {
 	   self.disableZoom();
-	   if (self.status === "DRAG") {
-	       if (d3.event.keyCode === 17) { // "Control"
-		   self.enableDrag();
-	       }
-	   }
-	   if (self.status === "FORCE") {
-	       if (d3.event.keyCode === 17) { // "Control"
-		   self.enableForce();
-	       }
-	   }
-	   if (self.status === "CONNECT") {
-	       if (d3.event.keyCode === 27) { // "Escape"
-		   d3.select("svg").on("mousemove", null);
-		   d3.select("svg").selectAll("svg > path").attr("d", null);
-		   d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
-		   termToChange = undefined;
-	       }
-	       if (d3.event.keyCode === 17) { // "Control"
-		   self.enableConnect();
-	       }
-	   }
-	   if (self.status === "cim:ACLineSegment") {
-	       if (d3.event.keyCode === 17) { // "Control"
-		   self.enableAddACLine();
-	       }
-	   }
-	   if (self.status === "cim:Breaker") {
-	       if (d3.event.keyCode === 17) { // "Control"
-		   self.enableAddBreaker();
-	       }
+	   switch(self.status) {
+	       case"DRAG":
+		   if (d3.event.keyCode === 17) { // "Control"
+		       self.enableDrag();
+		   }
+		   break;
+	       case "FORCE":
+		   if (d3.event.keyCode === 17) { // "Control"
+		       self.enableForce();
+		   }
+		   break;
+	       case "CONNECT":
+		   if (d3.event.keyCode === 27) { // "Escape"
+		       d3.select("svg").on("mousemove", null);
+		       d3.select("svg").selectAll("svg > path").attr("d", null);
+		       d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
+		       termToChange = undefined;
+		   }
+		   if (d3.event.keyCode === 17) { // "Control"
+		       self.enableConnect();
+		   }
+		   break;
+               case "cim:BusbarSection":
+		   if (d3.event.keyCode === 17) { // "Control"
+		       self.enableAddBusbar();
+		   }
+		   break;
+	       case "cim:ACLineSegment":
+		   if (d3.event.keyCode === 17) { // "Control"
+		       self.enableAddACLine();
+		   }
+		   break;
+	       case "cim:Breaker":
+		   if (d3.event.keyCode === 17) { // "Control"
+		       self.enableAddBreaker();
+		   }
+		   break;
 	   }
        });
 
@@ -476,7 +487,7 @@
 	  }
      }
 
-     // test to draw multi-segment objects
+     // draw multi-segment objects
      enableAddMulti(type, text) {
 	 self.disableAll();
 	 d3.select(self.root).selectAll("label").classed("active", false);
@@ -510,6 +521,38 @@
 		     lineData.push({x: m[0], y: m[1]});
 		     return line(lineData);
 		 });
+		 // highlight when aligned
+		 let last = newObject.lineData[newObject.lineData.length - 1];
+		 let newx = ((m[0] - transform.x) / transform.k) - newObject.x;
+		 let newy = ((m[1] - transform.y) / transform.k) - newObject.y;
+		 let hG = d3.select("svg").select("g.diagram-highlight");
+		 if (newx === last.x) {
+		     let height = parseInt(d3.select("svg").style("height"));
+		     hG.append("svg:line")
+			  .attr("class", "highlight")
+			  .attr("x1", m[0]) 
+			  .attr("y1", 0)
+			  .attr("x2", m[0]) 
+			  .attr("y2", height)
+			  .style("stroke", "red")
+			  .style("stroke-width", 1);
+		     
+		 } else {
+		     if (newy === last.y) {
+			 let width = parseInt(d3.select("svg").style("width"));
+			 hG.append("svg:line")
+			      .attr("class", "highlight")
+			      .attr("x1", 0)
+			      .attr("y1", m[1])
+			      .attr("x2", width)
+			      .attr("y2", m[1])
+			      .style("stroke", "red")
+			      .style("stroke-width", 1);
+		     } else {
+			 hG.selectAll(".highlight").remove();
+		     }
+		 }
+
 	     }
 	     
 	     if (self.status === type) {
@@ -528,29 +571,13 @@
 		 newObject.lineData = [{x: 0, y: 0, seq: 1}];
 		 self.status = "drawing"
 	     } else {
-		 let m = d3.mouse(d3.select("svg").node());
-		 let transform = d3.zoomTransform(d3.select("svg").node());
-		 let xoffset = transform.x;
-		 let yoffset = transform.y;
-		 let svgZoom = transform.k;
-		 let newx = ((m[0] - xoffset) / svgZoom) - newObject.x;
-		 let newy = ((m[1] - yoffset) / svgZoom) - newObject.y;
-		 let newSeq = newObject.lineData.length + 1;
-		 newObject.lineData.push({x: newx, y: newy, seq: newSeq});
+		 addNewPoint(newObject);
 	     }
 	 };
 	 
 	 function finish() {
 	     d3.event.preventDefault();
-	     let m = d3.mouse(d3.select("svg").node());
-	     let transform = d3.zoomTransform(d3.select("svg").node());
-	     let xoffset = transform.x;
-	     let yoffset = transform.y;
-	     let svgZoom = transform.k;
-	     let newx = ((m[0] - xoffset) / svgZoom) - newObject.x;
-	     let newy = ((m[1] - yoffset) / svgZoom) - newObject.y;
-	     let newSeq = newObject.lineData.length + 1;
-	     newObject.lineData.push({x: newx, y: newy, seq: newSeq});
+	     addNewPoint(newObject);
 	     opts.model.addToActiveDiagram(newObject, newObject.lineData);
 	     self.status = type;
 	     d3.select("svg").on("mousemove", null);
@@ -558,6 +585,21 @@
 	     d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
 	     // disable ourselves
 	     d3.select("svg").on("contextmenu.add", null);
+	 };
+
+	 function addNewPoint(newObject) {
+	     let m = d3.mouse(d3.select("svg").node());
+	     let transform = d3.zoomTransform(d3.select("svg").node());
+	     let xoffset = transform.x;
+	     let yoffset = transform.y;
+	     let svgZoom = transform.k;
+	     let newx = ((m[0] - xoffset) / svgZoom) - newObject.x;
+	     let newy = ((m[1] - yoffset) / svgZoom) - newObject.y;
+	     let newSeq = newObject.lineData.length + 1;		 
+	     newObject.lineData.push({x: newx, y: newy, seq: newSeq});
+	     // remove highlight
+	     let hG = d3.select("svg").select("g.diagram-highlight");
+	     hG.selectAll(".highlight").remove();
 	 };
      }
 

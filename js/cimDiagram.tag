@@ -28,10 +28,12 @@
     
     <cimDiagramControls model={model}></cimDiagramControls>
     <div class="app-diagram">	
-	<svg width="1200" height="800">
+	<svg width="1200" height="800" style="border: 1px solid black;">
 	    <path stroke-width="1" stroke="black" fill="none"></path>
 	    <circle r="3.5" cy="-10" cx="-10"></circle>
 	    <g class="brush"></g>
+	    <g class="diagram-grid"></g>
+	    <g class="diagram-highlight"></g>
 	    <g class="diagram">
 		<g class="edges"></g>
 	    </g>
@@ -62,6 +64,8 @@
 	 let xAxis = d3.axisBottom(xScale);
 	 d3.select("svg").append("g").attr("id", "yAxisG").call(yAxis);
 	 d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
+	 // draw grid
+	 self.drawGrid(1.0);
      });
      
      // listen to 'transform' event
@@ -79,7 +83,9 @@
 	 let xAxis = d3.axisBottom(xScale);
 	 d3.select("svg").select("#yAxisG").call(yAxis);
 	 d3.select("svg").select("#xAxisG").call(xAxis);
-
+	 // update grid
+	 self.drawGrid(newZoom);
+	 
 	 //self.updateEdges(newx, newy, newZoom);
      });
 
@@ -1464,18 +1470,18 @@
 			  let lineData = [lineSource, tarRot];
 			  return line(lineData);
 		      });	     
+
+	 function rotateTerm(term) {
+	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source)[0];
+	     let baseX = equipment.x; 
+	     let baseY = equipment.y; 	     
+	     let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);
+	     let newX = baseX + cRot.x;
+	     let newY = baseY + cRot.y;
+	     return {x: newX, y: newY};
+	 };
      }
      
-     function rotateTerm(term) {
-	 let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source)[0];
-	 let baseX = equipment.x; 
-	 let baseY = equipment.y; 	     
-	 let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);
-	 let newX = baseX + cRot.x;
-	 let newY = baseY + cRot.y;
-	 return {x: newX, y: newY};
-     }
-
      /** rotate a point of a given amount (in degrees) */
      rotate(p, rotation) {
 	 let svgroot = d3.select("svg").node();
@@ -1495,6 +1501,37 @@
 	     dy = p1.y - p2.y; 
 	 return dx * dx + dy * dy;
      }
+
+          // draw the diagram grid
+     drawGrid(zoom) {
+	 let width = parseInt(d3.select("svg").style("width"))/zoom;
+	 let height = parseInt(d3.select("svg").style("height"))/zoom;
+	 let gridG = d3.select("svg").select("g.diagram-grid");
+	 gridG.selectAll("*").remove();
+	 const spacing = 25;
+	 for (let j=spacing; j <= height-spacing; j=j+spacing) {
+	     gridG.append("svg:line")
+		  .attr("x1", 0)
+		  .attr("y1", j)
+		  .attr("x2", width)
+		  .attr("y2", j)
+		  .attr("stroke-dasharray", "1, 5")
+		  .style("stroke", "rgb(6,120,155)")
+		  .style("stroke-width", 1);
+	 };
+	 for (let j=spacing; j <= width-spacing; j=j+spacing) {
+	     gridG.append("svg:line")
+		  .attr("x1", j)
+		  .attr("y1", 0)
+		  .attr("x2", j)
+		  .attr("y2", height)
+		  .attr("stroke-dasharray", "1, 5")
+		  .style("stroke", "rgb(6,120,155)")
+		  .style("stroke-width", 1);
+	 };
+	 gridG.attr("transform", "scale(" + zoom + ")");
+     }
+
     </script>
 
 </cimDiagram>
