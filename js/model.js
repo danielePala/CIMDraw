@@ -228,6 +228,8 @@ function cimDiagramModel() {
 	    })[0];
 	},
 
+	// Get all the attributes associated to a given type.
+	// The type is without namespace, e.g. "Breaker".
 	getSchemaAttributes(type) {
 	    let ret = model.schemaAttributesMap.get(type);
 	    if (typeof(ret) === "undefined") {
@@ -254,6 +256,13 @@ function cimDiagramModel() {
 	    }
 	    
 	    return ret;
+	},
+
+	// Get a specific attribute associated to a given type.
+	// The type is without namespace, e.g. "Breaker".
+	getSchemaAttribute(type, attrName) {
+	    let schemaAttributes = model.getSchemaAttributes(type);
+	    return schemaAttributes.filter(el => el.attributes[0].value === attrName)[0];
 	},
 
 	getSchemaLinks(type) {
