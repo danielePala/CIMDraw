@@ -161,6 +161,16 @@
 	 }
      });
 
+     self.parent.on("transform", function() {
+         /*let transform = d3.zoomTransform(d3.select("svg").node());
+	 path.attr("d", function() {
+	     let newx = (termToChange.x*transform.k) + transform.x;
+	     let newy = (termToChange.y*transform.k) + transform.y;
+	     return line([{x: newx, y: newy}, {x: m[0], y: m[1]}]);
+	 });
+	 */
+     });
+
      // modality for drag+zoom
      d3.select("body")
        .on("keydown", function() {
@@ -173,7 +183,7 @@
 	       self.disableDrag();
 	       self.disableZoom();
 	       self.disableForce();
-	       self.disableConnect();
+	       //self.disableConnect();
 	       self.enableZoom();
 	   }
        })
@@ -350,7 +360,7 @@
 
      zooming() {
 	 d3.select("svg").select("g.diagram").attr("transform", d3.event.transform);
-	 this.parent.trigger("transform");
+	 self.parent.trigger("transform");
      }
 
      enableConnect() {

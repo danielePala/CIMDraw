@@ -111,7 +111,7 @@ function cimDiagramModel() {
 	    // let's read schema files
 	    let rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
 	    let rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
-	    d3.xml(rdfsEQ, function(schemaDataEQ) {
+	    d3.xml(rdfsEQ, function(error, schemaDataEQ) {
 		model.schemaDataEQ = schemaDataEQ;
 		d3.xml(rdfsDL, function(schemaDataDL) {
 		    model.schemaDataDL = schemaDataDL;
@@ -262,7 +262,7 @@ function cimDiagramModel() {
 	// The type is without namespace, e.g. "Breaker".
 	getSchemaAttribute(type, attrName) {
 	    let schemaAttributes = model.getSchemaAttributes(type);
-	    return schemaAttributes.filter(el => el.attributes[0].value === attrName)[0];
+	    return schemaAttributes.filter(el => el.attributes[0].value.substring(1) === attrName)[0];
 	},
 
 	getSchemaLinks(type) {

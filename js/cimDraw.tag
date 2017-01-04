@@ -40,6 +40,7 @@
 		</div>
 	    </div>
 
+	    <!-- File input plugin -->
 	    <div class="row center-block">
 		<div class="col-md-12" id="cim-file-input-container">
 		    <form enctype="multipart/form-data" method="POST">
@@ -158,12 +159,18 @@
 	     d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
 	     d3.select("#cim-filename").html("");    
 	     $(".selectpicker").selectpicker("refresh");
+	     // initialize the fileinput component
 	     $("#cim-file-input").fileinput();
+	     // what to do when the user loads a file
 	     $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {	    
 		 cimFile = file;
 		 cimFileReader = reader;
 		 $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
 		 $("#cim-load-container").show();
+	     });
+	     // sometimes we must hide the 'load file' button
+	     $('#cim-file-input').on('fileclear', function(event) {
+	         $("#cim-load-container").hide();
 	     });
 	 });
 
