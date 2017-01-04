@@ -120,63 +120,64 @@ function cimDiagramModel() {
 	    });
 	},
 
-	// serialize the current CIM file.
+	// Serialize the current CIM file.
 	save() {
 	    let oSerializer = new XMLSerializer();
 	    let sXML = oSerializer.serializeToString(model.data.all);
 	    return sXML;
 	},
 
-	// serialize the current diagram.
+	// Serialize the current diagram. Nodes are cloned, otherwise they would
+	// be removed from the original document.
 	export() {
 	    let parser = new DOMParser();
 	    let data = parser.parseFromString(emptyFile, "application/xml");
 	    // fill the file
-	    data.children[0].appendChild(model.activeDiagram);
+	    data.children[0].appendChild(model.activeDiagram.cloneNode(true));
 	    let allDiagramObjects = model.getGraph([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
 	    for (let diagramObject of allDiagramObjects) {
-		data.children[0].appendChild(diagramObject);
+		data.children[0].appendChild(diagramObject.cloneNode(true));
 	    }
 	    let allEquipments = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects").map(el => el.source);
 	    for (let equipment of allEquipments) {
-		data.children[0].appendChild(equipment);
+		data.children[0].appendChild(equipment.cloneNode(true));
 	    }
 	    let allDiagramObjectPoints = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
 	    for (let diagramObjectPoint of allDiagramObjectPoints) {
-		data.children[0].appendChild(diagramObjectPoint);
+		data.children[0].appendChild(diagramObjectPoint.cloneNode(true));
 	    }
 	    let allTerminals = model.getTerminals(allEquipments);
 	    for (let terminal of allTerminals) {
-		data.children[0].appendChild(terminal);
+		data.children[0].appendChild(terminal.cloneNode(true));
 	    }
 	    let allConnectivityNodes = model.getConnectivityNodes();
 	    for (let connectivityNode of allConnectivityNodes) {
-		data.children[0].appendChild(connectivityNode);
+		data.children[0].appendChild(connectivityNode.cloneNode(true));
 	    }
 	    let allSubstations = model.getEquipmentContainers("cim:Substation");
 	    for (let substation of allSubstations) {
-		data.children[0].appendChild(substation);
+		data.children[0].appendChild(substation.cloneNode(true));
 	    }
 	    let allLines = model.getEquipmentContainers("cim:Line");
 	    for (let line of allLines) {
-		data.children[0].appendChild(line);
+		data.children[0].appendChild(line.cloneNode(true));
 	    }
 	    let allBaseVoltages = model.getGraph(allEquipments, "ConductingEquipment.BaseVoltage", "BaseVoltage.ConductingEquipment").map(el => el.source)
 	    for (let baseVoltage of allBaseVoltages) {
-		data.children[0].appendChild(baseVoltage);
+		data.children[0].appendChild(baseVoltage.cloneNode(true));
 	    }
 	    let allTrafoEnds = model.getGraph(allEquipments, "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer").map(el => el.source);
 	    for (let trafoEnd of allTrafoEnds) {
-		data.children[0].appendChild(trafoEnd);
+		data.children[0].appendChild(trafoEnd.cloneNode(true));
 	    }
 	    // TODO: measurements can also be tied to power system resources (e.g. busbars), not only terminals
 	    let allMeasurements = model.getGraph(allTerminals, "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
 	    for (let measurement of allMeasurements) {
-		data.children[0].appendChild(measurement);
+		data.children[0].appendChild(measurement.cloneNode(true));
 	    }
 	    let allAnalogValues = model.getGraph(allMeasurements, "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source);
 	    for (let analogValue of allAnalogValues) {
-		data.children[0].appendChild(analogValue);
+		data.children[0].appendChild(analogValue.cloneNode(true));
 	    }
 	    
 	    var oSerializer = new XMLSerializer();
