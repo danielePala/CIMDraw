@@ -57,7 +57,6 @@
     <script>
      "use strict";
      let self = this;
-     let termToChange = undefined;
      let quadtree = d3.quadtree();
      let selected = [];
      let menu = [
@@ -149,7 +148,7 @@
 	 $("#cim-diagram-elements").show();
      });
 
-     // listen to 'addToDiagram' event 
+     // listen to 'addToDiagram' event from parent 
      self.parent.on("addToDiagram", function(selection) {
 	 if (selection.size() === 1) {
 	     quadtree.add(selection.node()); // update the quadtree
@@ -161,14 +160,39 @@
 	 }
      });
 
+     // Listen to 'transform' event from parent.
+     // Needed if zooming while connecting objects or drawing multi-lines.
      self.parent.on("transform", function() {
-         /*let transform = d3.zoomTransform(d3.select("svg").node());
+	 let pathData = d3.select("svg > path").datum();
+	 if (typeof(pathData) === "undefined") {
+	     return;
+	 }
+	 let line = d3.line()
+		      .x(function(d) { return d.x; })
+		      .y(function(d) { return d.y; });
+	 let path = d3.select("svg > path");
+         let transform = d3.zoomTransform(d3.select("svg").node());
+	 let circleTr = d3.select("svg > circle").node().transform.baseVal.consolidate();
+	 if (circleTr === null) {
+	     return;
+	 }
+	 let circleMatrix = circleTr.matrix;
+	 let cx = circleMatrix.e - 10;
+	 let cy = circleMatrix.f - 10;
+	 let lineData = [];
+	 if (typeof(pathData.lineData) === "undefined") {
+	     lineData.push({x: ((pathData.x)*transform.k) + transform.x,
+			    y: ((pathData.y)*transform.k) + transform.y});
+	 } else {
+	     for (let linePoint of pathData.lineData) {
+		 lineData.push({x: ((linePoint.x+pathData.x)*transform.k) + transform.x,
+				y: ((linePoint.y+pathData.y)*transform.k) + transform.y});
+	     }
+	 }
+	 lineData.push({x: cx, y: cy});
 	 path.attr("d", function() {
-	     let newx = (termToChange.x*transform.k) + transform.x;
-	     let newy = (termToChange.y*transform.k) + transform.y;
-	     return line([{x: newx, y: newy}, {x: m[0], y: m[1]}]);
+	     return line(lineData);
 	 });
-	 */
      });
 
      // modality for drag+zoom
@@ -205,7 +229,7 @@
 		       d3.select("svg").on("mousemove", null);
 		       d3.select("svg").selectAll("svg > path").attr("d", null);
 		       d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
-		       termToChange = undefined;
+		       d3.select("svg > path").datum(null);
 		   }
 		   if (d3.event.keyCode === 17) { // "Control"
 		       self.enableConnect();
@@ -375,9 +399,9 @@
 		            .y(function(d) { return d.y; });
 	       
 	       let svg = d3.select("svg");
-	       let path = svg.selectAll("svg > path");
-	       let circle = svg.selectAll("svg > circle");
-	       
+	       let path = d3.select("svg > path");
+	       let circle = d3.select("svg > circle");
+	       let termToChange = path.datum();
 	       // TEST: directly connect terminals
 	       if (typeof(termToChange) !== "undefined") {
 		   let cn = opts.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
@@ -398,12 +422,12 @@
 		   let schemaLinkName = "cim:" + schemaLink.attributes[0].value.substring(1);
 		   opts.model.setLink(termToChange, schemaLinkName, cn);
 		   opts.model.setLink(d, schemaLinkName, cn);
-		   termToChange = undefined;
+		   path.datum(null);
 		   return;
 	       }
 
 	       svg.on("mousemove", mousemoved);
-	       termToChange = d;
+	       path.data([d]);
 	       function mousemoved() {
 		   let m = d3.mouse(this);
 		   let transform = d3.zoomTransform(d3.select("svg").node());
@@ -423,6 +447,7 @@
 	   .on("click", function (d) {
 	       d3.select("svg").selectAll("svg > path").attr("d", null);
 	       d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
+	       let termToChange = d3.select("svg > path").datum();
 	       if (typeof(termToChange) !== "undefined") {
 		   d3.select("svg").on("mousemove", null);
 		   // update the model
@@ -430,7 +455,7 @@
 		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
 		   let schemaLinkName = "cim:" + schemaLink.attributes[0].value.substring(1);
 		   opts.model.setLink(termToChange, schemaLinkName, d);
-		   termToChange = undefined;
+		   d3.select("svg > path").datum(null);
 	       }
 	   });
      }
@@ -440,6 +465,15 @@
 	   .on("click", null);
 	 d3.select("svg").selectAll("svg > g.diagram > g.ConnectivityNodes > g.ConnectivityNode")
 	   .on("click", null);
+	 d3.select("svg").on("mousemove", null);
+	 d3.select("svg > path").attr("d", null);
+	 d3.select("svg > circle").attr("transform", "translate(0, 0)");
+	 let datum = d3.select("svg > path").datum();
+	 if (typeof(datum) !== "undefined") {
+	     if (datum.nodeName === "cim:Terminal") {
+		 d3.select("svg > path").datum(null);
+	     }
+	 }
      }
 
      enableAddACLine() {
@@ -532,6 +566,7 @@
 		     let mousey = m[1] + 10;
 		     return "translate(" + mousex + "," + mousey +")";
 		 });
+		 path.data([newObject]);
 		 path.attr("d", function() {
 		     let lineData = [];
 		     for (let linePoint of newObject.lineData) {
@@ -543,8 +578,8 @@
 		 });
 		 // highlight when aligned
 		 let last = newObject.lineData[newObject.lineData.length - 1];
-		 let newx = ((m[0] - transform.x) / transform.k) - newObject.x;
-		 let newy = ((m[1] - transform.y) / transform.k) - newObject.y;
+		 let newx = Math.round((m[0] - transform.x) / transform.k) - newObject.x;
+		 let newy = Math.round((m[1] - transform.y) / transform.k) - newObject.y;
 		 let hG = d3.select("svg").select("g.diagram-highlight");
 		 if (newx === last.x) {
 		     let height = parseInt(d3.select("svg").style("height"));
@@ -584,9 +619,9 @@
 		 let xoffset = transform.x;
 		 let yoffset = transform.y;
 		 let svgZoom = transform.k;
-		 newObject.x = (m[0] - xoffset) / svgZoom;
+		 newObject.x = Math.round((m[0] - xoffset) / svgZoom);
 		 newObject.px = newObject.x;
-		 newObject.y = (m[1] - yoffset) / svgZoom;
+		 newObject.y = Math.round((m[1] - yoffset) / svgZoom);
 		 newObject.py = newObject.y;
 		 newObject.lineData = [{x: 0, y: 0, seq: 1}];
 		 self.status = "drawing"
@@ -603,6 +638,7 @@
 	     d3.select("svg").on("mousemove", null);
 	     d3.select("svg").selectAll("svg > path").attr("d", null);
 	     d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
+	     d3.select("svg > path").datum(null);
 	     // disable ourselves
 	     d3.select("svg").on("contextmenu.add", null);
 	 };
@@ -613,8 +649,8 @@
 	     let xoffset = transform.x;
 	     let yoffset = transform.y;
 	     let svgZoom = transform.k;
-	     let newx = ((m[0] - xoffset) / svgZoom) - newObject.x;
-	     let newy = ((m[1] - yoffset) / svgZoom) - newObject.y;
+	     let newx = Math.round((m[0] - xoffset) / svgZoom) - newObject.x;
+	     let newy = Math.round((m[1] - yoffset) / svgZoom) - newObject.y;
 	     let newSeq = newObject.lineData.length + 1;		 
 	     newObject.lineData.push({x: newx, y: newy, seq: newSeq});
 	     // remove highlight
@@ -627,6 +663,16 @@
 	 $("#addElement").text("Insert element");
 	 d3.select("svg").on("click.add", null);
 	 d3.select("svg").on("contextmenu.add", null);
+	 d3.select("svg").on("mousemove", null);
+	 d3.select("svg > path").attr("d", null);
+	 d3.select("svg > circle").attr("transform", "translate(0, 0)");
+	 // delete from model
+	 let datum = d3.select("svg > path").datum();
+	 console.log(datum);
+	 if (typeof(datum) !== "undefined") {
+	     opts.model.deleteObject(datum);
+	 }
+	 d3.select("svg > path").datum(null);
      }
 
     </script>
