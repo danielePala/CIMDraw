@@ -66,9 +66,9 @@
 	 // setup search button
 	 $("#cimTreeSearchBtn").on("click", function() {
 	     let searchKey = document.getElementById("cim-search-key").value;
-	     $("#CIMComponents>li>ul").each(function() {
-		 let toShow = $(this).find(">li>a:contains(" + searchKey + ")");
-		 let toHide = $(this).find(">li>a:not(:contains(" + searchKey + "))");
+	     $("ul").each(function() {
+		 let toShow = $(this).find("li.CIM-object>a:contains(" + searchKey + ")");
+		 let toHide = $(this).find("li.CIM-object>a:not(:contains(" + searchKey + "))");
 		 toShow.parent().show();
 		 toHide.parent().hide();
 		 $(this).parent().find(">span").html(toShow.size());
@@ -397,7 +397,7 @@
 		})
 		.enter()
 		.append("li")
-		.attr("class", name);
+		.attr("class", name + " CIM-object");
 	 let cimModel = this.model;
 	 elementTopContainer.append("a")
 			    .attr("class", "btn btn-primary btn-xs")

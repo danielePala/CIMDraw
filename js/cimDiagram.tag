@@ -555,7 +555,7 @@
 			      container: "body",
 			      html: true,
 			      placement: "auto right"
-	     });
+	     }).attr('data-original-title', tooltip);
 	 });
      }
 
