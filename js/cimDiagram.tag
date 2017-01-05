@@ -122,7 +122,8 @@
 	 }
      });
 
-     // listen to 'updateActiveDiagram' event from model
+     // Listen to 'updateActiveDiagram' event from model.
+     // This should replace the calls to 'forceTick' in other components.
      self.model.on("updateActiveDiagram", function(object) {
 	 let selection = null;
 	 switch (object.nodeName) {

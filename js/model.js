@@ -601,6 +601,9 @@ function cimModel() {
 		    dobjs = model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
 		}
 	    }
+	    for (let dobj of dobjs) {
+		model.setAttribute(dobj, "cim:DiagramObject.rotation", object.rotation);
+	    }
 	    let doEdges = model.getDiagramObjectPointGraph(dobjs);
 	    let points = doEdges.map(el => el.target);
 	    if (points.length > 0) {

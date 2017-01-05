@@ -69,7 +69,8 @@
 		     terminal.rotation = terminal.rotation + 90;
 		 });
 		 d.rotation = d.rotation + 90;
-		 self.parent.forceTick(selection);
+		 opts.model.updateActiveDiagram(d, d.lineData);
+		 self.parent.forceTick(selection); // TODO: remove this for flux
 	     }
 	 },
 	 {
@@ -264,7 +265,8 @@
 			      dd.y = dd.y + deltay;
 			      dd.py = dd.y;
 			  }
-			  self.parent.forceTick(d3.selectAll(selected));
+			  opts.model.updateActiveDiagram(d, d.lineData);
+			  self.parent.forceTick(d3.selectAll(selected)); // TODO: remove this for flux
 		      })
 		      .on("drag.end", function(d) {
 			  opts.model.updateActiveDiagram(d, d.lineData);
@@ -319,12 +321,20 @@
 	 let terminals = equipments.selectAll("g.Terminal");
 	 self.d3force = d3.forceSimulation(equipments.data().concat(terminals.data()))
 			  .force("link", d3.forceLink(d3.select("svg").selectAll("svg > g > g.edges > g").data()))
-			  .on("tick", self.parent.forceTick)
+			  .on("tick", updateModel)
 			  .force("charge", d3.forceCollide(5));
 	 d3.select(self.root).selectAll("label:not(#forceLabel)").classed("active", false);
 	 $("#force").click();
 	 self.status = "FORCE";
-	 self.d3force.restart(); 
+	 self.d3force.restart();
+
+	 let elements = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
+	 function updateModel() {
+	     elements.each(function(d) {
+		 opts.model.updateActiveDiagram(d, d.lineData);
+	     });
+	     self.parent.forceTick(); // TODO: remove this for flux
+	 }
      }
 
      disableForce() {
