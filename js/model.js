@@ -455,13 +455,15 @@ function cimModel() {
 	    // all the links to 'object' must be deleted
 	    let linksToDelete = [];
 	    let objsToDelete = [];
+	    // handle connectivity nodes
 	    if (object.nodeName === "cim:ConnectivityNode") {
-		// let's try to get a busbar section
-		let busbars = model.getEquipments(object).filter(el => el.nodeName === "cim:BusbarSection");
-		if (busbars.length > 0) {
-		    objsToDelete = busbars;
-		}
+		objsToDelete = getBusbars(object);
 	    }
+	    // handle busbars
+	    if (object.nodeName === "cim:BusbarSection") {
+		objsToDelete = getConnectivityNode(object);
+	    }
+	    
 	    for (let [linkAndTarget, sources] of model.linksMap) {
 		let linkName = "cim:" + linkAndTarget.split("#")[0];
 		// delete links of 'object'
@@ -519,6 +521,30 @@ function cimModel() {
 		    }
 		}
 		return false;
+	    };
+
+	    // functions to navigate busbars <-> connectivity nodes.
+	    // these are internal to this function, since they don't
+	    // filter by diagram, while in all other situations you
+	    // want that filter.
+	    function getConnectivityNode(busbar) {
+		if (busbar.nodeName === "cim:BusbarSection") {
+		    let terminal = model.getGraph([busbar], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment").map(el => el.source);
+		    let cn = model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source);
+		    return cn;		
+		}
+		return [];
+	    };
+
+	    function getBusbars(connectivityNode) {
+		if (connectivityNode.nodeName === "cim:ConnectivityNode") {
+		    let cnTerminals = model.getGraph([connectivityNode], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode").map(el => el.source);
+		    // let's try to get some equipment
+		    let equipments = model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+		    let busbars = equipments.filter(el => el.nodeName === "cim:BusbarSection");
+		    return busbars;
+		}
+		return [];
 	    };
 
 	    model.trigger("deleteObject", objUUID);
@@ -876,6 +902,8 @@ function cimModel() {
 	    return doEdges;
 	},
 
+	// Get the equipments in the current diagram associated to the
+	// given connectivity node.
 	getEquipments(connectivityNode) {
 	    let edges = model.getGraph([connectivityNode], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
 	    let cnTerminals = edges.map(el => el.target);

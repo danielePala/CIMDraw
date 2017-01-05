@@ -25,27 +25,27 @@
 			    <span id="addElement">Insert element</span>
 			    <span class="caret"></span>
 			</button>
-			<ul class="dropdown-menu">
+			<ul class="dropdown-menu" id="cimElementList">
 			    <li class="dropdown-header">Busses</li>
-			    <li id="addBusbar" onclick={enableAddBusbar}><a>Node</a></li>
+			    <li id="cim:BusbarSection" onclick={enableAddMulti}><a>Node</a></li>
 			    <li class="dropdown-header">Branches</li>
-			    <li id="addACLine" onclick={enableAddACLine}><a>AC Line Segment</a></li>
+			    <li id="cim:ACLineSegment" onclick={enableAddMulti}><a>AC Line Segment</a></li>
 			    <li class="dropdown-header">Switches</li>
-			    <li id="addBreaker" onclick={enableAddBreaker}><a>Breaker</a></li>
-			    <li id="addDisconnector" onclick={enableAddDisconnector}><a>Disconnector</a></li>
-			    <li id="addLoadBreakSwitch" onclick={enableAddLoadBreakSwitch}><a>Load Break Switch</a></li>
-			    <li id="addJumper" onclick={enableAddJumper}><a>Jumper</a></li>
+			    <li id="cim:Breaker" onclick={enableAdd}><a>Breaker</a></li>
+			    <li id="cim:Disconnector" onclick={enableAdd}><a>Disconnector</a></li>
+			    <li id="cim:LoadBreakSwitch" onclick={enableAdd}><a>Load Break Switch</a></li>
+			    <li id="cim:Jumper" onclick={enableAdd}><a>Jumper</a></li>
 			    <li class="dropdown-header">Connectors</li>
-			    <li id="addJunction" onclick={enableAddJunction}><a>Junction</a></li>
+			    <li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>
 			    <li class="dropdown-header">Generators</li>
-			    <li id="addEnergySource" onclick={enableAddEnergySource}><a>Energy Source</a></li>
-			    <li id="addSynchronousMachine" onclick={enableAddSynchronousMachine}><a>Synchronous Machine</a></li>
+			    <li id="cim:EnergySource" onclick={enableAdd}><a>Energy Source</a></li>
+			    <li id="cim:SynchronousMachine" onclick={enableAdd}><a>Synchronous Machine</a></li>
 			    <li class="dropdown-header">Loads</li>
-			    <li id="addEnergyConsumer" onclick={enableAddEnergyConsumer}><a>Energy Consumer</a></li>
-			    <li id="addConformLoad" onclick={enableAddConformLoad}><a>Conform Load</a></li>
-			    <li id="addNonConformLoad" onclick={enableAddNonConformLoad}><a>Non Conform Load</a></li>
+			    <li id="cim:EnergyConsumer" onclick={enableAdd}><a>Energy Consumer</a></li>
+			    <li id="cim:ConformLoad" onclick={enableAdd}><a>Conform Load</a></li>
+			    <li id="cim:NonConformLoad" onclick={enableAdd}><a>Non Conform Load</a></li>
 			    <li class="dropdown-header">Transformers</li>
-			    <li id="addTwoWindingTransformer" onclick={enableAddTwoWindingTransformer}><a>Two-winding Transformer</a></li>
+			    <li id="cim:PowerTransformer" onclick={enableAdd}><a>Two-winding Transformer</a></li>
 			</ul>
 		    </div>
 		    
@@ -139,7 +139,7 @@
 	 }).addAll(points.nodes());
 	 // setup context menu
 	 points.on("contextmenu", d3.contextMenu(menu));
-	 // anble drag by default
+	 // enable drag by default
 	 self.disableForce();
 	 self.disableZoom();
 	 self.disableConnect();
@@ -203,11 +203,9 @@
 	   }
 	   // trap the ctrl key being pressed
 	   if (d3.event.ctrlKey) {
-	       //self.disableAll();
 	       self.disableDrag();
 	       self.disableZoom();
 	       self.disableForce();
-	       //self.disableConnect();
 	       self.enableZoom();
 	   }
        })
@@ -222,32 +220,6 @@
 	       case "FORCE":
 		   if (d3.event.keyCode === 17) { // "Control"
 		       self.enableForce();
-		   }
-		   break;
-	       case "CONNECT":
-		   if (d3.event.keyCode === 27) { // "Escape"
-		       d3.select("svg").on("mousemove", null);
-		       d3.select("svg").selectAll("svg > path").attr("d", null);
-		       d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
-		       d3.select("svg > path").datum(null);
-		   }
-		   if (d3.event.keyCode === 17) { // "Control"
-		       self.enableConnect();
-		   }
-		   break;
-               case "cim:BusbarSection":
-		   if (d3.event.keyCode === 17) { // "Control"
-		       self.enableAddBusbar();
-		   }
-		   break;
-	       case "cim:ACLineSegment":
-		   if (d3.event.keyCode === 17) { // "Control"
-		       self.enableAddACLine();
-		   }
-		   break;
-	       case "cim:Breaker":
-		   if (d3.event.keyCode === 17) { // "Control"
-		       self.enableAddBreaker();
 		   }
 		   break;
 	   }
@@ -388,6 +360,13 @@
      }
 
      enableConnect() {
+	 // handle escape key
+	 d3.select("body").on("keyup.connect", function() {
+	     if (d3.event.keyCode === 27) { // "Escape"
+		 self.disableAdd();
+		 self.enableConnect();
+	     }
+	 });
 	 d3.select(self.root).selectAll("label:not(#connectLabel)").classed("active", false);
          $("#connect").click();
 	 self.status = "CONNECT";
@@ -461,6 +440,7 @@
      }
 
      disableConnect() {
+	 d3.select("body").on("keyup.connect", null);
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
 	   .on("click", null);
 	 d3.select("svg").selectAll("svg > g.diagram > g.ConnectivityNodes > g.ConnectivityNode")
@@ -476,64 +456,15 @@
 	 }
      }
 
-     enableAddACLine() {
-	 self.enableAddMulti("cim:ACLineSegment", "AC Line Segment");
-     }
-     
-     enableAddBreaker() {
-	 self.enableAdd("cim:Breaker", "Breaker");
-     }
-
-     enableAddDisconnector() {
-	 self.enableAdd("cim:Disconnector", "Disconnector");
-     }
-
-     enableAddLoadBreakSwitch() {
-	 self.enableAdd("cim:LoadBreakSwitch", "Load Break Switch");
-     }
-
-     enableAddJumper() {
-	 self.enableAdd("cim:Jumper", "Jumper");
-     }
-
-     enableAddJunction() {
-	 self.enableAdd("cim:Junction", "Junction");
-     }
-
-     enableAddEnergySource() {
-	 self.enableAdd("cim:EnergySource", "Energy Source");
-     }
-
-     enableAddSynchronousMachine() {
-	 self.enableAdd("cim:SynchronousMachine", "Synchronous Machine");
-     }
-
-     enableAddEnergyConsumer() {
-	 self.enableAdd("cim:EnergyConsumer", "Energy Consumer");
-     }
-
-     enableAddConformLoad() {
-	 self.enableAdd("cim:ConformLoad", "Conform Load");
-     }
-
-     enableAddNonConformLoad() {
-	 self.enableAdd("cim:NonConformLoad", "Non Conform Load");
-     }
-
-     enableAddBusbar() {
-	 self.enableAddMulti("cim:BusbarSection", "Node");
-     }
-
-     enableAddTwoWindingTransformer() {
-	 self.enableAdd("cim:PowerTransformer", "Two-winding Transformer");
-     }
-     
-     enableAdd(type, text) {
+     // draw single-segment objects
+     enableAdd(e) {
+	 let type = e.target.parentNode.id;
+	 let text = e.target.textContent;
 	 self.disableAll();
 	 d3.select(self.root).selectAll("label").classed("active", false);
 	 $("input").prop('checked', false);
 	 $("#addElement").text(text);
-	 self.status = type;
+	 self.status = "ADD" + type;
 	 d3.select("svg").on("click.add", clicked);
 	 function clicked() {
 	     let newObject = opts.model.createObject(type);
@@ -542,12 +473,21 @@
      }
 
      // draw multi-segment objects
-     enableAddMulti(type, text) {
+     enableAddMulti(e) {
+	 // handle escape key
+	 d3.select("body").on("keyup.addMulti", function() {
+	     if (d3.event.keyCode === 27) { // "Escape"
+		 self.disableAdd();
+		 self.enableAddMulti(e);
+	     }
+	 });
+	 let type = e.target.parentNode.id;
+	 let text = e.target.textContent;
 	 self.disableAll();
 	 d3.select(self.root).selectAll("label").classed("active", false);
 	 $("input").prop('checked', false);
 	 $("#addElement").text(text);
-	 self.status = type;
+	 self.status = "ADD" + type;
 	 d3.select("svg").on("click.add", clicked);
 	 let newObject = undefined;
 	 function clicked() {
@@ -610,7 +550,7 @@
 
 	     }
 	     
-	     if (self.status === type) {
+	     if (self.status === "ADD" + type) {
 		 d3.select("svg").on("contextmenu.add", finish);
 		 svg.on("mousemove", mousemoved);
 		 newObject = opts.model.createObject(type);
@@ -624,7 +564,7 @@
 		 newObject.y = Math.round((m[1] - yoffset) / svgZoom);
 		 newObject.py = newObject.y;
 		 newObject.lineData = [{x: 0, y: 0, seq: 1}];
-		 self.status = "drawing"
+		 self.status = "ADDdrawing"
 	     } else {
 		 addNewPoint(newObject);
 	     }
@@ -634,7 +574,7 @@
 	     d3.event.preventDefault();
 	     addNewPoint(newObject);
 	     opts.model.addToActiveDiagram(newObject, newObject.lineData);
-	     self.status = type;
+	     self.status = "ADD" + type;
 	     d3.select("svg").on("mousemove", null);
 	     d3.select("svg").selectAll("svg > path").attr("d", null);
 	     d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
@@ -661,6 +601,7 @@
 
      disableAdd() {
 	 $("#addElement").text("Insert element");
+	 d3.select("body").on("keyup.addMulti", null);
 	 d3.select("svg").on("click.add", null);
 	 d3.select("svg").on("contextmenu.add", null);
 	 d3.select("svg").on("mousemove", null);
