@@ -1,6 +1,6 @@
 "use strict";
 
-function cimDiagramModel() {
+function cimModel() {
     const cimNS = "http://iec.ch/TC57/2013/CIM-schema-cim16#";
     let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2013/CIM-schema-cim16#\" xmlns:entsoe=\"http://entsoe.eu/CIM/SchemaExtension/3/1#\" xmlns:md=\"http://iec.ch/TC57/61970-552/ModelDescription/1#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
 
@@ -448,50 +448,38 @@ function cimDiagramModel() {
 	    return newElement;
 	},
 
-	// delete an object: also, delete its terminals and graphic objects
-	// TODO: delete transformer windings and handle BusbarSections
+	// Delete an object: also, delete its terminals and graphic objects.
+	// Moreover, delete transformer windings and handle BusbarSections.
 	deleteObject(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
 	    // all the links to 'object' must be deleted
 	    let linksToDelete = [];
 	    let objsToDelete = [];
+	    if (object.nodeName === "cim:ConnectivityNode") {
+		// let's try to get a busbar section
+		let busbars = model.getEquipments(object).filter(el => el.nodeName === "cim:BusbarSection");
+		if (busbars.length > 0) {
+		    objsToDelete = busbars;
+		}
+	    }
 	    for (let [linkAndTarget, sources] of model.linksMap) {
 		let linkName = "cim:" + linkAndTarget.split("#")[0];
-		// delete links pointing to 'object'
-		if (linkAndTarget.endsWith(objUUID)) { 
-		    for (let source of sources) {
-			linksToDelete.push({s: source, l: linkName, t: object});
-			//model.removeLink(source, linkName, object);
-			if ("cim:Terminal" === source.nodeName && object.nodeName !== "cim:ConnectivityNode") {
-			    objsToDelete.push(source);
-			}
-			if ("cim:DiagramObjectPoint" === source.nodeName) {
-			    objsToDelete.push(source);
-			}
-			// this check is to avoid infinite recursion
-			if (object.nodeName !== "cim:DiagramObjectPoint") {
-			    if ("cim:DiagramObject" === source.nodeName) {
-				objsToDelete.push(source);
-			    }
-			}
-		    }
-		}
 		// delete links of 'object'
 		if (sources.indexOf(object) > -1) {
 		    let target = model.dataMap.get("#" + linkAndTarget.split("#")[1]);
 		    linksToDelete.push({s: object, l: linkName, t: target});
-		    //model.removeLink(object, linkName, target);
-		    if ("cim:Terminal" === target.nodeName && object.nodeName !== "cim:ConnectivityNode") {
+		    if (checkRelatedObject(object, target)) {
 			objsToDelete.push(target);
 		    }
-		    if ("cim:DiagramObjectPoint" === target.nodeName) {
-			objsToDelete.push(target);
-		    }
-		    // this check is to avoid infinite recursion
-		    if (object.nodeName !== "cim:DiagramObjectPoint") {
-			if ("cim:DiagramObject" === target.nodeName) {
-			    objsToDelete.push(target);
-			}
+		}
+		// delete links pointing to 'object'
+		if (linkAndTarget.endsWith(objUUID) === false) {
+		    continue;
+		}
+		for (let source of sources) {
+		    linksToDelete.push({s: source, l: linkName, t: object});
+		    if (checkRelatedObject(object, source)) {
+			objsToDelete.push(source);
 		    }
 		}
 	    }
@@ -505,6 +493,33 @@ function cimDiagramModel() {
 	    model.dataMap.delete("#" + objUUID);
 	    // delete the object
 	    object.remove();
+
+	    function checkRelatedObject(object, related) {
+		// terminals of conducting equipment
+		if (object.nodeName !== "cim:ConnectivityNode") {
+		    if (related.nodeName === "cim:Terminal") {
+			return true;
+		    }
+		}
+		// diagram object points
+		if (related.nodeName === "cim:DiagramObjectPoint") {
+		    return true;
+		}
+		// diagram objects
+		// this check is to avoid infinite recursion
+		if (object.nodeName !== "cim:DiagramObjectPoint") {
+		    if (related.nodeName === "cim:DiagramObject") {
+			return true;
+		    }
+		}
+		// trafo ends
+		if (object.nodeName === "cim:PowerTransformer") {
+		    if (related.nodeName === "cim:PowerTransformerEnd") {
+			return true;
+		    }
+		}
+		return false;
+	    };
 
 	    model.trigger("deleteObject", objUUID);
 	},

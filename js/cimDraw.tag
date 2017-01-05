@@ -117,7 +117,7 @@
     <script>
      "use strict";
      let self = this;
-     self.cimModel = cimDiagramModel();
+     self.cimModel = cimModel();
      let diagramsToLoad = 2;
      
      self.on("loaded", function() {

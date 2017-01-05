@@ -668,7 +668,6 @@
 	 d3.select("svg > circle").attr("transform", "translate(0, 0)");
 	 // delete from model
 	 let datum = d3.select("svg > path").datum();
-	 console.log(datum);
 	 if (typeof(datum) !== "undefined") {
 	     opts.model.deleteObject(datum);
 	 }
