@@ -235,8 +235,9 @@
      }
 
      deselectAll() {
+	 d3.selectAll(selected).selectAll("rect.selection-rect").remove();
+	 d3.selectAll(selected).selectAll("g.resize").remove();
 	 selected = [];
-	 d3.select("svg").selectAll("svg > g.diagram > g > g").selectAll("rect").remove();
      }
      
      enableDrag() {
@@ -252,6 +253,7 @@
 			  if (selected.length === 0) {
 			      selected.push(this);
 			      self.parent.hover(this);
+			      updateSelected();
 			  }
 			  quadtree.removeAll(selected); // update quadtree
 		      })
@@ -283,7 +285,7 @@
 	     if (extent === null) {
 		 return;
 	     }
-	     selected = [];
+	     self.deselectAll();
 	     let transform = d3.zoomTransform(d3.select("svg").node());
 	     let tx = transform.x;
 	     let ty = transform.y;
@@ -292,6 +294,7 @@
 	     for (let el of selected) {
 		     self.parent.hover(el);
 	     }
+	     updateSelected();
 	     // Find the nodes within the specified rectangle.
 	     function search(quadtree, x0, y0, x3, y3) {
 		 quadtree.visit(function(node, x1, y1, x2, y2) {
@@ -309,6 +312,30 @@
 		 });
 	     }
 	 };
+
+	 function updateSelected() {
+	     let res = d3.selectAll(selected).selectAll("g.resize").data(function(d) {
+		 return d.lineData.map(el => [d, el]);
+	     }).enter().append("g").attr("class", "resize");
+	     res.append("rect")
+		.attr("x", function(d) {
+		    return d[1].x - 2;
+		})
+		.attr("y", function(d) {
+		    return d[1].y - 2;
+		})
+		.attr("width", 4)
+		.attr("height", 4)
+		.attr("stroke", "black")
+		.attr("stroke-width", 2);
+	     res.call(resizeDrag);
+	 };
+	 let resizeDrag = d3.drag().on("drag", function(d) {
+	     let p = d[0].lineData.filter(el => el.seq === d[1].seq)[0];
+	     p.x = d3.event.x;
+	     p.y = d3.event.y;
+	     opts.model.updateActiveDiagram(d[0], d[0].lineData);
+	 });
      }
 
      disableDrag() {

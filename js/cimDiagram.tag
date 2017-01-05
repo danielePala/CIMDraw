@@ -128,7 +128,8 @@
 	 let selection = null;
 	 switch (object.nodeName) {
 	     case "cim:ACLineSegment":
-		 selection = self.drawACLines([object]);
+		 selection = self.drawACLines([object])[0];
+		 //console.log(selection.selectAll("g.Terminal"));
 		 break;
 	 }
      });
@@ -138,7 +139,7 @@
 	 let selection = null;
 	 switch (object.nodeName) {	 
 	     case "cim:ACLineSegment":
-		 selection = self.drawACLines([object]);
+		 selection = self.drawACLines([object])[1]; // TODO: handle correctly
 		 break;
 	     case "cim:Breaker":
 		 selection = self.drawBreakers([object]);
@@ -316,7 +317,7 @@
 	 yield "[" + Date.now() + "] DIAGRAM: extracted equipments";
 	 
 	 // AC Lines
-	 let aclineEnter = self.drawACLines(allACLines);
+	 let aclineEnter = self.drawACLines(allACLines)[1];
 	 yield "[" + Date.now() + "] DIAGRAM: drawn acLines";
 	 // breakers
 	 let breakerEnter = self.drawBreakers(allBreakers);
@@ -639,7 +640,7 @@
 	             .attr("stroke", "darkred")
 	             .attr("stroke-width", 2);
 		      
-	 return aclineEnter;
+	 return [aclineUpdate, aclineEnter];
      }
 
      // Draw all Breakers
