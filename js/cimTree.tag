@@ -12,7 +12,7 @@
 	 min-width: 170px;
      }
 
-     .cim-tree-link-btn {
+     .cim-tree-btn-group {
 	 float: left;
      }
 
@@ -472,30 +472,114 @@
 		.html(function (d) {
 		    return d.attributes[0].value.substring(1).split(".")[1]; 
 		});
-	 elementDiv.append("input")
+	 // String attributes 
+	 elementDiv.filter(function(d) {
+	     let attrType = self.model.getSchemaAttributeType(d);
+	     return attrType[0] === "#String";
+	 }).append("input")
 		   .attr("class", "form-control")
-		   .each(function (d) {
-		       let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
-		       let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
-		       if (typeof(value) !== "undefined") {
-			   this.value = value.innerHTML;
-		       } else { 
-			   d3.select(this).attr("placeholder", "none");
-		       }
-		   })
+		   .each(setValueFromModel)
 		   .attr("type", "text")
-		   .on("keydown", function(d) {
-		       if (typeof(d3.event) === "undefined") {
-			   return;
-		       }
-		       // trap the return key being pressed
-		       if (d3.event.keyCode === 13) {
-			   d3.event.preventDefault();
-			   let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
-			   let attrName = "cim:" + d.attributes[0].value.substring(1);
-			   self.model.setAttribute(object, attrName, this.value);
-		       }
-		   });
+		   .on("keydown", attrKeyDown);
+	 // Integer attributes
+	 elementDiv.filter(function(d) {
+	     let attrType = self.model.getSchemaAttributeType(d);
+	     return attrType[0] === "#Integer";
+	 }).append("input")
+		   .attr("class", "form-control")
+		   .each(setIntValueFromModel)
+		   .attr("type", "number")
+		   .on("keydown", attrKeyDown);
+	 // Float attributes
+	 elementDiv.filter(function(d) {
+	     let attrType = self.model.getSchemaAttributeType(d);
+	     return attrType[0] === "#Float";
+	 }).append("input")
+		   .attr("class", "form-control")
+		   .each(setFloatValueFromModel)
+		   .attr("type", "number")
+		   .attr("step", "0.00001")
+		   .on("keydown", attrKeyDown);
+	 // Boolean attributes
+	 let elementBool = elementDiv.filter(function(d) {
+	     let attrType = self.model.getSchemaAttributeType(d);
+	     return attrType[0] === "#Boolean";
+	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
+	 elementBool.append("button").attr("type", "button")
+		    .attr("class", "btn btn-default dropdown-toggle")
+		    .attr("data-toggle", "dropdown")
+		    .attr("aria-haspopup", "true")
+		    .attr("aria-expanded", "false")
+		    .html("<span class=\"boolVal\">none</span> <span class=\"caret\"></span>");
+	 let elementBoolList = elementBool.append("ul").attr("class", "dropdown-menu");
+	 elementBoolList.append("li").on("click", function(d) {
+	     // change the element's text
+	     let value = d3.select(this).selectAll("a").node().textContent;
+	     $(this).parent().parent().find(">button>span.boolVal").text(value);
+	     let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
+	     let attrName = "cim:" + d.attributes[0].value.substring(1);
+	     // update the model
+	     self.model.setAttribute(object, attrName, value);
+	 }).append("a").text("true");
+	 elementBoolList.append("li").append("a").text("False");
+	 // Enum attributes
+	 let elementEnum = elementDiv.filter(function(d) {
+	     return self.model.isEnum(d);
+	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
+	 elementEnum.append("button").attr("type", "button")
+		    .attr("class", "btn btn-default dropdown-toggle")
+		    .attr("data-toggle", "dropdown")
+		    .attr("aria-haspopup", "true")
+		    .attr("aria-expanded", "false")
+		    .html("<span class=\"enumVal\">none</span> <span class=\"caret\"></span>");
+	 let elementEnumList = elementEnum.append("ul").attr("class", "dropdown-menu");
+	 elementEnumList.html(function(d) {
+	     let enumValues = self.model.getSchemaEnumValues(d);
+	     let ret = "";
+	     for (let enumValue of enumValues) {
+		 ret = ret + "<li><a>" + enumValue + "</a></li>";
+	     }
+	     return ret;
+	 });
+	 function setValueFromModel(d) {
+	     let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
+	     let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
+	     if (typeof(value) !== "undefined") {
+		 this.value = value.innerHTML;
+	     } else { 
+		 d3.select(this).attr("placeholder", "none");
+	     }
+	 };
+	 function setIntValueFromModel(d) {
+	     let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
+	     let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
+	     if (typeof(value) !== "undefined") {
+		 this.value = parseInt(value.innerHTML);
+	     } else { 
+		 d3.select(this).attr("placeholder", "none");
+	     }
+	 };
+	 function setFloatValueFromModel(d) {
+	     let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
+	     let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
+	     if (typeof(value) !== "undefined") {
+		 this.value = parseFloat(value.innerHTML).toFixed(5);
+	     } else { 
+		 d3.select(this).attr("placeholder", "none");
+	     }
+	 };
+	 function attrKeyDown(d) {
+	     if (typeof(d3.event) === "undefined") {
+		 return;
+	     }
+	     // trap the return key being pressed
+	     if (d3.event.keyCode === 13) {
+		 d3.event.preventDefault();
+		 let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
+		 let attrName = "cim:" + d.attributes[0].value.substring(1);
+		 self.model.setAttribute(object, attrName, this.value);
+	     }
+	 };
 	 // add links
 	 let elementLink = elementEnter
 	        .selectAll("li.link")
@@ -511,7 +595,7 @@
 		.html(function (d) {
 		    return d.attributes[0].value.substring(1).split(".")[1]; 
 		});
-	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-link-btn");
+	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-btn-group");
 	 elementLinkBtn.append("button")
 		       .attr("class","btn btn-default btn-xs")
 	 	       .attr("id", "cimLinkBtn")
@@ -569,8 +653,8 @@
 
 	 
 	 // handle power transfomer ends
-	 let name = d3.select(elementEnter.node().parentNode).attr("class");
-	 if (name === "PowerTransformer") {
+	 let name = d3.select(elementEnter.node().parentNode).data()[0].nodeName;
+	 if (name === "cim:PowerTransformer") {
 	     elementEnter.each(function(d, i) {
 		 let trafoEnds = self.model.getGraph([d], "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer");
 		 if (trafoEnds.length > 0) {

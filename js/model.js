@@ -75,6 +75,7 @@ function cimModel() {
 	    }
 	},
 
+	// build initial model data structures and call a user callback
 	buildModel(data, callback) {
 	    model.data = data;
 	    model.dataMap = new Map();
@@ -207,6 +208,7 @@ function cimModel() {
 	    });
 	},
 
+	// TODO: replace all getObject calls with this
 	getObjects1(types) {
 	    let ret = {};
  	    let allObjects = model.getAllObjects();
@@ -222,11 +224,27 @@ function cimModel() {
 	    return ret;
 	},
 
+	// Get the schema description of a given object, e.g. Breaker 
 	getSchemaObject(type) {
 	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value === "#" + type;
 	    })[0];
+	},
+
+	getSchemaEnumValues(attr) {
+	    let type = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "rdfs:range";
+	    })[0];
+	    let typeVal = type.attributes.getNamedItem("rdf:resource").value;
+	    let enumName = typeVal.substring(1);
+	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
+	    let enumValues = [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value.startsWith("#" + enumName + ".");
+	    });
+	    return enumValues.map(el => [].filter.call(el.children, function(el) {
+		return el.nodeName === "rdfs:label";
+	    })[0].textContent);
 	},
 
 	// Get all the attributes associated to a given type.
@@ -264,6 +282,51 @@ function cimModel() {
 	getSchemaAttribute(type, attrName) {
 	    let schemaAttributes = model.getSchemaAttributes(type);
 	    return schemaAttributes.filter(el => el.attributes[0].value.substring(1) === attrName)[0];
+	},
+
+	// Test if a given attribute is an enum.
+	isEnum(attr) {
+	    let type = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "cims:dataType";
+	    })[0];
+	    // enums don't have a dataType
+	    if (typeof(type) === "undefined") {
+		return true;
+	    }
+	    return false;
+	},
+
+	// Get the type of a given attribute
+	getSchemaAttributeType(attr) {
+	    let unit = "none";
+	    let multiplier = "none";
+	    if (model.isEnum(attr)) {
+		return ["#Enum", unit, multiplier];
+	    }
+	    let type = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "cims:dataType";
+	    })[0];
+	    let typeVal = type.attributes.getNamedItem("rdf:resource").value;
+	    let typeObj = model.getSchemaObject(typeVal.substring(1));
+	    let typeStereotype = [].filter.call(typeObj.children, function(el) {
+		return el.nodeName === "cims:stereotype";
+	    })[0].textContent;
+	    
+	    if (typeStereotype === "CIMDatatype") {
+		let valueObj = model.getSchemaObject(typeVal.substring(1) + ".value");
+		let unitObj = model.getSchemaObject(typeVal.substring(1) + ".unit");
+		let multiplierObj = model.getSchemaObject(typeVal.substring(1) + ".multiplier");
+		typeVal = [].filter.call(valueObj.children, function(el) {
+		    return el.nodeName === "cims:dataType";
+		})[0].attributes.getNamedItem("rdf:resource").value;
+		unit = [].filter.call(unitObj.children, function(el) {
+		    return el.nodeName === "cims:isFixed";
+		})[0].attributes.getNamedItem("rdfs:Literal").value;
+		multiplier = [].filter.call(multiplierObj.children, function(el) {
+		    return el.nodeName === "cims:isFixed";
+		})[0].attributes.getNamedItem("rdfs:Literal").value;
+	    } 
+	    return [typeVal, unit, multiplier];
 	},
 
 	getSchemaLinks(type) {
