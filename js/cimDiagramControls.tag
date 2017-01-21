@@ -1,7 +1,13 @@
 <cimDiagramControls>
     <style>
-     #cim-diagram-controls { display: none }
-     #cim-diagram-elements { display: none }
+     #cim-diagram-controls { 
+         display: none;
+     }
+
+     #cim-diagram-elements { 
+         display: none; 
+     }
+
     </style>
 
     <div class="container-fluid">
@@ -70,7 +76,6 @@
 		 });
 		 d.rotation = d.rotation + 90;
 		 opts.model.updateActiveDiagram(d, d.lineData);
-		 self.parent.forceTick(selection); // TODO: remove this for flux
 	     }
 	 },
 	 {
@@ -268,7 +273,6 @@
 			      dd.py = dd.y;
 			  }
 			  opts.model.updateActiveDiagram(d, d.lineData);
-			  self.parent.forceTick(d3.selectAll(selected)); // TODO: remove this for flux
 		      })
 		      .on("drag.end", function(d) {
 			  opts.model.updateActiveDiagram(d, d.lineData);
@@ -291,9 +295,12 @@
 	     let ty = transform.y;
 	     let tZoom = transform.k;	     
 	     search(quadtree, (extent[0][0] - tx)/tZoom, (extent[0][1] - ty)/tZoom, (extent[1][0] - tx)/tZoom, (extent[1][1] - ty)/tZoom);
-	     for (let el of selected) {
-		     self.parent.hover(el);
-	     }
+
+	     // TODO: find correct selector
+	     d3.selectAll(selected)
+		 .filter("g:not(.ACLineSegment) g:not(.ConnectivityNode)").each(function(d) {
+		     self.parent.hover(this);
+		 });
 	     updateSelected();
 	     // Find the nodes within the specified rectangle.
 	     function search(quadtree, x0, y0, x3, y3) {
@@ -314,26 +321,56 @@
 	 };
 
 	 function updateSelected() {
-	     let res = d3.selectAll(selected).selectAll("g.resize").data(function(d) {
-		 return d.lineData.map(el => [d, el]);
-	     }).enter().append("g").attr("class", "resize");
+	     let res = d3.selectAll(selected)
+		 .filter("g.ACLineSegment,g.ConnectivityNode") // resizable elements (TODO: junction)
+		 .selectAll("g.resize")
+		 .data(function(d) {
+		     // data is the element plus the coordinate point seq number
+		     let ret = d.lineData.map(el => [d, el.seq]);
+		     return ret;
+		 }).enter().append("g").attr("class", "resize");
 	     res.append("rect")
-		.attr("x", function(d) {
-		    return d[1].x - 2;
-		})
-		.attr("y", function(d) {
-		    return d[1].y - 2;
-		})
-		.attr("width", 4)
-		.attr("height", 4)
-		.attr("stroke", "black")
-		.attr("stroke-width", 2);
+		 .attr("x", function(d) {
+		     return d[0].lineData.filter(el => el.seq === d[1])[0].x - 2;
+		 })
+		 .attr("y", function(d) {
+		     return d[0].lineData.filter(el => el.seq === d[1])[0].y - 2;
+		 })
+		 .attr("width", 4)
+		 .attr("height", 4);
 	     res.call(resizeDrag);
 	 };
+	 // move one point of the multi-segment. "lineData" coordinates
+	 // are relative to d.x and d.y, and the first point is always (0,0).
+	 // Therefore, we must handle the translation of the first point in a different way.
 	 let resizeDrag = d3.drag().on("drag", function(d) {
-	     let p = d[0].lineData.filter(el => el.seq === d[1].seq)[0];
-	     p.x = d3.event.x;
-	     p.y = d3.event.y;
+	     let p = d[0].lineData.filter(el => el.seq === d[1])[0];
+	     if (p.seq !== 1) {
+		 p.x = d3.event.x;
+		 p.y = d3.event.y;
+	     } else {
+		 d[0].x = d[0].x + d3.event.x;
+		 d[0].y = d[0].y + d3.event.y;
+		 for (let point of d[0].lineData) {
+		     if (point.seq === 1) {
+			 continue;
+		     }
+		     point.x = point.x - d3.event.x;
+		     point.y = point.y - d3.event.y;
+		 }
+	     }
+	     // check alignment with nearby points
+	     for (let point of d[0].lineData) {
+		 if (point.seq === d[1]) {
+		     continue;
+		 }
+		 if (d3.event.x === point.x) {
+		     console.log("x-aligned", point);
+		 }
+		 if (d3.event.y === point.y) {
+		     console.log("y-aligned", point);
+		 }
+	     }
 	     opts.model.updateActiveDiagram(d[0], d[0].lineData);
 	 });
      }
@@ -360,7 +397,6 @@
 	     elements.each(function(d) {
 		 opts.model.updateActiveDiagram(d, d.lineData);
 	     });
-	     self.parent.forceTick(); // TODO: remove this for flux
 	 }
      }
 
@@ -400,7 +436,7 @@
 	 // handle escape key
 	 d3.select("body").on("keyup.connect", function() {
 	     if (d3.event.keyCode === 27) { // "Escape"
-		 self.disableAdd();
+		 self.disableConnect();
 		 self.enableConnect();
 	     }
 	 });
@@ -514,7 +550,7 @@
 	 // handle escape key
 	 d3.select("body").on("keyup.addMulti", function() {
 	     if (d3.event.keyCode === 27) { // "Escape"
-		 self.disableAdd();
+	 self.disableAdd();
 		 self.enableAddMulti(e);
 	     }
 	 });
@@ -560,26 +596,21 @@
 		 let hG = d3.select("svg").select("g.diagram-highlight");
 		 if (newx === last.x) {
 		     let height = parseInt(d3.select("svg").style("height"));
-		     hG.append("svg:line")
-			  .attr("class", "highlight")
-			  .attr("x1", m[0]) 
-			  .attr("y1", 0)
-			  .attr("x2", m[0]) 
-			  .attr("y2", height)
-			  .style("stroke", "red")
-			  .style("stroke-width", 1);
-		     
+		     hG.append("line")
+			 .attr("class", "highlight")
+			 .attr("x1", m[0]) 
+			 .attr("y1", 0)
+			 .attr("x2", m[0]) 
+			 .attr("y2", height)
 		 } else {
 		     if (newy === last.y) {
 			 let width = parseInt(d3.select("svg").style("width"));
 			 hG.append("svg:line")
-			      .attr("class", "highlight")
-			      .attr("x1", 0)
-			      .attr("y1", m[1])
-			      .attr("x2", width)
-			      .attr("y2", m[1])
-			      .style("stroke", "red")
-			      .style("stroke-width", 1);
+			     .attr("class", "highlight")
+			     .attr("x1", 0)
+			     .attr("y1", m[1])
+			     .attr("x2", width)
+			     .attr("y2", m[1]);
 		     } else {
 			 hG.selectAll(".highlight").remove();
 		     }

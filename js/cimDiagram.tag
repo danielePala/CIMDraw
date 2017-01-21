@@ -18,6 +18,16 @@
 	 width: 1200px;
 	 height: 800px;
      }
+ 
+     line.highlight {
+	 stroke: red;
+	 stroke-width: 1;
+     }
+
+     g.resize > rect {
+	 stroke: black;
+	 stroke-width: 2;
+     }
 
      .tooltip-inner {
 	 max-width: 250px;
@@ -127,11 +137,14 @@
      self.model.on("updateActiveDiagram", function(object) {
 	 let selection = null;
 	 switch (object.nodeName) {
-	     case "cim:ACLineSegment":
-		 selection = self.drawACLines([object])[0];
-		 //console.log(selection.selectAll("g.Terminal"));
-		 break;
+	 case "cim:ACLineSegment":
+	     selection = self.drawACLines([object])[0];
+	     break;
+	 case "cim:ConnectivityNode":
+	     self.drawConnectivityNodes([object]);
+	     break;
 	 }
+	 self.forceTick(); // TODO: not very efficient to update everything
      });
      
      // listen to 'addToActiveDiagram' event from model
@@ -1437,6 +1450,15 @@
 			  d.y = d3.select(this.parentNode).datum().y + parseInt(d3.select(this.firstChild).attr("cy"));
 			  return d.attributes.getNamedItem("rdf:ID").value;
 		      });
+	     selection.selectAll("g.resize").selectAll("rect")
+		 .attr("x", function(d) {
+		     let p = d[0].lineData.filter(el => el.seq === d[1])[0];
+		     return p.x - 2;
+		 })
+		 .attr("y", function(d) {
+		     let p = d[0].lineData.filter(el => el.seq === d[1])[0];
+		     return p.y - 2;
+		 });
 	 };
      }
 
