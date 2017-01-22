@@ -14,6 +14,11 @@
 
      .cim-tree-btn-group {
 	 float: left;
+	 width: 100%;
+     }
+
+     .cim-tree-dropdown-toggle {
+	 width: 100%;
      }
 
      ul {
@@ -506,7 +511,7 @@
 	     return attrType[0] === "#Boolean";
 	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
 	 elementBool.append("button").attr("type", "button")
-		    .attr("class", "btn btn-default dropdown-toggle")
+		    .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
 		    .attr("data-toggle", "dropdown")
 		    .attr("aria-haspopup", "true")
 		    .attr("aria-expanded", "false")
@@ -527,7 +532,7 @@
 	     return self.model.isEnum(d);
 	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
 	 elementEnum.append("button").attr("type", "button")
-		    .attr("class", "btn btn-default dropdown-toggle")
+		    .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
 		    .attr("data-toggle", "dropdown")
 		    .attr("aria-haspopup", "true")
 		    .attr("aria-expanded", "false")

@@ -298,7 +298,7 @@
 
 	     // TODO: find correct selector
 	     d3.selectAll(selected)
-		 .filter("g:not(.ACLineSegment) g:not(.ConnectivityNode)").each(function(d) {
+		 .filter("g:not(.ACLineSegment)").filter("g:not(.ConnectivityNode)").each(function(d) {
 		     self.parent.hover(this);
 		 });
 	     updateSelected();
