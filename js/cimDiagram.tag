@@ -1539,23 +1539,23 @@
 	 }
 
 	 links.select("path")
-		      .attr("d", function(d) {
-			  let tarRot = {x: d.target.x, y: d.target.y};
-			  let lineSource = {x: d.source.x, y: d.source.y};
-			  //if ((xScale(d.source.x) >= 0 && xScale(d.source.x) <= svgWidth) || (xScale(d.target.x) >= 0 && xScale(d.target.x) <= svgWidth)) {
-			      //if ((yScale(d.source.y) >= 0 && yScale(d.source.y) <= svgHeight) || (yScale(d.target.y) >= 0 && yScale(d.target.y) <= svgHeight)) {
-				  if (d.target.rotation > 0) {
-				      tarRot = rotateTerm(d.target);
-				  }
-				  d.p = self.closestPoint(d.source, tarRot);
-				  lineSource.x = lineSource.x + d.p[0];
-				  lineSource.y = lineSource.y + d.p[1];
-			      //} 
-			  //}
-			  let lineData = [lineSource, tarRot];
-			  return line(lineData);
-		      });	     
-
+	      .attr("d", function(d) {
+		  let tarRot = {x: d.target.x, y: d.target.y};
+		  let lineSource = {x: d.source.x, y: d.source.y};
+		  //if ((xScale(d.source.x) >= 0 && xScale(d.source.x) <= svgWidth) || (xScale(d.target.x) >= 0 && xScale(d.target.x) <= svgWidth)) {
+		  //if ((yScale(d.source.y) >= 0 && yScale(d.source.y) <= svgHeight) || (yScale(d.target.y) >= 0 && yScale(d.target.y) <= svgHeight)) {
+		  if (d.target.rotation > 0) {
+		      tarRot = rotateTerm(d.target);
+		  }
+		  d.p = self.closestPoint(d.source, tarRot);
+		  lineSource.x = lineSource.x + d.p[0];
+		  lineSource.y = lineSource.y + d.p[1];
+		  //} 
+		  //}
+		  let lineData = [lineSource, tarRot];
+		  return line(lineData);
+	      });	     
+	 
 	 function rotateTerm(term) {
 	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source)[0];
 	     let baseX = equipment.x; 
@@ -1587,7 +1587,7 @@
 	 return dx * dx + dy * dy;
      }
 
-          // draw the diagram grid
+     // draw the diagram grid
      drawGrid(zoom) {
 	 let width = parseInt(d3.select("svg").style("width"))/zoom;
 	 let height = parseInt(d3.select("svg").style("height"))/zoom;
