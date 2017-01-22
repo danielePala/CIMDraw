@@ -138,7 +138,8 @@
 	 let selection = null;
 	 switch (object.nodeName) {
 	 case "cim:ACLineSegment":
-	     selection = self.drawACLines([object])[0];
+		 selection = self.drawACLines([object])[0];
+		 self.createTerminals(selection);
 	     break;
 	 case "cim:ConnectivityNode":
 	     self.drawConnectivityNodes([object]);
@@ -982,7 +983,7 @@
 		 height = 30;
 	 }
 	 let allEdges = [];
-	 let termSelection = eqSelection.selectAll("g")
+	 let updateTermSelection = eqSelection.selectAll("g")
 					.data(function(d) {
 					    /*
 					       let numTerm = getNumTerm(d);
@@ -992,67 +993,68 @@
 					       }
 					    */
 					    return self.model.getTerminals([d]);
-					})
-					.enter()
-					.append("g")
-					.each(function(d, i) {
-					    let cn = self.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
-					    let lineData = d3.select(this.parentNode).datum().lineData;
-					    let start = lineData[0];
-					    let end = lineData[lineData.length-1];
-					    let eqX = d3.select(this.parentNode).datum().x;
-					    let eqY = d3.select(this.parentNode).datum().y;
-					    if (lineData.length === 1) {
-						start = {x:0, y:0};
-						end = {x:0, y:height};
-					    }
-
-					    let eqRot = d3.select(this.parentNode).datum().rotation;
-					    let terminals = self.model.getTerminals(d3.select(this.parentNode).data());
-					    if (typeof(cn) !== "undefined" && terminals.length > 1) {
-						let dist1 = 0;
-						let dist2 = 0;
-						// handle rotation
-						if (eqRot > 0) {
-						    let startRot = self.rotate(start, eqRot);
-						    let endRot = self.rotate(end, eqRot);
-						    dist1 = Math.pow((eqX+startRot.x-cn.x), 2)+Math.pow((eqY+startRot.y-cn.y), 2);
-						    dist2 = Math.pow((eqX+endRot.x-cn.x), 2)+Math.pow((eqY+endRot.y-cn.y), 2);
-						} else {
-						    dist1 = Math.pow((eqX+start.x-cn.x), 2)+Math.pow((eqY+start.y-cn.y), 2);
-						    dist2 = Math.pow((eqX+end.x-cn.x), 2)+Math.pow((eqY+end.y-cn.y), 2);
-						}
-						
-						if (dist2 < dist1) {
-						    d.x = eqX + end.x;
-						    d.y = eqY + end.y;
-						} else {
-						    d.x = eqX + start.x;
-						    d.y = eqY + start.y;
-						}
-						// be sure we don't put two terminals on the same side of the equipment
-						checkTerminals(terminals, d, cn, eqX, eqY, start, end);
-					    } else {
-						if (lineData.length === 1) {
-						    d.x = eqX;
-						    d.y = eqY + height*i;						    
-						} else {
-						    d.x = eqX + start.x*(1-i)+end.x*i;
-						    d.y = eqY + start.y*(1-i)+end.y*i;
-						}
-					    }
-					    d.rotation = d3.select(this.parentNode).datum().rotation;
-					    if (typeof(cn) !== "undefined" && typeof(cn.lineData) !== "undefined") {
-						let newEdge = {source: cn, target: d};
-						allEdges.push(newEdge);
-					    }
-					})
-					.attr("id", function(d) {
-					    return d.attributes.getNamedItem("rdf:ID").value;
-					})
-					.attr("class", function(d) {
-					    return d.localName;
 					});
+	 let termSelection = updateTermSelection
+	     .enter()
+	     .append("g")
+	     .each(function(d, i) {
+		 let cn = self.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 let lineData = d3.select(this.parentNode).datum().lineData;
+		 let start = lineData[0];
+		 let end = lineData[lineData.length-1];
+		 let eqX = d3.select(this.parentNode).datum().x;
+		 let eqY = d3.select(this.parentNode).datum().y;
+		 if (lineData.length === 1) {
+		     start = {x:0, y:0};
+		     end = {x:0, y:height};
+		 }
+
+		 let eqRot = d3.select(this.parentNode).datum().rotation;
+		 let terminals = self.model.getTerminals(d3.select(this.parentNode).data());
+		 if (typeof(cn) !== "undefined" && terminals.length > 1) {
+		     let dist1 = 0;
+		     let dist2 = 0;
+		     // handle rotation
+		     if (eqRot > 0) {
+			 let startRot = self.rotate(start, eqRot);
+			 let endRot = self.rotate(end, eqRot);
+			 dist1 = Math.pow((eqX+startRot.x-cn.x), 2)+Math.pow((eqY+startRot.y-cn.y), 2);
+			 dist2 = Math.pow((eqX+endRot.x-cn.x), 2)+Math.pow((eqY+endRot.y-cn.y), 2);
+		     } else {
+			 dist1 = Math.pow((eqX+start.x-cn.x), 2)+Math.pow((eqY+start.y-cn.y), 2);
+			 dist2 = Math.pow((eqX+end.x-cn.x), 2)+Math.pow((eqY+end.y-cn.y), 2);
+		     }
+		     
+		     if (dist2 < dist1) {
+			 d.x = eqX + end.x;
+			 d.y = eqY + end.y;
+		     } else {
+			 d.x = eqX + start.x;
+			 d.y = eqY + start.y;
+		     }
+		     // be sure we don't put two terminals on the same side of the equipment
+		     checkTerminals(terminals, d, cn, eqX, eqY, start, end);
+		 } else {
+		     if (lineData.length === 1) {
+			 d.x = eqX;
+			 d.y = eqY + height*i;						    
+		     } else {
+			 d.x = eqX + start.x*(1-i)+end.x*i;
+			 d.y = eqY + start.y*(1-i)+end.y*i;
+		     }
+		 }
+		 d.rotation = d3.select(this.parentNode).datum().rotation;
+		 if (typeof(cn) !== "undefined" && typeof(cn.lineData) !== "undefined") {
+		     let newEdge = {source: cn, target: d};
+		     allEdges.push(newEdge);
+		 }
+	     })
+	     .attr("id", function(d) {
+		 return d.attributes.getNamedItem("rdf:ID").value;
+	     })
+	     .attr("class", function(d) {
+		 return d.localName;
+	     });
 	 self.createEdges(allEdges);
 	 termSelection.append("circle")
 		      .attr("r", 2)
@@ -1063,7 +1065,30 @@
 		      .attr("cy", function(d, i) {
 			  return d3.select(this.parentNode).datum().y - d3.select(this.parentNode.parentNode).datum().y;
 		      });
-
+	 updateTermSelection
+	     .each(function(d, i) {
+		 let eqX = d3.select(this.parentNode).datum().x;
+		 let eqY = d3.select(this.parentNode).datum().y;
+		 let offsetx = parseInt(d3.select(this.firstChild).attr("cx"));
+		 let offsety = parseInt(d3.select(this.firstChild).attr("cy"));
+		 if (offsetx === 0 && offsety === 0) {
+		     d.x = eqX;
+		     d.y = eqY;
+		 } else {
+		     let lineData = d3.select(this.parentNode).datum().lineData;
+		     let end = lineData[lineData.length-1];
+		     d.x = eqX + end.x;
+		     d.y = eqY + end.y;
+		 }
+	     });
+	 updateTermSelection.selectAll("circle")
+			    .attr("cx", function(d, i) {	    
+				return d3.select(this.parentNode).datum().x - d3.select(this.parentNode.parentNode).datum().x; 
+			    })
+			    .attr("cy", function(d, i) {
+				return d3.select(this.parentNode).datum().y - d3.select(this.parentNode.parentNode).datum().y;
+			    });
+	 
 	 function checkTerminals(terminals, d, cn, eqX, eqY, start, end) {
 	     let otherTerm = terminals.filter(term => term !== d)[0];
 	     // we need to check if the other terminal must be moved
@@ -1280,18 +1305,34 @@
      }
 
      hover(hoverD) {	   
-	   d3.select(hoverD).each(function (d) {
-	       d3.select(this).append("rect")
-		 .attr("x", this.getBBox().x)
-		 .attr("y", this.getBBox().y)
-		 .attr("width", this.getBBox().width)
-		 .attr("height", this.getBBox().height)
-		 .attr("stroke", "black")
-		 .attr("stroke-width", 2)
-		 .attr("stroke-dasharray", "5,5")
-		 .attr("fill", "none")
-		 .attr("class", "selection-rect");	       
-	   });
+	 d3.select(hoverD).filter("g:not(.ACLineSegment)").filter("g:not(.ConnectivityNode)").each(function (d) {
+	     d3.select(this).append("rect")
+	       .attr("x", this.getBBox().x)
+	       .attr("y", this.getBBox().y)
+	       .attr("width", this.getBBox().width)
+	       .attr("height", this.getBBox().height)
+	       .attr("stroke", "black")
+	       .attr("stroke-width", 2)
+	       .attr("stroke-dasharray", "5,5")
+	       .attr("fill", "none")
+	       .attr("class", "selection-rect");	       
+	 });
+	 let res = d3.select(hoverD).filter("g.ACLineSegment,g.ConnectivityNode") // resizable elements (TODO: junction)
+		     .selectAll("g.resize")
+		     .data(function(d) {
+			 // data is the element plus the coordinate point seq number
+			 let ret = d.lineData.map(el => [d, el.seq]);
+			 return ret;
+		     }).enter().append("g").attr("class", "resize");
+	 res.append("rect")
+	    .attr("x", function(d) {
+		return d[0].lineData.filter(el => el.seq === d[1])[0].x - 2;
+	    })
+	    .attr("y", function(d) {
+		return d[0].lineData.filter(el => el.seq === d[1])[0].y - 2;
+	    })
+	    .attr("width", 4)
+	    .attr("height", 4);
      }
 
      moveTo(uuid) {

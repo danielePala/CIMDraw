@@ -296,11 +296,9 @@
 	     let tZoom = transform.k;	     
 	     search(quadtree, (extent[0][0] - tx)/tZoom, (extent[0][1] - ty)/tZoom, (extent[1][0] - tx)/tZoom, (extent[1][1] - ty)/tZoom);
 
-	     // TODO: find correct selector
-	     d3.selectAll(selected)
-		 .filter("g:not(.ACLineSegment)").filter("g:not(.ConnectivityNode)").each(function(d) {
-		     self.parent.hover(this);
-		 });
+	     d3.selectAll(selected).each(function(d) {
+		 self.parent.hover(this);
+	     });
 	     updateSelected();
 	     // Find the nodes within the specified rectangle.
 	     function search(quadtree, x0, y0, x3, y3) {
@@ -321,24 +319,9 @@
 	 };
 
 	 function updateSelected() {
-	     let res = d3.selectAll(selected)
-		 .filter("g.ACLineSegment,g.ConnectivityNode") // resizable elements (TODO: junction)
-		 .selectAll("g.resize")
-		 .data(function(d) {
-		     // data is the element plus the coordinate point seq number
-		     let ret = d.lineData.map(el => [d, el.seq]);
-		     return ret;
-		 }).enter().append("g").attr("class", "resize");
-	     res.append("rect")
-		 .attr("x", function(d) {
-		     return d[0].lineData.filter(el => el.seq === d[1])[0].x - 2;
-		 })
-		 .attr("y", function(d) {
-		     return d[0].lineData.filter(el => el.seq === d[1])[0].y - 2;
-		 })
-		 .attr("width", 4)
-		 .attr("height", 4);
-	     res.call(resizeDrag);
+	     d3.selectAll(selected)
+	       .selectAll("g.resize")
+	       .call(resizeDrag);
 	 };
 	 // move one point of the multi-segment. "lineData" coordinates
 	 // are relative to d.x and d.y, and the first point is always (0,0).
