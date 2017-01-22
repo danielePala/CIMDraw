@@ -69,13 +69,21 @@
 	 {
 	     title: 'Rotate',
 	     action: function(elm, d, i) {
-		 let selection = d3.select(elm);
+		 if (selected.indexOf(elm) === -1) {
+		     self.deselectAll();
+		     selected.push(elm);
+		     self.parent.hover(elm);
+		 }
+		 let selection = d3.selectAll(selected);
 		 let terminals = opts.model.getTerminals(selection.data());
 		 terminals.forEach(function (terminal) {
 		     terminal.rotation = terminal.rotation + 90;
 		 });
-		 d.rotation = d.rotation + 90;
-		 opts.model.updateActiveDiagram(d, d.lineData);
+		 for (let datum of selection.data()) {
+		     datum.rotation = datum.rotation + 90;
+		     opts.model.updateActiveDiagram(datum, datum.lineData);
+		 }
+		 
 	     }
 	 },
 	 {
@@ -84,11 +92,9 @@
 		 if (selected.indexOf(elm) === -1) {
 		     self.deselectAll();
 		     selected.push(elm);
-		     self.parent.hover(elm);
 		 }
 		 quadtree.removeAll(selected); // update quadtree
 		 let selection = d3.selectAll(selected);
-		 
 		 let terminals = opts.model.getTerminals(selection.data());
 		 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
 		     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
@@ -103,14 +109,21 @@
 	 {
 	     title: 'Delete from current diagram',
 	     action: function(elm, d, i) {
-		 let selection = d3.select(elm);
+		 if (selected.indexOf(elm) === -1) {
+		     self.deselectAll();
+		     selected.push(elm);
+		 }
+		 quadtree.removeAll(selected); // update quadtree
+		 let selection = d3.selectAll(selected);
 		 let terminals = opts.model.getTerminals(selection.data());
 		 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
 		     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
 		 }).remove();
 		 selection.remove();
 		 // delete from model
-		 opts.model.deleteFromDiagram(selection.datum());
+	 	 for (let datum of selection.data()) {
+		     opts.model.deleteFromDiagram(datum);
+		 }
 	     }
 	 }
      ];
