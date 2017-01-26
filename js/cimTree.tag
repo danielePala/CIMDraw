@@ -529,16 +529,21 @@
 		    .attr("data-toggle", "dropdown")
 		    .attr("aria-haspopup", "true")
 		    .attr("aria-expanded", "false");
-	 elementEnumBtn.html("<span class=\"enumVal\">none</span> <span class=\"caret\"></span>");
+	 elementEnumBtn.append("span").attr("class", "enumVal").each(setEnumValueFromModel);
+	 elementEnumBtn.append("span").attr("class", "caret");
 	 let elementEnumList = elementEnum.append("ul").attr("class", "dropdown-menu");
-	 elementEnumList.html(function(d) {
-	     let enumValues = self.model.getSchemaEnumValues(d);
-	     let ret = "";
-	     for (let enumValue of enumValues) {
-		 ret = ret + "<li><a>" + enumValue + "</a></li>";
-	     }
-	     return ret;
-	 });
+	 elementEnumList
+	     .selectAll("li")
+	     .data(function(d) {
+		 return self.model.getSchemaEnumValues(d);
+	     })
+	     .enter()
+	     .append("li")
+	     .on("click", setEnumAttr)
+	     .append("a")
+	     .text(function(d) {
+		 return d;
+	     });
 	 function setValueFromModel(d) {
 	     let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
 	     let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
@@ -575,6 +580,15 @@
 		 d3.select(this).text("none");
 	     }
 	 };
+	 function setEnumValueFromModel(d) {
+	     let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
+	     let value = self.model.getEnum(object, "cim:" + d.attributes[0].value.substring(1));
+	     if (typeof(value) !== "undefined") {
+		 d3.select(this).text(value.innerHTML);
+	     } else { 
+		 d3.select(this).text("none");
+	     }
+	 };
 	 // set a boolean attribute according to user input
 	 function setBoolAttr(d) {
 	     // change the element's text
@@ -584,6 +598,17 @@
 	     let attrName = "cim:" + d.attributes[0].value.substring(1);
 	     // update the model
 	     self.model.setAttribute(object, attrName, value);
+	 };
+	 // set an enum attribute according to user input
+	 function setEnumAttr(d) {
+	     // change the element's text
+	     $(this).parent().parent().find(">button>span.enumVal").text(d);
+	     let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
+	     let attr = d3.select($(this).parents("li.attribute").first().get(0)).data()[0];
+	     let attrName = "cim:" + attr.attributes[0].value.substring(1);
+	     let value = self.model.getSchemaEnumName(attr) + "." + d;
+	     // update the model
+	     self.model.setEnum(object, attrName, value);
 	 };
 	 function attrKeyDown(d) {
 	     if (typeof(d3.event) === "undefined") {

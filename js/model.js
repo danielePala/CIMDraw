@@ -247,6 +247,15 @@ function cimModel() {
 	    })[0].textContent);
 	},
 
+	getSchemaEnumName(attr) {
+	    let type = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "rdfs:range";
+	    })[0];
+	    let typeVal = type.attributes.getNamedItem("rdf:resource").value;
+	    let enumName = typeVal.substring(1);
+	    return enumName;
+	},
+
 	// Get all the attributes associated to a given type.
 	// The type is without namespace, e.g. "Breaker".
 	getSchemaAttributes(type) {
@@ -480,6 +489,21 @@ function cimModel() {
 		object.appendChild(attribute);
 	    }
 	    model.trigger("setAttribute", object, attrName, value);
+	    return;
+	},
+
+	// set a specific enum of a given object. If it doesen't exists, it is created.
+	setEnum(object, enumName, value) {
+	    let enumAttr = model.getEnum(object, enumName);
+	    if (typeof(enumAttr) === "undefined") {
+		enumAttr = object.ownerDocument.createElement(enumName);
+		let enumValue = object.ownerDocument.createAttribute("rdf:resource");
+		enumValue.nodeValue = "#";
+		enumAttr.setAttributeNode(enumValue);
+		object.appendChild(enumAttr);
+	    }
+	    enumAttr.attributes[0].value = cimNS + value;
+	    model.trigger("setEnum", object, enumName, value);
 	    return;
 	},
 
@@ -738,18 +762,22 @@ function cimModel() {
 	    });
 	},
 
-	// get all the enums of a given object which are actually set.
-	getEnums(object) {
-	    return [].filter.call(object.children, function(el) {
-		return (el.attributes.length > 0) && (el.attributes[0].value.charAt(0) !== "#");
-	    });
-	},
-
 	// get a specific link of a given object.
 	// If the link is many-valued, it mey return more than one element
 	getLink(object, linkName) {
 	    let links = model.getLinks(object);
 	    return links.filter(el => el.nodeName === linkName);
+	},
+
+	// get all the enums of a given object which are actually set.
+	getEnums(object) {
+	    return [].filter.call(object.children, function(el) {
+		let resource = el.attributes.getNamedItem("rdf:resource");
+		if (el.attributes.length === 0 || resource === null) {
+		    return false;
+		}
+		return (resource.value.charAt(0) !== "#");
+	    });
 	},
 
 	// get a specific enum of a given object.
