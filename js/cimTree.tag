@@ -510,23 +510,16 @@
 	     let attrType = self.model.getSchemaAttributeType(d);
 	     return attrType[0] === "#Boolean";
 	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
-	 elementBool.append("button").attr("type", "button")
+	 let elementBoolBtn = elementBool.append("button").attr("type", "button")
 		    .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
 		    .attr("data-toggle", "dropdown")
 		    .attr("aria-haspopup", "true")
-		    .attr("aria-expanded", "false")
-		    .html("<span class=\"boolVal\">none</span> <span class=\"caret\"></span>");
+		    .attr("aria-expanded", "false");
+	 elementBoolBtn.append("span").attr("class", "boolVal").each(setBoolValueFromModel);
+	 elementBoolBtn.append("span").attr("class", "caret");
 	 let elementBoolList = elementBool.append("ul").attr("class", "dropdown-menu");
-	 elementBoolList.append("li").on("click", function(d) {
-	     // change the element's text
-	     let value = d3.select(this).selectAll("a").node().textContent;
-	     $(this).parent().parent().find(">button>span.boolVal").text(value);
-	     let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
-	     let attrName = "cim:" + d.attributes[0].value.substring(1);
-	     // update the model
-	     self.model.setAttribute(object, attrName, value);
-	 }).append("a").text("true");
-	 elementBoolList.append("li").append("a").text("False");
+	 elementBoolList.append("li").on("click", setBoolAttr).append("a").text("true");
+	 elementBoolList.append("li").on("click", setBoolAttr).append("a").text("false");
 	 // Enum attributes
 	 let elementEnum = elementDiv.filter(function(d) {
 	     return self.model.isEnum(d);
@@ -547,7 +540,7 @@
 	     return ret;
 	 });
 	 function setValueFromModel(d) {
-	     let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
+	     let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
 	     let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
 	     if (typeof(value) !== "undefined") {
 		 this.value = value.innerHTML;
@@ -572,6 +565,25 @@
 	     } else { 
 		 d3.select(this).attr("placeholder", "none");
 	     }
+	 };
+	 function setBoolValueFromModel(d) {
+	     let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
+	     let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
+	     if (typeof(value) !== "undefined") {
+		 d3.select(this).text(value.innerHTML);
+	     } else { 
+		 d3.select(this).text("none");
+	     }
+	 };
+	 // set a boolean attribute according to user input
+	 function setBoolAttr(d) {
+	     // change the element's text
+	     let value = d3.select(this).selectAll("a").node().textContent;
+	     $(this).parent().parent().find(">button>span.boolVal").text(value);
+	     let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
+	     let attrName = "cim:" + d.attributes[0].value.substring(1);
+	     // update the model
+	     self.model.setAttribute(object, attrName, value);
 	 };
 	 function attrKeyDown(d) {
 	     if (typeof(d3.event) === "undefined") {

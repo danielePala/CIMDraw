@@ -1540,19 +1540,20 @@
 
 	 links.select("path")
 	      .attr("d", function(d) {
-		  let tarRot = {x: d.target.x, y: d.target.y};
-		  let lineSource = {x: d.source.x, y: d.source.y};
+		  let cnXY = {x: d.source.x, y: d.source.y};
+		  let terminalXY = {x: d.target.x, y: d.target.y};
 		  //if ((xScale(d.source.x) >= 0 && xScale(d.source.x) <= svgWidth) || (xScale(d.target.x) >= 0 && xScale(d.target.x) <= svgWidth)) {
 		  //if ((yScale(d.source.y) >= 0 && yScale(d.source.y) <= svgHeight) || (yScale(d.target.y) >= 0 && yScale(d.target.y) <= svgHeight)) {
 		  if (d.target.rotation > 0) {
-		      tarRot = rotateTerm(d.target);
-		  }
-		  d.p = self.closestPoint(d.source, tarRot);
-		  lineSource.x = lineSource.x + d.p[0];
-		  lineSource.y = lineSource.y + d.p[1];
+		      terminalXY = rotateTerm(d.target);
+		  }	
+		  
+		  d.p = self.closestPoint(d.source, terminalXY);
+		  cnXY.x = cnXY.x + d.p[0];
+		  cnXY.y = cnXY.y + d.p[1];
 		  //} 
 		  //}
-		  let lineData = [lineSource, tarRot];
+		  let lineData = [cnXY, terminalXY];
 		  return line(lineData);
 	      });	     
 	 

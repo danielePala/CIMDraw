@@ -450,7 +450,7 @@
 	       let path = d3.select("svg > path");
 	       let circle = d3.select("svg > circle");
 	       let termToChange = path.datum();
-	       // TEST: directly connect terminals
+	       // directly connect terminals
 	       if (typeof(termToChange) !== "undefined") {
 		   let cn = opts.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 		   d3.select("svg").selectAll("svg > path").attr("d", null);
