@@ -319,12 +319,16 @@ function cimModel() {
 		typeVal = [].filter.call(valueObj.children, function(el) {
 		    return el.nodeName === "cims:dataType";
 		})[0].attributes.getNamedItem("rdf:resource").value;
-		unit = [].filter.call(unitObj.children, function(el) {
-		    return el.nodeName === "cims:isFixed";
-		})[0].attributes.getNamedItem("rdfs:Literal").value;
-		multiplier = [].filter.call(multiplierObj.children, function(el) {
-		    return el.nodeName === "cims:isFixed";
-		})[0].attributes.getNamedItem("rdfs:Literal").value;
+		if (typeof(unitObj) !== "undefined") {
+		    unit = [].filter.call(unitObj.children, function(el) {
+			return el.nodeName === "cims:isFixed";
+		    })[0].attributes.getNamedItem("rdfs:Literal").value;
+		}
+		if (typeof(multiplierObj) !== "undefined") {
+		    multiplier = [].filter.call(multiplierObj.children, function(el) {
+			return el.nodeName === "cims:isFixed";
+		    })[0].attributes.getNamedItem("rdfs:Literal").value;
+		}
 	    } 
 	    return [typeVal, unit, multiplier];
 	},

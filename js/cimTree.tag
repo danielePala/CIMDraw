@@ -524,12 +524,12 @@
 	 let elementEnum = elementDiv.filter(function(d) {
 	     return self.model.isEnum(d);
 	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
-	 elementEnum.append("button").attr("type", "button")
+	 let elementEnumBtn = elementEnum.append("button").attr("type", "button")
 		    .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
 		    .attr("data-toggle", "dropdown")
 		    .attr("aria-haspopup", "true")
-		    .attr("aria-expanded", "false")
-		    .html("<span class=\"enumVal\">none</span> <span class=\"caret\"></span>");
+		    .attr("aria-expanded", "false");
+	 elementEnumBtn.html("<span class=\"enumVal\">none</span> <span class=\"caret\"></span>");
 	 let elementEnumList = elementEnum.append("ul").attr("class", "dropdown-menu");
 	 elementEnumList.html(function(d) {
 	     let enumValues = self.model.getSchemaEnumValues(d);
