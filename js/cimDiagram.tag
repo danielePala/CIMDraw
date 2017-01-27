@@ -28,12 +28,6 @@
 	 stroke: black;
 	 stroke-width: 2;
      }
-
-     .tooltip-inner {
-	 max-width: 250px;
-	 width: 250px;
-     }
-
     </style>
     
     <cimDiagramControls model={model}></cimDiagramControls>
