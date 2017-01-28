@@ -72,7 +72,7 @@
 		 if (selected.indexOf(elm) === -1) {
 		     self.deselectAll();
 		     selected.push(elm);
-		     self.parent.hover(elm);
+		     self.updateSelected();
 		 }
 		 let selection = d3.selectAll(selected);
 		 let terminals = opts.model.getTerminals(selection.data());
@@ -127,6 +127,39 @@
 	     }
 	 }
      ];
+     // move one point of the multi-segment. "lineData" coordinates
+     // are relative to d.x and d.y, and the first point is always (0,0).
+     // Therefore, we must handle the translation of the first point in a different way.
+     let resizeDrag = d3.drag().on("drag", function(d) {
+	 let p = d[0].lineData.filter(el => el.seq === d[1])[0];
+	 if (p.seq !== 1) {
+	     p.x = d3.event.x;
+	     p.y = d3.event.y;
+	 } else {
+	     d[0].x = d[0].x + d3.event.x;
+	     d[0].y = d[0].y + d3.event.y;
+	     for (let point of d[0].lineData) {
+		 if (point.seq === 1) {
+		     continue;
+		 }
+		 point.x = point.x - d3.event.x;
+		 point.y = point.y - d3.event.y;
+	     }
+	 }
+	 // check alignment with nearby points
+	 for (let point of d[0].lineData) {
+	     if (point.seq === d[1]) {
+		 continue;
+	     }
+	     if (d3.event.x === point.x) {
+		 console.log("x-aligned", point);
+	     }
+	     if (d3.event.y === point.y) {
+		 console.log("y-aligned", point);
+	     }
+	 }
+	 opts.model.updateActiveDiagram(d[0], d[0].lineData);
+     });
      
      self.on("mount", function() {
 	 // setup diagram buttons
@@ -145,6 +178,13 @@
 	     self.enableConnect();
 	 });
 	 
+     });
+
+     // listen to 'moveTo' event from parent
+     self.parent.on("moveTo", function(element) {
+	 let diagramElem = d3.select("svg").selectAll("g#"+element).node();
+	 selected = [diagramElem];
+	 self.updateSelected();
      });
      
      // listen to 'render' event
@@ -253,8 +293,7 @@
      }
 
      deselectAll() {
-	 d3.selectAll(selected).selectAll("rect.selection-rect").remove();
-	 d3.selectAll(selected).selectAll("g.resize").remove();
+	 opts.model.trigger("deselected", selected);
 	 selected = [];
      }
      
@@ -270,8 +309,7 @@
 			  }
 			  if (selected.length === 0) {
 			      selected.push(this);
-			      self.parent.hover(this);
-			      updateSelected();
+			      self.updateSelected();
 			  }
 			  quadtree.removeAll(selected); // update quadtree
 		      })
@@ -308,11 +346,7 @@
 	     let ty = transform.y;
 	     let tZoom = transform.k;	     
 	     search(quadtree, (extent[0][0] - tx)/tZoom, (extent[0][1] - ty)/tZoom, (extent[1][0] - tx)/tZoom, (extent[1][1] - ty)/tZoom);
-
-	     d3.selectAll(selected).each(function(d) {
-		 self.parent.hover(this);
-	     });
-	     updateSelected();
+	     self.updateSelected();
 	     // Find the nodes within the specified rectangle.
 	     function search(quadtree, x0, y0, x3, y3) {
 		 quadtree.visit(function(node, x1, y1, x2, y2) {
@@ -330,45 +364,13 @@
 		 });
 	     }
 	 };
+     }
 
-	 function updateSelected() {
-	     d3.selectAll(selected)
-	       .selectAll("g.resize")
-	       .call(resizeDrag);
-	 };
-	 // move one point of the multi-segment. "lineData" coordinates
-	 // are relative to d.x and d.y, and the first point is always (0,0).
-	 // Therefore, we must handle the translation of the first point in a different way.
-	 let resizeDrag = d3.drag().on("drag", function(d) {
-	     let p = d[0].lineData.filter(el => el.seq === d[1])[0];
-	     if (p.seq !== 1) {
-		 p.x = d3.event.x;
-		 p.y = d3.event.y;
-	     } else {
-		 d[0].x = d[0].x + d3.event.x;
-		 d[0].y = d[0].y + d3.event.y;
-		 for (let point of d[0].lineData) {
-		     if (point.seq === 1) {
-			 continue;
-		     }
-		     point.x = point.x - d3.event.x;
-		     point.y = point.y - d3.event.y;
-		 }
-	     }
-	     // check alignment with nearby points
-	     for (let point of d[0].lineData) {
-		 if (point.seq === d[1]) {
-		     continue;
-		 }
-		 if (d3.event.x === point.x) {
-		     console.log("x-aligned", point);
-		 }
-		 if (d3.event.y === point.y) {
-		     console.log("y-aligned", point);
-		 }
-	     }
-	     opts.model.updateActiveDiagram(d[0], d[0].lineData);
-	 });
+     updateSelected() {
+	 d3.selectAll(selected)
+	   .selectAll("g.resize")
+	   .call(resizeDrag);
+	 opts.model.trigger("updateSelected", selected);
      }
 
      disableDrag() {
@@ -678,7 +680,6 @@
 	 }
 	 d3.select("svg > path").datum(null);
      }
-
     </script>
 
 </cimDiagramControls>

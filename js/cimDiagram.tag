@@ -50,7 +50,7 @@
      const TRAFO_HEIGHT = 50;  // height of transformer elements
      let self = this;
      self.model = opts.model;
-
+     
      // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
 	 if (decodeURI(name) !== self.diagramName) {
@@ -58,6 +58,7 @@
 	 }
          if (typeof(element) !== "undefined") {
 	     self.moveTo(element);
+	     self.trigger("moveTo", element);
          }
      });
 
@@ -266,6 +267,19 @@
 	     edgeToChange.source = cn;
 	 }
 	 self.forceTick();
+     });
+
+     // listen to 'updateSelected' event from model
+     self.model.on("updateSelected", function(selected) {
+	 d3.selectAll(selected).each(function(d) {
+	     self.hover(this);
+	 });
+     });
+
+     // listen to 'deselected' event from model
+     self.model.on("deselected", function(selected) {
+	 d3.selectAll(selected).selectAll("rect.selection-rect").remove();
+	 d3.selectAll(selected).selectAll("g.resize").remove();
      });
 
      render(diagramName) {
@@ -1363,8 +1377,6 @@
 	 d3.selectAll("svg").select("g.diagram").attr("transform", t);
 	 d3.zoom().transform(d3.selectAll("svg"), t);
 	 self.trigger("transform");
-	 // highlight the element
-	 self.hover(d3.select("svg").selectAll("g#"+uuid).node());;
      }
 
      /** Calculate the closest point on a given busbar relative to a given point (a terminal) */
