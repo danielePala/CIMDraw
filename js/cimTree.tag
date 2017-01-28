@@ -633,7 +633,11 @@
 		})
 	        .enter()
 	        .append("li")
-		.attr("class", "link").append("div").attr("class", "input-group input-group-sm");
+		.attr("class", "link").attr("title", function(d) {
+		    return [].filter.call(d.children, function(el) {
+			return el.nodeName === "rdfs:comment"
+		    })[0].textContent;
+		}).append("div").attr("class", "input-group input-group-sm");
 	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
 		.html(function (d) {
 		    return d.attributes[0].value.substring(1).split(".")[1]; 
