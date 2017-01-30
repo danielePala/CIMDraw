@@ -37,7 +37,9 @@
 	    <circle r="3.5" cy="-10" cx="-10"></circle>
 	    <g class="brush"></g>
 	    <g class="diagram-grid"></g>
-	    <g class="diagram-highlight"></g>
+	    <g class="diagram-highlight">
+		<line class="highlight"></line>
+	    </g>
 	    <g class="diagram">
 		<g class="edges"></g>
 	    </g>
@@ -121,7 +123,6 @@
 		 let terminal = self.model.getGraph(analog, "Measurement.Terminal", "Terminal.Measurements").map(el => el.source)[0];
 		 let termUUID = terminal.attributes.getNamedItem("rdf:ID").value;
 		 let termSelection = d3.select("g#" + termUUID);
-		 console.log(terminal, termSelection);
 		 self.createMeasurements(termSelection);
 		 break;
 	 }
@@ -140,7 +141,11 @@
 	     self.drawConnectivityNodes([object]);
 	     break;
 	 }
-	 self.forceTick(); // TODO: not very efficient to update everything
+	 let type = object.localName;
+	 let uuid = object.attributes.getNamedItem("rdf:ID").value;
+	 let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
+	 let target = types.select("#" + uuid);
+	 self.forceTick(target); 
      });
      
      // listen to 'addToActiveDiagram' event from model
@@ -267,19 +272,6 @@
 	     edgeToChange.source = cn;
 	 }
 	 self.forceTick();
-     });
-
-     // listen to 'updateSelected' event from model
-     self.model.on("updateSelected", function(selected) {
-	 d3.selectAll(selected).each(function(d) {
-	     self.hover(this);
-	 });
-     });
-
-     // listen to 'deselected' event from model
-     self.model.on("deselected", function(selected) {
-	 d3.selectAll(selected).selectAll("rect.selection-rect").remove();
-	 d3.selectAll(selected).selectAll("g.resize").remove();
      });
 
      render(diagramName) {
@@ -1310,37 +1302,6 @@
 	 };
 
 	 return cnEnter;
-     }
-
-     hover(hoverD) {	   
-	 d3.select(hoverD).filter("g:not(.ACLineSegment)").filter("g:not(.ConnectivityNode)").each(function (d) {
-	     d3.select(this).append("rect")
-	       .attr("x", this.getBBox().x)
-	       .attr("y", this.getBBox().y)
-	       .attr("width", this.getBBox().width)
-	       .attr("height", this.getBBox().height)
-	       .attr("stroke", "black")
-	       .attr("stroke-width", 2)
-	       .attr("stroke-dasharray", "5,5")
-	       .attr("fill", "none")
-	       .attr("class", "selection-rect");	       
-	 });
-	 let res = d3.select(hoverD).filter("g.ACLineSegment,g.ConnectivityNode") // resizable elements (TODO: junction)
-		     .selectAll("g.resize")
-		     .data(function(d) {
-			 // data is the element plus the coordinate point seq number
-			 let ret = d.lineData.map(el => [d, el.seq]);
-			 return ret;
-		     }).enter().append("g").attr("class", "resize");
-	 res.append("rect")
-	    .attr("x", function(d) {
-		return d[0].lineData.filter(el => el.seq === d[1])[0].x - 2;
-	    })
-	    .attr("y", function(d) {
-		return d[0].lineData.filter(el => el.seq === d[1])[0].y - 2;
-	    })
-	    .attr("width", 4)
-	    .attr("height", 4);
      }
 
      moveTo(uuid) {

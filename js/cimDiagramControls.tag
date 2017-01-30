@@ -151,14 +151,28 @@
 	     if (point.seq === d[1]) {
 		 continue;
 	     }
+	     let transform = d3.zoomTransform(d3.select("svg").node());
 	     if (d3.event.x === point.x) {
-		 console.log("x-aligned", point);
-	     }
-	     if (d3.event.y === point.y) {
-		 console.log("y-aligned", point);
-	     }
+		 let m = ((point.x + d[0].x) * transform.k) + transform.x;
+		 self.highlight("x", m);
+		 break;
+	     } else {
+		 if (d3.event.y === point.y) {
+		     let m = ((point.y + d[0].y) * transform.k) + transform.y;
+		     self.highlight("y", m);
+		     break;
+		 } else {
+		     self.highlight(null);
+		 }
+	     }	 
 	 }
 	 opts.model.updateActiveDiagram(d[0], d[0].lineData);
+     }).on("start", function(d) {
+	 quadtree.removeAll(selected); // update quadtree
+     }).on("end", function(d) {
+	 self.highlight(null);
+	 opts.model.updateActiveDiagram(d[0], d[0].lineData);
+	 quadtree.addAll(selected); // update quadtree
      });
      
      self.on("mount", function() {
@@ -293,7 +307,8 @@
      }
 
      deselectAll() {
-	 opts.model.trigger("deselected", selected);
+	 d3.selectAll(selected).selectAll("rect.selection-rect").remove();
+	 d3.selectAll(selected).selectAll("g.resize").remove();
 	 selected = [];
      }
      
@@ -303,7 +318,7 @@
 	 $("#select").click();
 	 self.status = "DRAG";
 	 let drag = d3.drag()
-		      .on("drag.start", function(d) {
+		      .on("start", function(d) {
 			  if (selected.indexOf(this) === -1) {
 			      self.deselectAll();
 			  }
@@ -325,7 +340,7 @@
 			  }
 			  opts.model.updateActiveDiagram(d, d.lineData);
 		      })
-		      .on("drag.end", function(d) {
+		      .on("end", function(d) {
 			  opts.model.updateActiveDiagram(d, d.lineData);
 			  quadtree.addAll(selected); // update quadtree
 		      });
@@ -368,9 +383,11 @@
 
      updateSelected() {
 	 d3.selectAll(selected)
+	   .each(function(d) {
+	       self.hover(this);
+	   })
 	   .selectAll("g.resize")
 	   .call(resizeDrag);
-	 opts.model.trigger("updateSelected", selected);
      }
 
      disableDrag() {
@@ -411,7 +428,7 @@
 	       let hashComponents = window.location.hash.substring(1).split("/");
 	       let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 	       if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
-		       route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
+		   route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
 	       }
 	   });
 	 let zoomComp = d3.zoom();
@@ -540,7 +557,7 @@
 	 function clicked() {
 	     let newObject = opts.model.createObject(type);
 	     self.parent.addToDiagram(newObject);
-	  }
+	 }
      }
 
      // draw multi-segment objects
@@ -548,7 +565,7 @@
 	 // handle escape key
 	 d3.select("body").on("keyup.addMulti", function() {
 	     if (d3.event.keyCode === 27) { // "Escape"
-	 self.disableAdd();
+		 self.disableAdd();
 		 self.enableAddMulti(e);
 	     }
 	 });
@@ -593,27 +610,14 @@
 		 let newy = Math.round((m[1] - transform.y) / transform.k) - newObject.y;
 		 let hG = d3.select("svg").select("g.diagram-highlight");
 		 if (newx === last.x) {
-		     let height = parseInt(d3.select("svg").style("height"));
-		     hG.append("line")
-			 .attr("class", "highlight")
-			 .attr("x1", m[0]) 
-			 .attr("y1", 0)
-			 .attr("x2", m[0]) 
-			 .attr("y2", height)
+		     self.highlight("x", m[0]);
 		 } else {
 		     if (newy === last.y) {
-			 let width = parseInt(d3.select("svg").style("width"));
-			 hG.append("svg:line")
-			     .attr("class", "highlight")
-			     .attr("x1", 0)
-			     .attr("y1", m[1])
-			     .attr("x2", width)
-			     .attr("y2", m[1]);
+			 self.highlight("y", m[1]);
 		     } else {
-			 hG.selectAll(".highlight").remove();
+			 self.highlight(null);
 		     }
 		 }
-
 	     }
 	     
 	     if (self.status === "ADD" + type) {
@@ -660,9 +664,35 @@
 	     let newSeq = newObject.lineData.length + 1;		 
 	     newObject.lineData.push({x: newx, y: newy, seq: newSeq});
 	     // remove highlight
-	     let hG = d3.select("svg").select("g.diagram-highlight");
-	     hG.selectAll(".highlight").remove();
+	     self.highlight(null);
 	 };
+     }
+
+     highlight(direction, val) {
+	 let hG = d3.select("svg").select("g.diagram-highlight");
+	 if (direction === "x") {
+	     let height = parseInt(d3.select("svg").style("height"));
+	     hG.select("line.highlight")
+	       .attr("x1", val) 
+	       .attr("y1", 0)
+	       .attr("x2", val) 
+	       .attr("y2", height);
+	 } else {
+	     if (direction === "y") {
+		 let width = parseInt(d3.select("svg").style("width"));
+		 hG.select("line.highlight")
+		   .attr("x1", 0)
+		   .attr("y1", val)
+		   .attr("x2", width)
+		   .attr("y2", val);
+	     } else {
+		 hG.select("line.highlight")
+		   .attr("x1", null)
+		   .attr("y1", null)
+		   .attr("x2", null)
+		   .attr("y2", null);
+	     }
+	 }
      }
 
      disableAdd() {
@@ -679,6 +709,37 @@
 	     opts.model.deleteObject(datum);
 	 }
 	 d3.select("svg > path").datum(null);
+     }
+
+     hover(hoverD) {	   
+	 d3.select(hoverD).filter("g:not(.ACLineSegment)").filter("g:not(.ConnectivityNode)").each(function (d) {
+	     d3.select(this).append("rect")
+	       .attr("x", this.getBBox().x)
+	       .attr("y", this.getBBox().y)
+	       .attr("width", this.getBBox().width)
+	       .attr("height", this.getBBox().height)
+	       .attr("stroke", "black")
+	       .attr("stroke-width", 2)
+	       .attr("stroke-dasharray", "5,5")
+	       .attr("fill", "none")
+	       .attr("class", "selection-rect");	       
+	 });
+	 let res = d3.select(hoverD).filter("g.ACLineSegment,g.ConnectivityNode") // resizable elements (TODO: junction)
+		     .selectAll("g.resize")
+		     .data(function(d) {
+			 // data is the element plus the coordinate point seq number
+			 let ret = d.lineData.map(el => [d, el.seq]);
+			 return ret;
+		     }).enter().append("g").attr("class", "resize");
+	 res.append("rect")
+	    .attr("x", function(d) {
+		return d[0].lineData.filter(el => el.seq === d[1])[0].x - 2;
+	    })
+	    .attr("y", function(d) {
+		return d[0].lineData.filter(el => el.seq === d[1])[0].y - 2;
+	    })
+	    .attr("width", 4)
+	    .attr("height", 4);
      }
     </script>
 
