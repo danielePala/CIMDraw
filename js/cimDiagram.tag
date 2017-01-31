@@ -28,6 +28,11 @@
 	 stroke: black;
 	 stroke-width: 2;
      }
+
+     .equipment-container-higlight {
+	 opacity: 0.5;
+	 fill: lightblue;
+     }
     </style>
     
     <cimDiagramControls model={model}></cimDiagramControls>
@@ -919,9 +924,22 @@
 	 let allChildNodes = [];
 	 let equipments = self.model.getGraph([d], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
 	 for (let equipment of equipments) {
-	     let childNode = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value);
-	     childNode.select("path").attr("stroke-width", 30);
-	     allChildNodes.push(childNode.node());
+	     let equipmentNode = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value);
+	     let res = equipmentNode.selectAll("g.equipment-container-higlight")
+		          .data(function(d) {
+			      // data is the element plus the coordinate point seq number
+			      let ret = d.lineData.map(el => [d, el.seq]);
+			      return ret;
+			  }).enter().append("g").attr("class", "equipment-container-higlight");
+	     res.append("circle")
+		.attr("cx", function(d) {
+		    return d[0].lineData.filter(el => el.seq === d[1])[0].x - 2;
+		})
+		.attr("cy", function(d) {
+		    return d[0].lineData.filter(el => el.seq === d[1])[0].y - 2;
+		})
+		.attr("r", 20);
+	     allChildNodes.push(equipmentNode.node());
 	 }
 	 d.x = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().x+d3.select(dd).datum().x}) - 30;
 	 d.y = d3.min(allChildNodes.filter(el => el !== null), function(dd) {return dd.getBBox().y+d3.select(dd).datum().y}) - 30;    
