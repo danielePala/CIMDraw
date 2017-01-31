@@ -196,8 +196,26 @@
 
      // listen to 'moveTo' event from parent
      self.parent.on("moveTo", function(element) {
-	 let diagramElem = d3.select("svg").selectAll("g#"+element).node();
-	 selected = [diagramElem];
+	 let cimObject = opts.model.getObject(element);
+	 if (cimObject.nodeName === "cim:Substation" || cimObject.nodeName === "cim:Line") {
+	     let equipments = opts.model.getGraph([cimObject], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
+	     for (let equipment of equipments) {
+		 // handle busbars
+		 if (equipment.nodeName === "cim:BusbarSection") {
+		     let cn = opts.model.getConnectivityNode(equipment);
+		     if (cn !== null) {
+			 equipment = cn;
+		     }
+		 }
+		 let node = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value).node();
+		 if (node !== null) {
+		     selected.push(node);
+		 }
+	     }
+	 } else {
+	     let diagramElem = d3.select("svg").selectAll("g#"+element).node();
+	     selected = [diagramElem];
+	 }
 	 self.updateSelected();
      });
      
