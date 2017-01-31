@@ -337,11 +337,10 @@
 			      dd.px = dd.x;
 			      dd.y = dd.y + deltay;
 			      dd.py = dd.y;
+			      opts.model.updateActiveDiagram(dd, dd.lineData);
 			  }
-			  opts.model.updateActiveDiagram(d, d.lineData);
 		      })
 		      .on("end", function(d) {
-			  opts.model.updateActiveDiagram(d, d.lineData);
 			  quadtree.addAll(selected); // update quadtree
 		      });
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
