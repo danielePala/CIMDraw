@@ -641,7 +641,7 @@ function cimModel() {
 	    model.trigger("deleteObject", objUUID);
 	},
 
-	// function to navigate busbars -> connectivity node.
+	// function to navigate busbar -> connectivity node.
 	// It filters by diagram (i.e. the busbar must be in the diagram)
 	getConnectivityNode(busbar) {
 	    if (busbar.nodeName === "cim:BusbarSection") {
@@ -651,6 +651,18 @@ function cimModel() {
 		}
 		let cn = model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
 		return cn;
+	    }
+	    return null;
+	},
+
+	// function to navigate connectivity node -> busbar.
+	// It filters by diagram (i.e. the busbar must be in the diagram) 
+	getBusbar(connectivityNode) {
+	    if (connectivityNode.nodeName === "cim:ConnectivityNode") {
+		let busbars = model.getEquipments(connectivityNode).filter(el => el.localName === "BusbarSection");
+		if (busbars.length > 0) {
+		    return busbars[0];
+		}
 	    }
 	    return null;
 	},

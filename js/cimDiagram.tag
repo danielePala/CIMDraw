@@ -368,6 +368,7 @@
 	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformers";
 	 // connectivity nodes
 	 let cnEnter = self.drawConnectivityNodes(allConnectivityNodes);
+	 self.createMeasurements(cnEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn connectivity nodes";
 
 	 // ac line terminals
@@ -501,78 +502,100 @@
 	   .attr("stroke-width", 1);
      }
 
-     createMeasurements(termSelection) {
-	 termSelection.attr("data-toggle", "tooltip");	 
-	 termSelection.each(function(d) {
-	     let tooltip = "";
-	     let measurements = self.model.getGraph([d], "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
-	     if (measurements.length > 0) {
-		 let tooltipLines = ["<b>Measurements</b><br><br>"];
-		 for (let measurement of measurements) {
-		     let type = self.model.getAttribute(measurement, "cim:Measurement.measurementType").textContent;
-		     let phases = self.model.getEnum(measurement, "cim:Measurement.phases").attributes[0].textContent.split("#")[1].split(".")[1];
-		     let unitMultiplier = self.model.getEnum(measurement, "cim:Measurement.unitMultiplier").attributes[0].textContent.split("#")[1].split(".")[1];
-		     if (unitMultiplier === "none") {
-			 unitMultiplier = "";
+     // Create measurements associated with a selection of terminals or power system resources.
+     // TODO: junctions
+     createMeasurements(psrSelection) {
+	 psrSelection.attr("data-toggle", "tooltip");	 
+	 psrSelection.each(function(d) {
+	     let measurements = []; 
+	     let svs = [];
+	     
+	     if (d.nodeName === "cim:ConnectivityNode") {		 
+		 let busbar = self.model.getBusbar(d);
+		 measurements = self.model.getGraph([busbar], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source);
+	     } else {
+		 if (d.nodeName === "cim:Terminal") {
+		     measurements = self.model.getGraph([d], "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
+		     svs = self.model.getGraph([d], "Terminal.SvPowerFlow", "SvPowerFlow.Terminal").map(el => el.source);
+		     if (measurements.length > 0 || svs.length > 0) {
+			 // change terminal appearance
+			 d3.select(this)
+			   .select("circle")
+			   .style("fill","white")
+			   .style("stroke", "black");
 		     }
-		     let unitSymbol = self.model.getEnum(measurement, "cim:Measurement.unitSymbol").attributes[0].textContent.split("#")[1].split(".")[1];
-		     let valueObject = self.model.getGraph([measurement], "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source)[0];
-		     let actLine = "";
-		     let value = "n.a."
-		     if (typeof(valueObject) !== "undefined") {
-			 if(typeof(self.model.getAttribute(valueObject, "cim:AnalogValue.value")) !== "undefined") {
-			     value = self.model.getAttribute(valueObject, "cim:AnalogValue.value").textContent;
-			     value = parseFloat(value).toFixed(2);
-			 }
-		     }
-		     actLine = actLine + type;
-		     actLine = actLine + " (phase: " + phases + ")";
-		     actLine = actLine + ": ";
-		     actLine = actLine + value;
-		     actLine = actLine + " [" + unitMultiplier + unitSymbol + "]";
-		     actLine = actLine + "<br>";
-		     tooltipLines.push(actLine);   
-		 }
-		 tooltipLines.sort();
-		 for (let i in tooltipLines) {
-		     tooltip = tooltip + tooltipLines[i];
-		 }
-		 // change terminal appearance
-		 d3.select(this)
-		   .select("circle")
-		   .style("fill","white")
-		   .style("stroke", "black");
+		   } else {  
+		       measurements = self.model.getGraph([d], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source);
+		   }
 	     }
-
-	     // power flow results
-	     let svs = self.model.getGraph([d], "Terminal.SvPowerFlow", "SvPowerFlow.Terminal").map(el => el.source);
-	     if (svs.length > 0) {
-		 if (measurements.length > 0) {
-		     tooltip = tooltip + "<br>";
-		 }
-		 tooltip = tooltip + "<b>Power flow results</b><br><br>";
-		 for (let sv of svs) {
-		     let p = 0.0, q = 0.0;
-		     if (typeof(self.model.getAttribute(sv, "cim:SvPowerFlow.p")) !== "undefined") { 
-			 p = self.model.getAttribute(sv, "cim:SvPowerFlow.p").textContent;
-		     }
-		     if (typeof(self.model.getAttribute(sv, "cim:SvPowerFlow.q")) !== "undefined") {
-			 q = self.model.getAttribute(sv, "cim:SvPowerFlow.q").textContent;
-		     }
-		     let actLine = "Active Power: " + parseFloat(p).toFixed(2) + " [kW]";
-		     actLine = actLine + "<br>";
-		     actLine = actLine + "Reactive power: " + parseFloat(q).toFixed(2) + " [kVAr]";
-		     actLine = actLine + "<br>";
-		     tooltip = tooltip + actLine;
-		 }	 
-	     }
-	 
+	 	     
+	     let tooltip = self.createTooltip(measurements, svs);
+	     
 	     $(this).tooltip({title: tooltip,
 			      container: "body",
 			      html: true,
 			      placement: "auto right"
 	     }).attr('data-original-title', tooltip);
 	 });
+     }
+
+     createTooltip(measurements, svs) {
+	 let tooltip = "";
+	 if (measurements.length > 0) {
+	     let tooltipLines = ["<b>Measurements</b><br><br>"];
+	     for (let measurement of measurements) {
+		 let type = self.model.getAttribute(measurement, "cim:Measurement.measurementType").textContent;
+		 let phases = self.model.getEnum(measurement, "cim:Measurement.phases").attributes[0].textContent.split("#")[1].split(".")[1];
+		 let unitMultiplier = self.model.getEnum(measurement, "cim:Measurement.unitMultiplier").attributes[0].textContent.split("#")[1].split(".")[1];
+		 if (unitMultiplier === "none") {
+		     unitMultiplier = "";
+		 }
+		 let unitSymbol = self.model.getEnum(measurement, "cim:Measurement.unitSymbol").attributes[0].textContent.split("#")[1].split(".")[1];
+		 let valueObject = self.model.getGraph([measurement], "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source)[0];
+		 let actLine = "";
+		 let value = "n.a."
+		 if (typeof(valueObject) !== "undefined") {
+		     if(typeof(self.model.getAttribute(valueObject, "cim:AnalogValue.value")) !== "undefined") {
+			 value = self.model.getAttribute(valueObject, "cim:AnalogValue.value").textContent;
+			 value = parseFloat(value).toFixed(2);
+		     }
+		 }
+		 actLine = actLine + type;
+		 actLine = actLine + " (phase: " + phases + ")";
+		 actLine = actLine + ": ";
+		 actLine = actLine + value;
+		 actLine = actLine + " [" + unitMultiplier + unitSymbol + "]";
+		 actLine = actLine + "<br>";
+		 tooltipLines.push(actLine);   
+	     }
+	     tooltipLines.sort();
+	     for (let i in tooltipLines) {
+		 tooltip = tooltip + tooltipLines[i];
+	     }
+	 }
+
+	 // power flow results
+	 if (svs.length > 0) {
+	     if (measurements.length > 0) {
+		 tooltip = tooltip + "<br>";
+	     }
+	     tooltip = tooltip + "<b>Power flow results</b><br><br>";
+	     for (let sv of svs) {
+		 let p = 0.0, q = 0.0;
+		 if (typeof(self.model.getAttribute(sv, "cim:SvPowerFlow.p")) !== "undefined") { 
+		     p = self.model.getAttribute(sv, "cim:SvPowerFlow.p").textContent;
+		 }
+		 if (typeof(self.model.getAttribute(sv, "cim:SvPowerFlow.q")) !== "undefined") {
+		     q = self.model.getAttribute(sv, "cim:SvPowerFlow.q").textContent;
+		 }
+		 let actLine = "Active Power: " + parseFloat(p).toFixed(2) + " [kW]";
+		 actLine = actLine + "<br>";
+		 actLine = actLine + "Reactive power: " + parseFloat(q).toFixed(2) + " [kVAr]";
+		 actLine = actLine + "<br>";
+		 tooltip = tooltip + actLine;
+	     }	 
+	 }
+	 return tooltip;
      }
 
      // bind data to an x,y array from Diagram Object Points
