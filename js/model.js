@@ -155,11 +155,11 @@ function cimModel() {
 	    for (let connectivityNode of allConnectivityNodes) {
 		data.children[0].appendChild(connectivityNode.cloneNode(true));
 	    }
-	    let allSubstations = model.getEquipmentContainers("cim:Substation");
+	    let allSubstations = model.getEquipmentContainers(["cim:Substation"])["cim:Substation"];
 	    for (let substation of allSubstations) {
 		data.children[0].appendChild(substation.cloneNode(true));
 	    }
-	    let allLines = model.getEquipmentContainers("cim:Line");
+	    let allLines = model.getEquipmentContainers(["cim:Line"])["cim:Line"];
 	    for (let line of allLines) {
 		data.children[0].appendChild(line.cloneNode(true));
 	    }
@@ -188,7 +188,7 @@ function cimModel() {
 
 	// get a list of diagrams in the current CIM file.
 	getDiagramList() {
-	    let diagrams = model.getObjects("cim:Diagram")
+	    let diagrams = model.getObjects(["cim:Diagram"])["cim:Diagram"]
 		.map(el => {
 		    let name = model.getAttribute(el, "cim:IdentifiedObject.name");
 		    if (typeof(name) === "undefined") {
@@ -201,15 +201,7 @@ function cimModel() {
 	},
 
 	// Get the objects of a given type (doesn't filter by diagram).
-	getObjects(type) {
-	    let allObjects = model.getAllObjects();
-	    return [].filter.call(allObjects, function(el) {
-		return el.nodeName === type;
-	    });
-	},
-
-	// TODO: replace all getObject calls with this
-	getObjects1(types) {
+	getObjects(types) {
 	    let ret = {};
  	    let allObjects = model.getAllObjects();
 	    for (let type of types) {
@@ -222,6 +214,22 @@ function cimModel() {
 		return r;
 	    }, ret);
 	    return ret;
+	},
+
+	// get all the measurements in the current diagram
+	getMeasurements() {
+	    let ceGraph = model.getConductingEquipmentGraph();
+	    let allEquipments = ceGraph.map(el => el.source);
+	    let terminals = ceGraph.map(el => el.target);
+	    let tMeasurements = model.getGraph(terminals,
+					       "Terminal.Measurements",
+					       "Measurement.Terminal")
+		.map(el => el.source);
+	    let eqMeasurements = model.getGraph(allEquipments,
+						"PowerSystemResource.Measurements",
+						"Measurement.PowerSystemResource")
+		.map(el => el.source);
+	    return [...new Set(tMeasurements.concat(eqMeasurements))];
 	},
 
 	// Get the (EQ) schema description of a given object, e.g. Breaker 
@@ -415,7 +423,7 @@ function cimModel() {
 
 	// Get the connectivity nodes that belong to the current diagram.
 	getConnectivityNodes() {
-	    let allConnectivityNodes = model.getObjects("cim:ConnectivityNode");
+	    let allConnectivityNodes = model.getObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
 	    let graphic = model.getGraphicObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
 	    let nonGraphic = allConnectivityNodes.filter(el => graphic.indexOf(el) === -1);
 	    nonGraphic = nonGraphic.filter(function(d) {
@@ -435,13 +443,21 @@ function cimModel() {
 	},
 
 	// Get the equipment containers that belong to the current diagram.
-	getEquipmentContainers(type) {
-	    let allContainers = model.getObjects(type);
-	    return allContainers.filter(function(container) {
-		let allContainedObjects = model.getGraph([container], "EquipmentContainers.Equipment", "Equipment.EquipmentContainer").map(el => el.source);
-		let graphicContainedObjects = model.getDiagramObjectGraph(allContainedObjects);
-		return (graphicContainedObjects.length > 0);
-	    });
+	getEquipmentContainers(types) {
+	    let ret = {};
+ 	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
+	    let allObjectsSet = new Set(allObjects); // we want uniqueness
+	    for (let type of types) {
+		ret[type] = model.getObjects([type])[type].filter(function(container) {
+		    let allContainedObjects = model.getGraph([container],
+							     "EquipmentContainers.Equipment",
+							     "Equipment.EquipmentContainer")
+			.map(el => el.source);
+		    let graphicContainedObjects = model.getDiagramObjectGraph(allContainedObjects);
+		    return (graphicContainedObjects.length > 0);
+		});
+	    }
+	    return ret;
 	},
 
 	// get all the terminals of given objects.
@@ -1034,7 +1050,7 @@ function cimModel() {
 	selectDiagram(diagramName) {
 	    if (diagramName !== model.activeDiagramName) {
 		model.activeDiagramName = diagramName;
-		model.activeDiagram = model.getObjects("cim:Diagram")
+		model.activeDiagram = model.getObjects(["cim:Diagram"])["cim:Diagram"]
 	            .filter(el => model.getAttribute(el, "cim:IdentifiedObject.name").textContent === model.activeDiagramName)[0];
 	    }
 	    // see if we must generate a new diagram
