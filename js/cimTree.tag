@@ -84,7 +84,7 @@
 	     if (this.checked === true) {
 		 self.createTree(self.model.getObjects1, self.model.getObjects);
 	     } else {
-		 self.createTree(self.model.getGraphicObjects1, self.model.getEquipmentContainers);
+		 self.createTree(self.model.getGraphicObjects, self.model.getEquipmentContainers);
 	     }
 	 });
      });
@@ -361,18 +361,24 @@
      createAddButton(cimContainer, name) {
 	 let elementsTopContainer = cimContainer.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
-	 let addBtn = elements
-	     .insert("li", ":first-child")
-	     .append("button")
-	     .attr("class", "btn btn-default btn-xs")
-	     .attr("type", "submit");
-	 addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
+	 let addBtn = elements.select("button.cim-add-btn");
+	 if (addBtn.empty() === true) {
+	     addBtn = elements
+		 .insert("li", ":first-child")
+		 .append("button")
+		 .attr("class", "btn btn-default btn-xs cim-add-btn")
+		 .attr("type", "submit");
+	     addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
+	     addBtn.on("click.add", function() {
+		 let newObject = opts.model.createObject("cim:" + name);
+	     });
+	 }
      }
 
      createElements(cimNetwork, name, printName, data) {
 	 let elementsTopContainer = cimNetwork.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
-	 if (elementsTopContainer.empty()) {
+	 if (elementsTopContainer.empty() === true) {
 	     elementsTopContainer = cimNetwork
 		.append("li")
 		.attr("class", name + "s" + " list-group-item");

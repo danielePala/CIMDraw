@@ -224,7 +224,7 @@ function cimModel() {
 	    return ret;
 	},
 
-	// Get the schema description of a given object, e.g. Breaker 
+	// Get the (EQ) schema description of a given object, e.g. Breaker 
 	getSchemaObject(type) {
 	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
@@ -232,6 +232,7 @@ function cimModel() {
 	    })[0];
 	},
 
+	// Get the (EQ) schema enumeration values of a given attribute 
 	getSchemaEnumValues(attr) {
 	    let type = [].filter.call(attr.children, function(el) {
 		return el.nodeName === "rdfs:range";
@@ -247,6 +248,8 @@ function cimModel() {
 	    })[0].textContent);
 	},
 
+	// Get the enum name a given attribute.
+	// It is not limited to EQ schema.
 	getSchemaEnumName(attr) {
 	    let type = [].filter.call(attr.children, function(el) {
 		return el.nodeName === "rdfs:range";
@@ -258,6 +261,7 @@ function cimModel() {
 
 	// Get all the attributes associated to a given type.
 	// The type is without namespace, e.g. "Breaker".
+	// It is limited to EQ schema.
 	getSchemaAttributes(type) {
 	    let ret = model.schemaAttributesMap.get(type);
 	    if (typeof(ret) === "undefined") {
@@ -288,12 +292,14 @@ function cimModel() {
 
 	// Get a specific attribute associated to a given type.
 	// The type is without namespace, e.g. "Breaker".
+	// It is limited to EQ schema.
 	getSchemaAttribute(type, attrName) {
 	    let schemaAttributes = model.getSchemaAttributes(type);
 	    return schemaAttributes.filter(el => el.attributes[0].value.substring(1) === attrName)[0];
 	},
 
 	// Test if a given attribute is an enum.
+	// It is not limited to EQ schema.
 	isEnum(attr) {
 	    let type = [].filter.call(attr.children, function(el) {
 		return el.nodeName === "cims:dataType";
@@ -305,7 +311,8 @@ function cimModel() {
 	    return false;
 	},
 
-	// Get the type of a given attribute
+	// Get the type of a given attribute.
+	// It is not limited to EQ schema.
 	getSchemaAttributeType(attr) {
 	    let unit = "none";
 	    let multiplier = "none";
@@ -342,6 +349,7 @@ function cimModel() {
 	    return [typeVal, unit, multiplier];
 	},
 
+	// Get the (EQ) schema links for a given type.
 	getSchemaLinks(type) {
 	    let ret = model.schemaLinksMap.get(type);
 	    if (typeof(ret) === "undefined") {
@@ -369,6 +377,7 @@ function cimModel() {
 	    return ret;
 	},
 
+	// Get all the (EQ) superclasses for a given type.
 	getAllSuper(type) {
 	    let allSuper = [];
 	    let object = model.getSchemaObject(type);
@@ -385,7 +394,10 @@ function cimModel() {
 
 	// Get the objects of a given type that have at least one
 	// DiagramObject in the current diagram.
-	getGraphicObjects1(types) {
+	// The input is an array of types, like ["cim:ACLineSegment", "cim:Breaker"]
+	// The output is an object, its keys are the types and the values are the
+	// corresponding arrays, like {cim:ACLineSegment: [array1], cim:Breaker: [array2]}
+	getGraphicObjects(types) {
 	    let ret = {};
  	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
 	    let allObjectsSet = new Set(allObjects); // we want uniqueness
@@ -401,18 +413,10 @@ function cimModel() {
 	    return ret;
 	},
 
-	getGraphicObjects(type) {
- 	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
-	    let allObjectsSet = new Set(allObjects); // we want uniqueness
-	    return [...allObjectsSet].filter(function(el) {
-		return el.nodeName === type;
-	    });
-	},
-
 	// Get the connectivity nodes that belong to the current diagram.
 	getConnectivityNodes() {
 	    let allConnectivityNodes = model.getObjects("cim:ConnectivityNode");
-	    let graphic = model.getGraphicObjects("cim:ConnectivityNode");
+	    let graphic = model.getGraphicObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
 	    let nonGraphic = allConnectivityNodes.filter(el => graphic.indexOf(el) === -1);
 	    nonGraphic = nonGraphic.filter(function(d) {
 		let edges = model.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
