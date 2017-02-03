@@ -82,9 +82,9 @@
 
 	 $("#showAllObjects").change(function() {
 	     if (this.checked === true) {
-		 self.createTree(self.model.getObjects1, self.model.getObjects);
+		 self.createTree(self.model.getObjects, self.model.getObjects);
 	     } else {
-		 self.createTree(self.model.getGraphicObjects1, self.model.getEquipmentContainers);
+		 self.createTree(self.model.getGraphicObjects, self.model.getEquipmentContainers);
 	     }
 	 });
      });
@@ -115,7 +115,9 @@
      });
 
      addNewObject(object) {
-	 let cimNetwork = d3.select("div.tree").selectAll("ul#CIMComponents");
+	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
+	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
+	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
 	 let generators = undefined;
 	 let loads = undefined;
 	 switch (object.nodeName) {
@@ -162,6 +164,19 @@
 		 break;
 	     case "cim:BusbarSection":
 		 self.createElements(cimNetwork, "BusbarSection", "Nodes", [object]);
+		 break;
+	     case "cim:BaseVoltage":
+		 self.createElements(cimContainers, "BaseVoltage", "Base Voltages", [object]);
+		 break;
+	     case "cim:Substation":
+		 self.createElements(cimContainers, "Substation", "Substations", [object]);
+		 break;
+	     case "cim:Line":
+		 self.createElements(cimContainers, "Line", "Lines", [object]);
+		 break;
+	     case "cim:Analog":
+	     case "cim:Discrete":
+		 self.createElements(cimMeasurements, "Measurement", "Measurements", [object]);
 		 break;
 	 }	 
      }
@@ -259,6 +274,8 @@
      self.createTreeGenerator = function*(getObjects, getContainers) {
 	 // clear all
 	 d3.select("#app-tree").selectAll("#CIMComponents > li").remove();
+	 d3.select("#app-tree").selectAll("#CIMContainers > li").remove();
+	 d3.select("#app-tree").selectAll("#CIMMeasurements > li").remove();
 	 // get all equipments
 	 let allEquipments = getObjects([
 	     "cim:BaseVoltage",
@@ -278,7 +295,7 @@
 	 ]);
 
 	 // base voltages don't depend on diagram
-	 let allBaseVoltages = self.model.getObjects("cim:BaseVoltage"); 
+	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
 	 let allBusbarSections = allEquipments["cim:BusbarSection"]; 
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
 	 let allACLines = allEquipments["cim:ACLineSegment"]; 
@@ -293,25 +310,17 @@
 	                              .concat(allEquipments["cim:ConformLoad"])
 	                              .concat(allEquipments["cim:NonConformLoad"]);
 	 yield "[" + Date.now() + "] TREE: extracted equipments";	 
-	 let allSubstations = getContainers("cim:Substation");
+	 let allSubstations = getContainers(["cim:Substation"])["cim:Substation"];
 	 yield "[" + Date.now() + "] TREE: extracted substations";
-	 let allLines = getContainers("cim:Line");
+	 let allLines = getContainers(["cim:Line"])["cim:Line"];
 	 yield "[" + Date.now() + "] TREE: extracted lines";
 
-	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
-	 // extract all measurements (can be tied to terminals or equipment
-	 for (let i of Object.keys(allEquipments)) {
-	     let terms = self.model.getTerminals(allEquipments[i]);
-	     let tMeasurements = self.model.getGraph(terms, "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
-	     let eqMeasurements = self.model.getGraph(allEquipments[i], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source);
-	     self.createElements(cimMeasurements, "Measurement", "Measurements", [...new Set(tMeasurements.concat(eqMeasurements))]);
-	 }  
-	 
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
+	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
+	 self.createElements(cimMeasurements, "Measurement", "Measurements", self.model.getMeasurements());	 
 	 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
 	 self.createElements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
-	 self.createAddButton(cimContainers, "BaseVoltage");
 	 self.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
 	 self.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
 	 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
@@ -328,6 +337,11 @@
 	 self.createElements(cimContainers, "Substation", "Substations", allSubstations);
 	 self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 self.createElements(cimContainers, "Line", "Lines", allLines);
+
+	 // add buttons (to remove)
+	 //self.createAddButton(cimContainers, "BaseVoltage");
+	 //self.createAddButton(cimContainers, "Substation");
+	 //self.createAddButton(cimContainers, "Line");
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
@@ -358,21 +372,28 @@
 	 return elements;
      }
 
+     // to remove
      createAddButton(cimContainer, name) {
 	 let elementsTopContainer = cimContainer.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
-	 let addBtn = elements
-	     .insert("li", ":first-child")
-	     .append("button")
-	     .attr("class", "btn btn-default btn-xs")
-	     .attr("type", "submit");
-	 addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
+	 let addBtn = elements.select("button.cim-add-btn");
+	 if (addBtn.empty() === true) {
+	     addBtn = elements
+		 .insert("li", ":first-child")
+		 .append("button")
+		 .attr("class", "btn btn-default btn-xs cim-add-btn")
+		 .attr("type", "submit");
+	     addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
+	     addBtn.on("click.add", function() {
+		 let newObject = opts.model.createObject("cim:" + name);
+	     });
+	 }
      }
 
      createElements(cimNetwork, name, printName, data) {
 	 let elementsTopContainer = cimNetwork.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
-	 if (elementsTopContainer.empty()) {
+	 if (elementsTopContainer.empty() === true) {
 	     elementsTopContainer = cimNetwork
 		.append("li")
 		.attr("class", name + "s" + " list-group-item");

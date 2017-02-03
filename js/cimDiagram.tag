@@ -302,19 +302,19 @@
 	 let allConnectivityNodes = self.model.getConnectivityNodes();
 	 yield "[" + Date.now() + "] DIAGRAM: extracted connectivity nodes";
 	 
-	 let allEquipments = self.model.getGraphicObjects1(["cim:ACLineSegment",
-							    "cim:Breaker",
-							    "cim:Disconnector",
-							    "cim:LoadBreakSwitch",
-							    "cim:Jumper",
-							    "cim:Junction",
-							    "cim:EnergySource",
-							    "cim:SynchronousMachine",
-							    "cim:EnergyConsumer",
-							    "cim:ConformLoad",
-							    "cim:NonConformLoad",
-							    "cim:PowerTransformer",
-							    "cim:BusbarSection"]);
+	 let allEquipments = self.model.getGraphicObjects(["cim:ACLineSegment",
+							   "cim:Breaker",
+							   "cim:Disconnector",
+							   "cim:LoadBreakSwitch",
+							   "cim:Jumper",
+							   "cim:Junction",
+							   "cim:EnergySource",
+							   "cim:SynchronousMachine",
+							   "cim:EnergyConsumer",
+							   "cim:ConformLoad",
+							   "cim:NonConformLoad",
+							   "cim:PowerTransformer",
+							   "cim:BusbarSection"]);
 	 let allACLines = allEquipments["cim:ACLineSegment"];
 	 let allBreakers = allEquipments["cim:Breaker"];
 	 let allDisconnectors = allEquipments["cim:Disconnector"]; 
