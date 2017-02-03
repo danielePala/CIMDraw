@@ -389,6 +389,10 @@ function cimModel() {
 	getAllSuper(type) {
 	    let allSuper = [];
 	    let object = model.getSchemaObject(type);
+	    // handle unknown objects (e.g. non-EQ objects)
+	    if (typeof(object) === "undefined") {
+		return allSuper;
+	    }
 	    let aSuper = [].filter.call(object.children, function(el) {
 		return el.nodeName === "rdfs:subClassOf";
 	    })[0];
@@ -528,10 +532,15 @@ function cimModel() {
 	},
 
 	// create an object of a given type
-	createObject(type) {
-	    let newElement = model.cimObject(type);
+	createObject(type, uuid) {
+	    let newElement = model.cimObject(type, uuid);
 	    model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
-	    let term = model.createTerminal(newElement);
+	    if (model.getAllSuper(newElement.localName).indexOf("ConductingEquipment") < 0) {
+		// if not a conducting equipment, we are done
+		return;
+	    }
+	    let term1 = model.createTerminal(newElement);
+	    let term2 = null;
 	    // create second terminal if needed
 	    if (type === "cim:ACLineSegment" ||
 		type === "cim:Breaker" ||
@@ -540,11 +549,11 @@ function cimModel() {
 		type === "cim:Jumper" ||
 		type === "cim:Junction" ||
 		type === "cim:PowerTransformer") {
-		model.createTerminal(newElement);
+		term2 = model.createTerminal(newElement);
 	    }
 	    if (type === "cim:BusbarSection") {
 		let cn = model.cimObject("cim:ConnectivityNode");
-		model.addLink(term, "cim:Terminal.ConnectivityNode", cn);
+		model.addLink(term1, "cim:Terminal.ConnectivityNode", cn);
 	    }
 	    if (type === "cim:PowerTransformer") {
 		// TODO: the number of windings should be configurable
@@ -554,6 +563,8 @@ function cimModel() {
 		model.setAttribute(w2, "cim:IdentifiedObject.name", "winding2");
 		model.addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w1);
 		model.addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w2);
+		model.addLink(w1, "cim:PowerTransformerEnd.Terminal", term1);
+		model.addLink(w2, "cim:PowerTransformerEnd.Terminal", term2);
 	    }
 	    model.trigger("createObject", newElement);
 	    return newElement;
@@ -776,12 +787,16 @@ function cimModel() {
 	    }
 	},
 
-	cimObject(name) {
+	cimObject(name, uuid) {
 	    let document = model.getDocument(name);
 	    let obj = document.createElementNS(cimNS, name);
 	    document.children[0].appendChild(obj);
 	    let objID = document.createAttribute("rdf:ID");
-	    objID.nodeValue = generateUUID();
+	    if (typeof(uuid) !== "undefined") {
+		objID.nodeValue = uuid;
+	    } else {
+		objID.nodeValue = generateUUID();
+	    }
 	    obj.setAttributeNode(objID);
 	    model.dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
 	    
