@@ -128,7 +128,6 @@
 	     case "cim:SvPowerFlow.p":
 	     case "cim:SvPowerFlow.q":
 		 let svTerminal = self.model.getGraph([object], "SvPowerFlow.Terminal", "Terminal.SvPowerFlow").map(el => el.source)[0];
-		 console.log(svTerminal);
 		 if (typeof(svTerminal) !== "undefined") {
 		     let termUUID = svTerminal.attributes.getNamedItem("rdf:ID").value;
 		     let termSelection = d3.select("g#" + termUUID);
@@ -285,14 +284,13 @@
 		 }
 		 self.forceTick();
 	 }
-
+	 // power flow results
 	 if ((target.nodeName === "cim:Terminal" && source.nodeName === "cim:SvPowerFlow") ||
 	     (source.nodeName === "cim:Terminal" && target.nodeName === "cim:SvPowerFlow")) {
 		 let terminal = target;
 		 if (source.nodeName === "cim:Terminal") {
 		     terminal = source;
 		 }
-		 console.log(terminal);
 		 if (typeof(terminal) !== "undefined") {
 		     let termUUID = terminal.attributes.getNamedItem("rdf:ID").value;
 		     let termSelection = d3.select("g#" + termUUID);
