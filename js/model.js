@@ -117,7 +117,7 @@ function cimModel() {
 		model.schemaDataEQ = schemaDataEQ;
 		d3.xml(rdfsDL, function(schemaDataDL) {
 		    model.schemaDataDL = schemaDataDL;
-		    d3.xml(rdfsDL, function(schemaDataSV) {
+		    d3.xml(rdfsSV, function(schemaDataSV) {
 			model.schemaDataSV = schemaDataSV;
 			callback(null);
 		    });
