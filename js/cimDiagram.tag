@@ -127,10 +127,10 @@
 		 break;
 	     case "cim:SvPowerFlow.p":
 	     case "cim:SvPowerFlow.q":
-		 let terminal = self.model.getGraph([object], "SvPowerFlow.Terminal", "Terminal.SvPowerFlow").map(el => el.source)[0];
-		 console.log(terminal);
-		 if (typeof(terminal) !== "undefined") {
-		     let termUUID = terminal.attributes.getNamedItem("rdf:ID").value;
+		 let svTerminal = self.model.getGraph([object], "SvPowerFlow.Terminal", "Terminal.SvPowerFlow").map(el => el.source)[0];
+		 console.log(svTerminal);
+		 if (typeof(svTerminal) !== "undefined") {
+		     let termUUID = svTerminal.attributes.getNamedItem("rdf:ID").value;
 		     let termSelection = d3.select("g#" + termUUID);
 		     self.createMeasurements(termSelection);
 		 }
