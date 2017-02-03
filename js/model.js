@@ -112,11 +112,15 @@ function cimModel() {
 	    // let's read schema files
 	    let rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
 	    let rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
+	    let rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
 	    d3.xml(rdfsEQ, function(error, schemaDataEQ) {
 		model.schemaDataEQ = schemaDataEQ;
 		d3.xml(rdfsDL, function(schemaDataDL) {
 		    model.schemaDataDL = schemaDataDL;
-		    callback(null);
+		    d3.xml(rdfsDL, function(schemaDataSV) {
+			model.schemaDataSV = schemaDataSV;
+			callback(null);
+		    });
 		});
 	    });
 	},
@@ -938,6 +942,13 @@ function cimModel() {
 	    // if fail, search in DL schema
 	    if (typeof(invRole) === "undefined") {
 		allSchemaObjects = model.schemaDataDL.children[0].children;
+		invRole = [].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith(invRoleNameString);
+		})[0];
+	    }
+	    // if fail, search in SV schema
+	    if (typeof(invRole) === "undefined") {
+		allSchemaObjects = model.schemaDataSV.children[0].children;
 		invRole = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith(invRoleNameString);
 		})[0];
