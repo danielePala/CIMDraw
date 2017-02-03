@@ -288,9 +288,9 @@
 
 	 if ((target.nodeName === "cim:Terminal" && source.nodeName === "cim:SvPowerFlow") ||
 	     (source.nodeName === "cim:Terminal" && target.nodeName === "cim:SvPowerFlow")) {
-		 let terminal = target.nodeName;
+		 let terminal = target;
 		 if (source.nodeName === "cim:Terminal") {
-		     terminal = source.nodeName;
+		     terminal = source;
 		 }
 		 console.log(terminal);
 		 if (typeof(terminal) !== "undefined") {
