@@ -625,7 +625,9 @@
 
      // bind data to an x,y array from Diagram Object Points
      // returns a 2 element array: the first is the update selection
-     // and the second is the enter selection
+     // and the second is the enter selection.
+     // The first argument is the CIM type, like "ACLineSegment", the
+     // second is the data array.
      createSelection(type, data) {
 	 let types = type + "s";
 	 if (d3.select("svg").select("g." + types).empty()) {
@@ -671,6 +673,7 @@
 		    .attr("stroke", "darkred")
 		    .attr("stroke-width", 2);
 	 aclineEnter.append("text")
+		    .attr("class", "cim-object-text")
 		    .style("text-anchor", "middle")
 		    .attr("font-size", 8)
 		    .attr("x", function(d) {
@@ -764,6 +767,7 @@
 		.attr("stroke", color)
 		.attr("stroke-width", 2);
 	 swEnter.append("text")
+	 	.attr("class", "cim-object-text")
 		.style("text-anchor", "end")
 		.attr("font-size", 8)
 		.attr("x", function(d) {
@@ -823,6 +827,7 @@
 		 .attr("stroke", "blue")
 		 .attr("stroke-width", 4);
 	 genEnter.append("text")
+	 	 .attr("class", "cim-object-text")
 		 .style("text-anchor", "middle")
 		 .attr("font-size", 8)
 		 .attr("x", 0)
@@ -858,6 +863,7 @@
 		  .attr("stroke", "black")
 		  .attr("stroke-width", 4);
 	 loadEnter.append("text")
+	 	  .attr("class", "cim-object-text")
 		  .style("text-anchor", "middle")
 		  .attr("font-size", 8)
 		  .attr("x", 0) 
@@ -891,6 +897,7 @@
 	           .attr("stroke", "black")
 	           .attr("stroke-width", 4);
 	 trafoEnter.append("text")
+	 	   .attr("class", "cim-object-text")
 		   .style("text-anchor", "end")
 		   .attr("font-size", 8)
 		   .attr("x", -25)
@@ -914,6 +921,7 @@
 	 if (eqSelection.size() > 0) {
 	     objType = eqSelection.data()[0].nodeName;
 	 }
+	 // use the correct height for the element
 	 switch (objType) {
 	     case "cim:Breaker":
 	     case "cim:Disconnector":
@@ -1215,6 +1223,7 @@
 	 
 	 // for busbars, show the name
 	 cnEnter.append("text")
+	 	.attr("class", "cim-object-text")
 	        .style("text-anchor", "end")
 	        .attr("font-size", 8);
 	 updateText(cnEnter.select("text"));

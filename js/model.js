@@ -222,6 +222,7 @@ function cimModel() {
 
 	// get all the measurements in the current diagram
 	getMeasurements() {
+	    let gMeasurements = model.getGraphicObjects(["cim:Analog", "cim:Discrete"]);
 	    let ceGraph = model.getConductingEquipmentGraph();
 	    let allEquipments = ceGraph.map(el => el.source);
 	    let terminals = ceGraph.map(el => el.target);
@@ -233,7 +234,13 @@ function cimModel() {
 						"PowerSystemResource.Measurements",
 						"Measurement.PowerSystemResource")
 		.map(el => el.source);
-	    return [...new Set(tMeasurements.concat(eqMeasurements))];
+	    gMeasurements = [].reduce.call(tMeasurements.concat(eqMeasurements), function(r, v) {
+		if (typeof(r[v.nodeName]) !== "undefined") {
+		    r[v.nodeName].push(v);
+		}
+		return r;
+	    }, gMeasurements);
+	    return gMeasurements; //[...new Set(tMeasurements.concat(eqMeasurements))];
 	},
 
 	// Get the (EQ) schema description of a given object, e.g. Breaker 
@@ -453,16 +460,15 @@ function cimModel() {
 	// Get the equipment containers that belong to the current diagram.
 	getEquipmentContainers(types) {
 	    let ret = {};
- 	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
-	    let allObjectsSet = new Set(allObjects); // we want uniqueness
 	    for (let type of types) {
 		ret[type] = model.getObjects([type])[type].filter(function(container) {
 		    let allContainedObjects = model.getGraph([container],
 							     "EquipmentContainers.Equipment",
 							     "Equipment.EquipmentContainer")
 			.map(el => el.source);
+		    let graphicObjects = model.getDiagramObjectGraph([container]);
 		    let graphicContainedObjects = model.getDiagramObjectGraph(allContainedObjects);
-		    return (graphicContainedObjects.length > 0);
+		    return (graphicObjects.length > 0 || graphicContainedObjects.length > 0);
 		});
 	    }
 	    return ret;
@@ -541,7 +547,7 @@ function cimModel() {
 	    model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
 	    if (model.getAllSuper(newElement.localName).indexOf("ConductingEquipment") < 0) {
 		// if not a conducting equipment, we are done
-		return;
+		return newElement;
 	    }
 	    let term1 = model.createTerminal(newElement);
 	    let term2 = null;
@@ -725,9 +731,6 @@ function cimModel() {
 
 	// add an object to the active diagram
 	addToActiveDiagram(object, lineData) {
-	    if (lineData.length < 1) {
-		return;
-	    }
 	    // create a diagram object and a diagram object point
 	    let dobj = model.cimObject("cim:DiagramObject");
 	    for (let linePoint of lineData) {
