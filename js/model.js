@@ -573,8 +573,8 @@ function cimModel() {
 		model.setAttribute(w2, "cim:IdentifiedObject.name", "winding2");
 		model.addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w1);
 		model.addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w2);
-		model.addLink(w1, "cim:PowerTransformerEnd.Terminal", term1);
-		model.addLink(w2, "cim:PowerTransformerEnd.Terminal", term2);
+		model.addLink(w1, "cim:TransformerEnd.Terminal", term1);
+		model.addLink(w2, "cim:TransformerEnd.Terminal", term2);
 	    }
 	    model.trigger("createObject", newElement);
 	    return newElement;

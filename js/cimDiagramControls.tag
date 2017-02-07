@@ -77,10 +77,10 @@
 		 let selection = d3.selectAll(selected);
 		 let terminals = opts.model.getTerminals(selection.data());
 		 terminals.forEach(function (terminal) {
-		     terminal.rotation = terminal.rotation + 90;
+		     terminal.rotation = (terminal.rotation + 90) % 360;
 		 });
 		 for (let datum of selection.data()) {
-		     datum.rotation = datum.rotation + 90;
+		     datum.rotation = (datum.rotation + 90) % 360;
 		     opts.model.updateActiveDiagram(datum, datum.lineData);
 		 }
 		 

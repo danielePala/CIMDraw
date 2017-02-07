@@ -47,9 +47,12 @@
     </div>    
     <script>
      "use strict";
-     const SWITCH_HEIGHT = 16; // height of switch elements
+     const SWITCH_HEIGHT = 10; // height of switch elements
+     const SWITCH_WIDTH = 10; // width of switch elements
+     const SWITCH_TERMINAL_OFFSET = 1; // distance between switch element and its terminals
      const GEN_HEIGHT = 50;    // height of generator elements
      const TRAFO_HEIGHT = 50;  // height of transformer elements
+     const TERMINAL_RADIUS = 2; // radius of terminals
      let self = this;
      self.model = opts.model;
      
@@ -327,19 +330,20 @@
 	 let allConnectivityNodes = self.model.getConnectivityNodes();
 	 yield "[" + Date.now() + "] DIAGRAM: extracted connectivity nodes";
 	 
-	 let allEquipments = self.model.getGraphicObjects(["cim:ACLineSegment",
-							   "cim:Breaker",
-							   "cim:Disconnector",
-							   "cim:LoadBreakSwitch",
-							   "cim:Jumper",
-							   "cim:Junction",
-							   "cim:EnergySource",
-							   "cim:SynchronousMachine",
-							   "cim:EnergyConsumer",
-							   "cim:ConformLoad",
-							   "cim:NonConformLoad",
-							   "cim:PowerTransformer",
-							   "cim:BusbarSection"]);
+	 let allEquipments = self.model.getGraphicObjects(
+	     ["cim:ACLineSegment",
+	      "cim:Breaker",
+	      "cim:Disconnector",
+	      "cim:LoadBreakSwitch",
+	      "cim:Jumper",
+	      "cim:Junction",
+	      "cim:EnergySource",
+	      "cim:SynchronousMachine",
+	      "cim:EnergyConsumer",
+	      "cim:ConformLoad",
+	      "cim:NonConformLoad",
+	      "cim:PowerTransformer",
+	      "cim:BusbarSection"]);
 	 let allACLines = allEquipments["cim:ACLineSegment"];
 	 let allBreakers = allEquipments["cim:Breaker"];
 	 let allDisconnectors = allEquipments["cim:Disconnector"]; 
@@ -694,6 +698,7 @@
 			return "";
 		    });
 
+	 // TODO: update text position
 	 aclineUpdate.select("path")
 		     .attr("d", function(d) {
 			 if (d.lineData.length === 1) {
@@ -739,14 +744,18 @@
 		      .y(function(d) { return d.y; });
 
 	 let swEnter = self.createSelection(type, allSwitches)[1];
+	 let xStart = (SWITCH_WIDTH/2) * (-1);
+	 let xEnd = (SWITCH_WIDTH/2);
+	 let yStart = (SWITCH_HEIGHT/2)* (-1);
+	 let yEnd = (SWITCH_HEIGHT/2);
 	 
 	 swEnter.append("path")
 		.attr("d", function(d) {
-		    return line([{x:-5, y:3, seq:1},
-				 {x:5, y:3, seq:2},
-				 {x:5, y:13, seq:3},
-				 {x:-5, y:13, seq:4},
-				 {x:-5, y:3, seq:5}]);		    
+		    return line([{x:xStart, y:yStart, seq:1},
+				 {x:xEnd, y:yStart, seq:2},
+				 {x:xEnd, y:yEnd, seq:3},
+				 {x:xStart, y:yEnd, seq:4},
+				 {x:xStart, y:yStart, seq:5}]);		    
 		})
 		.attr("fill", function(d) {
 		    let value = "0"; // default is OPEN
@@ -770,16 +779,8 @@
 	 	.attr("class", "cim-object-text")
 		.style("text-anchor", "end")
 		.attr("font-size", 8)
-		.attr("x", function(d) {
-		    let lineData = d3.select(this.parentNode).datum().lineData;
-		    let end = lineData[lineData.length-1];
-		    return ((lineData[0].x + end.x)/2) - 10;
-		})
-		.attr("y", function(d) {
-		    let lineData = d3.select(this.parentNode).datum().lineData;
-		    let end = lineData[lineData.length-1];
-		    return ((lineData[0].y + end.y)/2) + 15;
-		})
+		.attr("x", -10)
+		.attr("y", 0)
 		.text(function(d) {
 		    let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
 		    if (typeof(name) !== "undefined") {
@@ -916,7 +917,8 @@
      // Adds terminals to the objects contained in the selection.
      // The elements must all be of the same type (e.g. switches, loads...)
      createTerminals(eqSelection) {
-	 let height = 30;
+	 let term1_cy = 0; // default y coordinate for first terminal
+	 let term2_cy = 30; // default y coordinate for second terminal (if present)
 	 let objType = "none";
 	 if (eqSelection.size() > 0) {
 	     objType = eqSelection.data()[0].nodeName;
@@ -928,17 +930,18 @@
 	     case "cim:LoadBreakSwitch":
 	     case "cim:Jumper":
 	     case "cim:Junction":
-		 height = SWITCH_HEIGHT;
+		 term1_cy = ((SWITCH_HEIGHT/2) + (TERMINAL_RADIUS + SWITCH_TERMINAL_OFFSET)) * (-1);
+		 term2_cy = (SWITCH_HEIGHT/2) + (TERMINAL_RADIUS + SWITCH_TERMINAL_OFFSET);
 		 break;
 	     case "cim:EnergySource":
 	     case "cim:SynchronousMachine":
-		 height = GEN_HEIGHT;
+		 term2_cy = GEN_HEIGHT;
 		 break;
 	     case "cim:PowerTransformer":
-		 height = TRAFO_HEIGHT;
+		 term2_cy = TRAFO_HEIGHT;
 		 break;
 	     default:
-		 height = 30;
+		 term2_cy = 30;
 	 }
 	 let allEdges = [];
 	 let updateTermSelection = eqSelection.selectAll("g")
@@ -963,8 +966,8 @@
 		 let eqX = d3.select(this.parentNode).datum().x;
 		 let eqY = d3.select(this.parentNode).datum().y;
 		 if (lineData.length === 1) {
-		     start = {x:0, y:0};
-		     end = {x:0, y:height};
+		     start = {x:0, y:term1_cy};
+		     end = {x:0, y:term2_cy};
 		 }
 
 		 let eqRot = d3.select(this.parentNode).datum().rotation;
@@ -995,7 +998,7 @@
 		 } else {
 		     if (lineData.length === 1) {
 			 d.x = eqX;
-			 d.y = eqY + height*i;						    
+			 d.y = eqY + term1_cy*(1-i) + term2_cy*i;						    
 		     } else {
 			 d.x = eqX + start.x*(1-i)+end.x*i;
 			 d.y = eqY + start.y*(1-i)+end.y*i;
@@ -1015,7 +1018,7 @@
 	     });
 	 self.createEdges(allEdges);
 	 termSelection.append("circle")
-		      .attr("r", 2)
+		      .attr("r", TERMINAL_RADIUS)
 		      .style("fill","black")
 		      .attr("cx", function(d, i) {	    
 			  return d3.select(this.parentNode).datum().x - d3.select(this.parentNode.parentNode).datum().x; 
@@ -1235,29 +1238,26 @@
 		 // let's try to get a busbar section
 		 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 		 return typeof(busbarSection) !== "undefined";
-	     })
-	        .attr("x", function(d) {
-		    let lineData = d3.select(this.parentNode).datum().lineData;
-		    let end = lineData[lineData.length-1];
-		    return ((lineData[0].x + end.x)/2) - 10;
-		})
-	        .attr("y", function(d) {
-		    let lineData = d3.select(this.parentNode).datum().lineData;
-		    let end = lineData[lineData.length-1];
-		    return ((lineData[0].y + end.y)/2) + 15;
-		})
-	        .text(function(d) {
-		    let equipments = self.model.getEquipments(d);
-		    // let's try to get a busbar section
-		    let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-		    if (typeof(busbarSection) !== "undefined") {    
-			let name = self.model.getAttribute(busbarSection, "cim:IdentifiedObject.name");
-			if (typeof(name) !== "undefined") {
-			    return name.innerHTML;
-			}
-		    }
-		    return "";
-		})  
+	     }).attr("x", function(d) {
+		 let lineData = d3.select(this.parentNode).datum().lineData;
+		 let end = lineData[lineData.length-1];
+		 return ((lineData[0].x + end.x)/2) - 10;
+	     }).attr("y", function(d) {
+		 let lineData = d3.select(this.parentNode).datum().lineData;
+		 let end = lineData[lineData.length-1];
+		 return ((lineData[0].y + end.y)/2) + 15;
+	     }).text(function(d) {
+		 let equipments = self.model.getEquipments(d);
+		 // let's try to get a busbar section
+		 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
+		 if (typeof(busbarSection) !== "undefined") {    
+		     let name = self.model.getAttribute(busbarSection, "cim:IdentifiedObject.name");
+		     if (typeof(name) !== "undefined") {
+			 return name.innerHTML;
+		     }
+		 }
+		 return "";
+	     })  
 	 };
 
 	 return cnEnter;
@@ -1422,6 +1422,42 @@
 			  d.y = d3.select(this.parentNode).datum().y + parseInt(d3.select(this.firstChild).attr("cy"));
 			  return d.attributes.getNamedItem("rdf:ID").value;
 		      });
+	     // if rotation is a multiple of 180, undo it (for readability)
+	     selection.selectAll("text.cim-object-text")
+		      .attr("transform", function (d) {
+			  let textRotation = 0;
+			  let rotationOrigin = {x:0, y:0};
+			  if ((d.rotation%360) === 180) {
+			      textRotation = d.rotation * (-1);
+			  }
+			  switch (d.nodeName) {
+			      case "cim:Breaker":
+			      case "cim:Disconnector":
+			      case "cim:LoadBreakSwitch":
+			      case "cim:Jumper":
+			      case "cim:Junction":
+				  rotationOrigin = {x:0, y:0};
+				  break;
+			      case "cim:PowerTransformer":
+				  rotationOrigin = {x:0, y:30}; // TODO: define this constant
+				  break;
+			      default:
+				  rotationOrigin = {x: d3.select(this).attr("x"),
+						    y: d3.select(this).attr("y")};
+				  break;
+			  }
+			  return "rotate("+textRotation+","+rotationOrigin.x+","+rotationOrigin.y+")";
+		      });
+	     selection.selectAll("rect.selection-rect")
+		      .attr("x", 0)
+	              .attr("y", 0)
+	              .attr("width", 0)
+	              .attr("height", 0);
+	     selection.selectAll("rect.selection-rect")
+		      .attr("x", function(d) {return this.parentNode.getBBox().x})
+	              .attr("y", function(d) {return this.parentNode.getBBox().y})
+	              .attr("width", function(d) {return this.parentNode.getBBox().width;})
+	              .attr("height", function(d) {return this.parentNode.getBBox().height;});
 	     selection.selectAll("g.resize").selectAll("rect")
 		 .attr("x", function(d) {
 		     let p = d[0].lineData.filter(el => el.seq === d[1])[0];
