@@ -1225,20 +1225,21 @@
 		.attr("fill", "none");
 	 
 	 // for busbars, show the name
-	 cnEnter.append("text")
-	 	.attr("class", "cim-object-text")
-	        .style("text-anchor", "end")
-	        .attr("font-size", 8);
-	 updateText(cnEnter.select("text"));
-	 updateText(cnUpdate.select("text"));
-
-	 function updateText(selection) {
-	     selection.filter(function(d) {
+	 cnEnter
+	     .filter(function(d) {
 		 let equipments = self.model.getEquipments(d);
 		 // let's try to get a busbar section
 		 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 		 return typeof(busbarSection) !== "undefined";
-	     }).attr("x", function(d) {
+	     }).append("text")
+	     .attr("class", "cim-object-text")
+	     .style("text-anchor", "end")
+	     .attr("font-size", 8);
+	 updateText(cnEnter.select("text"));
+	 updateText(cnUpdate.select("text"));
+
+	 function updateText(selection) {
+	     selection.attr("x", function(d) {
 		 let lineData = d3.select(this.parentNode).datum().lineData;
 		 let end = lineData[lineData.length-1];
 		 return ((lineData[0].x + end.x)/2) - 10;
