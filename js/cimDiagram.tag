@@ -541,6 +541,9 @@
 	     
 	     if (d.nodeName === "cim:ConnectivityNode") {		 
 		 let busbar = self.model.getBusbar(d);
+		 if (busbar === null) {
+		     return;
+		 }
 		 measurements = self.model.getGraph([busbar], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source);
 	     } else {
 		 if (d.nodeName === "cim:Terminal") {
