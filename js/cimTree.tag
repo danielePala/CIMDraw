@@ -176,6 +176,7 @@
 		 break;
 	     case "cim:Analog":
 		 self.createElements(cimMeasurements, "Analog", "Analogs", [object]);
+		 break;
 	     case "cim:Discrete":
 		 self.createElements(cimMeasurements, "Discrete", "Discretes", [object]);	 
 		 break;
