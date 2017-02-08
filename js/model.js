@@ -235,12 +235,12 @@ function cimModel() {
 						"Measurement.PowerSystemResource")
 		.map(el => el.source);
 	    gMeasurements = [].reduce.call(tMeasurements.concat(eqMeasurements), function(r, v) {
-		if (typeof(r[v.nodeName]) !== "undefined") {
+		if (typeof(r[v.nodeName]) !== "undefined" && r[v.nodeName].indexOf(v) < 0) {
 		    r[v.nodeName].push(v);
 		}
 		return r;
 	    }, gMeasurements);
-	    return gMeasurements; //[...new Set(tMeasurements.concat(eqMeasurements))];
+	    return gMeasurements; 
 	},
 
 	// Get the (EQ) schema description of a given object, e.g. Breaker 

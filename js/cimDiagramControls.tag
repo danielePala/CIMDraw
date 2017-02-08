@@ -125,6 +125,17 @@
 		     opts.model.deleteFromDiagram(datum);
 		 }
 	     }
+	 },
+	 {
+	     title: 'Add new measurement',
+	     action: function(elm, d, i) {
+		 // applies to only one element
+		 self.deselectAll();
+		 selected.push(elm);
+		 self.updateSelected();
+		 let newObject = opts.model.createObject("cim:Analog");
+		 opts.model.addToActiveDiagram(newObject, []);
+	     }
 	 }
      ];
      // move one point of the multi-segment. "lineData" coordinates

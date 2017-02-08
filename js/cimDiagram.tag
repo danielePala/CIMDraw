@@ -223,9 +223,11 @@
 		 }
 	     }   
 	 }
-	 
-	 self.forceTick();
-	 self.trigger("addToDiagram", selection);
+
+	 if (selection !== null) {
+	     self.forceTick();
+	     self.trigger("addToDiagram", selection);
+	 }
 
 	 function handleTerminals(selection) {
 	     let terminals = self.model.getTerminals([object]);
