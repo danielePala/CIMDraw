@@ -175,8 +175,9 @@
 		 self.createElements(cimContainers, "Line", "Lines", [object]);
 		 break;
 	     case "cim:Analog":
+		 self.createElements(cimMeasurements, "Analog", "Analogs", [object]);
 	     case "cim:Discrete":
-		 self.createElements(cimMeasurements, "Measurement", "Measurements", [object]);
+		 self.createElements(cimMeasurements, "Discrete", "Discretes", [object]);	 
 		 break;
 	 }	 
      }
@@ -295,6 +296,8 @@
 	 ]);
 	 // get all containers
 	 let allContainers = getContainers(["cim:Substation", "cim:Line"]);
+	 // get all measurements
+	 let allMeasurements = self.model.getMeasurements(["cim:Analog", "cim:Discrete"]);
 
 	 // base voltages don't depend on diagram
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
@@ -320,8 +323,8 @@
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
-	 self.createElements(cimMeasurements, "Analog", "Analogs", self.model.getMeasurements()["cim:Analog"]);
-	 self.createElements(cimMeasurements, "Discrete", "Discretes", self.model.getMeasurements()["cim:Discrete"]);	 
+	 self.createElements(cimMeasurements, "Analog", "Analogs", allMeasurements["cim:Analog"]);
+	 self.createElements(cimMeasurements, "Discrete", "Discretes", allMeasurements["cim:Discrete"]);	 
 	 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
 	 self.createElements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
 	 self.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
@@ -778,14 +781,19 @@
      }
      
      deleteObject(objectUUID) {
-	 let cimObject = d3.select("div.tree").selectAll("ul#CIMComponents").select("ul#" + objectUUID).node();
+	 let cimObject = d3.select("div.tree").select("ul#" + objectUUID).node();
 	 if (cimObject !== null) {
 	     let cimObjectContainer = cimObject.parentNode;
 	     // update element count
-	     let elementsTopContainer = d3.select(cimObjectContainer.parentNode.parentNode);
-	     let elementCount = parseInt(elementsTopContainer.select("span").html());
-	     elementCount = elementCount - 1;
-	     elementsTopContainer.select("span").html(elementCount);
+	     $(cimObjectContainer)
+		 .parents("li.list-group-item")
+		 .find(">span")
+		 .each(function() {
+		     let elementCount = parseInt($(this).html());
+		     elementCount = elementCount - 1;
+		     $(this).html(elementCount);
+		 });
+	     // remove object
 	     cimObjectContainer.remove();
 	 }
      }
