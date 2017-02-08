@@ -133,7 +133,12 @@
 		 self.deselectAll();
 		 selected.push(elm);
 		 self.updateSelected();
-		 let newObject = opts.model.createObject("cim:Analog");
+		 let newObject = null;
+		 if (opts.model.isSwitch(d) === true) {
+			 newObject = opts.model.createObject("cim:Discrete");
+		 } else {
+		     newObject = opts.model.createObject("cim:Analog");
+		 }
 		 opts.model.addToActiveDiagram(newObject, []);
 	     }
 	 }

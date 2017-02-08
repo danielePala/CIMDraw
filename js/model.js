@@ -708,6 +708,14 @@ function cimModel() {
 	    return null;
 	},
 
+	// test weather an object is a switch
+	isSwitch(object) {
+	    if (model.getAllSuper(object.localName).indexOf("Switch") < 0) {
+		return false;
+	    }
+	    return true;
+	},
+
 	// delete an object from the current diagram
 	deleteFromDiagram(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
