@@ -129,17 +129,15 @@
 	 {
 	     title: 'Add new measurement',
 	     action: function(elm, d, i) {
-		 // applies to only one element
-		 self.deselectAll();
-		 selected.push(elm);
-		 self.updateSelected();
-		 let newObject = null;
-		 if (opts.model.isSwitch(d) === true) {
-			 newObject = opts.model.createObject("cim:Discrete");
-		 } else {
-		     newObject = opts.model.createObject("cim:Analog");
-		 }
-		 opts.model.addToActiveDiagram(newObject, []);
+		 self.addNewMeasurement(elm, d, i);
+	     }
+	 }
+     ];
+     let terminalsMenu = [
+	 {
+	     title: 'Add new measurement',
+	     action: function(elm, d, i) {
+		 self.addNewMeasurement(elm, d, i);
 	     }
 	 }
      ];
@@ -245,7 +243,7 @@
 	     return d3.select(d).data()[0].y;
 	 }).addAll(points.nodes());
 	 // setup context menu
-	 points.on("contextmenu", d3.contextMenu(menu));
+	 self.addContextMenu(points);
 	 // enable drag by default
 	 self.disableForce();
 	 self.disableZoom();
@@ -773,6 +771,30 @@
 	    })
 	    .attr("width", 4)
 	    .attr("height", 4);
+     }
+
+     addNewMeasurement(elm, d, i) {
+	 // applies to only one element
+	 self.deselectAll();
+	 selected.push(elm);
+	 self.updateSelected();
+	 let newObject = null;
+	 if (opts.model.isSwitch(d) === true) {
+		 newObject = opts.model.createObject("cim:Discrete");
+	 } else {
+	     newObject = opts.model.createObject("cim:Analog");
+	 }
+	 opts.model.addToActiveDiagram(newObject, []);
+     }
+
+     addContextMenu(selection) {
+	 selection/*.filter("g.ConnectivityNode")*/.on("contextmenu", d3.contextMenu(menu));
+	 // setup context menu for terminals
+	 let terminals = selection.selectAll("g.Terminal");
+	 terminals.on("contextmenu", function() {
+	     d3.contextMenu(terminalsMenu)();
+	     d3.event.stopPropagation();
+ 	 });
      }
     </script>
 
