@@ -591,7 +591,6 @@
 	 psrSelection.attr("data-toggle", "popover");	 
 	 psrSelection.each(function(d) {
 	     let measurements = [];
-	     let termMeasurements = [];
 	     let svs = [];
 	     let terminals = self.model.getTerminals([d]);
 	     // get the measurements for this equipment
@@ -613,37 +612,12 @@
 				    .map(el => el.source);
 	     }
 	     for (let terminal of terminals) {
-		 // get the measurements for this terminal
-		 let actTermMeasurements = self.model.getGraph(
-		     [terminal],
-		     "Terminal.Measurements",
-		     "Measurement.Terminal").map(el => el.source);
 		 let actTermSvs = self.model.getGraph(
 		     [terminal],
 		     "Terminal.SvPowerFlow",
 		     "SvPowerFlow.Terminal").map(el => el.source);
-		 if (actTermMeasurements.length > 0 || actTermSvs.length > 0) {
-		     // change terminal appearance
-		     let actTermSel = d3.select(this).selectAll("g.Terminal").filter(function(aTerm) {
-			 return aTerm === terminal;
-		     });
-		     actTermSel.select("circle")
-			       .style("fill","white")
-			       .style("stroke", "black");
-		     // create tooltip
-		     let tooltip = self.createTooltip(actTermMeasurements, actTermSvs);	 
-		     $(actTermSel.node()).popover({title: tooltip,
-						   container: "body",
-						   html: true,
-						   placement: "auto right"
-		     }).attr('data-original-title', tooltip);
-		     // update terminals arrays
-		     termMeasurements = termMeasurements.concat(actTermMeasurements);  
-		     svs = svs.concat(actTermSvs);
-		 }
+		 svs = svs.concat(actTermSvs);
 	     }
-	     measurements = measurements.filter(
-		 x => termMeasurements.indexOf(x) < 0 );
 	     if (measurements.length > 0) {
 		 let tooltip = self.createTooltip(measurements, []);
 		 
@@ -661,10 +635,10 @@
 	 if (measurements.length > 0) {
 	     let tooltipLines = ["<b>Measurements</b><br><br>"];
 	     for (let measurement of measurements) {
-		 let type = "n.a.";
-		 let phases = "n.a.";
-		 let unitMultiplier = "n.a.";
-		 let unitSymbol = "n.a.";
+		 let type = "value";
+		 let phases = "ABC";
+		 let unitMultiplier = "";
+		 let unitSymbol = "no unit";
 		 let typeAttr = self.model.getAttribute(measurement, "cim:Measurement.measurementType");
 		 let phasesAttr = self.model.getEnum(measurement, "cim:Measurement.phases");
 		 let unitMultiplierAttr = self.model.getEnum(measurement, "cim:Measurement.unitMultiplier");
@@ -783,26 +757,9 @@
 	 aclineEnter.append("text")
 		    .attr("class", "cim-object-text")
 		    .style("text-anchor", "middle")
-		    .attr("font-size", 8)
-		    .attr("x", function(d) {
-			let lineData = d.lineData;
-			let end = lineData[lineData.length-1];
-			return (lineData[0].x + end.x)/2;
-		    })
-		    .attr("y", function(d) {
-			let lineData = d.lineData;
-			let end = lineData[lineData.length-1];
-			return (lineData[0].y + end.y)/2;
-		    })
-		    .text(function(d) {
-			let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
-			if (typeof(name) !== "undefined") {
-			    return name.innerHTML;
-			}
-			return "";
-		    });
-
-	 // TODO: update text position
+		    .attr("font-size", 8);
+	 updateText(aclineUpdate.select("text"));
+	 updateText(aclineEnter.select("text"));
 	 aclineUpdate.select("path")
 		     .attr("d", function(d) {
 			 if (d.lineData.length === 1) {
@@ -813,6 +770,24 @@
 	             .attr("fill", "none")
 	             .attr("stroke", "darkred")
 	             .attr("stroke-width", 2);
+
+	 function updateText(selection) {
+	     selection.attr("x", function(d) {
+		 let lineData = d.lineData;
+		 let end = lineData[lineData.length-1];
+		 return (lineData[0].x + end.x)/2;
+	     }).attr("y", function(d) {
+		 let lineData = d.lineData;
+		 let end = lineData[lineData.length-1];
+		 return (lineData[0].y + end.y)/2;
+	     }).text(function(d) {
+		 let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
+		 if (typeof(name) !== "undefined") {
+		     return name.innerHTML;
+		 }
+		 return "";
+	     });
+	 };
 		      
 	 return [aclineUpdate, aclineEnter];
      }
