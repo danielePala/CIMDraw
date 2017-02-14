@@ -122,19 +122,36 @@
 		 target.select("text").html(value);
 		 break;
 	     case "cim:AnalogValue.value":
-		 let analog = self.model.getGraph([object], "AnalogValue.Analog", "Analog.AnalogValues").map(el => el.source);
-		 let terminal = self.model.getGraph(analog, "Measurement.Terminal", "Terminal.Measurements").map(el => el.source)[0];
-		 let termUUID = terminal.attributes.getNamedItem("rdf:ID").value;
-		 let termSelection = d3.select("g#" + termUUID);
-		 self.createMeasurements(termSelection);
+		 let analog = self.model.getGraph(
+		     [object],
+		     "AnalogValue.Analog",
+		     "Analog.AnalogValues")
+				  .map(el => el.source);
+		 let psr = self.model.getGraph(
+		     analog,
+		     "Measurement.PowerSystemResource",
+		     "PowerSystemResource.Measurements")
+				    .map(el => el.source)[0];
+		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+		 let psrSelection = d3.select("g#" + psrUUID);
+		 self.createMeasurements(psrSelection);
 		 break;
 	     case "cim:SvPowerFlow.p":
 	     case "cim:SvPowerFlow.q":
-		 let svTerminal = self.model.getGraph([object], "SvPowerFlow.Terminal", "Terminal.SvPowerFlow").map(el => el.source)[0];
+		 let svTerminal = self.model.getGraph(
+		     [object],
+		     "SvPowerFlow.Terminal",
+		     "Terminal.SvPowerFlow")
+				      .map(el => el.source)[0];
 		 if (typeof(svTerminal) !== "undefined") {
-		     let termUUID = svTerminal.attributes.getNamedItem("rdf:ID").value;
-		     let termSelection = d3.select("g#" + termUUID);
-		     self.createMeasurements(termSelection);
+		     let psr = self.model.getGraph(
+			 [svTerminal],
+			 "Terminal.ConductingEquipment",
+			 "ConductingEquipment.Terminals")
+				   .map(el => el.source)[0];
+		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+		     let psrSelection = d3.select("g#" + psrUUID);
+		     self.createMeasurements(psrSelection);
 		 }
 		 break;
 	 }
@@ -261,8 +278,9 @@
      // this function checks if the terminal belongs to the current diagram
      // TODO: should check also the connectivity node
      self.model.on("addLink", function(source, linkName, target) {
-	 if ((target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") ||
-	     (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode")) {
+	 switch (linkName) {
+	     case "cim:Terminal.ConnectivityNode":
+	     case "cim:ConnectivityNode.Terminals":
 		 let cn = undefined;
 		 let term = undefined;
 		 if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
@@ -288,22 +306,56 @@
 		     edgeToChange.source = cn;
 		 }
 		 self.forceTick();
-	 }
-	 // power flow results
-	 if ((target.nodeName === "cim:Terminal" && source.nodeName === "cim:SvPowerFlow") ||
-	     (source.nodeName === "cim:Terminal" && target.nodeName === "cim:SvPowerFlow")) {
+		 break;
+	     case "cim:Terminal.SvPowerFlow":
+	     case "cim:SvPowerFlow.Terminal":
+		 // power flow results
 		 let terminal = target;
 		 if (source.nodeName === "cim:Terminal") {
 		     terminal = source;
 		 }
 		 if (typeof(terminal) !== "undefined") {
-		     let termUUID = terminal.attributes.getNamedItem("rdf:ID").value;
-		     let termSelection = d3.select("g#" + termUUID);
-		     self.createMeasurements(termSelection);
-		 }		 
+		     let psr = self.model.getGraph(
+			 [terminal],
+			 "Terminal.ConductingEquipment",
+			 "ConductingEquipment.Terminals")
+				   .map(el => el.source)[0];
+		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+		     let psrSelection = d3.select("g#" + psrUUID);
+		     self.createMeasurements(psrSelection);
+		 }
+		 break;
+	     case "cim:Measurement.Terminal":
+	     case "cim.ACDCTerminal.Measurements":
+	 	 let measTerminal = target;
+		 if (source.nodeName === "cim:Terminal") {
+		     measTerminal = source;
+		 }
+		 let measPsr = self.model.getGraph(
+		     [measTerminal],
+		     "Terminal.ConductingEquipment",
+		     "ConductingEquipment.Terminals")
+				   .map(el => el.source)[0];
+		 let measPsrUUID = measPsr.attributes.getNamedItem("rdf:ID").value;
+		 let measPsrSelection = d3.select("g#" + measPsrUUID);
+		 self.createMeasurements(measPsrSelection);
+		 break;
+	     case "cim:Measurement.PowerSystemResource":
+	     case "cim.PowerSystemResource.Measurements":
+		 let psr = target;
+		 if (linkName === "cim.PowerSystemResource.Measurements") {
+		     psr = source;
+		 }
+		 if (typeof(psr) !== "undefined") {
+		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+		     let psrSelection = d3.select("g#" + psrUUID);
+		     console.log(psrSelection);
+		     self.createMeasurements(psrSelection);
+		 }
+		 break;
 	 }
      });
-
+     
      render(diagramName) {
 	 let diagramRender = self.renderGenerator(diagramName);
 	 function periodic() {
@@ -404,7 +456,7 @@
 
 	 // ac line terminals
 	 let termSelection = self.createTerminals(aclineEnter);
-	 self.createMeasurements(termSelection);
+	 self.createMeasurements(aclineEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn acline terminals";
 	 // breaker terminals
 	 self.createTerminals(breakerEnter);
@@ -423,27 +475,27 @@
 	 yield "[" + Date.now() + "] DIAGRAM: drawn junction terminals";
 	 // energy source terminals
 	 termSelection = self.createTerminals(ensrcEnter);
-	 self.createMeasurements(termSelection);
+	 self.createMeasurements(ensrcEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy source terminals";
 	 // synchronous machine terminals
 	 termSelection = self.createTerminals(syncEnter);
-	 self.createMeasurements(termSelection);
+	 self.createMeasurements(syncEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machine terminals";
 	 // energy consumer terminals
 	 termSelection = self.createTerminals(enconsEnter);
-	 self.createMeasurements(termSelection);
+	 self.createMeasurements(enconsEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy consumer terminals";
 	 // conform load terminals
 	 termSelection = self.createTerminals(confEnter);
-	 self.createMeasurements(termSelection);
+	 self.createMeasurements(confEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn conform load terminals";
 	 // non conform load terminals
 	 termSelection = self.createTerminals(nonconfEnter);
-	 self.createMeasurements(termSelection);
+	 self.createMeasurements(nonconfEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn non conform load terminals";
 	 // power transformer terminals
 	 termSelection = self.createTerminals(trafoEnter);
-	 self.createMeasurements(termSelection);
+	 self.createMeasurements(trafoEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformer terminals";
 
 	 d3.select("svg").on("mouseover", function() {
@@ -536,41 +588,72 @@
      // Create measurements associated with a selection of terminals or power system resources.
      // TODO: junctions
      createMeasurements(psrSelection) {
-	 psrSelection.attr("data-toggle", "tooltip");	 
+	 psrSelection.attr("data-toggle", "popover");	 
 	 psrSelection.each(function(d) {
-	     let measurements = []; 
+	     let measurements = [];
+	     let termMeasurements = [];
 	     let svs = [];
-	     
+	     let terminals = self.model.getTerminals([d]);
+	     // get the measurements for this equipment
 	     if (d.nodeName === "cim:ConnectivityNode") {		 
 		 let busbar = self.model.getBusbar(d);
 		 if (busbar === null) {
 		     return;
 		 }
-		 measurements = self.model.getGraph([busbar], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source);
+		 measurements = self.model.getGraph(
+		     [busbar],
+		     "PowerSystemResource.Measurements",
+		     "Measurement.PowerSystemResource")
+				    .map(el => el.source);
 	     } else {
-		 if (d.nodeName === "cim:Terminal") {
-		     measurements = self.model.getGraph([d], "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
-		     svs = self.model.getGraph([d], "Terminal.SvPowerFlow", "SvPowerFlow.Terminal").map(el => el.source);
-		     if (measurements.length > 0 || svs.length > 0) {
-			 // change terminal appearance
-			 d3.select(this)
-			   .select("circle")
-			   .style("fill","white")
-			   .style("stroke", "black");
-		     }
-		   } else {  
-		       measurements = self.model.getGraph([d], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source);
-		   }
+		 measurements = self.model.getGraph(
+		     [d],
+		     "PowerSystemResource.Measurements",
+		     "Measurement.PowerSystemResource")
+				    .map(el => el.source);
 	     }
-	 	     
-	     let tooltip = self.createTooltip(measurements, svs);
-	     
-	     $(this).tooltip({title: tooltip,
-			      container: "body",
-			      html: true,
-			      placement: "auto right"
-	     }).attr('data-original-title', tooltip);
-	 });
+	     for (let terminal of terminals) {
+		 // get the measurements for this terminal
+		 let actTermMeasurements = self.model.getGraph(
+		     [terminal],
+		     "Terminal.Measurements",
+		     "Measurement.Terminal").map(el => el.source);
+		 let actTermSvs = self.model.getGraph(
+		     [terminal],
+		     "Terminal.SvPowerFlow",
+		     "SvPowerFlow.Terminal").map(el => el.source);
+		 if (actTermMeasurements.length > 0 || actTermSvs.length > 0) {
+		     // change terminal appearance
+		     let actTermSel = d3.select(this).selectAll("g.Terminal").filter(function(aTerm) {
+			 return aTerm === terminal;
+		     });
+		     actTermSel.select("circle")
+			       .style("fill","white")
+			       .style("stroke", "black");
+		     // create tooltip
+		     let tooltip = self.createTooltip(actTermMeasurements, actTermSvs);	 
+		     $(actTermSel.node()).popover({title: tooltip,
+						   container: "body",
+						   html: true,
+						   placement: "auto right"
+		     }).attr('data-original-title', tooltip);
+		     // update terminals arrays
+		     termMeasurements = termMeasurements.concat(actTermMeasurements);  
+		     svs = svs.concat(actTermSvs);
+		 }
+	     }
+	     measurements = measurements.filter(
+		 x => termMeasurements.indexOf(x) < 0 );
+	     if (measurements.length > 0) {
+		 let tooltip = self.createTooltip(measurements, []);
+		 
+		 $(this).popover({title: tooltip,
+				  container: "body",
+				  html: true,
+				  placement: "auto right"
+		 }).attr('data-original-title', tooltip);
+	     }
+	 })
      }
 
      createTooltip(measurements, svs) {
@@ -578,13 +661,29 @@
 	 if (measurements.length > 0) {
 	     let tooltipLines = ["<b>Measurements</b><br><br>"];
 	     for (let measurement of measurements) {
-		 let type = self.model.getAttribute(measurement, "cim:Measurement.measurementType").textContent;
-		 let phases = self.model.getEnum(measurement, "cim:Measurement.phases").attributes[0].textContent.split("#")[1].split(".")[1];
-		 let unitMultiplier = self.model.getEnum(measurement, "cim:Measurement.unitMultiplier").attributes[0].textContent.split("#")[1].split(".")[1];
-		 if (unitMultiplier === "none") {
-		     unitMultiplier = "";
+		 let type = "n.a.";
+		 let phases = "n.a.";
+		 let unitMultiplier = "n.a.";
+		 let unitSymbol = "n.a.";
+		 let typeAttr = self.model.getAttribute(measurement, "cim:Measurement.measurementType");
+		 let phasesAttr = self.model.getEnum(measurement, "cim:Measurement.phases");
+		 let unitMultiplierAttr = self.model.getEnum(measurement, "cim:Measurement.unitMultiplier");
+		 let unitSymbolAttr = self.model.getEnum(measurement, "cim:Measurement.unitSymbol");
+		 if (typeof(typeAttr) !== "undefined") {
+		     type = typeAttr.textContent;
 		 }
-		 let unitSymbol = self.model.getEnum(measurement, "cim:Measurement.unitSymbol").attributes[0].textContent.split("#")[1].split(".")[1];
+		 if (typeof(phasesAttr) !== "undefined") {
+		     phases = phasesAttr.attributes[0].textContent.split("#")[1].split(".")[1];
+		 }
+		 if (typeof(unitMultiplierAttr) !== "undefined") {
+		     unitMultiplier = unitMultiplierAttr.attributes[0].textContent.split("#")[1].split(".")[1];
+		     if (unitMultiplier === "none") {
+			 unitMultiplier = "";
+		     }
+		 }
+		 if (typeof(unitSymbolAttr) !== "undefined") {
+		     unitSymbol = unitSymbolAttr.attributes[0].textContent.split("#")[1].split(".")[1];
+		 }
 		 let valueObject = self.model.getGraph([measurement], "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source)[0];
 		 let actLine = "";
 		 let value = "n.a."

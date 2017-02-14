@@ -261,7 +261,7 @@
 		 self.disableAll();
 		 self.enableDrag();
 	     }
-	     selection.on("contextmenu", d3.contextMenu(menu));
+	     self.addContextMenu(selection);
 	 }
      });
 
@@ -776,13 +776,26 @@
      addNewMeasurement(elm, d, i) {
 	 // applies to only one element
 	 self.deselectAll();
-	 selected.push(elm);
-	 self.updateSelected();
+	 if (d.nodeName !== "cim:Terminal") { // TODO: select element associated with terminal
+	     selected.push(elm);
+	     self.updateSelected();
+	 }
 	 let newObject = null;
 	 if (opts.model.isSwitch(d) === true) {
 		 newObject = opts.model.createObject("cim:Discrete");
 	 } else {
 	     newObject = opts.model.createObject("cim:Analog");
+	 }
+	 if (d.nodeName === "cim:Terminal") {
+	     let psr = opts.model.getGraph(
+		 [d],
+		 "Terminal.ConductingEquipment",
+		 "ConductingEquipment.Terminals")
+	                       .map(el => el.source)[0];
+	     opts.model.setLink(newObject, "cim:Measurement.Terminal", d);
+	     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", psr);
+	 } else {
+	     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", d);
 	 }
 	 opts.model.addToActiveDiagram(newObject, []);
      }
@@ -791,8 +804,8 @@
 	 selection/*.filter("g.ConnectivityNode")*/.on("contextmenu", d3.contextMenu(menu));
 	 // setup context menu for terminals
 	 let terminals = selection.selectAll("g.Terminal");
-	 terminals.on("contextmenu", function() {
-	     d3.contextMenu(terminalsMenu)();
+	 terminals.on("contextmenu", function(d, i, nodes) {
+	     d3.contextMenu(terminalsMenu).bind(this)(d, i, nodes);
 	     d3.event.stopPropagation();
  	 });
      }
