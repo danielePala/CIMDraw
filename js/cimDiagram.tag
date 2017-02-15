@@ -621,11 +621,12 @@
 	     if (measurements.length > 0) {
 		 let tooltip = self.createTooltip(measurements, []);
 		 
-		 $(this).popover({title: tooltip,
+		 $(this).popover({title: "<b>Measurements</b>",
+				  content: tooltip,
 				  container: "body",
 				  html: true,
 				  placement: "auto right"
-		 }).attr('data-original-title', tooltip);
+		 }).data('bs.popover').tip().find('.popover-content').empty().append(tooltip);//.attr('data-original-title', tooltip);
 	     }
 	 })
      }
@@ -633,13 +634,14 @@
      createTooltip(measurements, svs) {
 	 let tooltip = "";
 	 if (measurements.length > 0) {
-	     let tooltipLines = ["<b>Measurements</b><br><br>"];
+	     let tooltipLines = [];
 	     for (let measurement of measurements) {
-		 let type = "value";
+		 let type = "unnamed";
 		 let phases = "ABC";
 		 let unitMultiplier = "";
 		 let unitSymbol = "no unit";
-		 let typeAttr = self.model.getAttribute(measurement, "cim:Measurement.measurementType");
+		 let typeAttr = self.model.getAttribute(measurement, "cim:IdentifiedObject.name");
+		 //self.model.getAttribute(measurement, "cim:Measurement.measurementType");
 		 let phasesAttr = self.model.getEnum(measurement, "cim:Measurement.phases");
 		 let unitMultiplierAttr = self.model.getEnum(measurement, "cim:Measurement.unitMultiplier");
 		 let unitSymbolAttr = self.model.getEnum(measurement, "cim:Measurement.unitSymbol");
@@ -667,7 +669,11 @@
 			 value = parseFloat(value).toFixed(2);
 		     }
 		 }
-		 actLine = actLine + type;
+		 let measUUID = measurement.attributes.getNamedItem("rdf:ID").value;
+		 let hashComponents = window.location.hash.split("/");
+		 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+		 let targetPath = basePath + "/" + measUUID;
+		 actLine = actLine + "<a href=" + targetPath + ">"+type+"</a>";
 		 actLine = actLine + " (phase: " + phases + ")";
 		 actLine = actLine + ": ";
 		 actLine = actLine + value;
