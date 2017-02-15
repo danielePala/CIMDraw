@@ -155,6 +155,34 @@
 		 }
 		 break;
 	 }
+	 if (object.nodeName === "cim:Analog" || object.nodeName === "cim:Discrete") {
+	     let psr = self.model.getGraph(
+		 [object],
+		 "Measurement.PowerSystemResource",
+		 "PowerSystemResource.Measurements")
+			   .map(el => el.source)[0];
+	     if (typeof(psr) !== "undefined") {
+		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+		 let psrSelection = d3.select("g#" + psrUUID);
+		 self.createMeasurements(psrSelection);
+	     }
+	 }
+     });
+
+     // listen to 'setEnum' event from model
+     self.model.on("setEnum", function(object, enumName, value) {
+	 if (object.nodeName === "cim:Analog" || object.nodeName === "cim:Discrete") {
+	     let psr = self.model.getGraph(
+		 [object],
+		 "Measurement.PowerSystemResource",
+		 "PowerSystemResource.Measurements")
+			   .map(el => el.source)[0];
+	     if (typeof(psr) !== "undefined") {
+		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+		 let psrSelection = d3.select("g#" + psrUUID);
+		 self.createMeasurements(psrSelection);
+	     }
+	 }
      });
 
      // Listen to 'updateActiveDiagram' event from model.
@@ -349,7 +377,6 @@
 		 if (typeof(psr) !== "undefined") {
 		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		     let psrSelection = d3.select("g#" + psrUUID);
-		     console.log(psrSelection);
 		     self.createMeasurements(psrSelection);
 		 }
 		 break;
@@ -626,7 +653,8 @@
 				  container: "body",
 				  html: true,
 				  placement: "auto right"
-		 }).data('bs.popover').tip().find('.popover-content').empty().append(tooltip);//.attr('data-original-title', tooltip);
+		 }).data('bs.popover').tip().find('.popover-content').empty().append(tooltip);
+		 $(this).data('bs.popover').options.content = tooltip;
 	     }
 	 })
      }
