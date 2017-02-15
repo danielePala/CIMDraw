@@ -1344,19 +1344,19 @@
      }
 
      moveTo(uuid) {
-	 let hoverD = this.model.getObject(uuid);
+	 let hoverD = self.model.getObject(uuid);
 	 // handle busbars
 	 if (hoverD.nodeName === "cim:BusbarSection") {
-	     hoverD = opts.model.getConnectivityNode(equipment);
+	     hoverD = self.model.getConnectivityNode(hoverD);
 	 }
 
 	 // handle substations and lines
 	 if (hoverD.nodeName === "cim:Substation" || hoverD.nodeName === "cim:Line") {
-	     let equipments = opts.model.getGraph([hoverD], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
+	     let equipments = self.model.getGraph([hoverD], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
 	     for (let equipment of equipments) {
 		 // handle busbars
 		 if (equipment.nodeName === "cim:BusbarSection") {
-		     let cn = opts.model.getConnectivityNode(equipment);
+		     let cn = self.model.getConnectivityNode(equipment);
 		     if (cn !== null) {
 			 equipment = cn;
 		     }
