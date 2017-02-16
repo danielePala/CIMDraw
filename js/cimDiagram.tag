@@ -665,6 +665,7 @@
 				  container: "body",
 				  html: true,
 				  trigger: "manual",
+				  delay: {"show": 200, "hide": 0},
 				  placement: "auto right"
 		 }).data('bs.popover').tip().find('.popover-content').empty().append(tooltip);
 		 $(this).data('bs.popover').options.content = tooltip;
