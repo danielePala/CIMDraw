@@ -358,11 +358,11 @@
 			      selected.push(this);
 			      self.updateSelected();
 			  }
-			  $(selected).popover("toggle");
+			  $(selected).filter('[data-toggle="popover"]').popover("toggle");
 			  quadtree.removeAll(selected); // update quadtree
 		      })
 		      .on("drag", function(d) {
-			  $(selected).popover("hide");
+			  $(selected).filter('[data-toggle="popover"]').popover("hide");
 			  let deltax = d3.event.x - d.x;
 			  let deltay = d3.event.y - d.y;
 			  for (let selNode of selected) {
