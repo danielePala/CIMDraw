@@ -795,7 +795,14 @@
 	     opts.model.setLink(newObject, "cim:Measurement.Terminal", d);
 	     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", psr);
 	 } else {
-	     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", d);
+	     if (d.nodeName === "cim:ConnectivityNode") {
+		 let busbar = opts.model.getBusbar(d);
+		 if (busbar !== null) {
+		     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", busbar);
+		 }
+	     } else {
+		 opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", d);
+	     }
 	 }
 	 opts.model.addToActiveDiagram(newObject, []);
      }

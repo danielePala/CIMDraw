@@ -162,6 +162,10 @@
 		 "PowerSystemResource.Measurements")
 			   .map(el => el.source)[0];
 	     if (typeof(psr) !== "undefined") {
+		 // handle busbars
+		 if (psr.nodeName === "cim:BusbarSection") {
+		     psr = self.model.getConnectivityNode(psr);
+		 }	 
 		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		 let psrSelection = d3.select("g#" + psrUUID);
 		 self.createMeasurements(psrSelection);
@@ -178,6 +182,10 @@
 		 "PowerSystemResource.Measurements")
 			   .map(el => el.source)[0];
 	     if (typeof(psr) !== "undefined") {
+		 // handle busbars
+		 if (psr.nodeName === "cim:BusbarSection") {
+		     psr = self.model.getConnectivityNode(psr);
+		 }	 
 		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		 let psrSelection = d3.select("g#" + psrUUID);
 		 self.createMeasurements(psrSelection);
@@ -375,6 +383,10 @@
 		     psr = source;
 		 }
 		 if (typeof(psr) !== "undefined") {
+		     // handle busbars
+		     if (psr.nodeName === "cim:BusbarSection") {
+			 psr = self.model.getConnectivityNode(psr);
+		     }	 
 		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		     let psrSelection = d3.select("g#" + psrUUID);
 		     self.createMeasurements(psrSelection);
