@@ -1419,7 +1419,9 @@
 	 if (typeof(hoverD.x) === "undefined" || typeof(hoverD.y) === "undefined") {
 	     return;
 	 }
-	 
+	 // hide popover before moving
+	 $('[data-toggle="popover"]').popover("hide");
+	 // do the transform
 	 let svgWidth = parseInt(d3.select("svg").style("width"));
 	 let svgHeight = parseInt(d3.select("svg").style("height"));
 	 let newZoom = 1;

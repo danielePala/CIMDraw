@@ -145,6 +145,8 @@
      // are relative to d.x and d.y, and the first point is always (0,0).
      // Therefore, we must handle the translation of the first point in a different way.
      let resizeDrag = d3.drag().on("drag", function(d) {
+	 // hide popovers
+	 $(selected).filter('[data-toggle="popover"]').popover("hide");
 	 let p = d[0].lineData.filter(el => el.seq === d[1])[0];
 	 if (p.seq !== 1) {
 	     p.x = d3.event.x;
@@ -745,7 +747,7 @@
 	 d3.select("svg > path").datum(null);
      }
 
-     hover(hoverD) {	   
+     hover(hoverD) {
 	 d3.select(hoverD).filter("g:not(.ACLineSegment)").filter("g:not(.ConnectivityNode)").each(function (d) {
 	     d3.select(this).append("rect")
 	       .attr("x", this.getBBox().x)
