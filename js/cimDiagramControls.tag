@@ -74,6 +74,7 @@
 		     selected.push(elm);
 		     self.updateSelected();
 		 }
+		 $(selected).filter('[data-toggle="popover"]').popover("hide");
 		 let selection = d3.selectAll(selected);
 		 let terminals = opts.model.getTerminals(selection.data());
 		 terminals.forEach(function (terminal) {
@@ -94,6 +95,7 @@
 		     selected.push(elm);
 		 }
 		 quadtree.removeAll(selected); // update quadtree
+		 $(selected).filter('[data-toggle="popover"]').popover("destroy");
 		 let selection = d3.selectAll(selected);
 		 let terminals = opts.model.getTerminals(selection.data());
 		 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
@@ -114,6 +116,7 @@
 		     selected.push(elm);
 		 }
 		 quadtree.removeAll(selected); // update quadtree
+		 $(selected).filter('[data-toggle="popover"]').popover("destroy");
 		 let selection = d3.selectAll(selected);
 		 let terminals = opts.model.getTerminals(selection.data());
 		 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
