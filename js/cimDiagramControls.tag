@@ -431,6 +431,7 @@
      }
 
      enableForce() {
+	 $('[data-toggle="popover"]').popover("hide");
 	 let equipments = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
 	 let terminals = equipments.selectAll("g.Terminal");
 	 self.d3force = d3.forceSimulation(equipments.data().concat(terminals.data()))
