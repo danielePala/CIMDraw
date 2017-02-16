@@ -456,6 +456,7 @@
      
      enableZoom() {
 	 $("#zoom").click();
+	 $('[data-toggle="popover"]').popover("hide");
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g")
 	   .on("click", function (d) {
 	       let hashComponents = window.location.hash.substring(1).split("/");
