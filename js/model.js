@@ -128,8 +128,14 @@ function cimModel() {
 	// Serialize the current CIM file.
 	save() {
 	    let oSerializer = new XMLSerializer();
-	    let sXML = oSerializer.serializeToString(model.data.all);
-	    return sXML;
+	    if (typeof(model.data.all) !== "undefined") {
+		let sXML = oSerializer.serializeToString(model.data.all);
+		return sXML;
+	    }
+	    let zip = new JSZip();
+	    zip.file("EQ.xml", oSerializer.serializeToString(model.data.eq));
+	    zip.file("DL.xml", oSerializer.serializeToString(model.data.dl));
+	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 	},
 
 	// Serialize the current diagram. Nodes are cloned, otherwise they would

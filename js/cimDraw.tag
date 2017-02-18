@@ -244,9 +244,16 @@
 	     // allow saving a copy of the file 
 	     $("#cim-save").on("click", function() {
 		 let out = self.cimModel.save();
-		 let blob = new Blob([out], {type : 'text/xml'});
-		 let objectURL = URL.createObjectURL(blob);
-		 $("#cim-save").attr("href", objectURL);
+		 if (typeof(out) === "string") {
+		     let blob = new Blob([out], {type : 'text/xml'});
+		     let objectURL = URL.createObjectURL(blob);
+		     $("#cim-save").attr("href", objectURL);
+		 } else {
+		     out.then(function(content) {
+			 let objectURL = URL.createObjectURL(content);
+			 window.location.href = objectURL;
+		     });
+		 }
 	     });
 	     $("#cim-save").show();
 	     // load diagram list
