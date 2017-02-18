@@ -18,14 +18,24 @@
     <nav class="navbar navbar-default">
 	<div class="container-fluid">
 	    <div class="navbar-header">
-		<a class="navbar-brand" href="">CIM network visualization</a>
+		<a class="navbar-brand" href="">CIMDraw</a>
 	    </div>
 	    <div class="collapse navbar-collapse">
 		<p class="navbar-text" id="cim-filename"></p>
-		<a class="btn btn-default navbar-btn navbar-left" href="" role="button" id="cim-home-container">Change file</a>
-		<a class="btn btn-default navbar-btn navbar-left" role="button" id="cim-save" download="file.xml">Save as...</a>
-		<a class="btn btn-default navbar-btn navbar-left" role="button" id="cim-export" download="diagram.xml">Export current diagram</a>
-		<select id="cim-diagrams" class="selectpicker navbar-left navbar-form" onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
+		<ul class="nav navbar-nav" id="cim-home-container">
+		    <li class="dropdown">
+			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+			    File <span class="caret"></span>
+			</a>
+			<ul class="dropdown-menu">
+			    <li><a href="">Open</a></li>
+			    <li><a id="cim-save" download="file.xml">Save as...</a></li>
+			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
+			</ul>
+		    </li>
+		</ul>
+		<select id="cim-diagrams" class="selectpicker navbar-left navbar-form"
+			onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
 		    <option disabled="disabled">Select a diagram</option>
 		</select>
 	    </div>
@@ -149,8 +159,6 @@
 	     $("#app-container").hide();
 	     $("#cim-load-container").hide();
 	     $("#cim-home-container").hide();
-	     $("#cim-save").hide();
-	     $("#cim-export").hide();
 	     $(".selectpicker").selectpicker("hide");
 	     // main logic
 	     $("#cim-file-input").fileinput("reset");
@@ -182,6 +190,7 @@
 	     // things to hide
 	     $("#cim-local-file-component").hide();
 	     $("#app-container").hide();
+	     $("#cim-export").parent().addClass("disabled");
 	     // main logic
 	     $("#loadingDiagramMsg").text("loading CIM network...");
 	     $("#loadingModal").off("shown.bs.modal");
@@ -236,7 +245,7 @@
 		     let objectURL = URL.createObjectURL(blob);
 		     $("#cim-export").attr("href", objectURL);
 		 });
-		 $("#cim-export").show();
+		 $("#cim-export").parent().removeClass("disabled");
 	     };
 	 };
 
@@ -255,7 +264,6 @@
 		     });
 		 }
 	     });
-	     $("#cim-save").show();
 	     // load diagram list
 	     $(".selectpicker").selectpicker({container: "body"});
 	     d3.select("#cim-diagrams").selectAll("option").remove();
