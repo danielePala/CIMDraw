@@ -514,7 +514,7 @@
 		   .attr("class", "form-control")
 		   .each(setValueFromModel)
 		   .attr("type", "text")
-		   .on("keydown", attrKeyDown);
+		   .on("input", attrInput);
 	 // Integer attributes
 	 elementDiv.filter(function(d) {
 	     let attrType = self.model.getSchemaAttributeType(d);
@@ -523,7 +523,7 @@
 		   .attr("class", "form-control")
 		   .each(setIntValueFromModel)
 		   .attr("type", "number")
-		   .on("keydown", attrKeyDown);
+	 	   .on("input", attrInput);
 	 // Float attributes
 	 elementDiv.filter(function(d) {
 	     let attrType = self.model.getSchemaAttributeType(d);
@@ -533,7 +533,7 @@
 		   .each(setFloatValueFromModel)
 		   .attr("type", "number")
 		   .attr("step", "0.00001")
-		   .on("keydown", attrKeyDown);
+	 	   .on("input", attrInput);
 	 // Boolean attributes
 	 let elementBool = elementDiv.filter(function(d) {
 	     let attrType = self.model.getSchemaAttributeType(d);
@@ -640,17 +640,10 @@
 	     // update the model
 	     self.model.setEnum(object, attrName, value);
 	 };
-	 function attrKeyDown(d) {
-	     if (typeof(d3.event) === "undefined") {
-		 return;
-	     }
-	     // trap the return key being pressed
-	     if (d3.event.keyCode === 13) {
-		 d3.event.preventDefault();
-		 let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
-		 let attrName = "cim:" + d.attributes[0].value.substring(1);
-		 self.model.setAttribute(object, attrName, this.value);
-	     }
+	 function attrInput(d) {
+	     let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
+	     let attrName = "cim:" + d.attributes[0].value.substring(1);
+	     self.model.setAttribute(object, attrName, this.value);
 	 };
 	 // add links
 	 let elementLink = elementEnter
