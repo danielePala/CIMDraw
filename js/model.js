@@ -145,15 +145,27 @@ function cimModel() {
 	    let data = parser.parseFromString(emptyFile, "application/xml");
 	    // fill the file
 	    data.children[0].appendChild(model.activeDiagram.cloneNode(true));
-	    let allDiagramObjects = model.getGraph([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
+	    let allDiagramObjects = model.getGraph(
+		[model.activeDiagram],
+		"Diagram.DiagramObjects",
+		"DiagramObject.Diagram")
+		.map(el => el.source);
 	    for (let diagramObject of allDiagramObjects) {
 		data.children[0].appendChild(diagramObject.cloneNode(true));
 	    }
-	    let allEquipments = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects").map(el => el.source);
+	    let allEquipments = model.getGraph(
+		allDiagramObjects,
+		"DiagramObject.IdentifiedObject",
+		"IdentifiedObject.DiagramObjects")
+		.map(el => el.source);
 	    for (let equipment of allEquipments) {
 		data.children[0].appendChild(equipment.cloneNode(true));
 	    }
-	    let allDiagramObjectPoints = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject").map(el => el.source);
+	    let allDiagramObjectPoints = model.getGraph(
+		allDiagramObjects,
+		"DiagramObject.DiagramObjectPoints",
+		"DiagramObjectPoint.DiagramObject")
+		.map(el => el.source);
 	    for (let diagramObjectPoint of allDiagramObjectPoints) {
 		data.children[0].appendChild(diagramObjectPoint.cloneNode(true));
 	    }
@@ -165,28 +177,47 @@ function cimModel() {
 	    for (let connectivityNode of allConnectivityNodes) {
 		data.children[0].appendChild(connectivityNode.cloneNode(true));
 	    }
-	    let allSubstations = model.getEquipmentContainers(["cim:Substation"])["cim:Substation"];
+	    let allEqContainers = model.getEquipmentContainers(
+		["cim:Substation", "cim:Line"]);
+	    let allSubstations = allEqContainers["cim:Substation"];
 	    for (let substation of allSubstations) {
 		data.children[0].appendChild(substation.cloneNode(true));
 	    }
-	    let allLines = model.getEquipmentContainers(["cim:Line"])["cim:Line"];
+	    let allLines = allEqContainers["cim:Line"];
 	    for (let line of allLines) {
 		data.children[0].appendChild(line.cloneNode(true));
 	    }
-	    let allBaseVoltages = model.getGraph(allEquipments, "ConductingEquipment.BaseVoltage", "BaseVoltage.ConductingEquipment").map(el => el.source)
+	    let allBaseVoltages = model.getGraph(
+		allEquipments,
+		"ConductingEquipment.BaseVoltage",
+		"BaseVoltage.ConductingEquipment")
+		.map(el => el.source)
 	    for (let baseVoltage of allBaseVoltages) {
 		data.children[0].appendChild(baseVoltage.cloneNode(true));
 	    }
-	    let allTrafoEnds = model.getGraph(allEquipments, "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer").map(el => el.source);
+	    let allTrafoEnds = model.getGraph(
+		allEquipments,
+		"PowerTransformer.PowerTransformerEnd",
+		"PowerTransformerEnd.PowerTransformer")
+		.map(el => el.source);
 	    for (let trafoEnd of allTrafoEnds) {
 		data.children[0].appendChild(trafoEnd.cloneNode(true));
 	    }
-	    // TODO: measurements can also be tied to power system resources (e.g. busbars), not only terminals
-	    let allMeasurements = model.getGraph(allTerminals, "Terminal.Measurements", "Measurement.Terminal").map(el => el.source);
+	    // TODO: measurements can also be tied to power system resources
+	    // (e.g. busbars), not only terminals
+	    let allMeasurements = model.getGraph(
+		allTerminals,
+		"Terminal.Measurements",
+		"Measurement.Terminal")
+		.map(el => el.source);
 	    for (let measurement of allMeasurements) {
 		data.children[0].appendChild(measurement.cloneNode(true));
 	    }
-	    let allAnalogValues = model.getGraph(allMeasurements, "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source);
+	    let allAnalogValues = model.getGraph(
+		allMeasurements,
+		"Analog.AnalogValues",
+		"AnalogValue.Analog")
+		.map(el => el.source);
 	    for (let analogValue of allAnalogValues) {
 		data.children[0].appendChild(analogValue.cloneNode(true));
 	    }
@@ -607,9 +638,11 @@ function cimModel() {
 		// delete links of 'object'
 		if (sources.indexOf(object) > -1) {
 		    let target = model.dataMap.get("#" + linkAndTarget.split("#")[1]);
-		    linksToDelete.push({s: object, l: linkName, t: target});
-		    if (checkRelatedObject(object, target)) {
+		    // target may be undefined, if it is defined in an external file
+		    // (like a boundary set file for example)
+		    if (typeof(target) !== "undefined" && checkRelatedObject(object, target)) {
 			objsToDelete.push(target);
+			linksToDelete.push({s: object, l: linkName, t: target});
 		    }
 		}
 		// delete links pointing to 'object'
