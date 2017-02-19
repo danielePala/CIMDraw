@@ -817,7 +817,7 @@
      }
 
      addContextMenu(selection) {
-	 selection/*.filter("g.ConnectivityNode")*/.on("contextmenu", d3.contextMenu(menu));
+	 selection.on("contextmenu", d3.contextMenu(menu));
 	 // setup context menu for terminals
 	 let terminals = selection.selectAll("g.Terminal");
 	 terminals.on("contextmenu", function(d, i, nodes) {

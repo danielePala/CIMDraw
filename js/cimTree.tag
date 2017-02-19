@@ -66,7 +66,15 @@
      
      this.model = opts.model;	
      let self = this;
-
+     let menu = [
+	 {
+	     title: 'Delete',
+	     action: function(elm, d, i) {
+		 opts.model.deleteObject(d);
+	     }
+	 }
+     ];
+     
      self.on("mount", function() {
 	 // setup search button
 	 $("#cimTreeSearchBtn").on("click", function() {
@@ -166,19 +174,24 @@
 		 self.createElements(cimNetwork, "BusbarSection", "Nodes", [object]);
 		 break;
 	     case "cim:BaseVoltage":
-		 self.createElements(cimContainers, "BaseVoltage", "Base Voltages", [object]);
+		 let bvEnter = self.createElements(cimContainers, "BaseVoltage", "Base Voltages", [object]);
+		 self.createDeleteMenu(bvEnter);
 		 break;
 	     case "cim:Substation":
-		 self.createElements(cimContainers, "Substation", "Substations", [object]);
+		 let subEnter = self.createElements(cimContainers, "Substation", "Substations", [object]);
+		 self.createDeleteMenu(subEnter);
 		 break;
 	     case "cim:Line":
-		 self.createElements(cimContainers, "Line", "Lines", [object]);
+		 let lineEnter = self.createElements(cimContainers, "Line", "Lines", [object]);
+		 self.createDeleteMenu(lineEnter);
 		 break;
 	     case "cim:Analog":
-		 self.createElements(cimMeasurements, "Analog", "Analogs", [object]);
+		 let analogEnter = self.createElements(cimMeasurements, "Analog", "Analogs", [object]);
+		 self.createDeleteMenu(analogEnter);
 		 break;
 	     case "cim:Discrete":
-		 self.createElements(cimMeasurements, "Discrete", "Discretes", [object]);	 
+		 let discEnter = self.createElements(cimMeasurements, "Discrete", "Discretes", [object]);
+		 self.createDeleteMenu(discEnter);
 		 break;
 	 }	 
      }
@@ -324,10 +337,13 @@
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
-	 self.createElements(cimMeasurements, "Analog", "Analogs", allMeasurements["cim:Analog"]);
-	 self.createElements(cimMeasurements, "Discrete", "Discretes", allMeasurements["cim:Discrete"]);	 
+	 let analogEnter = self.createElements(cimMeasurements, "Analog", "Analogs", allMeasurements["cim:Analog"]);
+	 self.createDeleteMenu(analogEnter);
+	 let discEnter = self.createElements(cimMeasurements, "Discrete", "Discretes", allMeasurements["cim:Discrete"]);
+	 self.createDeleteMenu(discEnter);
 	 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
-	 self.createElements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
+	 let bvEnter = self.createElements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
+	 self.createDeleteMenu(bvEnter);
 	 self.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
 	 self.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
 	 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
@@ -341,9 +357,11 @@
 	 self.createElements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
 	 self.createElements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
 	 self.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
-	 self.createElements(cimContainers, "Substation", "Substations", allSubstations);
+	 let subEnter = self.createElements(cimContainers, "Substation", "Substations", allSubstations);
+	 self.createDeleteMenu(subEnter);
 	 self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
-	 self.createElements(cimContainers, "Line", "Lines", allLines);
+	 let lineEnter = self.createElements(cimContainers, "Line", "Lines", allLines);
+	 self.createDeleteMenu(lineEnter);
 
 	 // add buttons
 	 self.createAddButton(cimContainers, "BaseVoltage");
@@ -396,6 +414,12 @@
 		 self.model.addToActiveDiagram(newObject, []);
 	     });
 	 }
+     }
+
+     // delete menu for containers
+     createDeleteMenu(selection) {
+	 let btnSel = selection.select(function() { return this.parentNode; }).selectAll("a");
+	 btnSel.on("contextmenu", d3.contextMenu(menu));
      }
 
      createElements(cimNetwork, name, printName, data) {

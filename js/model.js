@@ -584,6 +584,7 @@ function cimModel() {
 	    model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
 	    if (model.getAllSuper(newElement.localName).indexOf("ConductingEquipment") < 0) {
 		// if not a conducting equipment, we are done
+		model.trigger("createObject", newElement);
 		return newElement;
 	    }
 	    let term1 = model.createTerminal(newElement);
