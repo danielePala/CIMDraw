@@ -641,8 +641,10 @@ function cimModel() {
 		    let target = model.dataMap.get("#" + linkAndTarget.split("#")[1]);
 		    // target may be undefined, if it is defined in an external file
 		    // (like a boundary set file for example)
-		    if (typeof(target) !== "undefined" && checkRelatedObject(object, target)) {
-			objsToDelete.push(target);
+		    if (typeof(target) !== "undefined") {
+			if (checkRelatedObject(object, target)) {
+			    objsToDelete.push(target);
+			}
 			linksToDelete.push({s: object, l: linkName, t: target});
 		    }
 		}

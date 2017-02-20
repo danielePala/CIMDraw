@@ -303,7 +303,7 @@
 	 path.attr("d", function() {
 	     return line(lineData);
 	 });
-     });
+     });     
 
      // modality for drag+zoom
      d3.select("body")

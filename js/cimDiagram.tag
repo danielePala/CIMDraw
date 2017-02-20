@@ -394,6 +394,28 @@
 		 break;
 	 }
      });
+
+     // listen to 'removeLink' event from model
+     self.model.on("removeLink", function(source, linkName, target) {
+	 switch (linkName) {
+	     case "cim:Measurement.PowerSystemResource":
+	     case "cim.PowerSystemResource.Measurements":
+		 let psr = target;
+		 if (linkName === "cim.PowerSystemResource.Measurements") {
+		     psr = source;
+		 }
+		 if (typeof(psr) !== "undefined") {
+		     // handle busbars
+		     if (psr.nodeName === "cim:BusbarSection") {
+			 psr = self.model.getConnectivityNode(psr);
+		     }	 
+		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+		     let psrSelection = d3.select("g#" + psrUUID);
+		     self.createMeasurements(psrSelection);
+		 }
+		 break;
+	 }
+     });
      
      render(diagramName) {
 	 let diagramRender = self.renderGenerator(diagramName);
@@ -657,8 +679,8 @@
 		     "SvPowerFlow.Terminal").map(el => el.source);
 		 svs = svs.concat(actTermSvs);
 	     }
-	     if (measurements.length > 0) {
-		 let tooltip = self.createTooltip(measurements, []);
+	     if (measurements.length > 0 || svs.length > 0) {
+		 let tooltip = self.createTooltip(measurements, svs);
 		 
 		 $(this).popover({title: "<b>Measurements</b>",
 				  content: tooltip,
@@ -669,6 +691,10 @@
 				  placement: "auto right"
 		 }).data('bs.popover').tip().find('.popover-content').empty().append(tooltip);
 		 $(this).data('bs.popover').options.content = tooltip;
+	     } else {
+		 // no measurements, destroy popover
+		 psrSelection.attr("data-toggle", null);
+		 $(this).popover("destroy");
 	     }
 	 })
      }
