@@ -215,6 +215,7 @@
 
      // listen to 'moveTo' event from parent
      self.parent.on("moveTo", function(element) {
+	 self.deselectAll();
 	 let cimObject = opts.model.getObject(element);
 	 if (cimObject.nodeName === "cim:Substation" || cimObject.nodeName === "cim:Line") {
 	     let equipments = opts.model.getGraph([cimObject], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
