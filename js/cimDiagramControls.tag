@@ -349,7 +349,10 @@
 	 d3.selectAll(selected).selectAll("g.resize").remove();
 	 selected = [];
      }
-     
+
+     /**
+	Enable dragging of objects.
+     */
      enableDrag() {
 	 self.disableDrag();
 	 d3.select(self.root).selectAll("label:not(#selectLabel)").classed("active", false);
@@ -379,6 +382,28 @@
 			      dd.py = dd.y;
 			      opts.model.updateActiveDiagram(dd, dd.lineData);
 			  }
+			  if (opts.model.isA("ConductingEquipment", d) === true) {
+			      let terminals = opts.model.getTerminals([d]);
+			      let cns = opts.model.getGraph(
+				  terminals,
+				  "Terminal.ConnectivityNode",
+				  "ConnectivityNode.Terminals")
+					    .map(el => el.source);
+			      for (let cn of cns) {
+				  let cnTerms = opts.model.getGraph(
+				      [cn],
+				      "ConnectivityNode.Terminals",
+				      "Terminal.ConnectivityNode")
+						    .map(el => el.source);
+				  cnTerms = [...new Set(cnTerms)]; 
+				  if (cnTerms.length === 2) {
+				      cn.x = (cnTerms[0].x + cnTerms[1].x)/2;
+				      cn.y = (cnTerms[0].y + cnTerms[1].y)/2;
+				      opts.model.updateActiveDiagram(cn, cn.lineData);
+				  }
+			      }
+			  }
+
 		      })
 		      .on("end", function(d) {
 			  quadtree.addAll(selected); // update quadtree
@@ -791,7 +816,7 @@
 	     self.updateSelected();
 	 }
 	 let newObject = null;
-	 if (opts.model.isSwitch(d) === true) {
+	 if (opts.model.isA("Switch", d) === true) {
 		 newObject = opts.model.createObject("cim:Discrete");
 	 } else {
 	     newObject = opts.model.createObject("cim:Analog");

@@ -95,9 +95,6 @@
 	 let xAxis = d3.axisBottom(xScale);
 	 d3.select("svg").select("#yAxisG").call(yAxis);
 	 d3.select("svg").select("#xAxisG").call(xAxis);
-	 // update grid
-	 self.drawGrid(newZoom);
-	 
 	 //self.updateEdges(newx, newy, newZoom);
      });
 

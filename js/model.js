@@ -511,7 +511,7 @@ function cimModel() {
 	    return ret;
 	},
 
-	// get all the terminals of given objects.
+	/** Get all the terminals of given conducting equipments. */
 	getTerminals(identObjs) {
 	    let terminals = model.getConductingEquipmentGraph(identObjs).map(el => el.target);
 	    let terminalsSet = new Set(terminals);
@@ -750,9 +750,9 @@ function cimModel() {
 	    return null;
 	},
 
-	// test weather an object is a switch
-	isSwitch(object) {
-	    if (model.getAllSuper(object.localName).indexOf("Switch") < 0) {
+	// test weather an object is of a given type
+	isA(type, object) {
+	    if (model.getAllSuper(object.localName).indexOf(type) < 0) {
 		return false;
 	    }
 	    return true;
