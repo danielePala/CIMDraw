@@ -1279,7 +1279,10 @@
 		 d.rotation = parseInt(rotation.innerHTML);
 	     }
 	 }
-	 let points = self.model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
+	 let points = self.model.getTargets(
+	     dobjs,
+	     "DiagramObject.DiagramObjectPoints",
+	     "DiagramObjectPoint.DiagramObject");
 	 if (points.length > 0) {
 	     for (let point of points) {
 		 let seqNum = self.model.getAttribute(point, "cim:DiagramObjectPoint.sequenceNumber");

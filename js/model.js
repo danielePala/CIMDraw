@@ -1,57 +1,108 @@
+/*
+ Fundamental functions to load and manipulate CIM RDF/XML files.
+
+ Copyright 2017 Daniele Pala <pala.daniele@gmail.com>
+
+ This file is part of CIMDraw.
+
+ CIMDraw is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ CIMDraw is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with CIMDraw. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 "use strict";
 
 function cimModel() {
+    // The CIM XML namespace used by CIMDraw. This is the CIM 16 namespace,
+    // as used by ENTSO-E CGMES.
     const cimNS = "http://iec.ch/TC57/2013/CIM-schema-cim16#";
-    let emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2013/CIM-schema-cim16#\" xmlns:entsoe=\"http://entsoe.eu/CIM/SchemaExtension/3/1#\" xmlns:md=\"http://iec.ch/TC57/61970-552/ModelDescription/1#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
+    // An empty CIM file, used when creating a new file.
+    const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2013/CIM-schema-cim16#\" xmlns:entsoe=\"http://entsoe.eu/CIM/SchemaExtension/3/1#\" xmlns:md=\"http://iec.ch/TC57/61970-552/ModelDescription/1#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
+    // CIM data for the current file.
+    let data = {all: undefined, eq:undefined, dl:undefined};
 
-    let model = {	
-	// load a CIM file from the local filesystem.
+    // Parse and load an ENTSO-E CIM file. Only the EQ and DL profiles
+    // are parsed. The given callback is called after having loaded
+    // the model.
+    function parseZip(callback, zip) {
+	let parser = new DOMParser();
+	function success(content) {
+	    if (typeof(data.eq) === "undefined" ||
+		typeof(data.dl) === "undefined") {
+		let parsed = parser.parseFromString(content, "application/xml");
+		let fullModel = [].filter.call(
+		    parsed.children[0].children, function(el) {
+			return el.nodeName === "md:FullModel";
+		    })[0];
+		let profile = model.getAttribute(fullModel, "md:Model.profile");
+		if (profile.textContent.includes("Equipment")) {
+		    data.eq = parsed;
+		}
+		if (profile.textContent.includes("DiagramLayout")) {
+		    data.dl = parsed;
+		}
+	    }
+	    if (typeof(data.eq) !== "undefined" &&
+		typeof(data.dl) !== "undefined") {
+		model.buildModel(callback);
+	    }
+	};
+
+	return function parseZip(zip) {
+	    zip.forEach(function (relativePath, zipEntry) {
+		zipEntry.async("string")
+		    .then(success);	
+	    });
+	};
+    };
+    
+    // This is the fundamental object used by CIMDraw to manipulate CIM files.
+    let model = {
+	// The name of the CIM file which is actually loaded.
+	fileName: null,
+	dataMap: new Map(),
+	linksMap: new Map(),
+	activeDiagramName: "none",
+	schemaAttributesMap: new Map(),
+	schemaLinksMap: new Map(),
+	// Loads a CIM file from the local filesystem. If reader is null, then
+	// it creates a new empty file. After loading the file, the passed
+	// callback is called. The input file can be a plain RDF/XML file
+	// or a zipped file, conforming to ENTSO-E format (i.e. the
+	// zipped file contains many XML files, one for each profile
+	// (EQ, DL, TP etc).
 	load(file, reader, callback) {
 	    // should we create a new empty file?
 	    if (reader === null) {
 		let parser = new DOMParser();
-		let data = parser.parseFromString(emptyFile, "application/xml");
-		model.buildModel({all: data}, callback);
+		data.all = parser.parseFromString(emptyFile, "application/xml");
 		model.fileName = file.name;
+		model.buildModel(callback);
 		return;
 	    }
-	    
+	    // see if this file is already loaded
 	    if (model.fileName !== file.name) {
 		reader.onload = function(e) {
                     let parser = new DOMParser();
-		    let data = parser.parseFromString(reader.result, "application/xml");
-		    model.buildModel({all: data}, callback);
+		    let cimXML = reader.result;
+		    data.all = parser.parseFromString(cimXML, "application/xml");
+		    model.buildModel(callback);
 		}
 		model.fileName = file.name;
-
-		// initial test for zip file loading (ENTSO-E)
 		if (file.name.endsWith(".zip")) {
-		    let parser = new DOMParser();
-		    let data = {};
-		    JSZip.loadAsync(file).then(function (zip) {
-			zip.forEach(function (relativePath, zipEntry) {
-			    zipEntry.async("string")
-				.then(function success(content) {
-				    if (typeof(data.eq) === "undefined" || typeof(data.dl) === "undefined") {
-					let parsed = parser.parseFromString(content, "application/xml");
-					let fullModel = [].filter.call(parsed.children[0].children, function(el) {
-					    return el.nodeName === "md:FullModel";
-					})[0];
-					let profile = model.getAttribute(fullModel, "md:Model.profile");
-					if (profile.textContent.includes("Equipment")) {
-					    data.eq = parsed;
-					}
-					if (profile.textContent.includes("DiagramLayout")) {
-					    data.dl = parsed;
-					}
-				    }
-				    if (typeof(data.eq) !== "undefined" && typeof(data.dl) !== "undefined") {
-					model.buildModel(data, callback);
-				    }
-				});
-			});
-		    });
+		    // zip file loading (ENTSO-E).
+		    JSZip.loadAsync(file).then(parseZip(callback));
 		} else {
+		    // plain RDF/XML file loading
 		    reader.readAsText(file);
 		}
 	    } else {
@@ -59,7 +110,9 @@ function cimModel() {
 	    }
 	},
 
-	// load a CIM file from a remote location
+	// Load a CIM file from a remote location. After loading the file, the
+	// passed callback is called. The input file must be a plain
+	// RDF/XML file.
 	loadRemote(fileName, callback) {
 	    if (model.fileName !== decodeURI(fileName).substring(1)) {
 		model.fileName = decodeURI(fileName).substring(1);
@@ -68,7 +121,8 @@ function cimModel() {
 			callback(error);
 			return;
 		    }
-		    model.buildModel({all: data}, callback);
+		    data.all = data;
+		    model.buildModel(callback);
 		});
 	    } else {
 		callback(null);
@@ -76,15 +130,9 @@ function cimModel() {
 	},
 
 	// build initial model data structures and call a user callback
-	buildModel(data, callback) {
-	    model.data = data;
-	    model.dataMap = new Map();
-	    model.linksMap = new Map();
-	    model.activeDiagramName = "none";
-	    model.schemaAttributesMap = new Map();
-	    model.schemaLinksMap = new Map();
-
-	    // build a map (UUID)->(object) and a map (link name, target UUID)->(source objects)
+	buildModel(callback) {
+	    // build a map (UUID)->(object) and a map
+	    // (link name, target UUID)->(source objects)
 	    let allObjects = model.getAllObjects();
 	    for (let i in allObjects) {
 		let object = allObjects[i];
@@ -128,13 +176,13 @@ function cimModel() {
 	// Serialize the current CIM file.
 	save() {
 	    let oSerializer = new XMLSerializer();
-	    if (typeof(model.data.all) !== "undefined") {
-		let sXML = oSerializer.serializeToString(model.data.all);
+	    if (typeof(data.all) !== "undefined") {
+		let sXML = oSerializer.serializeToString(data.all);
 		return sXML;
 	    }
 	    let zip = new JSZip();
-	    zip.file("EQ.xml", oSerializer.serializeToString(model.data.eq));
-	    zip.file("DL.xml", oSerializer.serializeToString(model.data.dl));
+	    zip.file("EQ.xml", oSerializer.serializeToString(data.eq));
+	    zip.file("DL.xml", oSerializer.serializeToString(data.dl));
 	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 	},
 
@@ -522,8 +570,10 @@ function cimModel() {
 	// get all objects (doesn't filter by diagram).
 	getAllObjects() {
 	    let ret = [];
-	    for (let i of Object.keys(model.data)) {
-		ret = ret.concat([...model.data[i].children[0].children]);
+	    for (let i of Object.keys(data)) {
+		if (typeof(data[i]) !== "undefined") {
+		    ret = ret.concat([...data[i].children[0].children]);
+		}
 	    }
 	    return ret;
 	},
@@ -762,7 +812,10 @@ function cimModel() {
 	deleteFromDiagram(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
 	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.target);
-	    let points = model.getDiagramObjectPointGraph(dobjs).map(el => el.target);
+	    let points = model.getTargets(
+		dobjs,
+		"DiagramObject.DiagramObjectPoints",
+		"DiagramObjectPoint.DiagramObject");
 	    for (let dobj of dobjs) {
 		model.deleteObject(dobj);
 	    }
@@ -809,8 +862,10 @@ function cimModel() {
 	    for (let dobj of dobjs) {
 		model.setAttribute(dobj, "cim:DiagramObject.rotation", object.rotation);
 	    }
-	    let doEdges = model.getDiagramObjectPointGraph(dobjs);
-	    let points = doEdges.map(el => el.target);
+	    let points = model.getTargets(
+		dobjs,
+		"DiagramObject.DiagramObjectPoints",
+		"DiagramObjectPoint.DiagramObject");
 	    if (points.length > 0) {
 		for (let point of points) {
 		    let seq = 1;
@@ -819,9 +874,6 @@ function cimModel() {
 			seq = parseInt(seqObject.innerHTML);
 		    }
 		    let actLineData = object.lineData.filter(el => el.seq === seq)[0];
-		    if (typeof(actLineData) === "undefined") {
-			console.log(object);
-		    }
 		    model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML = actLineData.x + object.x;
 		    model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML = actLineData.y + object.y;
 		}
@@ -833,14 +885,14 @@ function cimModel() {
 
 	// get the document for the given CIM object
 	getDocument(cimObjName) {
-	    if (typeof(model.data.all) !== "undefined") {
-		return model.data.all;
+	    if (typeof(data.all) !== "undefined") {
+		return data.all;
 	    }
 	    // can be Diagram Layout or Equipment
 	    if (["cim:Diagram", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(cimObjName) > -1) {
-		return model.data.dl;
+		return data.dl;
 	    } else {
-		return model.data.eq;
+		return data.eq;
 	    }
 	},
 
@@ -1064,6 +1116,10 @@ function cimModel() {
 	    return result;
 	},
 
+	getTargets(sources, linkName, invLinkName) {
+	    return model.getGraph(sources, linkName, invLinkName).map(el => el.source);
+	},
+
 	// Get a graph of equipments and terminals, for each equipment
 	// that have at least one DiagramObject in the current diagram.
 	// If an array of equipments is given as argument, only the
@@ -1109,20 +1165,6 @@ function cimModel() {
 		}
 	    }
 	    return ioEdges;
-	},
-
-	// Get a graph of DiagramObjects and DiagramObjectPoints
-	// for the current diagram.
-	getDiagramObjectPointGraph(diagObjs) {
-	    let doEdges = [];
-	    if (arguments.length === 0) {
-		let ioEdges = model.getDiagramObjectGraph();
-		let allDiagramObjects = ioEdges.map(el => el.target);
-		doEdges = model.getGraph(allDiagramObjects, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
-	    } else {
-		doEdges = model.getGraph(diagObjs, "DiagramObject.DiagramObjectPoints", "DiagramObjectPoint.DiagramObject", true);
-	    }
-	    return doEdges;
 	},
 
 	// Get the equipments in the current diagram associated to the
