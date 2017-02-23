@@ -1,3 +1,24 @@
+/*
+ This tag renders a tree view of a given CIM diagram.
+
+ Copyright 2017 Daniele Pala <daniele.pala@rse-web.it>
+
+ This file is part of CIMDraw.
+
+ CIMDraw is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ CIMDraw is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with CIMDraw. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 <cimTree>
     <style>
      .tree {

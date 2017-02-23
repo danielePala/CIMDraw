@@ -1,7 +1,7 @@
 /*
  Fundamental functions to load and manipulate CIM RDF/XML files.
 
- Copyright 2017 Daniele Pala <pala.daniele@gmail.com>
+ Copyright 2017 Daniele Pala <daniele.pala@rse-web.it>
 
  This file is part of CIMDraw.
 

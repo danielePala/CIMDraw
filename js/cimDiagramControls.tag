@@ -1,3 +1,24 @@
+/*
+ This tag renders the controls for a given CIM diagram.
+
+ Copyright 2017 Daniele Pala <daniele.pala@rse-web.it>
+
+ This file is part of CIMDraw.
+
+ CIMDraw is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ CIMDraw is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with CIMDraw. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 <cimDiagramControls>
     <style>
      #cim-diagram-controls { 
@@ -41,8 +62,9 @@
 			    <li id="cim:Disconnector" onclick={enableAdd}><a>Disconnector</a></li>
 			    <li id="cim:LoadBreakSwitch" onclick={enableAdd}><a>Load Break Switch</a></li>
 			    <li id="cim:Jumper" onclick={enableAdd}><a>Jumper</a></li>
-			    <li class="dropdown-header">Connectors</li>
-			    <li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>
+			    <!-- junctions are still not implemented properly for now
+			    <!--<li class="dropdown-header">Connectors</li>-->
+			    <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
 			    <li class="dropdown-header">Generators</li>
 			    <li id="cim:EnergySource" onclick={enableAdd}><a>Energy Source</a></li>
 			    <li id="cim:SynchronousMachine" onclick={enableAdd}><a>Synchronous Machine</a></li>
@@ -514,6 +536,7 @@
      }
 
      enableConnect() {
+	 self.deselectAll();
 	 // handle escape key
 	 d3.select("body").on("keyup.connect", function() {
 	     if (d3.event.keyCode === 27) { // "Escape"
@@ -550,9 +573,7 @@
 		   }
 		   d3.select("svg").on("mousemove", null);
 		   // update the model
-		   let schemaLinks = opts.model.getSchemaLinks(termToChange.localName);
-		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
-		   let schemaLinkName = "cim:" + schemaLink.attributes[0].value.substring(1);
+		   let schemaLinkName = "cim:Terminal.ConnectivityNode";
 		   opts.model.setLink(termToChange, schemaLinkName, cn);
 		   opts.model.setLink(d, schemaLinkName, cn);
 		   path.datum(null);
