@@ -22,7 +22,7 @@ the [ENTSO-E CGMES profile](https://www.entsoe.eu/major-projects/common-informat
 In the second case, you just load the whole zip file, no need to uncompress it.
 Alternatively, it is possible to create a new file from scratch: in this case, a plain RDF/XML 
 file will be created.
-In any case, **ONLY NODE-BREAKER REPRESENTATIONS ARE SUPPORTED**. 
+In any case, **only node-breaker network representations are supported**. 
 
 ![file selection](doc/01_select_file.png)
 
