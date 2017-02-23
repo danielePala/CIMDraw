@@ -4,8 +4,8 @@ These are the source files for cimDraw.
 
 ### What is this? ###
 
-A WebApp to view IEC CIM files. Editing is also possible, with some limitations
-(see below).
+A WebApp to view IEC CIM files (**[ENTSO-E CGMES profile](https://www.entsoe.eu/major-projects/common-information-model-cim/cim-for-grid-models-exchange/standards/Pages/default.aspx), node-breaker representation**). 
+Editing is also possible, with some limitations (see below).
 The code uses many ES6 features, so you will need a modern browser to run it
 (Firefox >= 44, Chrome >= 49).
 
@@ -22,6 +22,7 @@ the [ENTSO-E CGMES profile](https://www.entsoe.eu/major-projects/common-informat
 In the second case, you just load the whole zip file, no need to uncompress it.
 Alternatively, it is possible to create a new file from scratch: in this case, a plain RDF/XML 
 file will be created.
+In any case, **ONLY NODE-BREAKER REPRESENTATIONS ARE SUPPORTED**. 
 
 ![file selection](doc/01_select_file.png)
 
@@ -31,7 +32,8 @@ will be loaded. Alternatevely, you can create a new diagram.
 ![diagram selection](doc/02_select_diagram.png)
 
 Once loaded, you will get a tree view of all the objects in the diagram and a single line diagram.
-You can move and zoom on the diagram by holding down the CTRL key. If you click on an element in the tree, the diagram will focus on that element. If you CTRL+click an element in the diagram, you will see it also in the tree.
+You can move and zoom on the diagram by holding down the CTRL key. If you click on an element in the tree, the diagram will focus on that element. If you CTRL+click an element in the diagram, you will see it also in the tree. The attributes in the tree can be edited.
+Also, the links between objects can be changed, just click the 'change' button and then click on the target element.
 
 ![diagram view](doc/03_loaded_diagram.png)
 
@@ -42,16 +44,27 @@ By default, the 'select' control is selected for the diagram, which allows you t
 ![edit connections between elements](doc/04_edit_connections.png)
 
 The 'Insert element' controls allows you to add elements to the diagram.
+You can right-click on an element in the diagram in order to rotate, delete 
+or add measurements to it. Measurements are shown by clicking on the
+element.
 
-You can right-click on an element in the diagram in order to rotate, delete or add measurements to it.
+![measurement](doc/05_measurement.png)
 
 Finally, you can save the modified file ('Save as...') and also save the current diagram only ('Export current diagram').
 
+![save menu](doc/06_save.png)
+
 ### Data model ###
 
-The attributes shown in the tree are taken from the schema file located inside the 'rdf-schema' folder, and it is the ENTSO-E CGMES equipment schema with the addition of the 'Jumper' object.
-The attributes in the tree can be edited.
-Also, the links between objects can be changed, just click the 'change' button and then click on the target element.
+The attributes shown in the tree are taken from the schema file located inside the 'rdf-schema' folder, and it is the [ENTSO-E CGMES](https://www.entsoe.eu/major-projects/common-information-model-cim/cim-for-grid-models-exchange/standards/Pages/default.aspx) equipment schema with the addition of the 'Jumper' object.
+
+### Known bugs/limitations ###
+
+At the moment there is no auto-save functionality. This will surely be 
+implemented in the future, probably by using IndexedDB.
+Also, not all of the CGMES elements are supported, only the most needed ones.
+You are welcome to contribute by supporting more elements, or by adding
+issues for discussing the addition of elements.
 
 ### License ###
 
