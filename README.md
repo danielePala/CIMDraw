@@ -11,13 +11,13 @@ The code uses many ES6 features, so you will need a modern browser to run it
 
 ### Installing ###
 
-In order to use the application, just serve it with your favourite web server
+In order to use the application, just serve it with your favorite web server
 and view it with your browser.
 
 ### Using ###
 
 The app starts by asking for a CIM file: you can load one RDF/XML file,
-or a splitted representation with many files (e.g. EQ, DL, SV etc) according to 
+or a split representation with many files (e.g. EQ, DL, SV etc) according to 
 the [ENTSO-E CGMES profile](https://www.entsoe.eu/major-projects/common-information-model-cim/cim-for-grid-models-exchange/standards/Pages/default.aspx).
 In the second case, you just load the whole zip file, no need to uncompress it.
 Alternatively, it is possible to create a new file from scratch: in this case, a plain RDF/XML 
@@ -27,7 +27,7 @@ In any case, **only node-breaker network representations are supported**.
 ![file selection](doc/01_select_file.png)
 
 Once loaded, the app shows a dropdown list of diagrams: choose a diagram and it
-will be loaded. Alternatevely, you can create a new diagram.
+will be loaded. Alternatively, you can create a new diagram.
 
 ![diagram selection](doc/02_select_diagram.png)
 
