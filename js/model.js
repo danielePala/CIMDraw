@@ -25,8 +25,10 @@ function cimModel() {
     // The CIM XML namespace used by CIMDraw. This is the CIM 16 namespace,
     // as used by ENTSO-E CGMES.
     const cimNS = "http://iec.ch/TC57/2013/CIM-schema-cim16#";
+    const modelNS = "http://iec.ch/TC57/61970-552/ModelDescription/1#";
     // An empty CIM file, used when creating a new file.
     const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2013/CIM-schema-cim16#\" xmlns:entsoe=\"http://entsoe.eu/CIM/SchemaExtension/3/1#\" xmlns:md=\"http://iec.ch/TC57/61970-552/ModelDescription/1#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
+
     // CIM data for the current file.
     let data = {all: undefined, eq:undefined, dl:undefined};
 
@@ -35,7 +37,10 @@ function cimModel() {
     // the model.
     function parseZip(callback, zip) {
 	let parser = new DOMParser();
+	let zipFilesProcessed = 0;
+	let zipFilesTotal = 0; 
 	function success(content) {
+	    zipFilesProcessed = zipFilesProcessed + 1;
 	    if (typeof(data.eq) === "undefined" ||
 		typeof(data.dl) === "undefined") {
 		let parsed = parser.parseFromString(content, "application/xml");
@@ -51,18 +56,40 @@ function cimModel() {
 		    data.dl = parsed;
 		}
 	    }
+	    // at the end we need to have at least the EQ file
 	    if (typeof(data.eq) !== "undefined" &&
-		typeof(data.dl) !== "undefined") {
+		zipFilesProcessed === zipFilesTotal) {
+		if (typeof(data.dl) === "undefined") {
+		    data.dl = createNewDLDocument();
+		}
 		model.buildModel(callback);
 	    }
 	};
 
 	return function parseZip(zip) {
+	    zipFilesTotal = Object.keys(zip.files).length;
 	    zip.forEach(function (relativePath, zipEntry) {
 		zipEntry.async("string")
 		    .then(success);	
 	    });
 	};
+    };
+
+    function createNewDLDocument() {
+	let parser = new DOMParser();
+	let empty = parser.parseFromString(emptyFile, "application/xml");
+	
+	let eqModelDesc = [].filter.call(
+	    data.eq.children[0].children, function(el) {
+		return el.nodeName === "md:FullModel";
+	    })[0];
+	let dlModelDesc = document.createElementNS(modelNS, "md:FullModel");
+	empty.children[0].appendChild(dlModelDesc);
+	let dlModelDescID = document.createAttribute("rdf:about");
+	dlModelDescID.nodeValue = eqModelDesc.attributes.getNamedItem("rdf:about").value;
+	dlModelDesc.setAttributeNode(dlModelDescID);
+	model.setAttribute(dlModelDesc, "md:Model.profile", "http://entsoe.eu/CIM/DiagramLayout/3/1");
+	return empty;
     };
     
     // This is the fundamental object used by CIMDraw to manipulate CIM files.
