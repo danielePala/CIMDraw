@@ -1157,8 +1157,12 @@ function cimModel() {
 	    return result;
 	},
 
+	// Returns all the nodes connected with the given sources
+	// via the link 'linkName' (or the inverse, 'invLinkName').
 	getTargets(sources, linkName, invLinkName) {
-	    return model.getGraph(sources, linkName, invLinkName).map(el => el.source);
+	    let graph = model.getGraph(sources, linkName, invLinkName);
+	    let targets = graph.map(el => el.source);
+	    return [...new Set(targets)]; // we want uniqueness
 	},
 
 	// Get a graph of equipments and terminals, for each equipment
@@ -1194,7 +1198,7 @@ function cimModel() {
 	    if (arguments.length === 0) {
 		let allDiagramObjects = []; 
 		if (typeof(model.activeDiagram) !== "undefined") {
-		    allDiagramObjects = model.getGraph([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram").map(el => el.source);
+		    allDiagramObjects = model.getTargets([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram");
 		}
 		ioEdges = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
 	    } else {
@@ -1211,11 +1215,17 @@ function cimModel() {
 	// Get the equipments in the current diagram associated to the
 	// given connectivity node.
 	getEquipments(connectivityNode) {
-	    let edges = model.getGraph([connectivityNode], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
-	    let cnTerminals = edges.map(el => el.target);
+	    let cnTerminals = model.getTargets(
+		[connectivityNode],
+		"ConnectivityNode.Terminals",
+		"Terminal.ConnectivityNode");
 	    // let's try to get some equipment
-	    let equipments = model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
-	    equipments = model.getConductingEquipmentGraph(equipments).map(el => el.source);
+	    let equipments = model.getTargets(
+		cnTerminals,
+		"Terminal.ConductingEquipment",
+		"ConductingEquipment.Terminals");
+	    equipments = model.getConductingEquipmentGraph(equipments)
+		.map(el => el.source);
 	    return [...new Set(equipments)]; // we want uniqueness
 	},
 
