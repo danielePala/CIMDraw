@@ -60,11 +60,13 @@ The attributes shown in the tree are taken from the schema file located inside t
 
 ### Known bugs/limitations ###
 
-At the moment there is no auto-save functionality. This will surely be 
+- At the moment there is no auto-save functionality. This will surely be 
 implemented in the future, probably by using IndexedDB.
-Also, not all of the CGMES elements are supported, only the most needed ones.
+- Not all of the CGMES elements are supported, only the most needed ones.
 You are welcome to contribute by supporting more elements, or by adding
 issues for discussing the addition of elements.
+- Only node-breaker network representations are supported. Contributions are welcome for adding bus-branch support.
+- CGMES files containing multiple EQ or DL files are not supported right now.
 
 ### License ###
 
