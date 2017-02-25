@@ -1,13 +1,19 @@
-# README #
+# CIMDraw #
 
 These are the source files for cimDraw.
 
 ### What is this? ###
 
-A WebApp to view IEC CIM files (**[ENTSO-E CGMES profile](https://www.entsoe.eu/major-projects/common-information-model-cim/cim-for-grid-models-exchange/standards/Pages/default.aspx), node-breaker representation**). 
+CIMDraw is a WebApp to view IEC CIM files (**[ENTSO-E CGMES profile](https://www.entsoe.eu/major-projects/common-information-model-cim/cim-for-grid-models-exchange/standards/Pages/default.aspx), node-breaker representation**). 
 Editing is also possible, with some limitations (see below).
 The code uses many ES6 features, so you will need a modern browser to run it
 (Firefox >= 44, Chrome >= 49).
+
+### Resources ###
+
+- [Wiki](https://bitbucket.org/danielePala/cimdraw/wiki/Home)
+- [Code architecture and API reference](https://bitbucket.org/danielePala/cimdraw/wiki/API.md)
+- [Examples](https://bitbucket.org/danielePala/cimdraw/wiki/Examples.md)
 
 ### Installing ###
 
