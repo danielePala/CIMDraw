@@ -25,16 +25,28 @@ function cimModel() {
     // The CIM XML namespace used by CIMDraw. This is the CIM 16 namespace,
     // as used by ENTSO-E CGMES.
     const cimNS = "http://iec.ch/TC57/2013/CIM-schema-cim16#";
+    // The model description namespace, for CGMES files
     const modelNS = "http://iec.ch/TC57/61970-552/ModelDescription/1#";
+    // The Diagram Layout namespace.
+    const dlNS = "http://entsoe.eu/CIM/DiagramLayout/3/1";
     // An empty CIM file, used when creating a new file.
     const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2013/CIM-schema-cim16#\" xmlns:entsoe=\"http://entsoe.eu/CIM/SchemaExtension/3/1#\" xmlns:md=\"http://iec.ch/TC57/61970-552/ModelDescription/1#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
-
     // CIM data for the current file.
+    // 'all' is used for plain RDF/XML files
+    // 'eq' is for the equipment file
+    // 'dl' is for the diagram layout file
     let data = {all: undefined, eq:undefined, dl:undefined};
+    // A map of schema attribute names vs schema attribute objects.
+    // Used for faster lookup.
+    let schemaAttributesMap =  new Map();
+    // A map of schema link names vs schema link objects.
+    // Used for faster lookup.
+    let schemaLinksMap = new Map();
 
     // Parse and load an ENTSO-E CIM file. Only the EQ and DL profiles
     // are parsed. The given callback is called after having loaded
     // the model.
+    // This is a 'private' function (not visible in the model object).
     function parseZip(callback, zip) {
 	let parser = new DOMParser();
 	let zipFilesProcessed = 0;
@@ -75,6 +87,9 @@ function cimModel() {
 	};
     };
 
+    // Create a new diagram layout document, in case the input
+    // CGMES file contains only the EQ profile.
+    // This is a 'private' function (not visible in the model object).
     function createNewDLDocument() {
 	let parser = new DOMParser();
 	let empty = parser.parseFromString(emptyFile, "application/xml");
@@ -88,7 +103,7 @@ function cimModel() {
 	let dlModelDescID = document.createAttribute("rdf:about");
 	dlModelDescID.nodeValue = eqModelDesc.attributes.getNamedItem("rdf:about").value;
 	dlModelDesc.setAttributeNode(dlModelDescID);
-	model.setAttribute(dlModelDesc, "md:Model.profile", "http://entsoe.eu/CIM/DiagramLayout/3/1");
+	model.setAttribute(dlModelDesc, "md:Model.profile", dlNS);
 	return empty;
     };
     
@@ -98,9 +113,8 @@ function cimModel() {
 	fileName: null,
 	dataMap: new Map(),
 	linksMap: new Map(),
+	// The name of the CIM diagram which is actually loaded.
 	activeDiagramName: "none",
-	schemaAttributesMap: new Map(),
-	schemaLinksMap: new Map(),
 	// Loads a CIM file from the local filesystem. If reader is null, then
 	// it creates a new empty file. After loading the file, the passed
 	// callback is called. The input file can be a plain RDF/XML file
@@ -394,7 +408,7 @@ function cimModel() {
 	// The type is without namespace, e.g. "Breaker".
 	// It is limited to EQ schema.
 	getSchemaAttributes(type) {
-	    let ret = model.schemaAttributesMap.get(type);
+	    let ret = schemaAttributesMap.get(type);
 	    if (typeof(ret) === "undefined") {
 		let allSchemaObjects = model.schemaDataEQ.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
@@ -415,7 +429,7 @@ function cimModel() {
 		    }
 		    return isLiteral;
 		});
-		model.schemaAttributesMap.set(type, ret);
+		schemaAttributesMap.set(type, ret);
 	    }
 	    
 	    return ret;
@@ -482,7 +496,7 @@ function cimModel() {
 
 	// Get the (EQ) schema links for a given type.
 	getSchemaLinks(type) {
-	    let ret = model.schemaLinksMap.get(type);
+	    let ret = schemaLinksMap.get(type);
 	    if (typeof(ret) === "undefined") {
 		let allSchemaObjects = model.schemaDataEQ.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
@@ -503,7 +517,7 @@ function cimModel() {
 		    }
 		    return isLiteral;
 		});
-		model.schemaLinksMap.set(type, ret);
+		schemaLinksMap.set(type, ret);
 	    }
 	    return ret;
 	},
