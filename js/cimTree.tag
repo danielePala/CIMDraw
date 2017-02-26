@@ -721,8 +721,10 @@
 		       .attr("cim-target", function(d) {
 			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
 			   let invLink = self.model.getInvLink(d);
-			   let graph = self.model.getGraph([source], d.attributes[0].value.substring(1), invLink.attributes[0].value.substring(1));
-			   let targetObj = graph.map(el => el.source)[0];
+			   let targetObj = self.model.getTargets(
+			       [source],
+			       d.attributes[0].value.substring(1),
+			       invLink.attributes[0].value.substring(1))[0];
 			   if (typeof(targetObj) === "undefined") {
 			       return "none";
 			   }
@@ -770,9 +772,16 @@
 	 let name = d3.select(elementEnter.node().parentNode).data()[0].nodeName;
 	 if (name === "cim:PowerTransformer") {
 	     elementEnter.each(function(d, i) {
-		 let trafoEnds = self.model.getGraph([d], "PowerTransformer.PowerTransformerEnd", "PowerTransformerEnd.PowerTransformer");
+		 let trafoEnds = self.model.getTargets(
+		     [d],
+		     "PowerTransformer.PowerTransformerEnd",
+		     "PowerTransformerEnd.PowerTransformer");
 		 if (trafoEnds.length > 0) {
-		     self.createElements(d3.select(this), "PowerTransformerEnd"+i, "Transformer Windings", trafoEnds.map(el => el.source));
+		     self.createElements(
+			 d3.select(this),
+			 "PowerTransformerEnd"+i,
+			 "Transformer Windings",
+			 trafoEnds);
 		 }
 	     });
 	 }

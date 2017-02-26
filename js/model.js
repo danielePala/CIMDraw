@@ -25,12 +25,19 @@ function cimModel() {
     // The CIM XML namespace used by CIMDraw. This is the CIM 16 namespace,
     // as used by ENTSO-E CGMES.
     const cimNS = "http://iec.ch/TC57/2013/CIM-schema-cim16#";
+    // The ENTSO-E namespace
+    const entsoeNS = "http://entsoe.eu/CIM/SchemaExtension/3/1#";
     // The model description namespace, for CGMES files
     const modelNS = "http://iec.ch/TC57/61970-552/ModelDescription/1#";
+    // The RDF namespace
+    const rdfNS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
     // The Diagram Layout namespace.
     const dlNS = "http://entsoe.eu/CIM/DiagramLayout/3/1";
     // An empty CIM file, used when creating a new file.
-    const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><rdf:RDF xmlns:cim=\"http://iec.ch/TC57/2013/CIM-schema-cim16#\" xmlns:entsoe=\"http://entsoe.eu/CIM/SchemaExtension/3/1#\" xmlns:md=\"http://iec.ch/TC57/61970-552/ModelDescription/1#\" xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"></rdf:RDF>";
+    const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+	  "<rdf:RDF xmlns:cim=\""+ cimNS + "\" xmlns:entsoe=\"" + entsoeNS +
+	  "\" xmlns:md=\"" + modelNS + "\" xmlns:rdf=\"" + rdfNS + "\">" +
+	  "</rdf:RDF>";
     // CIM data for the current file.
     // 'all' is used for plain RDF/XML files
     // 'eq' is for the equipment file
@@ -234,27 +241,24 @@ function cimModel() {
 	    let data = parser.parseFromString(emptyFile, "application/xml");
 	    // fill the file
 	    data.children[0].appendChild(model.activeDiagram.cloneNode(true));
-	    let allDiagramObjects = model.getGraph(
+	    let allDiagramObjects = model.getTargets(
 		[model.activeDiagram],
 		"Diagram.DiagramObjects",
-		"DiagramObject.Diagram")
-		.map(el => el.source);
+		"DiagramObject.Diagram");
 	    for (let diagramObject of allDiagramObjects) {
 		data.children[0].appendChild(diagramObject.cloneNode(true));
 	    }
-	    let allEquipments = model.getGraph(
+	    let allEquipments = model.getTargets(
 		allDiagramObjects,
 		"DiagramObject.IdentifiedObject",
-		"IdentifiedObject.DiagramObjects")
-		.map(el => el.source);
+		"IdentifiedObject.DiagramObjects");
 	    for (let equipment of allEquipments) {
 		data.children[0].appendChild(equipment.cloneNode(true));
 	    }
-	    let allDiagramObjectPoints = model.getGraph(
+	    let allDiagramObjectPoints = model.getTargets(
 		allDiagramObjects,
 		"DiagramObject.DiagramObjectPoints",
-		"DiagramObjectPoint.DiagramObject")
-		.map(el => el.source);
+		"DiagramObjectPoint.DiagramObject");
 	    for (let diagramObjectPoint of allDiagramObjectPoints) {
 		data.children[0].appendChild(diagramObjectPoint.cloneNode(true));
 	    }
@@ -276,37 +280,33 @@ function cimModel() {
 	    for (let line of allLines) {
 		data.children[0].appendChild(line.cloneNode(true));
 	    }
-	    let allBaseVoltages = model.getGraph(
+	    let allBaseVoltages = model.getTargets(
 		allEquipments,
 		"ConductingEquipment.BaseVoltage",
-		"BaseVoltage.ConductingEquipment")
-		.map(el => el.source)
+		"BaseVoltage.ConductingEquipment");
 	    for (let baseVoltage of allBaseVoltages) {
 		data.children[0].appendChild(baseVoltage.cloneNode(true));
 	    }
-	    let allTrafoEnds = model.getGraph(
+	    let allTrafoEnds = model.getTargets(
 		allEquipments,
 		"PowerTransformer.PowerTransformerEnd",
-		"PowerTransformerEnd.PowerTransformer")
-		.map(el => el.source);
+		"PowerTransformerEnd.PowerTransformer");
 	    for (let trafoEnd of allTrafoEnds) {
 		data.children[0].appendChild(trafoEnd.cloneNode(true));
 	    }
 	    // TODO: measurements can also be tied to power system resources
 	    // (e.g. busbars), not only terminals
-	    let allMeasurements = model.getGraph(
+	    let allMeasurements = model.getTargets(
 		allTerminals,
 		"Terminal.Measurements",
-		"Measurement.Terminal")
-		.map(el => el.source);
+		"Measurement.Terminal");
 	    for (let measurement of allMeasurements) {
 		data.children[0].appendChild(measurement.cloneNode(true));
 	    }
-	    let allAnalogValues = model.getGraph(
+	    let allAnalogValues = model.getTargets(
 		allMeasurements,
 		"Analog.AnalogValues",
-		"AnalogValue.Analog")
-		.map(el => el.source);
+		"AnalogValue.Analog");
 	    for (let analogValue of allAnalogValues) {
 		data.children[0].appendChild(analogValue.cloneNode(true));
 	    }
@@ -352,14 +352,14 @@ function cimModel() {
 	    let ceGraph = model.getConductingEquipmentGraph();
 	    let allEquipments = ceGraph.map(el => el.source);
 	    let terminals = ceGraph.map(el => el.target);
-	    let tMeasurements = model.getGraph(terminals,
-					       "Terminal.Measurements",
-					       "Measurement.Terminal")
-		.map(el => el.source);
-	    let eqMeasurements = model.getGraph(allEquipments,
-						"PowerSystemResource.Measurements",
-						"Measurement.PowerSystemResource")
-		.map(el => el.source);
+	    let tMeasurements = model.getTargets(
+		terminals,
+		"Terminal.Measurements",
+		"Measurement.Terminal");
+	    let eqMeasurements = model.getTargets(
+		allEquipments,
+		"PowerSystemResource.Measurements",
+		"Measurement.PowerSystemResource");
 	    gMeasurements = [].reduce.call(tMeasurements.concat(eqMeasurements), function(r, v) {
 		if (typeof(r[v.nodeName]) !== "undefined" && r[v.nodeName].indexOf(v) < 0) {
 		    r[v.nodeName].push(v);
@@ -568,10 +568,15 @@ function cimModel() {
 	    let graphic = model.getGraphicObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
 	    let nonGraphic = allConnectivityNodes.filter(el => graphic.indexOf(el) === -1);
 	    nonGraphic = nonGraphic.filter(function(d) {
-		let edges = model.getGraph([d], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode", true);
-		let cnTerminals = edges.map(el => el.target);
+		let cnTerminals = model.getTargets(
+		    [d],
+		    "ConnectivityNode.Terminals",
+		    "Terminal.ConnectivityNode");
 		// let's try to get some equipment
-		let equipments = model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+		let equipments = model.getTargets(
+		    cnTerminals,
+		    "Terminal.ConductingEquipment",
+		    "ConductingEquipment.Terminals");
 		equipments = model.getConductingEquipmentGraph(equipments).map(el => el.source);
 		// let's try to get a busbar section
 		let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
@@ -588,10 +593,10 @@ function cimModel() {
 	    let ret = {};
 	    for (let type of types) {
 		ret[type] = model.getObjects([type])[type].filter(function(container) {
-		    let allContainedObjects = model.getGraph([container],
-							     "EquipmentContainers.Equipment",
-							     "Equipment.EquipmentContainer")
-			.map(el => el.source);
+		    let allContainedObjects = model.getTargets(
+			[container],
+			"EquipmentContainers.Equipment",
+			"Equipment.EquipmentContainer");
 		    let graphicObjects = model.getDiagramObjectGraph([container]);
 		    let graphicContainedObjects = model.getDiagramObjectGraph(allContainedObjects);
 		    return (graphicObjects.length > 0 || graphicContainedObjects.length > 0);
@@ -794,8 +799,14 @@ function cimModel() {
 	    // want that filter.
 	    function getConnectivityNode(busbar) {
 		if (busbar.nodeName === "cim:BusbarSection") {
-		    let terminal = model.getGraph([busbar], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment").map(el => el.source);
-		    let cn = model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source);
+		    let terminal = model.getTargets(
+			[busbar],
+			"ConductingEquipment.Terminals",
+			"Terminal.ConductingEquipment");
+		    let cn = model.getTargets(
+			terminal,
+			"Terminal.ConnectivityNode",
+			"ConnectivityNode.Terminals");
 		    return cn;		
 		}
 		return [];
@@ -803,10 +814,17 @@ function cimModel() {
 
 	    function getBusbars(connectivityNode) {
 		if (connectivityNode.nodeName === "cim:ConnectivityNode") {
-		    let cnTerminals = model.getGraph([connectivityNode], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode").map(el => el.source);
+		    let cnTerminals = model.getTargets(
+			[connectivityNode],
+			"ConnectivityNode.Terminals",
+			"Terminal.ConnectivityNode");
 		    // let's try to get some equipment
-		    let equipments = model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
-		    let busbars = equipments.filter(el => el.nodeName === "cim:BusbarSection");
+		    let equipments = model.getTargets(
+			cnTerminals,
+			"Terminal.ConductingEquipment",
+			"ConductingEquipment.Terminals");
+		    let busbars = equipments.filter(
+			el => el.nodeName === "cim:BusbarSection");
 		    return busbars;
 		}
 		return [];
@@ -823,7 +841,10 @@ function cimModel() {
 		if (typeof(terminal) === "undefined") {
 		    return null;
 		}
-		let cn = model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		let cn = model.getTargets(
+		    [terminal],
+		    "Terminal.ConnectivityNode",
+		    "ConnectivityNode.Terminals")[0];
 		return cn;
 	    }
 	    return null;
@@ -1002,8 +1023,7 @@ function cimModel() {
 	setLink(source, linkName, target) {
 	    let invLinkSchema = model.getInvLink("#" + linkName.split(":")[1]);
 	    let invLinkName = "cim:" + invLinkSchema.attributes[0].value.substring(1);
-	    let graph = model.getGraph([source], linkName, invLinkName);
-	    let oldTargets = graph.map(el => el.source);
+	    let oldTargets = model.getTargets([source], linkName, invLinkName);
 	    for (let oldTarget of oldTargets) {
 		model.removeLink(source, linkName, oldTarget);
 	    }
@@ -1013,9 +1033,9 @@ function cimModel() {
 	addLink(source, linkName, target) {
 	    let invLink = model.getInvLink("#" + linkName.split(":")[1]);
 	    let invLinkName = "cim:" + invLink.attributes[0].value.substring(1);
-	    let graph = model.getGraph([source], linkName, invLinkName);
+	    let targets = model.getTargets([source], linkName, invLinkName);
 	    // see if the link is already set
-	    if (graph.length > 0) {
+	    if (targets.length > 0) {
 		return;
 	    }
 	    let link = source.ownerDocument.createElementNS(cimNS, linkName);
