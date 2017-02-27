@@ -119,7 +119,7 @@ function cimModel() {
     function buildModel(callback) {
 	// build a map (UUID)->(object) and a map
 	// (link name, target UUID)->(source objects)
-	let allObjects = model.getAllObjects();
+	let allObjects = getAllObjects();
 	for (let i in allObjects) {
 	    let object = allObjects[i];
 	    if (typeof(object.attributes) === "undefined") {
@@ -157,6 +157,18 @@ function cimModel() {
 		});
 	    });
 	});
+    };
+
+    // Get all objects (doesn't filter by diagram).
+    // This is a 'private' function (not visible in the model object).
+    function getAllObjects() {
+	let ret = [];
+	for (let i of Object.keys(data)) {
+	    if (typeof(data[i]) !== "undefined") {
+		ret = ret.concat([...data[i].children[0].children]);
+	    }
+	}
+	return ret;
     };
 
     // This is the fundamental object used by CIMDraw to manipulate CIM files.
@@ -317,7 +329,7 @@ function cimModel() {
 	    return sXML;
 	},
 
-	// get a list of diagrams in the current CIM file.
+	// Get a list of diagrams in the current CIM file.
 	getDiagramList() {
 	    let diagrams = model.getObjects(["cim:Diagram"])["cim:Diagram"]
 		.map(el => {
@@ -334,7 +346,7 @@ function cimModel() {
 	// Get the objects of a given type (doesn't filter by diagram).
 	getObjects(types) {
 	    let ret = {};
- 	    let allObjects = model.getAllObjects();
+ 	    let allObjects = getAllObjects();
 	    for (let type of types) {
 		ret[type] = [];
 	    }
@@ -347,7 +359,7 @@ function cimModel() {
 	    return ret;
 	},
 
-	// get all the measurements in the current diagram
+	// Get all the measurements in the current diagram.
 	getMeasurements() {
 	    let gMeasurements = model.getGraphicObjects(["cim:Analog", "cim:Discrete"]);
 	    let ceGraph = model.getConductingEquipmentGraph();
@@ -370,7 +382,7 @@ function cimModel() {
 	    return gMeasurements; 
 	},
 
-	// Get the (EQ) schema description of a given object, e.g. Breaker 
+	// Get the (EQ) schema description of a given object, e.g. Breaker. 
 	getSchemaObject(type) {
 	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
@@ -378,7 +390,7 @@ function cimModel() {
 	    })[0];
 	},
 
-	// Get the (EQ) schema enumeration values of a given attribute 
+	// Get the (EQ) schema enumeration values of a given attribute.
 	getSchemaEnumValues(attr) {
 	    let type = [].filter.call(attr.children, function(el) {
 		return el.nodeName === "rdfs:range";
@@ -544,9 +556,9 @@ function cimModel() {
 
 	// Get the objects of a given type that have at least one
 	// DiagramObject in the current diagram.
-	// The input is an array of types, like ["cim:ACLineSegment", "cim:Breaker"]
+	// The input is an array of types, like ["cim:ACLineSegment", "cim:Breaker"].
 	// The output is an object, its keys are the types and the values are the
-	// corresponding arrays, like {cim:ACLineSegment: [array1], cim:Breaker: [array2]}
+	// corresponding arrays, like {cim:ACLineSegment: [array1], cim:Breaker: [array2]}.
 	getGraphicObjects(types) {
 	    let ret = {};
  	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
@@ -606,7 +618,7 @@ function cimModel() {
 	    return ret;
 	},
 
-	/** Get all the terminals of given conducting equipments. */
+	// Get all the terminals of given conducting equipments. 
 	getTerminals(identObjs) {
 	    let terminals = model.getConductingEquipmentGraph(identObjs).map(el => el.target);
 	    let terminalsSet = new Set(terminals);
@@ -614,18 +626,7 @@ function cimModel() {
 	    return terminals;
 	},
 
-	// get all objects (doesn't filter by diagram).
-	getAllObjects() {
-	    let ret = [];
-	    for (let i of Object.keys(data)) {
-		if (typeof(data[i]) !== "undefined") {
-		    ret = ret.concat([...data[i].children[0].children]);
-		}
-	    }
-	    return ret;
-	},
-
-	// get an object given its UUID.
+	// Get an object given its UUID.
 	getObject(uuid) {
 	    return model.dataMap.get("#" + uuid);
 	},
