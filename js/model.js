@@ -81,7 +81,7 @@ function cimModel() {
 		if (typeof(data.dl) === "undefined") {
 		    data.dl = createNewDLDocument();
 		}
-		model.buildModel(callback);
+		buildModel(callback);
 	    }
 	};
 
@@ -113,7 +113,52 @@ function cimModel() {
 	model.setAttribute(dlModelDesc, "md:Model.profile", dlNS);
 	return empty;
     };
-    
+
+    // Build initial model data structures and call a user callback.
+    // This is a 'private' function (not visible in the model object).
+    function buildModel(callback) {
+	// build a map (UUID)->(object) and a map
+	// (link name, target UUID)->(source objects)
+	let allObjects = model.getAllObjects();
+	for (let i in allObjects) {
+	    let object = allObjects[i];
+	    if (typeof(object.attributes) === "undefined") {
+		continue;
+	    }
+	    if (object.attributes.getNamedItem("rdf:ID") === null) {
+		continue;
+	    }
+	    model.dataMap.set("#" + object.attributes.getNamedItem("rdf:ID").value, object);
+	    if (typeof(object.attributes) !== "undefined") {
+		let links = model.getLinks(object);
+		for (let link of links) {
+ 		    let key = link.localName + link.attributes[0].value;
+		    let val = model.linksMap.get(key);
+		    if (typeof(val) === "undefined") {
+			model.linksMap.set(key, [object]);
+		    } else {
+			val.push(object);
+		    }
+		}   
+	    } 
+	}
+	
+	// let's read schema files
+	let rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
+	let rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
+	let rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
+	d3.xml(rdfsEQ, function(error, schemaDataEQ) {
+	    model.schemaDataEQ = schemaDataEQ;
+	    d3.xml(rdfsDL, function(schemaDataDL) {
+		model.schemaDataDL = schemaDataDL;
+		d3.xml(rdfsSV, function(schemaDataSV) {
+		    model.schemaDataSV = schemaDataSV;
+		    callback(null);
+		});
+	    });
+	});
+    };
+
     // This is the fundamental object used by CIMDraw to manipulate CIM files.
     let model = {
 	// The name of the CIM file which is actually loaded.
@@ -134,7 +179,7 @@ function cimModel() {
 		let parser = new DOMParser();
 		data.all = parser.parseFromString(emptyFile, "application/xml");
 		model.fileName = file.name;
-		model.buildModel(callback);
+		buildModel(callback);
 		return;
 	    }
 	    // see if this file is already loaded
@@ -143,7 +188,7 @@ function cimModel() {
                     let parser = new DOMParser();
 		    let cimXML = reader.result;
 		    data.all = parser.parseFromString(cimXML, "application/xml");
-		    model.buildModel(callback);
+		    buildModel(callback);
 		}
 		model.fileName = file.name;
 		if (file.name.endsWith(".zip")) {
@@ -170,55 +215,11 @@ function cimModel() {
 			return;
 		    }
 		    data.all = data;
-		    model.buildModel(callback);
+		    buildModel(callback);
 		});
 	    } else {
 		callback(null);
 	    }
-	},
-
-	// build initial model data structures and call a user callback
-	buildModel(callback) {
-	    // build a map (UUID)->(object) and a map
-	    // (link name, target UUID)->(source objects)
-	    let allObjects = model.getAllObjects();
-	    for (let i in allObjects) {
-		let object = allObjects[i];
-		if (typeof(object.attributes) === "undefined") {
-		    continue;
-		}
-		if (object.attributes.getNamedItem("rdf:ID") === null) {
-		    continue;
-		}
-		model.dataMap.set("#" + object.attributes.getNamedItem("rdf:ID").value, object);
-		if (typeof(object.attributes) !== "undefined") {
-		    let links = model.getLinks(object);
-		    for (let link of links) {
- 			let key = link.localName + link.attributes[0].value;
-			let val = model.linksMap.get(key);
-			if (typeof(val) === "undefined") {
-			    model.linksMap.set(key, [object]);
-			} else {
-			    val.push(object);
-			}
-		    }   
-		} 
-	    }
-	    
-	    // let's read schema files
-	    let rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
-	    let rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
-	    let rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
-	    d3.xml(rdfsEQ, function(error, schemaDataEQ) {
-		model.schemaDataEQ = schemaDataEQ;
-		d3.xml(rdfsDL, function(schemaDataDL) {
-		    model.schemaDataDL = schemaDataDL;
-		    d3.xml(rdfsSV, function(schemaDataSV) {
-			model.schemaDataSV = schemaDataSV;
-			callback(null);
-		    });
-		});
-	    });
 	},
 
 	// Serialize the current CIM file.
