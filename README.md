@@ -1,6 +1,6 @@
 # CIMDraw #
 
-These are the source files for cimDraw.
+These are the source files for CIMDraw.
 
 ### What is this? ###
 
