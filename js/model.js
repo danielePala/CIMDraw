@@ -171,6 +171,76 @@ function cimModel() {
 	return ret;
     };
 
+    // Add a terminal to a given object.
+    // This is a 'private' function (not visible in the model object).
+    function createTerminal(object) {
+	let term = model.cimObject("cim:Terminal");
+	addLink(object, "cim:ConductingEquipment.Terminals", term);
+	return term;
+    };
+
+    // Get the document for the given CIM object.
+    // This is a 'private' function (not visible in the model object).
+    function getDocument(cimObjName) {
+	if (typeof(data.all) !== "undefined") {
+	    return data.all;
+	}
+	// can be Diagram Layout or Equipment
+	if (["cim:Diagram", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(cimObjName) > -1) {
+	    return data.dl;
+	} else {
+	    return data.eq;
+	}
+    };
+
+    // Get all the (EQ) superclasses for a given type.
+    // This is a 'private' function (not visible in the model object).
+    function getAllSuper(type) {
+	let allSuper = [];
+	let object = model.getSchemaObject(type);
+	// handle unknown objects (e.g. non-EQ objects)
+	if (typeof(object) === "undefined") {
+	    return allSuper;
+	}
+	let aSuper = [].filter.call(object.children, function(el) {
+	    return el.nodeName === "rdfs:subClassOf";
+	})[0];
+	if (typeof(aSuper) !== "undefined") {
+	    let aSuperName = aSuper.attributes[0].value.substring(1);
+		allSuper.push(aSuperName);
+	    allSuper = allSuper.concat(getAllSuper(aSuperName));
+	}
+	return allSuper;
+    };
+
+    // Add a new link to a given source.
+    // This is a 'private' function (not visible in the model object).
+    function addLink(source, linkName, target) {
+	let invLink = model.getInvLink("#" + linkName.split(":")[1]);
+	let invLinkName = "cim:" + invLink.attributes[0].value.substring(1);
+	let targets = model.getTargets([source], linkName, invLinkName);
+	// see if the link is already set
+	if (targets.length > 0) {
+	    return;
+	}
+	let link = source.ownerDocument.createElementNS(cimNS, linkName);
+	let linkValue = source.ownerDocument.createAttribute("rdf:resource");
+	linkValue.nodeValue = "#";
+	link.setAttributeNode(linkValue);
+	source.appendChild(link);
+	// set the new value
+	link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;
+	
+	let key = link.localName + link.attributes[0].value;
+	let val = model.linksMap.get(key);
+	if (typeof(val) === "undefined") {
+	    model.linksMap.set(key, [source]);
+	} else {
+	    val.push(source);
+	}
+	model.trigger("addLink", source, linkName, target);
+    };
+    
     // This is the fundamental object used by CIMDraw to manipulate CIM files.
     let model = {
 	// The name of the CIM file which is actually loaded.
@@ -427,7 +497,7 @@ function cimModel() {
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
-		let supers = model.getAllSuper(type);
+		let supers = getAllSuper(type);
 		for (let i in supers) {
 		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
 			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
@@ -515,7 +585,7 @@ function cimModel() {
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
-		let supers = model.getAllSuper(type);
+		let supers = getAllSuper(type);
 		for (let i in supers) {
 		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
 			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
@@ -533,25 +603,6 @@ function cimModel() {
 		schemaLinksMap.set(type, ret);
 	    }
 	    return ret;
-	},
-
-	// Get all the (EQ) superclasses for a given type.
-	getAllSuper(type) {
-	    let allSuper = [];
-	    let object = model.getSchemaObject(type);
-	    // handle unknown objects (e.g. non-EQ objects)
-	    if (typeof(object) === "undefined") {
-		return allSuper;
-	    }
-	    let aSuper = [].filter.call(object.children, function(el) {
-		return el.nodeName === "rdfs:subClassOf";
-	    })[0];
-	    if (typeof(aSuper) !== "undefined") {
-		let aSuperName = aSuper.attributes[0].value.substring(1);
-		allSuper.push(aSuperName);
-		allSuper = allSuper.concat(model.getAllSuper(aSuperName));
-	    }
-	    return allSuper;
 	},
 
 	// Get the objects of a given type that have at least one
@@ -631,14 +682,14 @@ function cimModel() {
 	    return model.dataMap.get("#" + uuid);
 	},
 
-	// get all the attributes of a given object which are actually set.
+	// Get all the attributes of a given object which are actually set.
 	getAttributes(object) {
 	    return [].filter.call(object.children, function(el) {
 		return el.attributes.length === 0;
 	    });
 	},
 
-	// get a specific attribute of a given object.
+	// Get a specific attribute of a given object.
 	getAttribute(object, attrName) {
 	    if (typeof(object) === "undefined") {
 		return "undefined";
@@ -647,7 +698,7 @@ function cimModel() {
 	    return attributes.filter(el => el.nodeName === attrName)[0];
 	},
 
-	// set a specific attribute of a given object. If it doesen't exists, it is created.
+	// Set a specific attribute of a given object. If it doesen't exists, it is created.
 	setAttribute(object, attrName, value) {
 	    let attribute = model.getAttribute(object, attrName);
 	    if (typeof(attribute) !== "undefined") {
@@ -661,7 +712,7 @@ function cimModel() {
 	    return;
 	},
 
-	// set a specific enum of a given object. If it doesen't exists, it is created.
+	// Set a specific enum of a given object. If it doesen't exists, it is created.
 	setEnum(object, enumName, value) {
 	    let enumAttr = model.getEnum(object, enumName);
 	    if (typeof(enumAttr) === "undefined") {
@@ -676,16 +727,16 @@ function cimModel() {
 	    return;
 	},
 
-	// create an object of a given type
+	// Create an object of a given type.
 	createObject(type, uuid) {
 	    let newElement = model.cimObject(type, uuid);
 	    model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
-	    if (model.getAllSuper(newElement.localName).indexOf("ConductingEquipment") < 0) {
+	    if (getAllSuper(newElement.localName).indexOf("ConductingEquipment") < 0) {
 		// if not a conducting equipment, we are done
 		model.trigger("createObject", newElement);
 		return newElement;
 	    }
-	    let term1 = model.createTerminal(newElement);
+	    let term1 = createTerminal(newElement);
 	    let term2 = null;
 	    // create second terminal if needed
 	    if (type === "cim:ACLineSegment" ||
@@ -695,11 +746,11 @@ function cimModel() {
 		type === "cim:Jumper" ||
 		type === "cim:Junction" ||
 		type === "cim:PowerTransformer") {
-		term2 = model.createTerminal(newElement);
+		term2 = createTerminal(newElement);
 	    }
 	    if (type === "cim:BusbarSection") {
 		let cn = model.cimObject("cim:ConnectivityNode");
-		model.addLink(term1, "cim:Terminal.ConnectivityNode", cn);
+		addLink(term1, "cim:Terminal.ConnectivityNode", cn);
 	    }
 	    if (type === "cim:PowerTransformer") {
 		// TODO: the number of windings should be configurable
@@ -707,10 +758,10 @@ function cimModel() {
 		let w2 = model.cimObject("cim:PowerTransformerEnd");
 		model.setAttribute(w1, "cim:IdentifiedObject.name", "winding1");
 		model.setAttribute(w2, "cim:IdentifiedObject.name", "winding2");
-		model.addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w1);
-		model.addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w2);
-		model.addLink(w1, "cim:TransformerEnd.Terminal", term1);
-		model.addLink(w2, "cim:TransformerEnd.Terminal", term2);
+		addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w1);
+		addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w2);
+		addLink(w1, "cim:TransformerEnd.Terminal", term1);
+		addLink(w2, "cim:TransformerEnd.Terminal", term2);
 	    }
 	    model.trigger("createObject", newElement);
 	    return newElement;
@@ -835,8 +886,8 @@ function cimModel() {
 	    model.trigger("deleteObject", objUUID);
 	},
 
-	// function to navigate busbar -> connectivity node.
-	// It filters by diagram (i.e. the busbar must be in the diagram)
+	// Function to navigate busbar -> connectivity node.
+	// It filters by diagram (i.e. the busbar must be in the diagram).
 	getConnectivityNode(busbar) {
 	    if (busbar.nodeName === "cim:BusbarSection") {
 		let terminal = model.getConductingEquipmentGraph([busbar]).map(el => el.target)[0];
@@ -852,8 +903,8 @@ function cimModel() {
 	    return null;
 	},
 
-	// function to navigate connectivity node -> busbar.
-	// It filters by diagram (i.e. the busbar must be in the diagram) 
+	// Function to navigate connectivity node -> busbar.
+	// It filters by diagram (i.e. the busbar must be in the diagram).
 	getBusbar(connectivityNode) {
 	    if (connectivityNode.nodeName === "cim:ConnectivityNode") {
 		let busbars = model.getEquipments(connectivityNode).filter(el => el.localName === "BusbarSection");
@@ -864,15 +915,15 @@ function cimModel() {
 	    return null;
 	},
 
-	// test weather an object is of a given type
+	// Test weather an object is of a given type.
 	isA(type, object) {
-	    if (model.getAllSuper(object.localName).indexOf(type) < 0) {
+	    if (getAllSuper(object.localName).indexOf(type) < 0) {
 		return false;
 	    }
 	    return true;
 	},
 
-	// delete an object from the current diagram
+	// Delete an object from the current diagram.
 	deleteFromDiagram(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
 	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.target);
@@ -889,14 +940,7 @@ function cimModel() {
 	    model.trigger("deleteFromDiagram", objUUID);
 	},
 
-	// add a terminal to a given object
-	createTerminal(object) {
-	    let term = model.cimObject("cim:Terminal");
-	    model.addLink(object, "cim:ConductingEquipment.Terminals", term);
-	    return term;
-	},
-
-	// add an object to the active diagram
+	// Add an object to the active diagram.
 	addToActiveDiagram(object, lineData) {
 	    // create a diagram object and a diagram object point
 	    let dobj = model.cimObject("cim:DiagramObject");
@@ -905,13 +949,17 @@ function cimModel() {
 		model.setAttribute(point, "cim:DiagramObjectPoint.xPosition", linePoint.x + object.x);
 		model.setAttribute(point, "cim:DiagramObjectPoint.yPosition", linePoint.y + object.y);
 		model.setAttribute(point, "cim:DiagramObjectPoint.sequenceNumber", linePoint.seq);
-		model.addLink(dobj, "cim:DiagramObject.DiagramObjectPoints", point);
+		addLink(dobj, "cim:DiagramObject.DiagramObjectPoints", point);
 	    }
-	    model.addLink(object, "cim:IdentifiedObject.DiagramObjects", dobj);
-	    model.addLink(dobj, "cim:DiagramObject.Diagram", model.activeDiagram);
+	    addLink(object, "cim:IdentifiedObject.DiagramObjects", dobj);
+	    addLink(dobj, "cim:DiagramObject.Diagram", model.activeDiagram);
 	    model.trigger("addToActiveDiagram", object);
 	},
 
+	// Update the model based on new position data. This is based on the
+	// given object's x and y attributes as well as a 'lineData' array 
+	// for extended objects: each element of the array must be an object
+	// with x and y keys, which are mapped to DiagramObjectPoints.
 	updateActiveDiagram(object, lineData) {
 	    // save new position.
 	    let ioEdges = model.getDiagramObjectGraph([object]);
@@ -947,21 +995,9 @@ function cimModel() {
 	    }
 	},
 
-	// get the document for the given CIM object
-	getDocument(cimObjName) {
-	    if (typeof(data.all) !== "undefined") {
-		return data.all;
-	    }
-	    // can be Diagram Layout or Equipment
-	    if (["cim:Diagram", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(cimObjName) > -1) {
-		return data.dl;
-	    } else {
-		return data.eq;
-	    }
-	},
-
+	// TODO: this shoul probably be private.
 	cimObject(name, uuid) {
-	    let document = model.getDocument(name);
+	    let document = getDocument(name);
 	    let obj = document.createElementNS(cimNS, name);
 	    document.children[0].appendChild(obj);
 	    let objID = document.createAttribute("rdf:ID");
@@ -985,7 +1021,7 @@ function cimModel() {
 	    return obj;
 	},
 	
-	// get all the links of a given object which are actually set.
+	// Get all the links of a given object which are actually set.
 	getLinks(object) {
 	    return [].filter.call(object.children, function(el) {
 		let resource = el.attributes.getNamedItem("rdf:resource");
@@ -996,14 +1032,14 @@ function cimModel() {
 	    });
 	},
 
-	// get a specific link of a given object.
-	// If the link is many-valued, it mey return more than one element
+	// Get a specific link of a given object.
+	// If the link is many-valued, it mey return more than one element.
 	getLink(object, linkName) {
 	    let links = model.getLinks(object);
 	    return links.filter(el => el.nodeName === linkName);
 	},
 
-	// get all the enums of a given object which are actually set.
+	// Get all the enums of a given object which are actually set.
 	getEnums(object) {
 	    return [].filter.call(object.children, function(el) {
 		let resource = el.attributes.getNamedItem("rdf:resource");
@@ -1014,13 +1050,13 @@ function cimModel() {
 	    });
 	},
 
-	// get a specific enum of a given object.
+	// Get a specific enum of a given object.
 	getEnum(object, enumName) {
 	    let enums = model.getEnums(object);
 	    return enums.filter(el => el.nodeName === enumName)[0];
 	},
 
-	// set a specific link of a given object.
+	// Set a specific link of a given object.
 	// If a link with the same name already exists, it is removed.
 	setLink(source, linkName, target) {
 	    let invLinkSchema = model.getInvLink("#" + linkName.split(":")[1]);
@@ -1029,35 +1065,10 @@ function cimModel() {
 	    for (let oldTarget of oldTargets) {
 		model.removeLink(source, linkName, oldTarget);
 	    }
-	    model.addLink(source, linkName, target);
+	    addLink(source, linkName, target);
 	},
 
-	addLink(source, linkName, target) {
-	    let invLink = model.getInvLink("#" + linkName.split(":")[1]);
-	    let invLinkName = "cim:" + invLink.attributes[0].value.substring(1);
-	    let targets = model.getTargets([source], linkName, invLinkName);
-	    // see if the link is already set
-	    if (targets.length > 0) {
-		return;
-	    }
-	    let link = source.ownerDocument.createElementNS(cimNS, linkName);
-	    let linkValue = source.ownerDocument.createAttribute("rdf:resource");
-	    linkValue.nodeValue = "#";
-	    link.setAttributeNode(linkValue);
-	    source.appendChild(link);
-	    // set the new value
-	    link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;
-
-	    let key = link.localName + link.attributes[0].value;
-	    let val = model.linksMap.get(key);
-	    if (typeof(val) === "undefined") {
-		model.linksMap.set(key, [source]);
-	    } else {
-		val.push(source);
-	    }
-	    model.trigger("addLink", source, linkName, target);
-	},
-
+	// Remove a specific link of a given object.
 	removeLink(source, linkName, target) {
 	    let link = model.getLink(source, linkName);
 	    removeLinkInternal(link, target);
@@ -1088,12 +1099,7 @@ function cimModel() {
 	    };
 	},
 
-	// resolve a given link.
-	resolveLink(link) {
-	    return model.dataMap.get(link.attributes[0].value);
-	},
-
-	// returns the inverse of a given link
+	// Returns the inverse of a given link.
 	getInvLink(link) {
 	    let invRoleNameString = link;
 	    if (typeof(link) !== "string") {
@@ -1124,7 +1130,7 @@ function cimModel() {
 	    return invRole;
 	},
 
-	// returns all relations between given sources and other objects,
+	// Returns all relations between given sources and other objects,
 	// via a given link name. The inverse link name should be supplied too.
 	// It doesn't filter by diagram.
 	getGraph(sources, linkName, invLinkName, invert) {

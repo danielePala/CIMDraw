@@ -607,7 +607,7 @@
 	 let topos = allConnectivityNodes.reduce(function(r, v) {
 	     let cnTerminals = self.model.getGraph([v], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode").map(el => el.source);
 	     let switches = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source).filter(function(el) {
-		 return self.model.getAllSuper(el.localName).indexOf("Switch") > -1;
+		 return self.model.isA("Switch", el) === true;
 	     });
 	     switches = switches.filter(function(el) {
 		 // TODO: take into account measurements
@@ -1117,13 +1117,6 @@
 	 let allEdges = [];
 	 let updateTermSelection = eqSelection.selectAll("g")
 					.data(function(d) {
-					    /*
-					       let numTerm = getNumTerm(d);
-					       let diffTerm = numTerm - self.model.getTerminals([d]).length;
-					       for (let i = 0; i < diffTerm; i++) {
-					       self.model.createTerminal(d);
-					       }
-					    */
 					    return self.model.getTerminals([d]);
 					});
 	 let termSelection = updateTermSelection
