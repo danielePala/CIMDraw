@@ -11,6 +11,7 @@ The code uses many ES6 features, so you will need a modern browser to run it
 
 ### Resources ###
 
+- [Online demo](https://cimdraw.bitbucket.io/)
 - [Wiki](https://bitbucket.org/danielePala/cimdraw/wiki/Home)
 - [Code architecture and API reference](https://bitbucket.org/danielePala/cimdraw/wiki/API.md)
 - [Examples](https://bitbucket.org/danielePala/cimdraw/wiki/Examples.md)
