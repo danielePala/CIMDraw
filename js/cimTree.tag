@@ -105,7 +105,7 @@
 		 let toHide = $(this).find("li.CIM-object>a:not(:contains(" + searchKey + "))");
 		 toShow.parent().show();
 		 toHide.parent().hide();
-		 $(this).parent().find(">span").html(toShow.size());
+		 $(this).parent().find(">span").html(toShow.length);
 	     });
 	 });
 
