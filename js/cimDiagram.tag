@@ -711,7 +711,7 @@
 		 $(this).data('bs.popover').options.content = tooltip;
 	     } else {
 		 // no measurements, destroy popover
-		 psrSelection.attr("data-toggle", null);
+		 d3.select(this).attr("data-toggle", null);
 		 $(this).popover("destroy");
 	     }
 	 })
