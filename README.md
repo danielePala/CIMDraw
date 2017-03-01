@@ -10,8 +10,9 @@ The code uses many ES6 features, so you will need a modern browser to run it
 (Firefox >= 44, Chrome >= 49).
 
 ### Acknowledgement ###
+[![logo.png](https://bitbucket.org/repo/xqjod4/images/734408249-logo.png)](http://www.rse-web.it/home.page?country=eng)
 
-This work has been financed by the Research Fund for the Italian Electrical System under the Contract Agreement between [RSE S.p.A.](http://www.rse-web.it/home.page?country=eng) and the Ministry of Economic Development - General Directorate for Nuclear Energy, Renewable Energy and Energy Efficiency in compliance with the Decree of March 8, 2006.
+This work has been financed by the Research Fund for the Italian Electrical System under the Contract Agreement between **[RSE S.p.A.](http://www.rse-web.it/home.page?country=eng)** and the Ministry of Economic Development - General Directorate for Nuclear Energy, Renewable Energy and Energy Efficiency in compliance with the Decree of March 8, 2006.
 
 ### Resources ###
 
