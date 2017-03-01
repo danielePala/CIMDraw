@@ -239,8 +239,12 @@
      self.parent.on("moveTo", function(element) {
 	 self.deselectAll();
 	 let cimObject = opts.model.getObject(element);
-	 if (cimObject.nodeName === "cim:Substation" || cimObject.nodeName === "cim:Line") {
-	     let equipments = opts.model.getGraph([cimObject], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
+	 if (cimObject.nodeName === "cim:Substation" ||
+	     cimObject.nodeName === "cim:Line") {
+		 let equipments = opts.model.getTargets(
+		     [cimObject],
+		     "EquipmentContainer.Equipments",
+		     "Equipment.EquipmentContainer");
 	     for (let equipment of equipments) {
 		 // handle busbars
 		 if (equipment.nodeName === "cim:BusbarSection") {
@@ -406,18 +410,15 @@
 			  }
 			  if (opts.model.isA("ConductingEquipment", d) === true) {
 			      let terminals = opts.model.getTerminals([d]);
-			      let cns = opts.model.getGraph(
+			      let cns = opts.model.getTargets(
 				  terminals,
 				  "Terminal.ConnectivityNode",
-				  "ConnectivityNode.Terminals")
-					    .map(el => el.source);
+				  "ConnectivityNode.Terminals");
 			      for (let cn of cns) {
-				  let cnTerms = opts.model.getGraph(
+				  let cnTerms = opts.model.getTargets(
 				      [cn],
 				      "ConnectivityNode.Terminals",
-				      "Terminal.ConnectivityNode")
-						    .map(el => el.source);
-				  cnTerms = [...new Set(cnTerms)]; 
+				      "Terminal.ConnectivityNode");
 				  if (cnTerms.length === 2) {
 				      cn.x = (cnTerms[0].x + cnTerms[1].x)/2;
 				      cn.y = (cnTerms[0].y + cnTerms[1].y)/2;
@@ -560,7 +561,10 @@
 	       let termToChange = path.datum();
 	       // directly connect terminals
 	       if (typeof(termToChange) !== "undefined") {
-		   let cn = opts.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		   let cn = opts.model.getTargets(
+		       [d],
+		       "Terminal.ConnectivityNode",
+		       "ConnectivityNode.Terminals")[0];
 		   d3.select("svg").selectAll("svg > path").attr("d", null);
 		   d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
 		   
@@ -843,11 +847,10 @@
 	     newObject = opts.model.createObject("cim:Analog");
 	 }
 	 if (d.nodeName === "cim:Terminal") {
-	     let psr = opts.model.getGraph(
+	     let psr = opts.model.getTargets(
 		 [d],
 		 "Terminal.ConductingEquipment",
-		 "ConductingEquipment.Terminals")
-	                       .map(el => el.source)[0];
+		 "ConductingEquipment.Terminals")[0];
 	     opts.model.setLink(newObject, "cim:Measurement.Terminal", d);
 	     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", psr);
 	 } else {

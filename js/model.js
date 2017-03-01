@@ -1203,15 +1203,24 @@ function cimModel() {
 		if (typeof(model.activeDiagram) !== "undefined") {
 		    let ioEdges = model.getDiagramObjectGraph();
 		    let graphicObjects = ioEdges.map(el => el.source);
-		    ceEdges = model.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
+		    ceEdges = model.getGraph(
+			graphicObjects,
+			"ConductingEquipment.Terminals",
+			"Terminal.ConductingEquipment", true);
 		} 
 	    } else {
 		if (typeof(model.activeDiagram) !== "undefined") {
 		    let ioEdges = model.getDiagramObjectGraph(identObjs);
 		    let graphicObjects = ioEdges.map(el => el.source);
-		    ceEdges = model.getGraph(graphicObjects, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
+		    ceEdges = model.getGraph(
+			graphicObjects,
+			"ConductingEquipment.Terminals",
+			"Terminal.ConductingEquipment", true);
 		} else {
-		    ceEdges = model.getGraph(identObjs, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true);
+		    ceEdges = model.getGraph(
+			identObjs,
+			"ConductingEquipment.Terminals",
+			"Terminal.ConductingEquipment", true);
 		}
 	    }
 	    return ceEdges;
@@ -1228,13 +1237,26 @@ function cimModel() {
 		if (typeof(model.activeDiagram) !== "undefined") {
 		    allDiagramObjects = model.getTargets([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram");
 		}
-		ioEdges = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
+		ioEdges = model.getGraph(
+		    allDiagramObjects,
+		    "DiagramObject.IdentifiedObject",
+		    "IdentifiedObject.DiagramObjects");
 	    } else {
 		if (typeof(model.activeDiagram) !== "undefined") {
-		    ioEdges = model.getGraph(identObjs, "IdentifiedObject.DiagramObjects", "DiagramObject.IdentifiedObject", true);
-		    let allDiagramObjects = ioEdges.map(el => el.target);
-		    allDiagramObjects = model.getGraph(allDiagramObjects, "DiagramObject.Diagram", "Diagram.DiagramObjects").filter(el => el.source === model.activeDiagram).map(el => el.target);
-		    ioEdges = model.getGraph(allDiagramObjects, "DiagramObject.IdentifiedObject", "IdentifiedObject.DiagramObjects");
+		    let allDiagramObjects = model.getTargets(
+			identObjs,
+			"IdentifiedObject.DiagramObjects",
+			"DiagramObject.IdentifiedObject");
+		    allDiagramObjects = model.getGraph(
+			allDiagramObjects,
+			"DiagramObject.Diagram",
+			"Diagram.DiagramObjects")
+			.filter(el => el.source === model.activeDiagram)
+			.map(el => el.target);
+		    ioEdges = model.getGraph(
+			allDiagramObjects,
+			"DiagramObject.IdentifiedObject",
+			"IdentifiedObject.DiagramObjects");
 		}
 	    }
 	    return ioEdges;

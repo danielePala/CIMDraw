@@ -131,7 +131,10 @@
 		     if (typeof(terminal) === "undefined") {
 			 return;
 		     }
-		     let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		     let cn = self.model.getTargets(
+			 [terminal],
+			 "Terminal.ConnectivityNode",
+			 "ConnectivityNode.Terminals")[0];
 		     type = cn.localName;
 		     uuid = cn.attributes.getNamedItem("rdf:ID").value;
 		 }
@@ -140,33 +143,29 @@
 		 target.select("text").html(value);
 		 break;
 	     case "cim:AnalogValue.value":
-		 let analog = self.model.getGraph(
+		 let analog = self.model.getTargets(
 		     [object],
 		     "AnalogValue.Analog",
-		     "Analog.AnalogValues")
-				  .map(el => el.source);
-		 let psr = self.model.getGraph(
+		     "Analog.AnalogValues");
+		 let psr = self.model.getTargets(
 		     analog,
 		     "Measurement.PowerSystemResource",
-		     "PowerSystemResource.Measurements")
-				    .map(el => el.source)[0];
+		     "PowerSystemResource.Measurements")[0];
 		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		 let psrSelection = d3.select("g#" + psrUUID);
 		 self.createMeasurements(psrSelection);
 		 break;
 	     case "cim:SvPowerFlow.p":
 	     case "cim:SvPowerFlow.q":
-		 let svTerminal = self.model.getGraph(
+		 let svTerminal = self.model.getTargets(
 		     [object],
 		     "SvPowerFlow.Terminal",
-		     "Terminal.SvPowerFlow")
-				      .map(el => el.source)[0];
+		     "Terminal.SvPowerFlow")[0];
 		 if (typeof(svTerminal) !== "undefined") {
-		     let psr = self.model.getGraph(
+		     let psr = self.model.getTargets(
 			 [svTerminal],
 			 "Terminal.ConductingEquipment",
-			 "ConductingEquipment.Terminals")
-				   .map(el => el.source)[0];
+			 "ConductingEquipment.Terminals")[0];
 		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		     let psrSelection = d3.select("g#" + psrUUID);
 		     self.createMeasurements(psrSelection);
@@ -174,11 +173,10 @@
 		 break;
 	 }
 	 if (object.nodeName === "cim:Analog" || object.nodeName === "cim:Discrete") {
-	     let psr = self.model.getGraph(
+	     let psr = self.model.getTargets(
 		 [object],
 		 "Measurement.PowerSystemResource",
-		 "PowerSystemResource.Measurements")
-			   .map(el => el.source)[0];
+		 "PowerSystemResource.Measurements")[0];
 	     if (typeof(psr) !== "undefined") {
 		 // handle busbars
 		 if (psr.nodeName === "cim:BusbarSection") {
@@ -194,11 +192,10 @@
      // listen to 'setEnum' event from model
      self.model.on("setEnum", function(object, enumName, value) {
 	 if (object.nodeName === "cim:Analog" || object.nodeName === "cim:Discrete") {
-	     let psr = self.model.getGraph(
+	     let psr = self.model.getTargets(
 		 [object],
 		 "Measurement.PowerSystemResource",
-		 "PowerSystemResource.Measurements")
-			   .map(el => el.source)[0];
+		 "PowerSystemResource.Measurements")[0];
 	     if (typeof(psr) !== "undefined") {
 		 // handle busbars
 		 if (psr.nodeName === "cim:BusbarSection") {
@@ -281,13 +278,22 @@
 	 }
 	 // handle busbars
 	 if (object.nodeName === "cim:BusbarSection") {
-	     let terminal = self.model.getGraph([object], "ConductingEquipment.Terminals", "Terminal.ConductingEquipment", true).map(el => el.target);
-	     let cn = self.model.getGraph(terminal, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+	     let terminal = self.model.getTargets(
+		 [object],
+		 "ConductingEquipment.Terminals",
+		 "Terminal.ConductingEquipment");
+	     let cn = self.model.getTargets(
+		 terminal,
+		 "Terminal.ConnectivityNode",
+		 "ConnectivityNode.Terminals")[0];
 	     selection = self.drawConnectivityNodes([cn]);
 	     let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
 	     let eqTerminals = self.model.getTerminals(equipments);
 	     for (let eqTerminal of eqTerminals) {
-		 let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 let eqCn = self.model.getTargets(
+		     [eqTerminal],
+		     "Terminal.ConnectivityNode",
+		     "ConnectivityNode.Terminals")[0];
 		 if (eqCn === cn) {
 		     let newEdge = {source: cn, target: eqTerminal};
 		     self.createEdges([newEdge]);
@@ -303,7 +309,10 @@
 	 function handleTerminals(selection) {
 	     let terminals = self.model.getTerminals([object]);
 	     for (let terminal of terminals) {
-		 let cn = self.model.getGraph([terminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 let cn = self.model.getTargets(
+		     [terminal],
+		     "Terminal.ConnectivityNode",
+		     "ConnectivityNode.Terminals")[0];
 		 if (typeof(cn) !== "undefined") {
 		     let equipments = self.model.getEquipments(cn);
 		     // let's try to get a busbar section
@@ -314,7 +323,10 @@
 
 			 let eqTerminals = self.model.getTerminals(equipments);
 			 for (let eqTerminal of eqTerminals) {
-			     let eqCn = self.model.getGraph([eqTerminal], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+			     let eqCn = self.model.getTargets(
+				 [eqTerminal],
+				 "Terminal.ConnectivityNode",
+				 "ConnectivityNode.Terminals")[0];
 			     if (eqCn === cn) {
 				 let newEdge = {source: cn, target: eqTerminal};
 				 self.createEdges([newEdge]);
@@ -350,7 +362,10 @@
 		 }
 		 let edgeToChange = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").data().filter(el => el.target === term)[0];
 		 if (typeof(edgeToChange) === "undefined") {
-		     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source);
+		     let equipment = self.model.getTargets(
+			 [term],
+			 "Terminal.ConductingEquipment",
+			 "ConductingEquipment.Terminals");
 		     equipment = self.model.getConductingEquipmentGraph(equipment).map(el => el.source);
 		     if (equipment.length > 0) {
 			 edgeToChange = {source: cn, target: term};
@@ -369,11 +384,10 @@
 		     terminal = source;
 		 }
 		 if (typeof(terminal) !== "undefined") {
-		     let psr = self.model.getGraph(
+		     let psr = self.model.getTargets(
 			 [terminal],
 			 "Terminal.ConductingEquipment",
-			 "ConductingEquipment.Terminals")
-				   .map(el => el.source)[0];
+			 "ConductingEquipment.Terminals")[0];
 		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		     let psrSelection = d3.select("g#" + psrUUID);
 		     self.createMeasurements(psrSelection);
@@ -385,11 +399,10 @@
 		 if (source.nodeName === "cim:Terminal") {
 		     measTerminal = source;
 		 }
-		 let measPsr = self.model.getGraph(
+		 let measPsr = self.model.getTargets(
 		     [measTerminal],
 		     "Terminal.ConductingEquipment",
-		     "ConductingEquipment.Terminals")
-				   .map(el => el.source)[0];
+		     "ConductingEquipment.Terminals")[0];
 		 let measPsrUUID = measPsr.attributes.getNamedItem("rdf:ID").value;
 		 let measPsrSelection = d3.select("g#" + measPsrUUID);
 		 self.createMeasurements(measPsrSelection);
@@ -678,23 +691,21 @@
 		 if (busbar === null) {
 		     return;
 		 }
-		 measurements = self.model.getGraph(
+		 measurements = self.model.getTargets(
 		     [busbar],
 		     "PowerSystemResource.Measurements",
-		     "Measurement.PowerSystemResource")
-				    .map(el => el.source);
+		     "Measurement.PowerSystemResource");
 	     } else {
-		 measurements = self.model.getGraph(
+		 measurements = self.model.getTargets(
 		     [d],
 		     "PowerSystemResource.Measurements",
-		     "Measurement.PowerSystemResource")
-				    .map(el => el.source);
+		     "Measurement.PowerSystemResource");
 	     }
 	     for (let terminal of terminals) {
-		 let actTermSvs = self.model.getGraph(
+		 let actTermSvs = self.model.getTargets(
 		     [terminal],
 		     "Terminal.SvPowerFlow",
-		     "SvPowerFlow.Terminal").map(el => el.source);
+		     "SvPowerFlow.Terminal");
 		 svs = svs.concat(actTermSvs);
 	     }
 	     if (measurements.length > 0 || svs.length > 0) {
@@ -746,7 +757,10 @@
 		 if (typeof(unitSymbolAttr) !== "undefined") {
 		     unitSymbol = unitSymbolAttr.attributes[0].textContent.split("#")[1].split(".")[1];
 		 }
-		 let valueObject = self.model.getGraph([measurement], "Analog.AnalogValues", "AnalogValue.Analog").map(el => el.source)[0];
+		 let valueObject = self.model.getTargets(
+		     [measurement],
+		     "Analog.AnalogValues",
+		     "AnalogValue.Analog")[0];
 		 let actLine = "";
 		 let value = "n.a."
 		 if (typeof(valueObject) !== "undefined") {
@@ -931,9 +945,15 @@
 		.attr("fill", function(d) {
 		    let value = "0"; // default is OPEN
 		    // check the status of this switch
-		    let measurement = self.model.getGraph([d], "PowerSystemResource.Measurements", "Measurement.PowerSystemResource").map(el => el.source)[0];
+		    let measurement = self.model.getTargets(
+			[d],
+			"PowerSystemResource.Measurements",
+			"Measurement.PowerSystemResource")[0];
 		    if (typeof(measurement) !== "undefined") {
-			let valueObject = self.model.getGraph([measurement], "Discrete.DiscreteValues", "DiscreteValue.Discrete").map(el => el.source)[0];
+			let valueObject = self.model.getTargets(
+			    [measurement],
+			    "Discrete.DiscreteValues",
+			    "DiscreteValue.Discrete")[0];
 			if (typeof(valueObject) !== "undefined") {
 			    value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
 			}
@@ -1123,7 +1143,10 @@
 	     .enter()
 	     .append("g")
 	     .each(function(d, i) {
-		 let cn = self.model.getGraph([d], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+		 let cn = self.model.getTargets(
+		     [d],
+		     "Terminal.ConnectivityNode",
+		     "ConnectivityNode.Terminals")[0];
 		 let lineData = d3.select(this.parentNode).datum().lineData;
 		 let start = lineData[0];
 		 let end = lineData[lineData.length-1];
@@ -1217,7 +1240,10 @@
 	 function checkTerminals(terminals, d, cn, eqX, eqY, start, end) {
 	     let otherTerm = terminals.filter(term => term !== d)[0];
 	     // we need to check if the other terminal must be moved
-	     let otherCn = self.model.getGraph([otherTerm], "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source)[0];
+	     let otherCn = self.model.getTargets(
+		 [otherTerm],
+		 "Terminal.ConnectivityNode",
+		 "ConnectivityNode.Terminals")[0];
 	     let termToChange = otherTerm;
 	     let cnToChange = otherCn;
 	     if(typeof(otherCn) !== "undefined") {
@@ -1439,8 +1465,12 @@
 	 }
 
 	 // handle substations and lines
-	 if (hoverD.nodeName === "cim:Substation" || hoverD.nodeName === "cim:Line") {
-	     let equipments = self.model.getGraph([hoverD], "EquipmentContainer.Equipments", "Equipment.EquipmentContainer").map(el => el.source);
+	 if (hoverD.nodeName === "cim:Substation"
+	  || hoverD.nodeName === "cim:Line") {
+	      let equipments = self.model.getTargets(
+		  [hoverD],
+		  "EquipmentContainer.Equipments",
+		  "Equipment.EquipmentContainer");
 	     for (let equipment of equipments) {
 		 // handle busbars
 		 if (equipment.nodeName === "cim:BusbarSection") {
@@ -1695,7 +1725,10 @@
 	      });	     
 	 
 	 function rotateTerm(term) {
-	     let equipment = self.model.getGraph([term], "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source)[0];
+	     let equipment = self.model.getTargets(
+		 [term],
+		 "Terminal.ConductingEquipment",
+		 "ConductingEquipment.Terminals")[0];
 	     let baseX = equipment.x; 
 	     let baseY = equipment.y; 	     
 	     let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);
