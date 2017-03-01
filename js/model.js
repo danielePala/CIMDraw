@@ -890,7 +890,8 @@ function cimModel() {
 	// It filters by diagram (i.e. the busbar must be in the diagram).
 	getConnectivityNode(busbar) {
 	    if (busbar.nodeName === "cim:BusbarSection") {
-		let terminal = model.getConductingEquipmentGraph([busbar]).map(el => el.target)[0];
+		let terminal = model.getConductingEquipmentGraph([busbar])
+		    .map(el => el.target)[0];
 		if (typeof(terminal) === "undefined") {
 		    return null;
 		}
