@@ -615,7 +615,7 @@
 	 
 	 // test topo
 	 /*
-	 allConnectivityNodes = self.model.getObjects("cim:ConnectivityNode");
+	 allConnectivityNodes = self.model.getObjects(["cim:ConnectivityNode"]);
 	 console.log(allConnectivityNodes.length);
 	 let topos = allConnectivityNodes.reduce(function(r, v) {
 	     let cnTerminals = self.model.getGraph([v], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode").map(el => el.source);
