@@ -240,6 +240,46 @@ function cimModel() {
 	}
 	model.trigger("addLink", source, linkName, target);
     };
+
+    // Returns all relations between given sources and other objects,
+    // via a given link name. The inverse link name should be supplied too.
+    // It doesn't filter by diagram.
+    // This is a 'private' function (not visible in the model object).
+    function getGraph(sources, linkName, invLinkName) {
+	let resultKeys = new Map();
+	let result = [];
+	for (let source of sources) {
+	    let srcUUID = source.attributes.getNamedItem("rdf:ID").value;
+	    let links = model.getLink(source, "cim:" + linkName);
+	    for (let link of links) {
+		let target = model.dataMap.get(
+		    link.attributes.getNamedItem("rdf:resource").value);
+		if (typeof(target) !== "undefined") {
+		    let dstUUID = target.attributes.getNamedItem("rdf:ID").value;
+		    result.push({
+			source: source,
+			target: target
+		    });
+		    resultKeys.set(srcUUID + dstUUID, 1);
+		}
+	    }
+	    // handle inverse relation
+	    let targets = model.linksMap.get(invLinkName + "#" + srcUUID);
+	    if (typeof(targets) === "undefined") {
+		continue;
+	    }
+	    for (let target of targets) {
+		let dstUUID = target.attributes.getNamedItem("rdf:ID").value;
+		if (typeof(resultKeys.get(srcUUID + dstUUID)) === "undefined") {
+		    result.push({
+			source: source,
+			target: target
+		    });
+		}   
+	    }
+	}
+	return result;
+    };
     
     // This is the fundamental object used by CIMDraw to manipulate CIM files.
     let model = {
@@ -612,7 +652,7 @@ function cimModel() {
 	// corresponding arrays, like {cim:ACLineSegment: [array1], cim:Breaker: [array2]}.
 	getGraphicObjects(types) {
 	    let ret = {};
- 	    let allObjects = model.getDiagramObjectGraph().map(el => el.source);
+ 	    let allObjects = model.getDiagramObjectGraph().map(el => el.target);
 	    let allObjectsSet = new Set(allObjects); // we want uniqueness
 	    for (let type of types) {
 		ret[type] = [];
@@ -927,7 +967,7 @@ function cimModel() {
 	// Delete an object from the current diagram.
 	deleteFromDiagram(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
-	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.target);
+	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.source);
 	    let points = model.getTargets(
 		dobjs,
 		"DiagramObject.DiagramObjectPoints",
@@ -964,12 +1004,12 @@ function cimModel() {
 	updateActiveDiagram(object, lineData) {
 	    // save new position.
 	    let ioEdges = model.getDiagramObjectGraph([object]);
-	    let dobjs = ioEdges.map(el => el.target);
+	    let dobjs = ioEdges.map(el => el.source);
 	    if (object.nodeName === "cim:ConnectivityNode" && dobjs.length === 0) {
 		let equipments = model.getEquipments(object);
 		let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 		if (typeof(busbarSection) !== "undefined") {
-		    dobjs = model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
+		    dobjs = model.getDiagramObjectGraph([busbarSection]).map(el => el.source);
 		}
 	    }
 	    for (let dobj of dobjs) {
@@ -996,7 +1036,7 @@ function cimModel() {
 	    }
 	},
 
-	// TODO: this shoul probably be private.
+	// TODO: this should probably be private.
 	cimObject(name, uuid) {
 	    let document = getDocument(name);
 	    let obj = document.createElementNS(cimNS, name);
@@ -1131,66 +1171,11 @@ function cimModel() {
 	    return invRole;
 	},
 
-	// Returns all relations between given sources and other objects,
-	// via a given link name. The inverse link name should be supplied too.
-	// It doesn't filter by diagram.
-	getGraph(sources, linkName, invLinkName, invert) {
-	    if (arguments.length === 3) {
-		invert = false;
-	    }
-	    let resultKeys = new Map();
-	    let result = [];
-	    for (let i in sources) {
-		let links = model.getLinks(sources[i]).filter(el => el.localName === linkName);
-		for (let j in links) {
-		    let targetObj = model.dataMap.get(links[j].attributes[0].value);
-		    if (typeof(targetObj) != "undefined") {
-			if (invert === false) {
-			    result.push({
-				source: targetObj,
-				target: sources[i]
-			    });
-			    resultKeys.set(targetObj.attributes.getNamedItem("rdf:ID").value + sources[i].attributes.getNamedItem("rdf:ID").value, 1);
-			} else {
-			    result.push({
-				source: sources[i],
-				target: targetObj
-			    });
-			    resultKeys.set(sources[i].attributes.getNamedItem("rdf:ID").value + targetObj.attributes.getNamedItem("rdf:ID").value, 1);
-			}
-		    }
-		}
-		// handle inverse relation
-		let allObjs = model.linksMap.get(invLinkName+"#"+sources[i].attributes.getNamedItem("rdf:ID").value);
-		if (typeof(allObjs) === "undefined") {
-		    continue;
-		}
-		for (let j = 0; j < allObjs.length; j++) {
-		    if (invert === false) {
-			if (typeof(resultKeys.get(allObjs[j].attributes.getNamedItem("rdf:ID").value + sources[i].attributes.getNamedItem("rdf:ID").value)) === "undefined") {
-			    result.push({
-				source: allObjs[j],
-				target: sources[i]
-			    });
-			}
-		    } else {
-			if (typeof(resultKeys.get(sources[i].attributes.getNamedItem("rdf:ID").value + allObjs[j].attributes.getNamedItem("rdf:ID").value)) === "undefined") {
-			    result.push({
-				source: sources[i],
-				target: allObjs[j]
-			    });
-			}   
-		    }
-		}
-	    }
-	    return result;
-	},
-
 	// Returns all the nodes connected with the given sources
 	// via the link 'linkName' (or the inverse, 'invLinkName').
 	getTargets(sources, linkName, invLinkName) {
-	    let graph = model.getGraph(sources, linkName, invLinkName);
-	    let targets = graph.map(el => el.source);
+	    let graph = getGraph(sources, linkName, invLinkName);
+	    let targets = graph.map(el => el.target);
 	    return [...new Set(targets)]; // we want uniqueness
 	},
 
@@ -1203,25 +1188,25 @@ function cimModel() {
 	    if (arguments.length === 0) {
 		if (typeof(model.activeDiagram) !== "undefined") {
 		    let ioEdges = model.getDiagramObjectGraph();
-		    let graphicObjects = ioEdges.map(el => el.source);
-		    ceEdges = model.getGraph(
+		    let graphicObjects = ioEdges.map(el => el.target);
+		    ceEdges = getGraph(
 			graphicObjects,
 			"ConductingEquipment.Terminals",
-			"Terminal.ConductingEquipment", true);
+			"Terminal.ConductingEquipment");
 		} 
 	    } else {
 		if (typeof(model.activeDiagram) !== "undefined") {
 		    let ioEdges = model.getDiagramObjectGraph(identObjs);
-		    let graphicObjects = ioEdges.map(el => el.source);
-		    ceEdges = model.getGraph(
+		    let graphicObjects = ioEdges.map(el => el.target);
+		    ceEdges = getGraph(
 			graphicObjects,
 			"ConductingEquipment.Terminals",
-			"Terminal.ConductingEquipment", true);
+			"Terminal.ConductingEquipment");
 		} else {
-		    ceEdges = model.getGraph(
+		    ceEdges = getGraph(
 			identObjs,
 			"ConductingEquipment.Terminals",
-			"Terminal.ConductingEquipment", true);
+			"Terminal.ConductingEquipment");
 		}
 	    }
 	    return ceEdges;
@@ -1238,7 +1223,7 @@ function cimModel() {
 		if (typeof(model.activeDiagram) !== "undefined") {
 		    allDiagramObjects = model.getTargets([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram");
 		}
-		ioEdges = model.getGraph(
+		ioEdges = getGraph(
 		    allDiagramObjects,
 		    "DiagramObject.IdentifiedObject",
 		    "IdentifiedObject.DiagramObjects");
@@ -1248,13 +1233,13 @@ function cimModel() {
 			identObjs,
 			"IdentifiedObject.DiagramObjects",
 			"DiagramObject.IdentifiedObject");
-		    allDiagramObjects = model.getGraph(
+		    allDiagramObjects = getGraph(
 			allDiagramObjects,
 			"DiagramObject.Diagram",
 			"Diagram.DiagramObjects")
-			.filter(el => el.source === model.activeDiagram)
-			.map(el => el.target);
-		    ioEdges = model.getGraph(
+			.filter(el => el.target === model.activeDiagram)
+			.map(el => el.source);
+		    ioEdges = getGraph(
 			allDiagramObjects,
 			"DiagramObject.IdentifiedObject",
 			"IdentifiedObject.DiagramObjects");

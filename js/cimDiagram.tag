@@ -1280,10 +1280,10 @@
 	 let equipments = self.model.getEquipments(d).filter(el => typeof(el.lineData) !== "undefined" || el.localName === "BusbarSection");
 	 // let's try to get a busbar section
 	 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-	 let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.target);
+	 let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.source);
 	 if (dobjs.length === 0) {
 	     if (typeof(busbarSection) !== "undefined") {
-		 dobjs = self.model.getDiagramObjectGraph([busbarSection]).map(el => el.target);
+		 dobjs = self.model.getDiagramObjectGraph([busbarSection]).map(el => el.source);
 		 let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation");
 		 if (typeof(rotation) !== "undefined") {
 		     d.rotation = parseInt(rotation.innerHTML);
