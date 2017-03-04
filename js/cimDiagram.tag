@@ -127,14 +127,10 @@
 		 let uuid = object.attributes.getNamedItem("rdf:ID").value;
 		 // special case for busbars
 		 if (object.nodeName === "cim:BusbarSection") {
-		     let terminal = self.model.getConductingEquipmentGraph([object]).map(el => el.target)[0];
-		     if (typeof(terminal) === "undefined") {
+		     let cn = self.model.getConnectivityNode(object);
+		     if (cn === null) {
 			 return;
 		     }
-		     let cn = self.model.getTargets(
-			 [terminal],
-			 "Terminal.ConnectivityNode",
-			 "ConnectivityNode.Terminals")[0];
 		     type = cn.localName;
 		     uuid = cn.attributes.getNamedItem("rdf:ID").value;
 		 }
@@ -366,8 +362,8 @@
 			 [term],
 			 "Terminal.ConductingEquipment",
 			 "ConductingEquipment.Terminals");
-		     equipment = self.model.getConductingEquipmentGraph(equipment).map(el => el.source);
-		     if (equipment.length > 0) {
+		     let dobjs = self.model.getDiagramObjects(equipment);
+		     if (dobjs.length > 0) {
 			 edgeToChange = {source: cn, target: term};
 			 self.createEdges([edgeToChange]);
 		     }
@@ -467,10 +463,6 @@
 	 // clear all
 	 d3.select("svg").select("g.diagram").selectAll("g:not(.edges)").remove();
 
-	 // DEBUG
-	 //let alleq = self.model.getConductingEquipmentGraph().map(el => el.source.nodeName);
-	 //console.log(new Set(alleq));
-	 
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
 	 let allConnectivityNodes = self.model.getConnectivityNodes();
@@ -597,7 +589,7 @@
 	 });
 
 	 function dragend(d) {
-	     let dobjs = self.model.getDiagramObjectGraph([d]);
+	     let dobjs = self.model.getDiagramObjects([d]);
 	     if (dobjs.length > 0) {
 		 self.moveTo(d.attributes.getNamedItem("rdf:ID").value);
 	     } else {
@@ -1280,10 +1272,10 @@
 	 let equipments = self.model.getEquipments(d).filter(el => typeof(el.lineData) !== "undefined" || el.localName === "BusbarSection");
 	 // let's try to get a busbar section
 	 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-	 let dobjs = self.model.getDiagramObjectGraph([d]).map(el => el.source);
+	 let dobjs = self.model.getDiagramObjects([d]);
 	 if (dobjs.length === 0) {
 	     if (typeof(busbarSection) !== "undefined") {
-		 dobjs = self.model.getDiagramObjectGraph([busbarSection]).map(el => el.source);
+		 dobjs = self.model.getDiagramObjects([busbarSection]);
 		 let rotation = self.model.getAttribute(dobjs[0], "cim:DiagramObject.rotation");
 		 if (typeof(rotation) !== "undefined") {
 		     d.rotation = parseInt(rotation.innerHTML);

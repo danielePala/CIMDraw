@@ -280,6 +280,101 @@ function cimModel() {
 	}
 	return result;
     };
+
+    // Get all the objects of the given types that either
+    // have at least a diagram object in the current diagram or are
+    // linked to some object which is in the current diagram
+    // via the given link. The 'types' parameter must be an array of
+    // namespace qualified types, like ["cim:Substation", "cim:Line"].
+    // The output is an object whose keys are the types and the values
+    // are the corresponding arrays, like {cim:Substation: [sub1, sub2],
+    // cim:Line: [line1]}. Each object returned is an Element.
+    // This is a 'private' function (not visible in the model object).
+    function getLinkedObjects(types, linkName, invLinkName) {
+	let ret = {};
+	for (let type of types) {
+	    ret[type] = model.getObjects([type])[type].filter(function(src) {
+		let targets = model.getTargets([src], linkName, invLinkName);
+		let dobjs = model.getDiagramObjects([src].concat(targets));
+		return (dobjs.length > 0);
+	    });
+	}
+	return ret;
+    };
+
+    // Get a graph of objects and DiagramObjects, for each object
+    // that have at least one DiagramObject in the current diagram.
+    // If an array of objects is given as argument, only the
+    // subgraph for that objects is returned.
+    // This is a 'private' function (not visible in the model object).
+    function getDiagramObjectGraph(identObjs) {
+	let ioEdges = [];
+	if (arguments.length === 0) {
+	    let allDiagramObjects = []; 
+	    if (typeof(model.activeDiagram) !== "undefined") {
+		allDiagramObjects = model.getTargets(
+		    [model.activeDiagram],
+		    "Diagram.DiagramObjects",
+		    "DiagramObject.Diagram");
+	    }
+	    ioEdges = getGraph(
+		allDiagramObjects,
+		"DiagramObject.IdentifiedObject",
+		"IdentifiedObject.DiagramObjects");
+	} else {
+	    if (typeof(model.activeDiagram) !== "undefined") {
+		let allDiagramObjects = model.getTargets(
+		    identObjs,
+		    "IdentifiedObject.DiagramObjects",
+		    "DiagramObject.IdentifiedObject");
+		allDiagramObjects = getGraph(
+		    allDiagramObjects,
+		    "DiagramObject.Diagram",
+		    "Diagram.DiagramObjects")
+		    .filter(el => el.target === model.activeDiagram)
+		    .map(el => el.source);
+		ioEdges = getGraph(
+		    allDiagramObjects,
+		    "DiagramObject.IdentifiedObject",
+		    "IdentifiedObject.DiagramObjects");
+	    }
+	}
+	return ioEdges;
+    };
+
+    // Get a graph of equipments and terminals, for each equipment
+    // that have at least one DiagramObject in the current diagram.
+    // If an array of equipments is given as argument, only the
+    // subgraph for that equipments is returned.
+    function getConductingEquipmentGraph(identObjs) {
+	let ceEdges = [];
+	if (arguments.length === 0) {
+	    if (typeof(model.activeDiagram) !== "undefined") {
+		let ioEdges = getDiagramObjectGraph();
+		let graphicObjects = ioEdges.map(el => el.target);
+		ceEdges = getGraph(
+		    graphicObjects,
+		    "ConductingEquipment.Terminals",
+		    "Terminal.ConductingEquipment");
+	    } 
+	} else {
+	    if (typeof(model.activeDiagram) !== "undefined") {
+		let ioEdges = getDiagramObjectGraph(identObjs);
+		let graphicObjects = ioEdges.map(el => el.target);
+		ceEdges = getGraph(
+		    graphicObjects,
+		    "ConductingEquipment.Terminals",
+		    "Terminal.ConductingEquipment");
+	    } else {
+		ceEdges = getGraph(
+		    identObjs,
+		    "ConductingEquipment.Terminals",
+		    "Terminal.ConductingEquipment");
+	    }
+	}
+	return ceEdges;
+    };
+
     
     // This is the fundamental object used by CIMDraw to manipulate CIM files.
     let model = {
@@ -469,29 +564,6 @@ function cimModel() {
 	    return ret;
 	},
 
-	// Get all the measurements in the current diagram.
-	getMeasurements() {
-	    let gMeasurements = model.getGraphicObjects(["cim:Analog", "cim:Discrete"]);
-	    let ceGraph = model.getConductingEquipmentGraph();
-	    let allEquipments = ceGraph.map(el => el.source);
-	    let terminals = ceGraph.map(el => el.target);
-	    let tMeasurements = model.getTargets(
-		terminals,
-		"Terminal.Measurements",
-		"Measurement.Terminal");
-	    let eqMeasurements = model.getTargets(
-		allEquipments,
-		"PowerSystemResource.Measurements",
-		"Measurement.PowerSystemResource");
-	    gMeasurements = [].reduce.call(tMeasurements.concat(eqMeasurements), function(r, v) {
-		if (typeof(r[v.nodeName]) !== "undefined" && r[v.nodeName].indexOf(v) < 0) {
-		    r[v.nodeName].push(v);
-		}
-		return r;
-	    }, gMeasurements);
-	    return gMeasurements; 
-	},
-
 	// Get the (EQ) schema description of a given object, e.g. Breaker. 
 	getSchemaObject(type) {
 	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
@@ -652,7 +724,7 @@ function cimModel() {
 	// corresponding arrays, like {cim:ACLineSegment: [array1], cim:Breaker: [array2]}.
 	getGraphicObjects(types) {
 	    let ret = {};
- 	    let allObjects = model.getDiagramObjectGraph().map(el => el.target);
+ 	    let allObjects = getDiagramObjectGraph().map(el => el.target);
 	    let allObjectsSet = new Set(allObjects); // we want uniqueness
 	    for (let type of types) {
 		ret[type] = [];
@@ -672,46 +744,35 @@ function cimModel() {
 	    let graphic = model.getGraphicObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
 	    let nonGraphic = allConnectivityNodes.filter(el => graphic.indexOf(el) === -1);
 	    nonGraphic = nonGraphic.filter(function(d) {
-		let cnTerminals = model.getTargets(
-		    [d],
-		    "ConnectivityNode.Terminals",
-		    "Terminal.ConnectivityNode");
-		// let's try to get some equipment
-		let equipments = model.getTargets(
-		    cnTerminals,
-		    "Terminal.ConductingEquipment",
-		    "ConductingEquipment.Terminals");
-		equipments = model.getConductingEquipmentGraph(equipments).map(el => el.source);
-		// let's try to get a busbar section
-		let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-		equipments = equipments.filter(el => el !== busbarSection);
-		let equipmentsSet = new Set(equipments);
-		equipments = [...equipmentsSet]; // we want uniqueness
-		return (equipments.length > 1) || (typeof(busbarSection) !== "undefined");
+		let busbarSection = model.getBusbar(d);
+		let equipments = model.getEquipments(d);
+		if (busbarSection !== null) {
+		    return true;
+		}
+		return (equipments.length > 1);
 	    });
 	    return graphic.concat(nonGraphic);
 	},
 
 	// Get the equipment containers that belong to the current diagram.
 	getEquipmentContainers(types) {
-	    let ret = {};
-	    for (let type of types) {
-		ret[type] = model.getObjects([type])[type].filter(function(container) {
-		    let allContainedObjects = model.getTargets(
-			[container],
-			"EquipmentContainers.Equipment",
-			"Equipment.EquipmentContainer");
-		    let graphicObjects = model.getDiagramObjectGraph([container]);
-		    let graphicContainedObjects = model.getDiagramObjectGraph(allContainedObjects);
-		    return (graphicObjects.length > 0 || graphicContainedObjects.length > 0);
-		});
-	    }
-	    return ret;
+	    return getLinkedObjects(
+		types,
+		"EquipmentContainers.Equipment",
+		"Equipment.EquipmentContainer");
 	},
 
+	// Get all the measurements that belong to the current diagram.
+	getMeasurements() {
+	    return getLinkedObjects(
+		["cim:Analog", "cim:Discrete"],
+		"Measurement.PowerSystemResource",
+	    	"PowerSystemResource.Measurements");
+	},
+	
 	// Get all the terminals of given conducting equipments. 
 	getTerminals(identObjs) {
-	    let terminals = model.getConductingEquipmentGraph(identObjs).map(el => el.target);
+	    let terminals = getConductingEquipmentGraph(identObjs).map(el => el.target);
 	    let terminalsSet = new Set(terminals);
 	    terminals = [...terminalsSet]; // we want uniqueness
 	    return terminals;
@@ -930,13 +991,12 @@ function cimModel() {
 	// It filters by diagram (i.e. the busbar must be in the diagram).
 	getConnectivityNode(busbar) {
 	    if (busbar.nodeName === "cim:BusbarSection") {
-		let terminal = model.getConductingEquipmentGraph([busbar])
-		    .map(el => el.target)[0];
-		if (typeof(terminal) === "undefined") {
+		let terminal = model.getTerminals([busbar]);
+		if (terminal.length === 0) {
 		    return null;
 		}
 		let cn = model.getTargets(
-		    [terminal],
+		    terminal,
 		    "Terminal.ConnectivityNode",
 		    "ConnectivityNode.Terminals")[0];
 		return cn;
@@ -967,7 +1027,7 @@ function cimModel() {
 	// Delete an object from the current diagram.
 	deleteFromDiagram(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
-	    let dobjs = model.getDiagramObjectGraph([object]).map(el => el.source);
+	    let dobjs = model.getDiagramObjects([object]);
 	    let points = model.getTargets(
 		dobjs,
 		"DiagramObject.DiagramObjectPoints",
@@ -1003,13 +1063,12 @@ function cimModel() {
 	// with x and y keys, which are mapped to DiagramObjectPoints.
 	updateActiveDiagram(object, lineData) {
 	    // save new position.
-	    let ioEdges = model.getDiagramObjectGraph([object]);
-	    let dobjs = ioEdges.map(el => el.source);
+	    let dobjs = model.getDiagramObjects([object]);
 	    if (object.nodeName === "cim:ConnectivityNode" && dobjs.length === 0) {
 		let equipments = model.getEquipments(object);
 		let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 		if (typeof(busbarSection) !== "undefined") {
-		    dobjs = model.getDiagramObjectGraph([busbarSection]).map(el => el.source);
+		    dobjs = model.getDiagramObjects([busbarSection]);
 		}
 	    }
 	    for (let dobj of dobjs) {
@@ -1179,73 +1238,13 @@ function cimModel() {
 	    return [...new Set(targets)]; // we want uniqueness
 	},
 
-	// Get a graph of equipments and terminals, for each equipment
-	// that have at least one DiagramObject in the current diagram.
-	// If an array of equipments is given as argument, only the
-	// subgraph for that equipments is returned.
-	getConductingEquipmentGraph(identObjs) {
-	    let ceEdges = [];
-	    if (arguments.length === 0) {
-		if (typeof(model.activeDiagram) !== "undefined") {
-		    let ioEdges = model.getDiagramObjectGraph();
-		    let graphicObjects = ioEdges.map(el => el.target);
-		    ceEdges = getGraph(
-			graphicObjects,
-			"ConductingEquipment.Terminals",
-			"Terminal.ConductingEquipment");
-		} 
-	    } else {
-		if (typeof(model.activeDiagram) !== "undefined") {
-		    let ioEdges = model.getDiagramObjectGraph(identObjs);
-		    let graphicObjects = ioEdges.map(el => el.target);
-		    ceEdges = getGraph(
-			graphicObjects,
-			"ConductingEquipment.Terminals",
-			"Terminal.ConductingEquipment");
-		} else {
-		    ceEdges = getGraph(
-			identObjs,
-			"ConductingEquipment.Terminals",
-			"Terminal.ConductingEquipment");
-		}
-	    }
-	    return ceEdges;
-	},
-
-	// Get a graph of objects and DiagramObjects, for each object
-	// that have at least one DiagramObject in the current diagram.
+	// Get all the diagram objects in the current diagram.
 	// If an array of objects is given as argument, only the
-	// subgraph for that objects is returned.
-	getDiagramObjectGraph(identObjs) {
-	    let ioEdges = [];
-	    if (arguments.length === 0) {
-		let allDiagramObjects = []; 
-		if (typeof(model.activeDiagram) !== "undefined") {
-		    allDiagramObjects = model.getTargets([model.activeDiagram], "Diagram.DiagramObjects", "DiagramObject.Diagram");
-		}
-		ioEdges = getGraph(
-		    allDiagramObjects,
-		    "DiagramObject.IdentifiedObject",
-		    "IdentifiedObject.DiagramObjects");
-	    } else {
-		if (typeof(model.activeDiagram) !== "undefined") {
-		    let allDiagramObjects = model.getTargets(
-			identObjs,
-			"IdentifiedObject.DiagramObjects",
-			"DiagramObject.IdentifiedObject");
-		    allDiagramObjects = getGraph(
-			allDiagramObjects,
-			"DiagramObject.Diagram",
-			"Diagram.DiagramObjects")
-			.filter(el => el.target === model.activeDiagram)
-			.map(el => el.source);
-		    ioEdges = getGraph(
-			allDiagramObjects,
-			"DiagramObject.IdentifiedObject",
-			"IdentifiedObject.DiagramObjects");
-		}
-	    }
-	    return ioEdges;
+	// diagram objects associated to that objects are returned.
+	getDiagramObjects(identObjs) {
+	    let graph = getDiagramObjectGraph(identObjs);
+	    let targets = graph.map(el => el.source);
+	    return [...new Set(targets)]; // we want uniqueness
 	},
 
 	// Get the equipments in the current diagram associated to the
@@ -1260,7 +1259,7 @@ function cimModel() {
 		cnTerminals,
 		"Terminal.ConductingEquipment",
 		"ConductingEquipment.Terminals");
-	    equipments = model.getConductingEquipmentGraph(equipments)
+	    equipments = getConductingEquipmentGraph(equipments)
 		.map(el => el.source);
 	    return [...new Set(equipments)]; // we want uniqueness
 	},
