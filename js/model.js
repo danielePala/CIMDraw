@@ -754,6 +754,22 @@ function cimModel() {
 	    return graphic.concat(nonGraphic);
 	},
 
+	// Get the busbars that belong to the current diagram.
+	getBusbars() {
+	    let allBusbars = model.getObjects(["cim:BusbarSection"])["cim:BusbarSection"];
+	    let graphic = model.getGraphicObjects(["cim:BusbarSection"])["cim:BusbarSection"];
+	    let nonGraphic = allBusbars.filter(el => graphic.indexOf(el) === -1);
+	    nonGraphic = nonGraphic.filter(function(d) {
+		let cn = model.getConnectivityNode(d);
+		if (cn !== null) {
+		    let dobjs = model.getDiagramObjects([cn]);
+		    return (dobjs.length > 0);
+		}
+		return false;
+	    });
+	    return graphic.concat(nonGraphic);
+	},
+	
 	// Get the equipment containers that belong to the current diagram.
 	getEquipmentContainers(types) {
 	    return getLinkedObjects(
@@ -762,7 +778,7 @@ function cimModel() {
 		"Equipment.EquipmentContainer");
 	},
 
-	// Get all the measurements that belong to the current diagram.
+	// Get the measurements that belong to the current diagram.
 	getMeasurements() {
 	    return getLinkedObjects(
 		["cim:Analog", "cim:Discrete"],
@@ -988,18 +1004,20 @@ function cimModel() {
 	},
 
 	// Function to navigate busbar -> connectivity node.
-	// It filters by diagram (i.e. the busbar must be in the diagram).
 	getConnectivityNode(busbar) {
 	    if (busbar.nodeName === "cim:BusbarSection") {
-		let terminal = model.getTerminals([busbar]);
-		if (terminal.length === 0) {
-		    return null;
-		}
+		let terminal = model.getTargets(
+		    [busbar],
+		    "ConductingEquipment.Terminals",
+		    "Terminal.ConductingEquipment");
 		let cn = model.getTargets(
 		    terminal,
 		    "Terminal.ConnectivityNode",
-		    "ConnectivityNode.Terminals")[0];
-		return cn;
+		    "ConnectivityNode.Terminals");
+		if (cn.length === 0) {
+		    return null;
+		}
+		return cn[0];
 	    }
 	    return null;
 	},

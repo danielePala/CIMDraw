@@ -336,7 +336,7 @@
 
 	 // base voltages don't depend on diagram
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
-	 let allBusbarSections = allEquipments["cim:BusbarSection"]; 
+	 let allBusbarSections = self.model.getBusbars(); 
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
 	 let allACLines = allEquipments["cim:ACLineSegment"]; 
 	 let allBreakers = allEquipments["cim:Breaker"]; 
