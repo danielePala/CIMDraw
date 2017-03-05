@@ -390,7 +390,7 @@
 		 }
 		 break;
 	     case "cim:Measurement.Terminal":
-	     case "cim.ACDCTerminal.Measurements":
+	     case "cim:ACDCTerminal.Measurements":
 	 	 let measTerminal = target;
 		 if (source.nodeName === "cim:Terminal") {
 		     measTerminal = source;
@@ -544,18 +544,23 @@
 	 yield "[" + Date.now() + "] DIAGRAM: drawn acline terminals";
 	 // breaker terminals
 	 self.createTerminals(breakerEnter);
+	 self.createMeasurements(breakerEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn breaker terminals";
 	 // disconnector terminals
 	 self.createTerminals(discEnter);
+	 self.createMeasurements(discEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn disconnector terminals";
 	 // load break switch terminals
 	 self.createTerminals(lbsEnter);
+	 self.createMeasurements(lbsEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn load break switch terminals";
 	 // jumper terminals
 	 self.createTerminals(jumpsEnter);
+	 self.createMeasurements(jumpsEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn jumper terminals";
 	 // junction terminals
 	 self.createTerminals(junctsEnter);
+	 self.createMeasurements(junctsEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn junction terminals";
 	 // energy source terminals
 	 termSelection = self.createTerminals(ensrcEnter);
@@ -761,6 +766,11 @@
 			 value = parseFloat(value).toFixed(2);
 		     }
 		 }
+		 let terms = self.model.getTargets(
+		     [measurement],
+		     "Measurement.Terminal",
+		     "ACDCTerminal.Measurements");
+		 
 		 let measUUID = measurement.attributes.getNamedItem("rdf:ID").value;
 		 let hashComponents = window.location.hash.split("/");
 		 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];

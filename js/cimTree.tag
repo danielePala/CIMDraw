@@ -700,8 +700,11 @@
 	        .selectAll("li.link")
 	        .data(function(d) {
 		    return self.model.getSchemaLinks(d.localName)
-				   .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
-				   .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal"); 
+			       .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
+			       .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal")
+			       .filter(el => el.attributes[0].value !== "#Measurement.Terminal")
+			       .filter(el => el.attributes[0].value !== "#Measurement.PowerSystemResource")
+			       .filter(el => el.attributes[0].value !== "#Discrete.ValueAliasSet"); 
 		})
 	        .enter()
 	        .append("li")

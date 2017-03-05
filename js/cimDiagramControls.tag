@@ -239,28 +239,45 @@
      self.parent.on("moveTo", function(element) {
 	 self.deselectAll();
 	 let cimObject = opts.model.getObject(element);
-	 if (cimObject.nodeName === "cim:Substation" ||
-	     cimObject.nodeName === "cim:Line") {
-		 let equipments = opts.model.getTargets(
+	 let equipments = null;
+	 let terminals = null;
+	 switch (cimObject.nodeName) {
+	     case "cim:Substation":
+	     case "cim:Line":
+		 equipments = opts.model.getTargets(
 		     [cimObject],
 		     "EquipmentContainer.Equipments",
 		     "Equipment.EquipmentContainer");
-	     for (let equipment of equipments) {
-		 // handle busbars
-		 if (equipment.nodeName === "cim:BusbarSection") {
-		     let cn = opts.model.getConnectivityNode(equipment);
-		     if (cn !== null) {
-			 equipment = cn;
+		 for (let equipment of equipments) {
+		     // handle busbars
+		     if (equipment.nodeName === "cim:BusbarSection") {
+			 let cn = opts.model.getConnectivityNode(equipment);
+			 if (cn !== null) {
+			     equipment = cn;
+			 }
+		     }
+		     let node = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value).node();
+		     if (node !== null) {
+			 selected.push(node);
 		     }
 		 }
-		 let node = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value).node();
-		 if (node !== null) {
-		     selected.push(node);
+		 break;
+	     case "cim:Analog":
+	     case "cim:Discrete":
+		 terminals = opts.model.getTargets(
+		     [cimObject],
+		     "Measurement.Terminal",
+		     "ACDCTerminal.Measurements");
+		 for (let terminal of terminals) {
+		     let node = d3.select("svg").select("#" + terminal.attributes.getNamedItem("rdf:ID").value).node();
+		     if (node !== null) {
+			 selected.push(node);
+		     }
 		 }
-	     }
-	 } else {
-	     let diagramElem = d3.select("svg").selectAll("g#"+element).node();
-	     selected = [diagramElem];
+		 break;
+	     default:
+		 let diagramElem = d3.select("svg").selectAll("g#"+element).node();
+		 selected = [diagramElem];
 	 }
 	 self.updateSelected();
      });
