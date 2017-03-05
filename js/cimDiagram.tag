@@ -1412,10 +1412,8 @@
 	 // for busbars, show the name
 	 cnEnter
 	     .filter(function(d) {
-		 let equipments = self.model.getEquipments(d);
-		 // let's try to get a busbar section
-		 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-		 return typeof(busbarSection) !== "undefined";
+		 let busbarSection = self.model.getBusbar(d);
+		 return (busbarSection !== null);
 	     }).append("text")
 	     .attr("class", "cim-object-text")
 	     .style("text-anchor", "end")

@@ -1023,11 +1023,21 @@ function cimModel() {
 	},
 
 	// Function to navigate connectivity node -> busbar.
-	// It filters by diagram (i.e. the busbar must be in the diagram).
+	// It filters by diagram (i.e. the busbar
+	// OR the connectivity node must be in the diagram).
 	getBusbar(connectivityNode) {
 	    if (connectivityNode.nodeName === "cim:ConnectivityNode") {
-		let busbars = model.getEquipments(connectivityNode).filter(el => el.localName === "BusbarSection");
-		if (busbars.length > 0) {
+		let terminals = model.getTargets(
+		    [connectivityNode],
+		    "ConnectivityNode.Terminals",
+		    "Terminal.ConnectivityNode");
+		let equipments = model.getTargets(
+		    terminals,
+		    "Terminal.ConductingEquipment",
+		    "ConductingEquipment.Terminals");
+		let busbars = equipments.filter(el => el.localName === "BusbarSection");
+		let dobjs = model.getDiagramObjects([connectivityNode].concat(busbars));
+		if (busbars.length > 0 && dobjs.length > 0) {
 		    return busbars[0];
 		}
 	    }
