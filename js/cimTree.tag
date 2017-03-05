@@ -336,7 +336,12 @@
 
 	 // base voltages don't depend on diagram
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
-	 let allBusbarSections = self.model.getBusbars(); 
+	 let allBusbarSections = [];
+	 if ($("#showAllObjects").prop('checked')) {
+	     allBusbarSections = self.model.getObjects(["cim:BusbarSection"])["cim:BusbarSection"]; ;
+	 } else {
+	     allBusbarSections = self.model.getBusbars();
+	 }
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
 	 let allACLines = allEquipments["cim:ACLineSegment"]; 
 	 let allBreakers = allEquipments["cim:Breaker"]; 
