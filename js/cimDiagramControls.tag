@@ -390,6 +390,7 @@
      deselectAll() {
 	 d3.selectAll(selected).selectAll("rect.selection-rect").remove();
 	 d3.selectAll(selected).selectAll("g.resize").remove();
+	 d3.selectAll(selected).selectAll("circle.selection-circle").remove();
 	 selected = [];
      }
 
@@ -829,19 +830,26 @@
      }
 
      hover(hoverD) {
-	 d3.select(hoverD).filter("g:not(.ACLineSegment)").filter("g:not(.ConnectivityNode)").each(function (d) {
-	     d3.select(this).append("rect")
-	       .attr("x", this.getBBox().x)
-	       .attr("y", this.getBBox().y)
-	       .attr("width", this.getBBox().width)
-	       .attr("height", this.getBBox().height)
-	       .attr("stroke", "black")
-	       .attr("stroke-width", 2)
-	       .attr("stroke-dasharray", "5,5")
-	       .attr("fill", "none")
-	       .attr("class", "selection-rect");	       
-	 });
-	 let res = d3.select(hoverD).filter("g.ACLineSegment,g.ConnectivityNode") // resizable elements (TODO: junction)
+	 // 'normal' elements
+	 d3.select(hoverD)
+	   .filter("g:not(.ACLineSegment)")
+	   .filter("g:not(.ConnectivityNode)")
+	   .filter("g:not(.Terminal)")
+	   .each(function (d) {
+	       d3.select(this).append("rect")
+		 .attr("x", this.getBBox().x)
+		 .attr("y", this.getBBox().y)
+		 .attr("width", this.getBBox().width)
+		 .attr("height", this.getBBox().height)
+		 .attr("stroke", "black")
+		 .attr("stroke-width", 2)
+		 .attr("stroke-dasharray", "5,5")
+		 .attr("fill", "none")
+		 .attr("class", "selection-rect");	       
+	   });
+	 // resizable elements (TODO: junction)
+	 let res = d3.select(hoverD)
+		     .filter("g.ACLineSegment,g.ConnectivityNode") 
 		     .selectAll("g.resize")
 		     .data(function(d) {
 			 // data is the element plus the coordinate point seq number
@@ -857,6 +865,19 @@
 	    })
 	    .attr("width", 4)
 	    .attr("height", 4);
+	 // terminals
+	 d3.select(hoverD)
+	   .filter("g.Terminal")
+	   .each(function (d) {
+	       d3.select(this).append("circle")
+		 .attr("cx", this.getBBox().x + 2)
+		 .attr("cy", this.getBBox().y + 2)
+		 .attr("r", this.getBBox().width)
+		 .attr("stroke-width", 0)
+		 .attr("fill", "lightblue")
+		 .attr("fill-opacity", "0.4")
+		 .attr("class", "selection-circle");
+	   });
      }
 
      addNewMeasurement(elm, d, i) {
