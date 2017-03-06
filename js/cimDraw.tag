@@ -236,6 +236,9 @@
 
 	 // here we show a certain diagram
 	 route('/*/diagrams/*', function(file, name) {	
+	     if (self.cimModel.activeDiagramName === decodeURI(name)) {
+		 return; // nothing to do;
+	     }
 	     $("#cim-local-file-component").hide();
 	     $("#loadingDiagramMsg").text("loading diagram...");
 	     $("#loadingModal").off("shown.bs.modal");

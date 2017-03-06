@@ -449,7 +449,16 @@
 			  quadtree.addAll(selected); // update quadtree
 		      });
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
-	 d3.select("svg").select("g.brush").call(d3.brush().on("start", self.deselectAll).on("end", selectInsideBrush));
+	 d3.select("svg").select("g.brush").call(
+	     d3.brush()
+	       .on("start", function() {
+		   let hashComponents = window.location.hash.substring(1).split("/");
+		   let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+		   route(basePath + "/");
+		   self.deselectAll();
+	       })
+	       .on("end", selectInsideBrush)
+	 );
 
 	 function selectInsideBrush() {
 	     // hide the brush
