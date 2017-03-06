@@ -358,6 +358,8 @@
 	   // trap the ctrl key being pressed
 	   if (d3.event.ctrlKey) {
 	       self.disableDrag();
+	       // delete any brush
+	       d3.select("svg").select("g.brush").call(d3.brush().move, null);
 	       self.disableZoom();
 	       self.disableForce();
 	       self.enableZoom();
