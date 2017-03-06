@@ -16,6 +16,35 @@ describe("CIM model", function() {
 	expect(typeof(out)).toBe("string");
     });
 
+    it("should not contain any diagram", function() {
+	let diagramList = model.getDiagramList();
+	expect(diagramList.length).toBe(0);
+    });
+
+    it("should be able to create a diagram", function() {
+	model.selectDiagram("test");
+	let diagramList = model.getDiagramList();
+	expect(diagramList.length).toBe(1);
+	expect(diagramList[0]).toBe("test");
+    });
+
+    it("should start empty", function() {
+	let objects = model.getObjects(
+	    ["cim:ACLineSegment",
+	     "cim:Breaker",
+	     "cim:Disconnector",
+	     "cim:LoadBreakSwitch",
+	     "cim:Jumper",
+	     "cim:Junction",
+	     "cim:EnergySource",
+	     "cim:SynchronousMachine",
+	     "cim:EnergyConsumer",
+	     "cim:ConformLoad",
+	     "cim:NonConformLoad",
+	     "cim:PowerTransformer",
+	     "cim:BusbarSection"]);
+    });
+
     it("should be able to read a schema attribute", function() {
 	// read a random attribute
 	let attribute = model.getSchemaAttribute("Breaker", "Switch.retained");
