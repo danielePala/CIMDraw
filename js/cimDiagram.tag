@@ -766,11 +766,6 @@
 			 value = parseFloat(value).toFixed(2);
 		     }
 		 }
-		 let terms = self.model.getTargets(
-		     [measurement],
-		     "Measurement.Terminal",
-		     "ACDCTerminal.Measurements");
-		 
 		 let measUUID = measurement.attributes.getNamedItem("rdf:ID").value;
 		 let hashComponents = window.location.hash.split("/");
 		 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
