@@ -3,8 +3,8 @@ body {
     min-height: 200px;
 }
 
-.tooltip-inner {
-    max-width: 250px;
-    width: 250px;
+.popover {
+    max-width: 400px;
+    width: 400px;
 }
 

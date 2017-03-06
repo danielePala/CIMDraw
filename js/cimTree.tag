@@ -126,6 +126,9 @@
 	 }
 	 if (typeof(element) !== "undefined") {
 	     self.moveTo(element);
+	 } else {
+	     // reset any element highlight
+	     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
 	 }
      });
 

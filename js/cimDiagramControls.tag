@@ -404,6 +404,10 @@
 	 self.status = "DRAG";
 	 let drag = d3.drag()
 		      .on("start", function(d) {
+			  // reset the current path
+			  let hashComponents = window.location.hash.substring(1).split("/");
+			  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+			  route(basePath + "/");
 			  if (selected.indexOf(this) === -1) {
 			      self.deselectAll();
 			  }
@@ -453,6 +457,7 @@
 	 d3.select("svg").select("g.brush").call(
 	     d3.brush()
 	       .on("start", function() {
+		   // reset the current path
 		   let hashComponents = window.location.hash.substring(1).split("/");
 		   let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 		   route(basePath + "/");
