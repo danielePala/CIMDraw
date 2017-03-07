@@ -141,12 +141,10 @@
 	     case "cim:AnalogValue.value":
 		 let analog = self.model.getTargets(
 		     [object],
-		     "AnalogValue.Analog",
-		     "Analog.AnalogValues");
+		     "AnalogValue.Analog");
 		 let psr = self.model.getTargets(
 		     analog,
-		     "Measurement.PowerSystemResource",
-		     "PowerSystemResource.Measurements")[0];
+		     "Measurement.PowerSystemResource")[0];
 		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		 let psrSelection = d3.select("g#" + psrUUID);
 		 self.createMeasurements(psrSelection);
@@ -155,13 +153,11 @@
 	     case "cim:SvPowerFlow.q":
 		 let svTerminal = self.model.getTargets(
 		     [object],
-		     "SvPowerFlow.Terminal",
-		     "Terminal.SvPowerFlow")[0];
+		     "SvPowerFlow.Terminal")[0];
 		 if (typeof(svTerminal) !== "undefined") {
 		     let psr = self.model.getTargets(
 			 [svTerminal],
-			 "Terminal.ConductingEquipment",
-			 "ConductingEquipment.Terminals")[0];
+			 "Terminal.ConductingEquipment")[0];
 		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		     let psrSelection = d3.select("g#" + psrUUID);
 		     self.createMeasurements(psrSelection);
@@ -171,8 +167,7 @@
 	 if (object.nodeName === "cim:Analog" || object.nodeName === "cim:Discrete") {
 	     let psr = self.model.getTargets(
 		 [object],
-		 "Measurement.PowerSystemResource",
-		 "PowerSystemResource.Measurements")[0];
+		 "Measurement.PowerSystemResource")[0];
 	     if (typeof(psr) !== "undefined") {
 		 // handle busbars
 		 if (psr.nodeName === "cim:BusbarSection") {
@@ -190,8 +185,7 @@
 	 if (object.nodeName === "cim:Analog" || object.nodeName === "cim:Discrete") {
 	     let psr = self.model.getTargets(
 		 [object],
-		 "Measurement.PowerSystemResource",
-		 "PowerSystemResource.Measurements")[0];
+		 "Measurement.PowerSystemResource")[0];
 	     if (typeof(psr) !== "undefined") {
 		 // handle busbars
 		 if (psr.nodeName === "cim:BusbarSection") {
@@ -276,20 +270,17 @@
 	 if (object.nodeName === "cim:BusbarSection") {
 	     let terminal = self.model.getTargets(
 		 [object],
-		 "ConductingEquipment.Terminals",
-		 "Terminal.ConductingEquipment");
+		 "ConductingEquipment.Terminals");
 	     let cn = self.model.getTargets(
 		 terminal,
-		 "Terminal.ConnectivityNode",
-		 "ConnectivityNode.Terminals")[0];
+		 "Terminal.ConnectivityNode")[0];
 	     selection = self.drawConnectivityNodes([cn]);
 	     let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
 	     let eqTerminals = self.model.getTerminals(equipments);
 	     for (let eqTerminal of eqTerminals) {
 		 let eqCn = self.model.getTargets(
 		     [eqTerminal],
-		     "Terminal.ConnectivityNode",
-		     "ConnectivityNode.Terminals")[0];
+		     "Terminal.ConnectivityNode")[0];
 		 if (eqCn === cn) {
 		     let newEdge = {source: cn, target: eqTerminal};
 		     self.createEdges([newEdge]);
@@ -307,8 +298,7 @@
 	     for (let terminal of terminals) {
 		 let cn = self.model.getTargets(
 		     [terminal],
-		     "Terminal.ConnectivityNode",
-		     "ConnectivityNode.Terminals")[0];
+		     "Terminal.ConnectivityNode")[0];
 		 if (typeof(cn) !== "undefined") {
 		     let equipments = self.model.getEquipments(cn);
 		     // let's try to get a busbar section
@@ -321,8 +311,7 @@
 			 for (let eqTerminal of eqTerminals) {
 			     let eqCn = self.model.getTargets(
 				 [eqTerminal],
-				 "Terminal.ConnectivityNode",
-				 "ConnectivityNode.Terminals")[0];
+				 "Terminal.ConnectivityNode")[0];
 			     if (eqCn === cn) {
 				 let newEdge = {source: cn, target: eqTerminal};
 				 self.createEdges([newEdge]);
@@ -360,8 +349,7 @@
 		 if (typeof(edgeToChange) === "undefined") {
 		     let equipment = self.model.getTargets(
 			 [term],
-			 "Terminal.ConductingEquipment",
-			 "ConductingEquipment.Terminals");
+			 "Terminal.ConductingEquipment");
 		     let dobjs = self.model.getDiagramObjects(equipment);
 		     if (dobjs.length > 0) {
 			 edgeToChange = {source: cn, target: term};
@@ -382,8 +370,7 @@
 		 if (typeof(terminal) !== "undefined") {
 		     let psr = self.model.getTargets(
 			 [terminal],
-			 "Terminal.ConductingEquipment",
-			 "ConductingEquipment.Terminals")[0];
+			 "Terminal.ConductingEquipment")[0];
 		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		     let psrSelection = d3.select("g#" + psrUUID);
 		     self.createMeasurements(psrSelection);
@@ -397,8 +384,7 @@
 		 }
 		 let measPsr = self.model.getTargets(
 		     [measTerminal],
-		     "Terminal.ConductingEquipment",
-		     "ConductingEquipment.Terminals")[0];
+		     "Terminal.ConductingEquipment")[0];
 		 let measPsrUUID = measPsr.attributes.getNamedItem("rdf:ID").value;
 		 let measPsrSelection = d3.select("g#" + measPsrUUID);
 		 self.createMeasurements(measPsrSelection);
@@ -690,19 +676,16 @@
 		 }
 		 measurements = self.model.getTargets(
 		     [busbar],
-		     "PowerSystemResource.Measurements",
-		     "Measurement.PowerSystemResource");
+		     "PowerSystemResource.Measurements");
 	     } else {
 		 measurements = self.model.getTargets(
 		     [d],
-		     "PowerSystemResource.Measurements",
-		     "Measurement.PowerSystemResource");
+		     "PowerSystemResource.Measurements");
 	     }
 	     for (let terminal of terminals) {
 		 let actTermSvs = self.model.getTargets(
 		     [terminal],
-		     "Terminal.SvPowerFlow",
-		     "SvPowerFlow.Terminal");
+		     "Terminal.SvPowerFlow");
 		 svs = svs.concat(actTermSvs);
 	     }
 	     if (measurements.length > 0 || svs.length > 0) {
@@ -756,8 +739,7 @@
 		 }
 		 let valueObject = self.model.getTargets(
 		     [measurement],
-		     "Analog.AnalogValues",
-		     "AnalogValue.Analog")[0];
+		     "Analog.AnalogValues")[0];
 		 let actLine = "";
 		 let value = "n.a."
 		 if (typeof(valueObject) !== "undefined") {
@@ -944,13 +926,11 @@
 		    // check the status of this switch
 		    let measurement = self.model.getTargets(
 			[d],
-			"PowerSystemResource.Measurements",
-			"Measurement.PowerSystemResource")[0];
+			"PowerSystemResource.Measurements")[0];
 		    if (typeof(measurement) !== "undefined") {
 			let valueObject = self.model.getTargets(
 			    [measurement],
-			    "Discrete.DiscreteValues",
-			    "DiscreteValue.Discrete")[0];
+			    "Discrete.DiscreteValues")[0];
 			if (typeof(valueObject) !== "undefined") {
 			    value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
 			}
@@ -1142,8 +1122,7 @@
 	     .each(function(d, i) {
 		 let cn = self.model.getTargets(
 		     [d],
-		     "Terminal.ConnectivityNode",
-		     "ConnectivityNode.Terminals")[0];
+		     "Terminal.ConnectivityNode")[0];
 		 let lineData = d3.select(this.parentNode).datum().lineData;
 		 let start = lineData[0];
 		 let end = lineData[lineData.length-1];
@@ -1239,8 +1218,7 @@
 	     // we need to check if the other terminal must be moved
 	     let otherCn = self.model.getTargets(
 		 [otherTerm],
-		 "Terminal.ConnectivityNode",
-		 "ConnectivityNode.Terminals")[0];
+		 "Terminal.ConnectivityNode")[0];
 	     let termToChange = otherTerm;
 	     let cnToChange = otherCn;
 	     if(typeof(otherCn) !== "undefined") {
@@ -1318,8 +1296,7 @@
 	 }
 	 let points = self.model.getTargets(
 	     dobjs,
-	     "DiagramObject.DiagramObjectPoints",
-	     "DiagramObjectPoint.DiagramObject");
+	     "DiagramObject.DiagramObjectPoints");
 	 if (points.length > 0) {
 	     for (let point of points) {
 		 let seqNum = self.model.getAttribute(point, "cim:DiagramObjectPoint.sequenceNumber");
@@ -1464,8 +1441,7 @@
 	  || hoverD.nodeName === "cim:Line") {
 	      let equipments = self.model.getTargets(
 		  [hoverD],
-		  "EquipmentContainer.Equipments",
-		  "Equipment.EquipmentContainer");
+		  "EquipmentContainer.Equipments");
 	     for (let equipment of equipments) {
 		 // handle busbars
 		 if (equipment.nodeName === "cim:BusbarSection") {
@@ -1722,8 +1698,7 @@
 	 function rotateTerm(term) {
 	     let equipment = self.model.getTargets(
 		 [term],
-		 "Terminal.ConductingEquipment",
-		 "ConductingEquipment.Terminals")[0];
+		 "Terminal.ConductingEquipment")[0];
 	     let baseX = equipment.x; 
 	     let baseY = equipment.y; 	     
 	     let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);

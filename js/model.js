@@ -49,6 +49,9 @@ function cimModel() {
     // A map of schema link names vs schema link objects.
     // Used for faster lookup.
     let schemaLinksMap = new Map();
+    // A map of schema link names vs inverse schema link name.
+    // Used for faster lookup.
+    let schemaInvLinksMap = new Map();
 
     // Parse and load an ENTSO-E CIM file. Only the EQ and DL profiles
     // are parsed. The given callback is called after having loaded
@@ -149,14 +152,35 @@ function cimModel() {
 	let rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
 	d3.xml(rdfsEQ, function(error, schemaDataEQ) {
 	    model.schemaDataEQ = schemaDataEQ;
+	    populateInvLinkMap(schemaDataEQ);
 	    d3.xml(rdfsDL, function(schemaDataDL) {
 		model.schemaDataDL = schemaDataDL;
+		populateInvLinkMap(schemaDataDL);
 		d3.xml(rdfsSV, function(schemaDataSV) {
 		    model.schemaDataSV = schemaDataSV;
+		    populateInvLinkMap(schemaDataSV);
 		    callback(null);
 		});
 	    });
 	});
+
+	function populateInvLinkMap(schemaData) {
+	    let allSchemaObjects = schemaData.children[0].children;
+	    for (let i in allSchemaObjects) {
+		let schemaObject = allSchemaObjects[i];
+		if (typeof(schemaObject.children) === "undefined") {
+		    continue;
+		}
+		let invRoleName = [].filter.call(schemaObject.children, function(el) {
+		    return el.nodeName === "cims:inverseRoleName";
+		})[0];
+		if (typeof(invRoleName) !== "undefined") {
+		    schemaInvLinksMap.set(
+			schemaObject.attributes[0].value.substring(1),
+			invRoleName.attributes[0].value.substring(1));
+		}
+	    }
+	};
     };
 
     // Get all objects (doesn't filter by diagram).
@@ -216,9 +240,7 @@ function cimModel() {
     // Add a new link to a given source.
     // This is a 'private' function (not visible in the model object).
     function addLink(source, linkName, target) {
-	let invLink = model.getInvLink("#" + linkName.split(":")[1]);
-	let invLinkName = "cim:" + invLink.attributes[0].value.substring(1);
-	let targets = model.getTargets([source], linkName, invLinkName);
+	let targets = model.getTargets([source], linkName);
 	// see if the link is already set
 	if (targets.length > 0) {
 	    return;
@@ -245,7 +267,8 @@ function cimModel() {
     // via a given link name. The inverse link name should be supplied too.
     // It doesn't filter by diagram.
     // This is a 'private' function (not visible in the model object).
-    function getGraph(sources, linkName, invLinkName) {
+    function getGraph(sources, linkName) {
+	let invLinkName = model.getInvLink("#" + linkName);
 	let resultKeys = new Map();
 	let result = [];
 	for (let source of sources) {
@@ -314,8 +337,7 @@ function cimModel() {
 	    if (typeof(model.activeDiagram) !== "undefined") {
 		allDiagramObjects = model.getTargets(
 		    [model.activeDiagram],
-		    "Diagram.DiagramObjects",
-		    "DiagramObject.Diagram");
+		    "Diagram.DiagramElements");
 	    }
 	    ioEdges = getGraph(
 		allDiagramObjects,
@@ -325,12 +347,11 @@ function cimModel() {
 	    if (typeof(model.activeDiagram) !== "undefined") {
 		let allDiagramObjects = model.getTargets(
 		    identObjs,
-		    "IdentifiedObject.DiagramObjects",
-		    "DiagramObject.IdentifiedObject");
+		    "IdentifiedObject.DiagramObjects");
 		allDiagramObjects = getGraph(
 		    allDiagramObjects,
 		    "DiagramObject.Diagram",
-		    "Diagram.DiagramObjects")
+		    "Diagram.DiagramElements")
 		    .filter(el => el.target === model.activeDiagram)
 		    .map(el => el.source);
 		ioEdges = getGraph(
@@ -461,22 +482,19 @@ function cimModel() {
 	    data.children[0].appendChild(model.activeDiagram.cloneNode(true));
 	    let allDiagramObjects = model.getTargets(
 		[model.activeDiagram],
-		"Diagram.DiagramObjects",
-		"DiagramObject.Diagram");
+		"Diagram.DiagramElements");
 	    for (let diagramObject of allDiagramObjects) {
 		data.children[0].appendChild(diagramObject.cloneNode(true));
 	    }
 	    let allEquipments = model.getTargets(
 		allDiagramObjects,
-		"DiagramObject.IdentifiedObject",
-		"IdentifiedObject.DiagramObjects");
+		"DiagramObject.IdentifiedObject");
 	    for (let equipment of allEquipments) {
 		data.children[0].appendChild(equipment.cloneNode(true));
 	    }
 	    let allDiagramObjectPoints = model.getTargets(
 		allDiagramObjects,
-		"DiagramObject.DiagramObjectPoints",
-		"DiagramObjectPoint.DiagramObject");
+		"DiagramObject.DiagramObjectPoints");
 	    for (let diagramObjectPoint of allDiagramObjectPoints) {
 		data.children[0].appendChild(diagramObjectPoint.cloneNode(true));
 	    }
@@ -500,15 +518,13 @@ function cimModel() {
 	    }
 	    let allBaseVoltages = model.getTargets(
 		allEquipments,
-		"ConductingEquipment.BaseVoltage",
-		"BaseVoltage.ConductingEquipment");
+		"ConductingEquipment.BaseVoltage");
 	    for (let baseVoltage of allBaseVoltages) {
 		data.children[0].appendChild(baseVoltage.cloneNode(true));
 	    }
 	    let allTrafoEnds = model.getTargets(
 		allEquipments,
-		"PowerTransformer.PowerTransformerEnd",
-		"PowerTransformerEnd.PowerTransformer");
+		"PowerTransformer.PowerTransformerEnd");
 	    for (let trafoEnd of allTrafoEnds) {
 		data.children[0].appendChild(trafoEnd.cloneNode(true));
 	    }
@@ -516,15 +532,13 @@ function cimModel() {
 	    // (e.g. busbars), not only terminals
 	    let allMeasurements = model.getTargets(
 		allTerminals,
-		"Terminal.Measurements",
-		"Measurement.Terminal");
+		"Terminal.Measurements");
 	    for (let measurement of allMeasurements) {
 		data.children[0].appendChild(measurement.cloneNode(true));
 	    }
 	    let allAnalogValues = model.getTargets(
 		allMeasurements,
-		"Analog.AnalogValues",
-		"AnalogValue.Analog");
+		"Analog.AnalogValues");
 	    for (let analogValue of allAnalogValues) {
 		data.children[0].appendChild(analogValue.cloneNode(true));
 	    }
@@ -774,7 +788,7 @@ function cimModel() {
 	getEquipmentContainers(types) {
 	    return getLinkedObjects(
 		types,
-		"EquipmentContainers.Equipment",
+		"EquipmentContainer.Equipments",
 		"Equipment.EquipmentContainer");
 	},
 
@@ -971,12 +985,10 @@ function cimModel() {
 		if (busbar.nodeName === "cim:BusbarSection") {
 		    let terminal = model.getTargets(
 			[busbar],
-			"ConductingEquipment.Terminals",
-			"Terminal.ConductingEquipment");
+			"ConductingEquipment.Terminals");
 		    let cn = model.getTargets(
 			terminal,
-			"Terminal.ConnectivityNode",
-			"ConnectivityNode.Terminals");
+			"Terminal.ConnectivityNode");
 		    return cn;		
 		}
 		return [];
@@ -986,13 +998,11 @@ function cimModel() {
 		if (connectivityNode.nodeName === "cim:ConnectivityNode") {
 		    let cnTerminals = model.getTargets(
 			[connectivityNode],
-			"ConnectivityNode.Terminals",
-			"Terminal.ConnectivityNode");
+			"ConnectivityNode.Terminals");
 		    // let's try to get some equipment
 		    let equipments = model.getTargets(
 			cnTerminals,
-			"Terminal.ConductingEquipment",
-			"ConductingEquipment.Terminals");
+			"Terminal.ConductingEquipment");
 		    let busbars = equipments.filter(
 			el => el.nodeName === "cim:BusbarSection");
 		    return busbars;
@@ -1008,12 +1018,10 @@ function cimModel() {
 	    if (busbar.nodeName === "cim:BusbarSection") {
 		let terminal = model.getTargets(
 		    [busbar],
-		    "ConductingEquipment.Terminals",
-		    "Terminal.ConductingEquipment");
+		    "ConductingEquipment.Terminals");
 		let cn = model.getTargets(
 		    terminal,
-		    "Terminal.ConnectivityNode",
-		    "ConnectivityNode.Terminals");
+		    "Terminal.ConnectivityNode");
 		if (cn.length === 0) {
 		    return null;
 		}
@@ -1029,12 +1037,10 @@ function cimModel() {
 	    if (connectivityNode.nodeName === "cim:ConnectivityNode") {
 		let terminals = model.getTargets(
 		    [connectivityNode],
-		    "ConnectivityNode.Terminals",
-		    "Terminal.ConnectivityNode");
+		    "ConnectivityNode.Terminals");
 		let equipments = model.getTargets(
 		    terminals,
-		    "Terminal.ConductingEquipment",
-		    "ConductingEquipment.Terminals");
+		    "Terminal.ConductingEquipment");
 		let busbars = equipments.filter(el => el.localName === "BusbarSection");
 		let dobjs = model.getDiagramObjects([connectivityNode].concat(busbars));
 		if (busbars.length > 0 && dobjs.length > 0) {
@@ -1058,8 +1064,7 @@ function cimModel() {
 	    let dobjs = model.getDiagramObjects([object]);
 	    let points = model.getTargets(
 		dobjs,
-		"DiagramObject.DiagramObjectPoints",
-		"DiagramObjectPoint.DiagramObject");
+		"DiagramObject.DiagramObjectPoints");
 	    for (let dobj of dobjs) {
 		model.deleteObject(dobj);
 	    }
@@ -1104,8 +1109,7 @@ function cimModel() {
 	    }
 	    let points = model.getTargets(
 		dobjs,
-		"DiagramObject.DiagramObjectPoints",
-		"DiagramObjectPoint.DiagramObject");
+		"DiagramObject.DiagramObjectPoints");
 	    if (points.length > 0) {
 		for (let point of points) {
 		    let seq = 1;
@@ -1187,8 +1191,7 @@ function cimModel() {
 	// Set a specific link of a given object.
 	// If a link with the same name already exists, it is removed.
 	setLink(source, linkName, target) {
-	    let invLinkSchema = model.getInvLink("#" + linkName.split(":")[1]);
-	    let invLinkName = "cim:" + invLinkSchema.attributes[0].value.substring(1);
+	    let invLinkName = model.getInvLink("#" + linkName.split(":")[1]);
 	    let oldTargets = model.getTargets([source], linkName, invLinkName);
 	    for (let oldTarget of oldTargets) {
 		model.removeLink(source, linkName, oldTarget);
@@ -1203,7 +1206,7 @@ function cimModel() {
 	    let invLinkSchema = model.getInvLink("#" + linkName.split(":")[1]);
 	    // remove inverse, if present in schema 
 	    if (typeof(invLinkSchema) !== "undefined") {
-		let invLinkName = "cim:" + invLinkSchema.attributes[0].value.substring(1);
+		let invLinkName = invLinkSchema.attributes[0].value.substring(1);
 		let invLink = model.getLink(target, invLinkName);
 		removeLinkInternal(invLink, source);
 	    }
@@ -1229,39 +1232,14 @@ function cimModel() {
 
 	// Returns the inverse of a given link.
 	getInvLink(link) {
-	    let invRoleNameString = link;
-	    if (typeof(link) !== "string") {
-		let invRoleName = [].filter.call(link.children, function(el) {
-		    return el.nodeName === "cims:inverseRoleName";
-		})[0];
-		invRoleNameString = invRoleName.attributes[0].value;
-	    }
-	    // search in EQ schema
-	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
-	    let invRole = [].filter.call(allSchemaObjects, function(el) {
-		return el.attributes[0].value.startsWith(invRoleNameString);
-	    })[0];
-	    // if fail, search in DL schema
-	    if (typeof(invRole) === "undefined") {
-		allSchemaObjects = model.schemaDataDL.children[0].children;
-		invRole = [].filter.call(allSchemaObjects, function(el) {
-		    return el.attributes[0].value.startsWith(invRoleNameString);
-		})[0];
-	    }
-	    // if fail, search in SV schema
-	    if (typeof(invRole) === "undefined") {
-		allSchemaObjects = model.schemaDataSV.children[0].children;
-		invRole = [].filter.call(allSchemaObjects, function(el) {
-		    return el.attributes[0].value.startsWith(invRoleNameString);
-		})[0];
-	    }
+	    let invRole = schemaInvLinksMap.get(link.substring(1)); 
 	    return invRole;
 	},
 
 	// Returns all the nodes connected with the given sources
 	// via the link 'linkName' (or the inverse, 'invLinkName').
-	getTargets(sources, linkName, invLinkName) {
-	    let graph = getGraph(sources, linkName, invLinkName);
+	getTargets(sources, linkName) {
+	    let graph = getGraph(sources, linkName);
 	    let targets = graph.map(el => el.target);
 	    return [...new Set(targets)]; // we want uniqueness
 	},
@@ -1280,13 +1258,11 @@ function cimModel() {
 	getEquipments(connectivityNode) {
 	    let cnTerminals = model.getTargets(
 		[connectivityNode],
-		"ConnectivityNode.Terminals",
-		"Terminal.ConnectivityNode");
+		"ConnectivityNode.Terminals");
 	    // let's try to get some equipment
 	    let equipments = model.getTargets(
 		cnTerminals,
-		"Terminal.ConductingEquipment",
-		"ConductingEquipment.Terminals");
+		"Terminal.ConductingEquipment");
 	    equipments = getConductingEquipmentGraph(equipments)
 		.map(el => el.source);
 	    return [...new Set(equipments)]; // we want uniqueness

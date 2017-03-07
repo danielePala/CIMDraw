@@ -731,11 +731,9 @@
 		       })
 		       .attr("cim-target", function(d) {
 			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
-			   let invLink = self.model.getInvLink(d);
 			   let targetObj = self.model.getTargets(
 			       [source],
-			       d.attributes[0].value.substring(1),
-			       invLink.attributes[0].value.substring(1))[0];
+			       d.attributes[0].value.substring(1))[0];
 			   if (typeof(targetObj) === "undefined") {
 			       return "none";
 			   }
@@ -785,8 +783,7 @@
 	     elementEnter.each(function(d, i) {
 		 let trafoEnds = self.model.getTargets(
 		     [d],
-		     "PowerTransformer.PowerTransformerEnd",
-		     "PowerTransformerEnd.PowerTransformer");
+		     "PowerTransformer.PowerTransformerEnd");
 		 if (trafoEnds.length > 0) {
 		     self.createElements(
 			 d3.select(this),

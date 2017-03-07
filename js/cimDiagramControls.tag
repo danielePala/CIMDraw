@@ -246,8 +246,7 @@
 	     case "cim:Line":
 		 equipments = opts.model.getTargets(
 		     [cimObject],
-		     "EquipmentContainer.Equipments",
-		     "Equipment.EquipmentContainer");
+		     "EquipmentContainer.Equipments");
 		 for (let equipment of equipments) {
 		     // handle busbars
 		     if (equipment.nodeName === "cim:BusbarSection") {
@@ -266,8 +265,7 @@
 	     case "cim:Discrete":
 		 terminals = opts.model.getTargets(
 		     [cimObject],
-		     "Measurement.Terminal",
-		     "ACDCTerminal.Measurements");
+		     "Measurement.Terminal");
 		 for (let terminal of terminals) {
 		     let node = d3.select("svg").select("#" + terminal.attributes.getNamedItem("rdf:ID").value).node();
 		     if (node !== null) {
@@ -436,13 +434,11 @@
 			      let terminals = opts.model.getTerminals([d]);
 			      let cns = opts.model.getTargets(
 				  terminals,
-				  "Terminal.ConnectivityNode",
-				  "ConnectivityNode.Terminals");
+				  "Terminal.ConnectivityNode");
 			      for (let cn of cns) {
 				  let cnTerms = opts.model.getTargets(
 				      [cn],
-				      "ConnectivityNode.Terminals",
-				      "Terminal.ConnectivityNode");
+				      "ConnectivityNode.Terminals");
 				  if (cnTerms.length === 2) {
 				      cn.x = (cnTerms[0].x + cnTerms[1].x)/2;
 				      cn.y = (cnTerms[0].y + cnTerms[1].y)/2;
@@ -597,8 +593,7 @@
 	       if (typeof(termToChange) !== "undefined") {
 		   let cn = opts.model.getTargets(
 		       [d],
-		       "Terminal.ConnectivityNode",
-		       "ConnectivityNode.Terminals")[0];
+		       "Terminal.ConnectivityNode")[0];
 		   d3.select("svg").selectAll("svg > path").attr("d", null);
 		   d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
 		   
@@ -903,8 +898,7 @@
 	 if (d.nodeName === "cim:Terminal") {
 	     let psr = opts.model.getTargets(
 		 [d],
-		 "Terminal.ConductingEquipment",
-		 "ConductingEquipment.Terminals")[0];
+		 "Terminal.ConductingEquipment")[0];
 	     opts.model.setLink(newObject, "cim:Measurement.Terminal", d);
 	     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", psr);
 	 } else {
