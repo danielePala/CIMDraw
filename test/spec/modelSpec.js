@@ -43,12 +43,21 @@ describe("CIM model", function() {
 	     "cim:NonConformLoad",
 	     "cim:PowerTransformer",
 	     "cim:BusbarSection"]);
+	for (let i of Object.keys(objects)) {
+	    expect(objects[i].length).toBe(0);
+	}
     });
 
     it("should be able to read a schema attribute", function() {
 	// read a random attribute
 	let attribute = model.getSchemaAttribute("Breaker", "Switch.retained");
 	expect(typeof(attribute)).not.toBe(undefined);
+    });
+
+    it("should be able to get the inverse of a link", function() {
+	// read a random attribute
+	let invLink = model.getInvLink("Terminal.ConductingEquipment");
+	expect(invLink).toBe("ConductingEquipment.Terminals");
     });
 
     
