@@ -337,18 +337,26 @@
 	     "cim:NonConformLoad"
 	 ]);
 	 // get additional objects
+	 let contNames = ["cim:Substation", "cim:Line"];
+	 let measNames = ["cim:Analog", "cim:Discrete"];
+	 let genNames = ["cim:GeneratingUnit", "cim:ThermalGeneratingUnit"];
 	 let allContainers = null;
 	 let allMeasurements = null;
+	 let allGeneratingUnits = null;
 	 if (showAllObjects === false) {
 	     allContainers = self.model.getLinkedObjects(
-		 ["cim:Substation", "cim:Line"],
+		 contNames,
 		 "EquipmentContainer.Equipments");
 	     allMeasurements = self.model.getLinkedObjects(
-		 ["cim:Analog", "cim:Discrete"],
+		 measNames,
 		 "Measurement.PowerSystemResource");
+	     allGeneratingUnits = self.model.getLinkedObjects(
+		 genNames,
+		 "GeneratingUnit.RotatingMachine");
 	 } else {
-	     allContainers = getObjects(["cim:Substation", "cim:Line"]);
-	     allMeasurements = getObjects(["cim:Analog", "cim:Discrete"]);
+	     allContainers = getObjects(contNames);
+	     allMeasurements = getObjects(measNames);
+	     allGeneratingUnits = getObjects(genNames);
 	 }
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
 	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 
@@ -398,6 +406,10 @@
 	 self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 let lineEnter = self.createElements(cimContainers, "Line", "Lines", allLines);
 	 self.createDeleteMenu(lineEnter);
+	 let allGenUnits = self.createTopContainer(cimContainers, "GeneratingUnit", "Generating Units", allGeneratingUnits["cim:GeneratingUnit"].concat(allGeneratingUnits["cim:ThermalGeneratingUnit"]));
+	 self.createElements(allGenUnits, "GeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
+	 self.createElements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
+
 
 	 // add buttons
 	 self.createAddButton(cimContainers, "BaseVoltage");
