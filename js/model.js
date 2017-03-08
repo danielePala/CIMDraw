@@ -485,8 +485,9 @@ function cimModel() {
 	    for (let connectivityNode of allConnectivityNodes) {
 		data.children[0].appendChild(connectivityNode.cloneNode(true));
 	    }
-	    let allEqContainers = model.getEquipmentContainers(
-		["cim:Substation", "cim:Line"]);
+	    let allEqContainers = model.getLinkedObjects(
+		["cim:Substation", "cim:Line"],
+		"EquipmentContainer.Equipments");
 	    let allSubstations = allEqContainers["cim:Substation"];
 	    for (let substation of allSubstations) {
 		data.children[0].appendChild(substation.cloneNode(true));
@@ -747,20 +748,25 @@ function cimModel() {
 	    return graphic.concat(nonGraphic);
 	},
 
-	// Get the busbars that belong to the current diagram.
-	getBusbars() {
-	    let allBusbars = model.getObjects(["cim:BusbarSection"])["cim:BusbarSection"];
-	    let graphic = model.getGraphicObjects(["cim:BusbarSection"])["cim:BusbarSection"];
-	    let nonGraphic = allBusbars.filter(el => graphic.indexOf(el) === -1);
-	    nonGraphic = nonGraphic.filter(function(d) {
-		let cn = model.getConnectivityNode(d);
-		if (cn !== null) {
+	// Get the Connectors (busbars or junctions)
+	// that belong to the current diagram.
+	getConnectors(types) {
+	    let ret = {};
+	    for (let type of types) {
+		let allObjs = model.getObjects([type])[type];
+		let graphic = model.getGraphicObjects([type])[type];
+		let nonGraphic = allObjs.filter(el => graphic.indexOf(el) === -1);
+		nonGraphic = nonGraphic.filter(function(d) {
+		    let cn = model.getConnectivityNode(d);
+		    if (cn !== null) {
 		    let dobjs = model.getDiagramObjects([cn]);
-		    return (dobjs.length > 0);
-		}
-		return false;
-	    });
-	    return graphic.concat(nonGraphic);
+			return (dobjs.length > 0);
+		    }
+		    return false;
+		});
+		ret[type] = graphic.concat(nonGraphic);
+	    }
+	    return ret;
 	},
 
 	// Get all the objects of the given types that either
@@ -773,35 +779,18 @@ function cimModel() {
 	// cim:Line: [line1]}. Each object returned is an Element.
 	// This function is useful for many CIM objects, like:
 	// Substations, Lines, Measurements, GeneratingUnits, RegulatingControls.
-	getLinkedObjects(types, linkName, invLinkName) {
+	getLinkedObjects(types, linkName) {
 	    let ret = {};
 	    for (let type of types) {
 		ret[type] = model.getObjects([type])[type].filter(function(src) {
-		    let targets = model.getTargets([src], linkName, invLinkName);
+		    let targets = model.getTargets([src], linkName);
 		    let dobjs = model.getDiagramObjects([src].concat(targets));
 		    return (dobjs.length > 0);
 		});
 	    }
 	    return ret;
 	},
-	
-	
-	// Get the equipment containers that belong to the current diagram.
-	getEquipmentContainers(types) {
-	    return model.getLinkedObjects(
-		types,
-		"EquipmentContainer.Equipments",
-		"Equipment.EquipmentContainer");
-	},
-
-	// Get the measurements that belong to the current diagram.
-	getMeasurements() {
-	    return model.getLinkedObjects(
-		["cim:Analog", "cim:Discrete"],
-		"Measurement.PowerSystemResource",
-	    	"PowerSystemResource.Measurements");
-	},
-	
+		
 	// Get all the terminals of given conducting equipments. 
 	getTerminals(identObjs) {
 	    let terminals = getConductingEquipmentGraph(identObjs).map(el => el.target);

@@ -110,11 +110,7 @@
 	 });
 
 	 $("#showAllObjects").change(function() {
-	     if (this.checked === true) {
-		 self.createTree(self.model.getObjects, self.model.getObjects);
-	     } else {
-		 self.createTree(self.model.getGraphicObjects, self.model.getEquipmentContainers);
-	     }
+	     self.createTree(this.checked);
 	 });
      });
 
@@ -289,8 +285,8 @@
 	 $("#showAllObjects").change();
      });
 
-     createTree(getObjects, getContainers) {
-	 let treeRender = self.createTreeGenerator(getObjects, getContainers);
+     createTree(showAllObjects) {
+	 let treeRender = self.createTreeGenerator(showAllObjects);
 	 function periodic() {
 	     let ret = treeRender.next().value;
 	     if (typeof(ret) !== "undefined") {
@@ -310,11 +306,19 @@
 	 $("#showAllObjects").change();
      }
 
-     self.createTreeGenerator = function*(getObjects, getContainers) {
+     self.createTreeGenerator = function*(showAllObjects) {
 	 // clear all
 	 d3.select("#app-tree").selectAll("#CIMComponents > li").remove();
 	 d3.select("#app-tree").selectAll("#CIMContainers > li").remove();
 	 d3.select("#app-tree").selectAll("#CIMMeasurements > li").remove();
+	 // setup the right function to get objects
+	 let getObjects = self.model.getObjects;
+	 let getConnectors = self.model.getObjects;
+	 if (showAllObjects === false) {
+	     getObjects = self.model.getGraphicObjects;
+	     getConnectors = self.model.getConnectors;
+	 }
+
 	 // get all equipments
 	 let allEquipments = getObjects([
 	     "cim:BaseVoltage",
@@ -332,19 +336,22 @@
 	     "cim:ConformLoad",
 	     "cim:NonConformLoad"
 	 ]);
-	 // get all containers
-	 let allContainers = getContainers(["cim:Substation", "cim:Line"]);
-	 // get all measurements
-	 let allMeasurements = self.model.getMeasurements(["cim:Analog", "cim:Discrete"]);
-
-	 // base voltages don't depend on diagram
-	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
-	 let allBusbarSections = [];
-	 if ($("#showAllObjects").prop('checked')) {
-	     allBusbarSections = self.model.getObjects(["cim:BusbarSection"])["cim:BusbarSection"]; ;
+	 // get additional objects
+	 let allContainers = null;
+	 let allMeasurements = null;
+	 if (showAllObjects === false) {
+	     allContainers = self.model.getLinkedObjects(
+		 ["cim:Substation", "cim:Line"],
+		 "EquipmentContainer.Equipments");
+	     allMeasurements = self.model.getLinkedObjects(
+		 ["cim:Analog", "cim:Discrete"],
+		 "Measurement.PowerSystemResource");
 	 } else {
-	     allBusbarSections = self.model.getBusbars();
+	     allContainers = getObjects(["cim:Substation", "cim:Line"]);
+	     allMeasurements = getObjects(["cim:Analog", "cim:Discrete"]);
 	 }
+	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
+	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
 	 let allACLines = allEquipments["cim:ACLineSegment"]; 
 	 let allBreakers = allEquipments["cim:Breaker"]; 
