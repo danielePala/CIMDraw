@@ -268,7 +268,7 @@ function cimModel() {
     // It doesn't filter by diagram.
     // This is a 'private' function (not visible in the model object).
     function getGraph(sources, linkName) {
-	let invLinkName = model.getInvLink(linkName);
+	let invLinkName = schemaInvLinksMap.get(linkName);
 	let resultKeys = new Map();
 	let result = [];
 	for (let source of sources) {
@@ -1191,7 +1191,7 @@ function cimModel() {
 	// Set a specific link of a given object.
 	// If a link with the same name already exists, it is removed.
 	setLink(source, linkName, target) {
-	    let invLinkName = model.getInvLink(linkName.split(":")[1]);
+	    let invLinkName = schemaInvLinksMap.get(linkName.split(":")[1]);
 	    let oldTargets = model.getTargets([source], linkName, invLinkName);
 	    for (let oldTarget of oldTargets) {
 		model.removeLink(source, linkName, oldTarget);
@@ -1203,7 +1203,7 @@ function cimModel() {
 	removeLink(source, linkName, target) {
 	    let link = model.getLink(source, linkName);
 	    removeLinkInternal(link, target);
-	    let invLinkName = model.getInvLink(linkName.split(":")[1]);
+	    let invLinkName = schemaInvLinksMap.get(linkName.split(":")[1]);
 	    // remove inverse, if present in schema 
 	    if (typeof(invLinkName) !== "undefined") {
 		let invLink = model.getLink(target, invLinkName);
@@ -1227,12 +1227,6 @@ function cimModel() {
 		    }
 		}
 	    };
-	},
-
-	// Returns the inverse of a given link.
-	getInvLink(link) {
-	    let invRole = schemaInvLinksMap.get(link); 
-	    return invRole;
 	},
 
 	// Returns all the nodes connected with the given sources
