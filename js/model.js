@@ -304,27 +304,6 @@ function cimModel() {
 	return result;
     };
 
-    // Get all the objects of the given types that either
-    // have at least a diagram object in the current diagram or are
-    // linked to some object which is in the current diagram
-    // via the given link. The 'types' parameter must be an array of
-    // namespace qualified types, like ["cim:Substation", "cim:Line"].
-    // The output is an object whose keys are the types and the values
-    // are the corresponding arrays, like {cim:Substation: [sub1, sub2],
-    // cim:Line: [line1]}. Each object returned is an Element.
-    // This is a 'private' function (not visible in the model object).
-    function getLinkedObjects(types, linkName, invLinkName) {
-	let ret = {};
-	for (let type of types) {
-	    ret[type] = model.getObjects([type])[type].filter(function(src) {
-		let targets = model.getTargets([src], linkName, invLinkName);
-		let dobjs = model.getDiagramObjects([src].concat(targets));
-		return (dobjs.length > 0);
-	    });
-	}
-	return ret;
-    };
-
     // Get a graph of objects and DiagramObjects, for each object
     // that have at least one DiagramObject in the current diagram.
     // If an array of objects is given as argument, only the
@@ -783,10 +762,33 @@ function cimModel() {
 	    });
 	    return graphic.concat(nonGraphic);
 	},
+
+	// Get all the objects of the given types that either
+	// have at least a diagram object in the current diagram or are
+	// linked to some object which is in the current diagram
+	// via the given link. The 'types' parameter must be an array of
+	// namespace qualified types, like ["cim:Substation", "cim:Line"].
+	// The output is an object whose keys are the types and the values
+	// are the corresponding arrays, like {cim:Substation: [sub1, sub2],
+	// cim:Line: [line1]}. Each object returned is an Element.
+	// This function is useful for many CIM objects, like:
+	// Substations, Lines, Measurements, GeneratingUnits, RegulatingControls.
+	getLinkedObjects(types, linkName, invLinkName) {
+	    let ret = {};
+	    for (let type of types) {
+		ret[type] = model.getObjects([type])[type].filter(function(src) {
+		    let targets = model.getTargets([src], linkName, invLinkName);
+		    let dobjs = model.getDiagramObjects([src].concat(targets));
+		    return (dobjs.length > 0);
+		});
+	    }
+	    return ret;
+	},
+	
 	
 	// Get the equipment containers that belong to the current diagram.
 	getEquipmentContainers(types) {
-	    return getLinkedObjects(
+	    return model.getLinkedObjects(
 		types,
 		"EquipmentContainer.Equipments",
 		"Equipment.EquipmentContainer");
@@ -794,7 +796,7 @@ function cimModel() {
 
 	// Get the measurements that belong to the current diagram.
 	getMeasurements() {
-	    return getLinkedObjects(
+	    return model.getLinkedObjects(
 		["cim:Analog", "cim:Discrete"],
 		"Measurement.PowerSystemResource",
 	    	"PowerSystemResource.Measurements");

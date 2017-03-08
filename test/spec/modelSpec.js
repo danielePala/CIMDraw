@@ -54,11 +54,5 @@ describe("CIM model", function() {
 	expect(typeof(attribute)).not.toBe(undefined);
     });
 
-    it("should be able to get the inverse of a link", function() {
-	// read a random attribute
-	let invLink = model.getInvLink("Terminal.ConductingEquipment");
-	expect(invLink).toBe("ConductingEquipment.Terminals");
-    });
-
     
 });
