@@ -410,7 +410,6 @@
 	 self.createElements(allGenUnits, "GeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
 	 self.createElements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
 
-
 	 // add buttons
 	 self.createAddButton(cimContainers, "BaseVoltage");
 	 self.createAddButton(cimContainers, "Substation");
@@ -813,20 +812,6 @@
 	     });
 	 }
 
-	 // add extra link to PQ application
-	 /*
-	 let pqLink = elementEnter.append("li")
-				  .attr("class", "link");
-	 pqLink.append("button")
-	       .attr("class","btn btn-default btn-xs")
-	       .attr("type", "submit")
-	       .on("click", function (d) {
-		   let source = d3.select(d3.select(this).node().parentNode.parentNode).datum();
-		   let sourceUUID = source.attributes.getNamedItem("rdf:ID").value;
-		   window.open("http://ric302107:8080/ClientRest/uuid/uuid.jsp?uuid=" + sourceUUID);
-	       })
-	       .html("View in CIM Datastore");
-	 */
      }
 
      moveTo(uuid) {

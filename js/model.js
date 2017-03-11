@@ -783,8 +783,14 @@ function cimModel() {
 	    let ret = {};
 	    for (let type of types) {
 		ret[type] = model.getObjects([type])[type].filter(function(src) {
-		    let targets = model.getTargets([src], linkName);
-		    let dobjs = model.getDiagramObjects([src].concat(targets));
+		    let srcs = [src];
+		    if (type === "cim:Substation") { // substations are not so simple
+			let vlevs = model.getTargets([src], "Substation.VoltageLevels");
+			let bays = model.getTargets(vlevs, "VoltageLevel.Bays");
+			srcs = srcs.concat(vlevs).concat(bays);
+		    }
+		    let targets = model.getTargets(srcs, linkName);
+		    let dobjs = model.getDiagramObjects(srcs.concat(targets));
 		    return (dobjs.length > 0);
 		});
 	    }
