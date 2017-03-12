@@ -795,21 +795,51 @@
 		       });
 
 	 
-	 // handle power transfomer ends
+	 // handle power transfomer ends, substations nd voltage levels
 	 let name = d3.select(elementEnter.node().parentNode).data()[0].nodeName;
-	 if (name === "cim:PowerTransformer") {
-	     elementEnter.each(function(d, i) {
-		 let trafoEnds = self.model.getTargets(
-		     [d],
-		     "PowerTransformer.PowerTransformerEnd");
-		 if (trafoEnds.length > 0) {
-		     self.createElements(
-			 d3.select(this),
-			 "PowerTransformerEnd"+i,
-			 "Transformer Windings",
-			 trafoEnds);
-		 }
-	     });
+	 switch(name) {
+	     case "cim:PowerTransformer":
+		 elementEnter.each(function(d, i) {
+		     let trafoEnds = self.model.getTargets(
+			 [d],
+			 "PowerTransformer.PowerTransformerEnd");
+		     if (trafoEnds.length > 0) {
+			 self.createElements(
+			     d3.select(this),
+			     d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
+			     "Transformer Windings",
+			     trafoEnds);
+		     }
+		 });
+		 break;
+	     case "cim:Substation":
+		 elementEnter.each(function(d, i) {
+		     let vlevs = self.model.getTargets(
+			 [d],
+			 "Substation.VoltageLevels");
+		     if (vlevs.length > 0) {
+			 self.createElements(
+			     d3.select(this),
+			     d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
+			     "Voltage Levels",
+			     vlevs);
+		     }
+		 });
+		 break;
+	     case "cim:VoltageLevel":
+		 elementEnter.each(function(d, i) {
+		     let bays = self.model.getTargets(
+			 [d],
+			 "VoltageLevel.Bays");
+		     if (bays.length > 0) {
+			 self.createElements(
+			     d3.select(this),
+			     d.attributes.getNamedItem("rdf:ID").value + "Bay",
+			     "Bays",
+			     bays);
+		     }
+		 });
+		 break;
 	 }
 
      }
