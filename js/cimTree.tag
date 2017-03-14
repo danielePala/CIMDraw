@@ -598,7 +598,7 @@
 	 // Float attributes
 	 elementDiv.filter(function(d) {
 	     let attrType = self.model.getSchemaAttributeType(d);
-	     return attrType[0] === "#Float";
+	     return (attrType[0] === "#Float" || attrType[0] === "#Decimal");
 	 }).append("input")
 		   .attr("class", "form-control")
 		   .each(setFloatValueFromModel)
