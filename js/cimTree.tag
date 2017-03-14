@@ -407,7 +407,7 @@
 	 let lineEnter = self.createElements(cimContainers, "Line", "Lines", allLines);
 	 self.createDeleteMenu(lineEnter);
 	 let allGenUnits = self.createTopContainer(cimContainers, "GeneratingUnit", "Generating Units", allGeneratingUnits["cim:GeneratingUnit"].concat(allGeneratingUnits["cim:ThermalGeneratingUnit"]));
-	 self.createElements(allGenUnits, "GeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
+	 self.createElements(allGenUnits, "GeneralGeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
 	 self.createElements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
 
 	 // add buttons
