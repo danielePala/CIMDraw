@@ -374,6 +374,12 @@
 	                              .concat(allEquipments["cim:NonConformLoad"]);
 	 yield "[" + Date.now() + "] TREE: extracted equipments";	 
 	 let allSubstations = allContainers["cim:Substation"];
+	 let allSubGeoRegions = self.model.getTargets(
+	     allSubstations,
+	     "Substation.Region");
+	 let allGeoRegions = self.model.getTargets(
+	     allSubGeoRegions,
+	     "SubGeographicalRegion.Region");
 	 yield "[" + Date.now() + "] TREE: extracted substations";
 	 let allLines = allContainers["cim:Line"];
 	 yield "[" + Date.now() + "] TREE: extracted lines";
@@ -401,9 +407,59 @@
 	 self.createElements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
 	 self.createElements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
 	 self.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
+	 let geoEnter = self.createElements(cimContainers, "GeographicalRegion", "Geographical Regions", allGeoRegions);
+	 geoEnter.each(function(d, i) {
+	     let subGeos = self.model.getTargets(
+		 [d],
+		 "GeographicalRegion.Regions");
+	     if (subGeos.length > 0) {
+		 self.createElements(
+		     d3.select(this),
+		     d.attributes.getNamedItem("rdf:ID").value + "SubGeographicalRegion",
+		     "Sub-Geographical Regions",
+		     subGeos);
+	     }
+	 });
 	 let subEnter = self.createElements(cimContainers, "Substation", "Substations", allSubstations);
 	 self.createDeleteMenu(subEnter);
-	 self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
+	 let vlEnter = d3.selectAll(null);
+	 subEnter.each(function(d, i) {
+	     let vlevs = self.model.getTargets(
+		 [d],
+		 "Substation.VoltageLevels");
+	     if (vlevs.length > 0) {
+		 vlEnter = self.createElements(
+		     d3.select(this),
+		     d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
+		     "Voltage Levels",
+		     vlevs);
+		 vlEnter.each(function(d, i) {
+		     let bays = self.model.getTargets(
+			 [d],
+			 "VoltageLevel.Bays");
+		     if (bays.length > 0) {
+			 self.createElements(
+			     d3.select(this),
+			     d.attributes.getNamedItem("rdf:ID").value + "Bay",
+			     "Bays",
+			     bays);
+		     }
+		 });
+	     }
+	 });
+	 let trafoEnter = self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
+	 trafoEnter.each(function(d, i) {
+	     let trafoEnds = self.model.getTargets(
+		 [d],
+		 "PowerTransformer.PowerTransformerEnd");
+	     if (trafoEnds.length > 0) {
+		 self.createElements(
+		     d3.select(this),
+		     d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
+		     "Transformer Windings",
+		     trafoEnds);
+	     }
+	 });
 	 let lineEnter = self.createElements(cimContainers, "Line", "Lines", allLines);
 	 self.createDeleteMenu(lineEnter);
 	 let allGenUnits = self.createTopContainer(cimContainers, "GeneratingUnit", "Generating Units", allGeneratingUnits["cim:GeneratingUnit"].concat(allGeneratingUnits["cim:ThermalGeneratingUnit"]));
@@ -527,9 +583,9 @@
 				    });
 				} else {
 				    // if necessary, generate attributes and links
-				    let elementEnter = d3.select(this.parentNode).select("ul").node();
-				    if (elementEnter.childNodes.length === 0) {
-					self.generateAttrsAndLinks(d3.select(elementEnter));
+				    let elementEnter = d3.select(this.parentNode).select("ul");
+				    if (elementEnter.selectAll("li.attribute").size() === 0) {
+					self.generateAttrsAndLinks(elementEnter);
 				    }
 				    // change address to 'this object'
 				    let hashComponents = window.location.hash.substring(1).split("/");
@@ -793,55 +849,6 @@
 			   }
 			   return "remove";
 		       });
-
-	 
-	 // handle power transfomer ends, substations nd voltage levels
-	 let name = d3.select(elementEnter.node().parentNode).data()[0].nodeName;
-	 switch(name) {
-	     case "cim:PowerTransformer":
-		 elementEnter.each(function(d, i) {
-		     let trafoEnds = self.model.getTargets(
-			 [d],
-			 "PowerTransformer.PowerTransformerEnd");
-		     if (trafoEnds.length > 0) {
-			 self.createElements(
-			     d3.select(this),
-			     d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
-			     "Transformer Windings",
-			     trafoEnds);
-		     }
-		 });
-		 break;
-	     case "cim:Substation":
-		 elementEnter.each(function(d, i) {
-		     let vlevs = self.model.getTargets(
-			 [d],
-			 "Substation.VoltageLevels");
-		     if (vlevs.length > 0) {
-			 self.createElements(
-			     d3.select(this),
-			     d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
-			     "Voltage Levels",
-			     vlevs);
-		     }
-		 });
-		 break;
-	     case "cim:VoltageLevel":
-		 elementEnter.each(function(d, i) {
-		     let bays = self.model.getTargets(
-			 [d],
-			 "VoltageLevel.Bays");
-		     if (bays.length > 0) {
-			 self.createElements(
-			     d3.select(this),
-			     d.attributes.getNamedItem("rdf:ID").value + "Bay",
-			     "Bays",
-			     bays);
-		     }
-		 });
-		 break;
-	 }
-
      }
 
      moveTo(uuid) {
