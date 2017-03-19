@@ -332,6 +332,7 @@
 	     "cim:Junction",
 	     "cim:EnergySource",
 	     "cim:SynchronousMachine",
+	     "cim:AsynchronousMachine",
 	     "cim:EnergyConsumer",
 	     "cim:ConformLoad",
 	     "cim:NonConformLoad"
@@ -371,7 +372,8 @@
 	     .concat(allEquipments["cim:SynchronousMachine"]);
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"] 
 	                              .concat(allEquipments["cim:ConformLoad"])
-	                              .concat(allEquipments["cim:NonConformLoad"]);
+	                              .concat(allEquipments["cim:NonConformLoad"])
+				      .concat(allEquipments["cim:AsynchronousMachine"]);
 	 yield "[" + Date.now() + "] TREE: extracted equipments";	 
 	 let allSubstations = allContainers["cim:Substation"];
 	 let allSubGeoRegions = self.model.getTargets(
@@ -406,6 +408,7 @@
 	 self.createElements(allLoads, "EnergyConsumer", "Energy Consumers", allEquipments["cim:EnergyConsumer"]);
 	 self.createElements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
 	 self.createElements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
+	 self.createElements(allLoads, "AsynchronousMachine", "Asynchronous Machines", allEquipments["cim:AsynchronousMachine"]);
 	 self.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
 	 let geoEnter = self.createElements(cimContainers, "GeographicalRegion", "Geographical Regions", allGeoRegions);
 	 geoEnter.each(function(d, i) {
