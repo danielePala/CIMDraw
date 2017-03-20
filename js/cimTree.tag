@@ -147,70 +147,75 @@
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
 	 let generators = undefined;
+	 let rotMac = undefined;
 	 let loads = undefined;
 	 switch (object.nodeName) {
 	     case "cim:ACLineSegment":
-		 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
+		 self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
 		 break;
 	     case "cim:Breaker":
-		 self.createElements(cimNetwork, "Breaker", "Breakers", [object]);
+		 self.elements(cimNetwork, "Breaker", "Breakers", [object]);
 		 break;
 	     case "cim:Disconnector":
-		 self.createElements(cimNetwork, "Disconnector", "Disconnectors", [object]);
+		 self.elements(cimNetwork, "Disconnector", "Disconnectors", [object]);
 		 break;
 	     case "cim:LoadBreakSwitch":
-		 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", [object]);
+		 self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", [object]);
 		 break;
 	     case "cim:Jumper":
-		 self.createElements(cimNetwork, "Jumper", "Jumpers", [object]);
+		 self.elements(cimNetwork, "Jumper", "Jumpers", [object]);
 		 break;
 	     case "cim:Junction":
-		 self.createElements(cimNetwork, "Junction", "Junctions", [object]);
+		 self.elements(cimNetwork, "Junction", "Junctions", [object]);
 		 break;
 	     case "cim:EnergySource":
 		 generators = self.createTopContainer(cimNetwork, "Generator", "Generators", [object]);
-		 self.createElements(generators, "EnergySource", "Energy Sources", [object]);
+		 self.elements(generators, "EnergySource", "Energy Sources", [object]);
 		 break;
 	     case "cim:SynchronousMachine":
-		 generators = self.createTopContainer(cimNetwork, "Generator", "Generators", [object]);
-		 self.createElements(generators, "SynchronousMachine", "Synchronous Machines", [object]);
+		 rotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "RotatingMachines", [object]);
+		 self.elements(rotMac, "SynchronousMachine", "Synchronous Machines", [object]);
+		 break;
+	     case "cim:AsynchronousMachine":
+		 rotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "RotatingMachines", [object]);
+		 self.elements(rotMac, "AsynchronousMachine", "Asynchronous Machines", [object]);
 		 break;
 	     case "cim:EnergyConsumer":
 		 loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
-		 self.createElements(loads, "EnergyConsumer", "Energy Consumers", [object]);
+		 self.elements(loads, "EnergyConsumer", "Energy Consumers", [object]);
 		 break;
 	     case "cim:ConformLoad":
 		 loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
-		 self.createElements(loads, "ConformLoad", "Conform Loads", [object]);
+		 self.elements(loads, "ConformLoad", "Conform Loads", [object]);
 		 break;
 	     case "cim:NonConformLoad":
 		 loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
-		 self.createElements(loads, "NonConformLoad", "Non Conform Loads", [object]);
+		 self.elements(loads, "NonConformLoad", "Non Conform Loads", [object]);
 		 break;
 	     case "cim:PowerTransformer":
-		 self.createElements(cimNetwork, "PowerTransformer", "Transformers", [object]);
+		 self.elements(cimNetwork, "PowerTransformer", "Transformers", [object]);
 		 break;
 	     case "cim:BusbarSection":
-		 self.createElements(cimNetwork, "BusbarSection", "Nodes", [object]);
+		 self.elements(cimNetwork, "BusbarSection", "Nodes", [object]);
 		 break;
 	     case "cim:BaseVoltage":
-		 let bvEnter = self.createElements(cimContainers, "BaseVoltage", "Base Voltages", [object]);
+		 let bvEnter = self.elements(cimContainers, "BaseVoltage", "Base Voltages", [object]);
 		 self.createDeleteMenu(bvEnter);
 		 break;
 	     case "cim:Substation":
-		 let subEnter = self.createElements(cimContainers, "Substation", "Substations", [object]);
+		 let subEnter = self.elements(cimContainers, "Substation", "Substations", [object]);
 		 self.createDeleteMenu(subEnter);
 		 break;
 	     case "cim:Line":
-		 let lineEnter = self.createElements(cimContainers, "Line", "Lines", [object]);
+		 let lineEnter = self.elements(cimContainers, "Line", "Lines", [object]);
 		 self.createDeleteMenu(lineEnter);
 		 break;
 	     case "cim:Analog":
-		 let analogEnter = self.createElements(cimMeasurements, "Analog", "Analogs", [object]);
+		 let analogEnter = self.elements(cimMeasurements, "Analog", "Analogs", [object]);
 		 self.createDeleteMenu(analogEnter);
 		 break;
 	     case "cim:Discrete":
-		 let discEnter = self.createElements(cimMeasurements, "Discrete", "Discretes", [object]);
+		 let discEnter = self.elements(cimMeasurements, "Discrete", "Discretes", [object]);
 		 self.createDeleteMenu(discEnter);
 		 break;
 	 }	 
@@ -368,12 +373,12 @@
 	 let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
 	 let allJumpers = allEquipments["cim:Jumper"]; 
 	 let allJunctions = allEquipments["cim:Junction"]; 
-	 let allEnergySources = allEquipments["cim:EnergySource"] 
-	     .concat(allEquipments["cim:SynchronousMachine"]);
+	 let allEnergySources = allEquipments["cim:EnergySource"];
+	 let allRotatingMachines = allEquipments["cim:SynchronousMachine"]
+	     .concat(allEquipments["cim:AsynchronousMachine"]);
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"] 
 	                              .concat(allEquipments["cim:ConformLoad"])
-	                              .concat(allEquipments["cim:NonConformLoad"])
-				      .concat(allEquipments["cim:AsynchronousMachine"]);
+	                              .concat(allEquipments["cim:NonConformLoad"]);
 	 yield "[" + Date.now() + "] TREE: extracted equipments";	 
 	 let allSubstations = allContainers["cim:Substation"];
 	 let allSubGeoRegions = self.model.getTargets(
@@ -389,41 +394,42 @@
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
-	 let analogEnter = self.createElements(cimMeasurements, "Analog", "Analogs", allMeasurements["cim:Analog"]);
+	 let analogEnter = self.elements(cimMeasurements, "Analog", "Analogs", allMeasurements["cim:Analog"]);
 	 self.createDeleteMenu(analogEnter);
-	 let discEnter = self.createElements(cimMeasurements, "Discrete", "Discretes", allMeasurements["cim:Discrete"]);
+	 let discEnter = self.elements(cimMeasurements, "Discrete", "Discretes", allMeasurements["cim:Discrete"]);
 	 self.createDeleteMenu(discEnter);
-	 self.createElements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
-	 let bvEnter = self.createElements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
+	 self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
+	 let bvEnter = self.elements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
 	 self.createDeleteMenu(bvEnter);
-	 self.createElements(cimNetwork, "Breaker", "Breakers", allBreakers);
-	 self.createElements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
-	 self.createElements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
-	 self.createElements(cimNetwork, "Jumper", "Jumpers", allJumpers);
-	 self.createElements(cimNetwork, "Junction", "Junctions", allJunctions);
-	 let allGenerators = self.createTopContainer(cimNetwork, "Generator", "Generators", allEnergySources);
-	 self.createElements(allGenerators, "EnergySource", "Energy Sources", allEquipments["cim:EnergySource"]);
-	 self.createElements(allGenerators, "SynchronousMachine", "Synchronous Machines", allEquipments["cim:SynchronousMachine"]);
+	 self.elements(cimNetwork, "Breaker", "Breakers", allBreakers);
+	 self.elements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
+	 self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
+	 self.elements(cimNetwork, "Jumper", "Jumpers", allJumpers);
+	 self.elements(cimNetwork, "Junction", "Junctions", allJunctions);
+	 let allGenerators = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", allEnergySources);
+	 self.elements(allGenerators, "EnergySource", "Energy Sources", allEquipments["cim:EnergySource"]);
+	 let allRotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "Rotating Machines", allRotatingMachines);
+	 self.elements(allRotMac, "SynchronousMachine", "Synchronous Machines", allEquipments["cim:SynchronousMachine"]);
+	 self.elements(allRotMac, "AsynchronousMachine", "Asynchronous Machines", allEquipments["cim:AsynchronousMachine"]);
 	 let allLoads = self.createTopContainer(cimNetwork, "Load", "Loads", allEnergyConsumers);
-	 self.createElements(allLoads, "EnergyConsumer", "Energy Consumers", allEquipments["cim:EnergyConsumer"]);
-	 self.createElements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
-	 self.createElements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
-	 self.createElements(allLoads, "AsynchronousMachine", "Asynchronous Machines", allEquipments["cim:AsynchronousMachine"]);
-	 self.createElements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
-	 let geoEnter = self.createElements(cimContainers, "GeographicalRegion", "Geographical Regions", allGeoRegions);
+	 self.elements(allLoads, "EnergyConsumer", "Energy Consumers", allEquipments["cim:EnergyConsumer"]);
+	 self.elements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
+	 self.elements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
+	 self.elements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
+	 let geoEnter = self.elements(cimContainers, "GeographicalRegion", "Geographical Regions", allGeoRegions);
 	 geoEnter.each(function(d, i) {
 	     let subGeos = self.model.getTargets(
 		 [d],
 		 "GeographicalRegion.Regions");
 	     if (subGeos.length > 0) {
-		 self.createElements(
+		 self.elements(
 		     d3.select(this),
 		     d.attributes.getNamedItem("rdf:ID").value + "SubGeographicalRegion",
 		     "Sub-Geographical Regions",
 		     subGeos);
 	     }
 	 });
-	 let subEnter = self.createElements(cimContainers, "Substation", "Substations", allSubstations);
+	 let subEnter = self.elements(cimContainers, "Substation", "Substations", allSubstations);
 	 self.createDeleteMenu(subEnter);
 	 let vlEnter = d3.selectAll(null);
 	 subEnter.each(function(d, i) {
@@ -431,7 +437,7 @@
 		 [d],
 		 "Substation.VoltageLevels");
 	     if (vlevs.length > 0) {
-		 vlEnter = self.createElements(
+		 vlEnter = self.elements(
 		     d3.select(this),
 		     d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
 		     "Voltage Levels",
@@ -441,7 +447,7 @@
 			 [d],
 			 "VoltageLevel.Bays");
 		     if (bays.length > 0) {
-			 self.createElements(
+			 self.elements(
 			     d3.select(this),
 			     d.attributes.getNamedItem("rdf:ID").value + "Bay",
 			     "Bays",
@@ -450,24 +456,24 @@
 		 });
 	     }
 	 });
-	 let trafoEnter = self.createElements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
+	 let trafoEnter = self.elements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 trafoEnter.each(function(d, i) {
 	     let trafoEnds = self.model.getTargets(
 		 [d],
 		 "PowerTransformer.PowerTransformerEnd");
 	     if (trafoEnds.length > 0) {
-		 self.createElements(
+		 self.elements(
 		     d3.select(this),
 		     d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
 		     "Transformer Windings",
 		     trafoEnds);
 	     }
 	 });
-	 let lineEnter = self.createElements(cimContainers, "Line", "Lines", allLines);
+	 let lineEnter = self.elements(cimContainers, "Line", "Lines", allLines);
 	 self.createDeleteMenu(lineEnter);
-	 let allGenUnits = self.createTopContainer(cimContainers, "GeneratingUnit", "Generating Units", allGeneratingUnits["cim:GeneratingUnit"].concat(allGeneratingUnits["cim:ThermalGeneratingUnit"]));
-	 self.createElements(allGenUnits, "GeneralGeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
-	 self.createElements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
+	 let allGenUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", allGeneratingUnits["cim:GeneratingUnit"].concat(allGeneratingUnits["cim:ThermalGeneratingUnit"]));
+	 self.elements(allGenUnits, "GeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
+	 self.elements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
 
 	 // add buttons
 	 self.createAddButton(cimContainers, "BaseVoltage");
@@ -528,7 +534,7 @@
 	 btnSel.on("contextmenu", d3.contextMenu(menu));
      }
 
-     createElements(cimNetwork, name, printName, data) {
+     elements(cimNetwork, name, printName, data) {
 	 let elementsTopContainer = cimNetwork.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
 	 if (elementsTopContainer.empty() === true) {

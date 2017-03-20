@@ -675,9 +675,12 @@ function cimModel() {
 		    })[0].attributes.getNamedItem("rdfs:Literal").value;
 		}
 		if (typeof(multiplierObj) !== "undefined") {
-		    multiplier = [].filter.call(multiplierObj.children, function(el) {
+		    let isFixed = [].filter.call(multiplierObj.children, function(el) {
 			return el.nodeName === "cims:isFixed";
-		    })[0].attributes.getNamedItem("rdfs:Literal").value;
+		    })[0];
+		    if (typeof(isFixed) !== "undefined") {
+			multiplier = isFixed.attributes.getNamedItem("rdfs:Literal").value;
+		    } 
 		}
 	    } 
 	    return [typeVal, unit, multiplier];
