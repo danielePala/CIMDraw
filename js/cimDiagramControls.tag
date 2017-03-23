@@ -436,6 +436,9 @@
 				  terminals,
 				  "Terminal.ConnectivityNode");
 			      for (let cn of cns) {
+				  if (opts.model.getBusbar(cn) !== null) {
+				      continue;
+				  }
 				  let cnTerms = opts.model.getTargets(
 				      [cn],
 				      "ConnectivityNode.Terminals");

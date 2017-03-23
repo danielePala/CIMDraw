@@ -67,6 +67,7 @@
 		<li role="presentation" class="active"><a href="#components" aria-controls="components" role="tab" data-toggle="tab" id="componentsTab">Components</a></li>
 		<li role="presentation"><a href="#containers" aria-controls="containers" role="tab" data-toggle="tab" id="containersTab">Containers</a></li>
 		<li role="presentation"><a href="#measurements" aria-controls="measurements" role="tab" data-toggle="tab" id="measurementsTab">Measurements</a></li>
+		<li role="presentation"><a href="#bases" aria-controls="bases" role="tab" data-toggle="tab" id="basesTab">Bases</a></li>
 	    </ul>
 	    <div class="tab-content">
 		<div role="tabpanel" class="tab-pane active" id="components">
@@ -77,6 +78,9 @@
 		</div>
 		<div role="tabpanel" class="tab-pane" id="measurements">
 		    <ul class="list-group" id="CIMMeasurements"></ul>
+		</div>
+		<div role="tabpanel" class="tab-pane" id="bases">
+		    <ul class="list-group" id="CIMBases"></ul>
 		</div>
 	    </div>
 	    
@@ -146,6 +150,7 @@
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
+	 let cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
 	 let generators = undefined;
 	 let rotMac = undefined;
 	 let loads = undefined;
@@ -199,7 +204,7 @@
 		 self.elements(cimNetwork, "BusbarSection", "Nodes", [object]);
 		 break;
 	     case "cim:BaseVoltage":
-		 let bvEnter = self.elements(cimContainers, "BaseVoltage", "Base Voltages", [object]);
+		 let bvEnter = self.elements(cimBases, "BaseVoltage", "Base Voltages", [object]);
 		 self.createDeleteMenu(bvEnter);
 		 break;
 	     case "cim:Substation":
@@ -316,6 +321,19 @@
 	 d3.select("#app-tree").selectAll("#CIMComponents > li").remove();
 	 d3.select("#app-tree").selectAll("#CIMContainers > li").remove();
 	 d3.select("#app-tree").selectAll("#CIMMeasurements > li").remove();
+	 d3.select("#app-tree").selectAll("#CIMBases > li").remove();
+	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
+	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
+	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
+	 let cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
+	 let contNames = ["cim:Substation", "cim:Line"];
+	 let measNames = ["cim:Analog", "cim:Discrete"];
+	 let genNames = ["cim:GeneratingUnit", "cim:ThermalGeneratingUnit"];
+	 let allContainers = null;
+	 let allMeasurements = null;
+	 let allGeneratingUnits = null;
+	 let allSubGeoRegions = null;
+	 let allGeoRegions = null;
 	 // setup the right function to get objects
 	 let getObjects = self.model.getObjects;
 	 let getConnectors = self.model.getObjects;
@@ -326,7 +344,6 @@
 
 	 // get all equipments
 	 let allEquipments = getObjects([
-	     "cim:BaseVoltage",
 	     "cim:BusbarSection",
 	     "cim:PowerTransformer",
 	     "cim:ACLineSegment",
@@ -342,13 +359,8 @@
 	     "cim:ConformLoad",
 	     "cim:NonConformLoad"
 	 ]);
+	 yield "[" + Date.now() + "] TREE: extracted equipments";
 	 // get additional objects
-	 let contNames = ["cim:Substation", "cim:Line"];
-	 let measNames = ["cim:Analog", "cim:Discrete"];
-	 let genNames = ["cim:GeneratingUnit", "cim:ThermalGeneratingUnit"];
-	 let allContainers = null;
-	 let allMeasurements = null;
-	 let allGeneratingUnits = null;
 	 if (showAllObjects === false) {
 	     allContainers = self.model.getLinkedObjects(
 		 contNames,
@@ -359,10 +371,18 @@
 	     allGeneratingUnits = self.model.getLinkedObjects(
 		 genNames,
 		 "GeneratingUnit.RotatingMachine");
+	     allSubGeoRegions = self.model.getTargets(
+		 allContainers["cim:Substation"],
+		 "Substation.Region");
+	     allGeoRegions = self.model.getTargets(
+		 allSubGeoRegions,
+		 "SubGeographicalRegion.Region");
 	 } else {
 	     allContainers = getObjects(contNames);
 	     allMeasurements = getObjects(measNames);
 	     allGeneratingUnits = getObjects(genNames);
+	     allSubGeoRegions = getObjects("cim:SubGeographicalRegion")["cim:SubGeographicalRegion"];
+	     allGeoRegions = getObjects("cim:GeographicalRegion")["cim:GeographicalRegion"];
 	 }
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
 	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 
@@ -379,27 +399,16 @@
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"] 
 	                              .concat(allEquipments["cim:ConformLoad"])
 	                              .concat(allEquipments["cim:NonConformLoad"]);
-	 yield "[" + Date.now() + "] TREE: extracted equipments";	 
 	 let allSubstations = allContainers["cim:Substation"];
-	 let allSubGeoRegions = self.model.getTargets(
-	     allSubstations,
-	     "Substation.Region");
-	 let allGeoRegions = self.model.getTargets(
-	     allSubGeoRegions,
-	     "SubGeographicalRegion.Region");
 	 yield "[" + Date.now() + "] TREE: extracted substations";
 	 let allLines = allContainers["cim:Line"];
 	 yield "[" + Date.now() + "] TREE: extracted lines";
-
-	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
-	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
-	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
 	 let analogEnter = self.elements(cimMeasurements, "Analog", "Analogs", allMeasurements["cim:Analog"]);
 	 self.createDeleteMenu(analogEnter);
 	 let discEnter = self.elements(cimMeasurements, "Discrete", "Discretes", allMeasurements["cim:Discrete"]);
 	 self.createDeleteMenu(discEnter);
 	 self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
-	 let bvEnter = self.elements(cimContainers, "BaseVoltage", "Base Voltages", allBaseVoltages);
+	 let bvEnter = self.elements(cimBases, "BaseVoltage", "Base Voltages", allBaseVoltages);
 	 self.createDeleteMenu(bvEnter);
 	 self.elements(cimNetwork, "Breaker", "Breakers", allBreakers);
 	 self.elements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);

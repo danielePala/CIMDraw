@@ -68,12 +68,17 @@
     </div>    
     <script>
      "use strict";
+     // Switch-related defs
      const SWITCH_HEIGHT = 10; // height of switch elements
      const SWITCH_WIDTH = 10; // width of switch elements
-     const SWITCH_TERMINAL_OFFSET = 1; // distance between switch element and its terminals
+     // generator-related defs
      const GEN_HEIGHT = 50;    // height of generator elements
+     // trafo-related defs
      const TRAFO_HEIGHT = 50;  // height of transformer elements
+     const TRAFO_RADIUS = 15;
+     // terminal-related defs
      const TERMINAL_RADIUS = 2; // radius of terminals
+     const TERMINAL_OFFSET = 1; // distance between element and its terminals
      let self = this;
      self.model = opts.model;
      
@@ -1050,18 +1055,20 @@
      // Draw all PowerTransformers
      drawPowerTransformers(allPowerTransformers) {
 	 let trafoEnter = this.createSelection("PowerTransformer", allPowerTransformers)[1];
+	 let wind1y = TRAFO_RADIUS - (TRAFO_HEIGHT/2);
+	 let wind2y = (TRAFO_HEIGHT/2) - TRAFO_RADIUS;
 	 
 	 trafoEnter.append("circle")
-		   .attr("r", 15)
+		   .attr("r", TRAFO_RADIUS)
 		   .attr("cx", 0) 
-		   .attr("cy", 15)
+		   .attr("cy", wind1y)
 		   .attr("fill", "none")
 		   .attr("stroke", "black")
 		   .attr("stroke-width", 4);
 	 trafoEnter.append("circle")
-	           .attr("r", 15)
+	           .attr("r", TRAFO_RADIUS)
 	           .attr("cx", 0)
-	           .attr("cy", 35)
+	           .attr("cy", wind2y)
 	           .attr("fill", "none")
 	           .attr("stroke", "black")
 	           .attr("stroke-width", 4);
@@ -1069,8 +1076,8 @@
 	 	   .attr("class", "cim-object-text")
 		   .style("text-anchor", "end")
 		   .attr("font-size", 8)
-		   .attr("x", -25)
-		   .attr("y", 25)
+		   .attr("x", (TRAFO_HEIGHT/2) * (-1))
+		   .attr("y", (TRAFO_HEIGHT/2))
 		   .text(function(d) {
 		       let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
 		       if (typeof(name) !== "undefined") {
@@ -1097,25 +1104,26 @@
 	     case "cim:Disconnector":
 	     case "cim:LoadBreakSwitch":
 	     case "cim:Jumper":
-	     case "cim:Junction":
-		 term1_cy = ((SWITCH_HEIGHT/2) + (TERMINAL_RADIUS + SWITCH_TERMINAL_OFFSET)) * (-1);
-		 term2_cy = (SWITCH_HEIGHT/2) + (TERMINAL_RADIUS + SWITCH_TERMINAL_OFFSET);
+		 term1_cy = ((SWITCH_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
+		 term2_cy = (SWITCH_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
 		 break;
 	     case "cim:EnergySource":
 	     case "cim:SynchronousMachine":
 		 term2_cy = GEN_HEIGHT;
 		 break;
 	     case "cim:PowerTransformer":
-		 term2_cy = TRAFO_HEIGHT;
+		 term1_cy = ((TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
+		 term2_cy = (TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
 		 break;
 	     default:
 		 term2_cy = 30;
 	 }
 	 let allEdges = [];
-	 let updateTermSelection = eqSelection.selectAll("g")
-					.data(function(d) {
-					    return self.model.getTerminals([d]);
-					});
+	 let updateTermSelection = eqSelection
+	     .selectAll("g")
+	     .data(function(d) {
+		 return self.model.getTerminals([d]);
+	     });
 	 let termSelection = updateTermSelection
 	     .enter()
 	     .append("g")
@@ -1685,8 +1693,13 @@
 		  if (d.target.rotation > 0) {
 		      terminalXY = rotateTerm(d.target);
 		  }	
-		  
-		  d.p = self.closestPoint(d.source, terminalXY);
+
+		  if (self.model.getBusbar(d.source) !== null) {
+		      d.p = self.closestPoint(d.source, terminalXY);
+		  } else {
+		      d.p = [0, 0];
+		  }
+		      
 		  cnXY.x = cnXY.x + d.p[0];
 		  cnXY.y = cnXY.y + d.p[1];
 		  //} 
