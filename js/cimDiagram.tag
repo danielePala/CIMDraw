@@ -1691,7 +1691,7 @@
 		  //if ((xScale(d.source.x) >= 0 && xScale(d.source.x) <= svgWidth) || (xScale(d.target.x) >= 0 && xScale(d.target.x) <= svgWidth)) {
 		  //if ((yScale(d.source.y) >= 0 && yScale(d.source.y) <= svgHeight) || (yScale(d.target.y) >= 0 && yScale(d.target.y) <= svgHeight)) {
 		  if (d.target.rotation > 0) {
-		      terminalXY = rotateTerm(d.target);
+		      terminalXY = self.rotateTerm(d.target);
 		  }	
 
 		  if (self.model.getBusbar(d.source) !== null) {
@@ -1707,18 +1707,18 @@
 		  let lineData = [cnXY, terminalXY];
 		  return line(lineData);
 	      });	     
-	 
-	 function rotateTerm(term) {
-	     let equipment = self.model.getTargets(
-		 [term],
-		 "Terminal.ConductingEquipment")[0];
-	     let baseX = equipment.x; 
-	     let baseY = equipment.y; 	     
-	     let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);
-	     let newX = baseX + cRot.x;
-	     let newY = baseY + cRot.y;
-	     return {x: newX, y: newY};
-	 };
+     }
+
+     rotateTerm(term) {
+	 let equipment = self.model.getTargets(
+	     [term],
+	     "Terminal.ConductingEquipment")[0];
+	 let baseX = equipment.x; 
+	 let baseY = equipment.y; 	     
+	 let cRot = self.rotate({x: term.x-baseX, y: term.y-baseY}, term.rotation);
+	 let newX = baseX + cRot.x;
+	 let newY = baseY + cRot.y;
+	 return {x: newX, y: newY};
      }
      
      /** rotate a point of a given amount (in degrees) */

@@ -381,8 +381,8 @@
 	     allContainers = getObjects(contNames);
 	     allMeasurements = getObjects(measNames);
 	     allGeneratingUnits = getObjects(genNames);
-	     allSubGeoRegions = getObjects("cim:SubGeographicalRegion")["cim:SubGeographicalRegion"];
-	     allGeoRegions = getObjects("cim:GeographicalRegion")["cim:GeographicalRegion"];
+	     allSubGeoRegions = getObjects(["cim:SubGeographicalRegion"])["cim:SubGeographicalRegion"];
+	     allGeoRegions = getObjects(["cim:GeographicalRegion"])["cim:GeographicalRegion"];
 	 }
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
 	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 

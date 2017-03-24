@@ -398,62 +398,80 @@
 	Enable dragging of objects.
      */
      enableDrag() {
+	 let cnsToMove = [];
 	 self.disableDrag();
 	 d3.select(self.root).selectAll("label:not(#selectLabel)").classed("active", false);
 	 $("#select").click();
 	 self.status = "DRAG";
-	 let drag = d3.drag()
-		      .on("start", function(d) {
-			  // reset the current path
-			  let hashComponents = window.location.hash.substring(1).split("/");
-			  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-			  route(basePath + "/");
-			  if (selected.indexOf(this) === -1) {
-			      self.deselectAll();
-			  }
-			  if (selected.length === 0) {
-			      selected.push(this);
-			      self.updateSelected();
-			  }
-			  $(selected).filter('[data-toggle="popover"]').popover("toggle");
-			  quadtree.removeAll(selected); // update quadtree
-		      })
-		      .on("drag", function(d) {
-			  $(selected).filter('[data-toggle="popover"]').popover("hide");
-			  let deltax = d3.event.x - d.x;
-			  let deltay = d3.event.y - d.y;
-			  for (let selNode of selected) {
-			      let dd = d3.select(selNode).data()[0];
-			      dd.x = dd.x + deltax;
-			      dd.px = dd.x;
-			      dd.y = dd.y + deltay;
-			      dd.py = dd.y;
-			      opts.model.updateActiveDiagram(dd, dd.lineData);
-			  }
-			  if (opts.model.isA("ConductingEquipment", d) === true) {
-			      let terminals = opts.model.getTerminals([d]);
-			      let cns = opts.model.getTargets(
-				  terminals,
-				  "Terminal.ConnectivityNode");
-			      for (let cn of cns) {
-				  if (opts.model.getBusbar(cn) !== null) {
-				      continue;
-				  }
-				  let cnTerms = opts.model.getTargets(
-				      [cn],
-				      "ConnectivityNode.Terminals");
-				  if (cnTerms.length === 2) {
-				      cn.x = (cnTerms[0].x + cnTerms[1].x)/2;
-				      cn.y = (cnTerms[0].y + cnTerms[1].y)/2;
-				      opts.model.updateActiveDiagram(cn, cn.lineData);
-				  }
-			      }
-			  }
+	 let drag = d3
+	     .drag()
+	     .on("start", function(d) {
+		 // reset the current path
+		 let hashComponents = window.location.hash.substring(1).split("/");
+		 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+		 route(basePath + "/");
+		 if (selected.indexOf(this) === -1) {
+		     self.deselectAll();
+		 }
+		 if (selected.length === 0) {
+		     selected.push(this);
+		     self.updateSelected();
+		 }
+		 $(selected).filter('[data-toggle="popover"]').popover("toggle");
+		 quadtree.removeAll(selected); // update quadtree
+		 // handle movement of cn
+		 if (opts.model.isA("ConductingEquipment", d) === true) {
+		     let terminals = opts.model.getTerminals([d]);
+		     let cns = opts.model.getTargets(
+			 terminals,
+			 "Terminal.ConnectivityNode");
+		     for (let cn of cns) {
+			 if (opts.model.getBusbar(cn) !== null) {
+			     continue;
+			 }
+			 let cnTerms = opts.model.getTargets(
+			     [cn],
+			     "ConnectivityNode.Terminals");
+			 if (cnTerms.length === 2) {
+			     let cnToMove = {cn: cn, cnTerms: cnTerms};
+			     cnsToMove.push(cnToMove);
+			 }
+		     }
+		 }
 
-		      })
-		      .on("end", function(d) {
-			  quadtree.addAll(selected); // update quadtree
-		      });
+	     })
+	     .on("drag", function(d) {
+		 $(selected).filter('[data-toggle="popover"]').popover("hide");
+		 let deltax = d3.event.x - d.x;
+		 let deltay = d3.event.y - d.y;
+		 for (let selNode of selected) {
+		     let dd = d3.select(selNode).data()[0];
+		     dd.x = dd.x + deltax;
+		     dd.px = dd.x;
+		     dd.y = dd.y + deltay;
+		     dd.py = dd.y;
+		     opts.model.updateActiveDiagram(dd, dd.lineData);
+		 }
+		 for (let c of cnsToMove) {
+		     // handle rotation of terminals
+		     let t1XY = {x: c.cnTerms[0].x, y: c.cnTerms[0].y};
+		     let t2XY = {x: c.cnTerms[1].x, y: c.cnTerms[1].y};
+		     if (c.cnTerms[0].rotation > 0) {
+			 t1XY = self.parent.rotateTerm(c.cnTerms[0]);
+		     }
+		     if (c.cnTerms[1].rotation > 0) {
+			 t2XY = self.parent.rotateTerm(c.cnTerms[1]);
+		     }
+		     // update position of cn
+		     c.cn.x = (t1XY.x + t2XY.x)/2;
+		     c.cn.y = (t1XY.y + t2XY.y)/2;
+		     opts.model.updateActiveDiagram(c.cn, c.cn.lineData);
+		 }
+	     })
+	     .on("end", function(d) {
+		 quadtree.addAll(selected); // update quadtree
+		 cnsToMove = [];
+	     });
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
 	 d3.select("svg").select("g.brush").call(
 	     d3.brush()
@@ -641,10 +659,7 @@
 	       if (typeof(termToChange) !== "undefined") {
 		   d3.select("svg").on("mousemove", null);
 		   // update the model
-		   let schemaLinks = opts.model.getSchemaLinks(termToChange.localName);
-		   let schemaLink = schemaLinks.filter(el => el.attributes[0].value === "#Terminal.ConnectivityNode")[0];
-		   let schemaLinkName = "cim:" + schemaLink.attributes[0].value.substring(1);
-		   opts.model.setLink(termToChange, schemaLinkName, d);
+		   opts.model.setLink(termToChange, "cim:Terminal.ConnectivityNode", d);
 		   d3.select("svg > path").datum(null);
 	       }
 	   });
