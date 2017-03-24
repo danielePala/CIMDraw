@@ -54,5 +54,28 @@ describe("CIM model", function() {
 	expect(typeof(attribute)).not.toBe(undefined);
     });
 
-    
+    it("should be able to create and connect objects in diagram", function() {
+	model.selectDiagram("test");
+	let lineData = [{x: 0, y: 0, seq:1}];
+	let brk1 = model.createObject("cim:Breaker");
+	model.addToActiveDiagram(brk1, lineData);
+	let brk2 = model.createObject("cim:Breaker");
+	model.addToActiveDiagram(brk2, lineData);
+	let objects = model.getGraphicObjects(["cim:Breaker"]);
+	expect(objects["cim:Breaker"].length).toBe(2);
+
+	let cn = model.createObject("cim:ConnectivityNode");
+	model.addToActiveDiagram(cn, lineData);
+	let brk1Terms = model.getTerminals([brk1]);	
+	let brk2Terms = model.getTerminals([brk2]);
+	model.setLink(brk1Terms[0], "cim:Terminal.ConnectivityNode", cn);
+	model.setLink(brk2Terms[0], "cim:Terminal.ConnectivityNode", cn);
+	let cnTerms = model.getTargets([cn], "ConnectivityNode.Terminals");
+	expect(cnTerms.length).toBe(2);
+	let cn2 = model.createObject("cim:ConnectivityNode");
+	model.setLink(brk1Terms[0], "cim:Terminal.ConnectivityNode", cn2);
+	cnTerms = model.getTargets([cn], "ConnectivityNode.Terminals");
+	expect(cnTerms.length).toBe(1);
+
+    });
 });

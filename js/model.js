@@ -1191,8 +1191,7 @@ function cimModel() {
 	// Set a specific link of a given object.
 	// If a link with the same name already exists, it is removed.
 	setLink(source, linkName, target) {
-	    let invLinkName = schemaInvLinksMap.get(linkName.split(":")[1]);
-	    let oldTargets = model.getTargets([source], linkName, invLinkName);
+	    let oldTargets = model.getTargets([source], linkName.split(":")[1]);
 	    for (let oldTarget of oldTargets) {
 		model.removeLink(source, linkName, oldTarget);
 	    }
