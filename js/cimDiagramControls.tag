@@ -605,7 +605,12 @@
 	       let line = d3.line()
 		            .x(function(d) { return d.x; })
 		            .y(function(d) { return d.y; });
-	       
+	       // handle rotation of terminals
+	       let termXY = {x: d.x, y: d.y};
+	       if (d.rotation > 0) {
+		   termXY = self.parent.rotateTerm(d);
+	       }
+
 	       let svg = d3.select("svg");
 	       let path = d3.select("svg > path");
 	       let circle = d3.select("svg > circle");
@@ -645,8 +650,8 @@
 		       return "translate(" + mousex + "," + mousey +")";
 		   });
 		   path.attr("d", function() {
-		       let newx = (d.x*transform.k) + transform.x;
-		       let newy = (d.y*transform.k) + transform.y;
+		       let newx = (termXY.x*transform.k) + transform.x;
+		       let newy = (termXY.y*transform.k) + transform.y;
 		       return line([{x: newx, y: newy}, {x: m[0], y: m[1]}]);
 		   });
 	       }
