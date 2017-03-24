@@ -1201,27 +1201,27 @@ function cimModel() {
 	// Remove a specific link of a given object.
 	removeLink(source, linkName, target) {
 	    let link = model.getLink(source, linkName);
-	    removeLinkInternal(link, target);
+	    removeLinkInternal(link, source, target);
 	    let invLinkName = schemaInvLinksMap.get(linkName.split(":")[1]);
 	    // remove inverse, if present in schema 
 	    if (typeof(invLinkName) !== "undefined") {
-		let invLink = model.getLink(target, invLinkName);
-		removeLinkInternal(invLink, source);
+		let invLink = model.getLink(target, "cim:" + invLinkName);
+		removeLinkInternal(invLink, target, source);
 	    }
 	    model.trigger("removeLink", source, linkName, target);
 
-	    function removeLinkInternal(link, target) {
+	    function removeLinkInternal(link, sourceInt, targetInt) {
 		// the link may be many-valued
 		for (let linkEntry of link) {
 		    let targetUUID = linkEntry.attributes.getNamedItem("rdf:resource").value;
-		    if (targetUUID === "#" + target.attributes.getNamedItem("rdf:ID").value) {
+		    if (targetUUID === "#" + targetInt.attributes.getNamedItem("rdf:ID").value) {
 			let linksMapKey = linkEntry.localName + targetUUID;
 			let linksMapValue = model.linksMap.get(linksMapKey);
 			linkEntry.remove();
 			if (linksMapValue.length === 1) {
 			    model.linksMap.delete(linksMapKey);
 			} else {
-			    linksMapValue.splice(linksMapValue.indexOf(source), 1);
+			    linksMapValue.splice(linksMapValue.indexOf(sourceInt), 1);
 			}
 		    }
 		}

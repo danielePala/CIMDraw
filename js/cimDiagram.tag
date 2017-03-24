@@ -432,6 +432,28 @@
 		     self.createMeasurements(psrSelection);
 		 }
 		 break;
+	     case "cim:Terminal.ConnectivityNode":
+	     case "cim:ConnectivityNode.Terminals":
+		 let cn = undefined;
+		 let term = undefined;
+		 if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
+		     cn = source;
+		     term = target;
+		 } else {
+		     if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
+			 term = source;
+			 cn = target;
+		     } else {
+			 return;
+		     }
+		 }
+		 d3.select("svg")
+		   .selectAll("svg > g.diagram > g.edges > g")
+		   .filter(function(d) {
+		       return d.target === term
+		   })
+		   .remove();
+		 break;
 	 }
      });
      

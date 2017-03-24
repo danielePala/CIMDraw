@@ -166,6 +166,14 @@
 	     }
 	 }
      ];
+     let edgesMenu = [
+	 {
+	     title: 'Delete',
+	     action: function(elm, d, i) {
+		 opts.model.removeLink(d.source, "cim:ConnectivityNode.Terminals", d.target);
+	     }
+	 }
+     ];
      // move one point of the multi-segment. "lineData" coordinates
      // are relative to d.x and d.y, and the first point is always (0,0).
      // Therefore, we must handle the translation of the first point in a different way.
@@ -284,6 +292,7 @@
      self.parent.on("render", function() {
 	 // setup quadtree
 	 let points = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
+	 let edges = d3.select("svg").selectAll("svg > g.diagram > g.edges > g");
 	 quadtree.x(function(d) {
 	     return d3.select(d).data()[0].x;
 	 }).y(function(d) {
@@ -291,6 +300,7 @@
 	 }).addAll(points.nodes());
 	 // setup context menu
 	 self.addContextMenu(points);
+	 edges.on("contextmenu", d3.contextMenu(edgesMenu));
 	 // enable drag by default
 	 self.disableForce();
 	 self.disableZoom();
@@ -658,16 +668,24 @@
 	   });
 	 d3.select("svg").selectAll("svg > g.diagram > g.ConnectivityNodes > g.ConnectivityNode")
 	   .on("click", function (d) {
-	       d3.select("svg").selectAll("svg > path").attr("d", null);
-	       d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
-	       let termToChange = d3.select("svg > path").datum();
-	       if (typeof(termToChange) !== "undefined") {
-		   d3.select("svg").on("mousemove", null);
-		   // update the model
-		   opts.model.setLink(termToChange, "cim:Terminal.ConnectivityNode", d);
-		   d3.select("svg > path").datum(null);
-	       }
+	       connect(d);
 	   });
+	 d3.select("svg").selectAll("svg > g.diagram > g.edges > g")
+	   .on("click", function (d) {
+	       connect(d.source);
+	   });
+	 
+	 function connect(cn) {
+	     d3.select("svg").selectAll("svg > path").attr("d", null);
+	     d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
+	     let termToChange = d3.select("svg > path").datum();
+	     if (typeof(termToChange) !== "undefined") {
+		 d3.select("svg").on("mousemove", null);
+		 // update the model
+		 opts.model.setLink(termToChange, "cim:Terminal.ConnectivityNode", cn);
+		 d3.select("svg > path").datum(null);
+	     }
+	 };
      }
 
      disableConnect() {
@@ -675,6 +693,8 @@
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
 	   .on("click", null);
 	 d3.select("svg").selectAll("svg > g.diagram > g.ConnectivityNodes > g.ConnectivityNode")
+	   .on("click", null);
+	 d3.select("svg").selectAll("svg > g.diagram > g.edges > g")
 	   .on("click", null);
 	 d3.select("svg").on("mousemove", null);
 	 d3.select("svg > path").attr("d", null);
