@@ -72,7 +72,7 @@
      const SWITCH_HEIGHT = 10; // height of switch elements
      const SWITCH_WIDTH = 10; // width of switch elements
      // generator-related defs
-     const GEN_HEIGHT = 50;    // height of generator elements
+     const GEN_HEIGHT = 50;  // height of generator elements
      // trafo-related defs
      const TRAFO_HEIGHT = 50;  // height of transformer elements
      const TRAFO_RADIUS = 15;
@@ -1019,9 +1019,9 @@
 	 let genEnter = self.createSelection(type, allGens)[1];
 	 
 	 genEnter.append("circle")
-		 .attr("r", 25)
+		 .attr("r", GEN_HEIGHT/2)
 		 .attr("cx", 0) 
-		 .attr("cy", -25)
+		 .attr("cy", 0)
 		 .attr("fill", "white")
 		 .attr("stroke", "blue")
 		 .attr("stroke-width", 4);
@@ -1030,7 +1030,7 @@
 		 .style("text-anchor", "middle")
 		 .attr("font-size", 8)
 		 .attr("x", 0)
-		 .attr("y", -60)
+		 .attr("y", (GEN_HEIGHT/2)-60)
 		 .text(function(d) {
 		     let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
 		     if (typeof(name) !== "undefined") {
@@ -1042,7 +1042,7 @@
 	         .style("text-anchor", "middle")
 	         .attr("font-size", 64)
 	         .attr("x", 0)
-	         .attr("y", -4)
+	         .attr("y", (GEN_HEIGHT/2)-4)
 	         .text("~");
 	 return genEnter;
      }
@@ -1134,7 +1134,7 @@
 		 break;
 	     case "cim:EnergySource":
 	     case "cim:SynchronousMachine":
-		 term2_cy = GEN_HEIGHT;
+		 term1_cy = (GEN_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
 		 break;
 	     case "cim:PowerTransformer":
 		 term1_cy = ((TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
@@ -1705,17 +1705,13 @@
 		      .y(function(d) { return d.y; })
 		      .curve(d3.curveStepBefore); 
 	 if (arguments.length === 3) {
-	     links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g"); /*.filter(function(d) {
-		 return (typeof(d.p) === "undefined"); 
-	     });*/
+	     links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g"); 
 	 }
 
 	 links.select("path")
 	      .attr("d", function(d) {
 		  let cnXY = {x: d.source.x, y: d.source.y};
 		  let terminalXY = {x: d.target.x, y: d.target.y};
-		  //if ((xScale(d.source.x) >= 0 && xScale(d.source.x) <= svgWidth) || (xScale(d.target.x) >= 0 && xScale(d.target.x) <= svgWidth)) {
-		  //if ((yScale(d.source.y) >= 0 && yScale(d.source.y) <= svgHeight) || (yScale(d.target.y) >= 0 && yScale(d.target.y) <= svgHeight)) {
 		  if (d.target.rotation > 0) {
 		      terminalXY = self.rotateTerm(d.target);
 		  }	
@@ -1728,8 +1724,6 @@
 		      
 		  cnXY.x = cnXY.x + d.p[0];
 		  cnXY.y = cnXY.y + d.p[1];
-		  //} 
-		  //}
 		  let lineData = [cnXY, terminalXY];
 		  return line(lineData);
 	      });	     
