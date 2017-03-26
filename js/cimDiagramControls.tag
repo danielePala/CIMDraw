@@ -288,7 +288,7 @@
 	 self.updateSelected();
      });
      
-     // listen to 'render' event
+     // listen to 'render' event from parent
      self.parent.on("render", function() {
 	 // setup quadtree
 	 let points = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
@@ -355,7 +355,12 @@
 	 path.attr("d", function() {
 	     return line(lineData);
 	 });
-     });     
+     });
+
+     // listen to 'createEdges' event from parent
+     self.parent.on("createEdges", function(edgesEnter) {
+	 edgesEnter.on("contextmenu", d3.contextMenu(edgesMenu));
+     });
 
      // modality for drag+zoom
      d3.select("body")

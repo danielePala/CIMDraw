@@ -670,21 +670,24 @@
      }
 
      createEdges(edges) {
-	 d3.select("svg").select("g > g.edges")
-	   .selectAll("g.edge")
-	   .data(edges, function(d) {
-	       return d.source.attributes[0].value+d.target.attributes[0].value;
-	   })
-	   .enter()
-	   .append("g")
-	   .attr("class", "edge")
-	   .attr("id", function(d) {
-	       return d.source.attributes[0].value+d.target.attributes[0].value;
-	   })
-	   .append("path")
-	   .attr("fill", "none")
-	   .attr("stroke", "black")
-	   .attr("stroke-width", 1);
+	 let edgesEnter = d3
+	     .select("svg")
+	     .select("g > g.edges")
+	     .selectAll("g.edge")
+	     .data(edges, function(d) {
+		 return d.source.attributes[0].value+d.target.attributes[0].value;
+	     })
+	     .enter()
+	     .append("g")
+	     .attr("class", "edge")
+	     .attr("id", function(d) {
+		 return d.source.attributes[0].value+d.target.attributes[0].value;
+	     })
+	     .append("path")
+	     .attr("fill", "none")
+	     .attr("stroke", "black")
+	     .attr("stroke-width", 1);
+	 self.trigger("createEdges", edgesEnter);
      }
 
      // Create measurements associated with a selection of terminals or power system resources.
@@ -1699,7 +1702,8 @@
 	 
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
-		      .y(function(d) { return d.y; }); 
+		      .y(function(d) { return d.y; })
+		      .curve(d3.curveStepBefore); 
 	 if (arguments.length === 3) {
 	     links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g"); /*.filter(function(d) {
 		 return (typeof(d.p) === "undefined"); 
