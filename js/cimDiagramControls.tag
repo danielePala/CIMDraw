@@ -615,7 +615,7 @@
 	       let line = d3.line()
 		            .x(function(d) { return d.x; })
 		            .y(function(d) { return d.y; });
-	       // handle rotation of terminals
+	       // handle rotation of terminal
 	       let termXY = {x: d.x, y: d.y};
 	       if (d.rotation > 0) {
 		   termXY = self.parent.rotateTerm(d);
@@ -634,10 +634,15 @@
 		   d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
 		   
 		   if (typeof(cn) === "undefined") {
+		       // handle rotation of the origin terminal
+		       let term1XY = {x: termToChange.x, y: termToChange.y};
+		       if (termToChange.rotation > 0) {
+			   term1XY = self.parent.rotateTerm(termToChange);
+		       }
 		       cn = opts.model.cimObject("cim:ConnectivityNode");
 		       opts.model.setAttribute(cn, "cim:IdentifiedObject.name", "new1");
-		       cn.x = (termToChange.x + d.x)/2;
-		       cn.y = (termToChange.y + d.y)/2;
+		       cn.x = (term1XY.x + termXY.x)/2;
+		       cn.y = (term1XY.y + termXY.y)/2;
 		       opts.model.addToActiveDiagram(cn, [{x: 0, y: 0, seq: 1}]);
 		   }
 		   d3.select("svg").on("mousemove", null);
