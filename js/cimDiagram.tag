@@ -73,6 +73,9 @@
      const SWITCH_WIDTH = 10; // width of switch elements
      // generator-related defs
      const GEN_HEIGHT = 50;  // height of generator elements
+     // load-related defs
+     const LOAD_HEIGHT = 20;  // height of load elements
+     const LOAD_WIDTH = 30;  // width of load elements
      // trafo-related defs
      const TRAFO_HEIGHT = 50;  // height of transformer elements
      const TRAFO_RADIUS = 15;
@@ -1051,12 +1054,20 @@
      drawLoads(allLoads, type) {
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
-		      .y(function(d) { return d.y; });
+		      .y(function(d) { return d.y; })
+		      .curve(d3.curveLinearClosed);
 	 let loadEnter = self.createSelection(type, allLoads)[1];
+	 let lx1 = (LOAD_WIDTH/2) * (-1);
+	 let lx2 = (LOAD_WIDTH/2);
+	 let ly1 = (LOAD_HEIGHT/2) * (-1);
+	 let ly2 = (LOAD_HEIGHT/2);
 
 	 loadEnter.append("path")
 		  .attr("d", function(d) {
-		      return line([{x: -15, y:0, seq:1}, {x:15, y:0, seq:2}, {x:0, y:20, seq:3}, {x: -15, y:0, seq:4}]);
+		      return line([
+			  {x: lx1, y:ly1, seq:1},
+			  {x: lx2, y:ly1, seq:2},
+			  {x: (lx2+lx1)/2, y:ly2, seq:3}]);
 		  })
 		  .attr("fill", "white")
 		  .attr("stroke", "black")
@@ -1066,7 +1077,7 @@
 		  .style("text-anchor", "middle")
 		  .attr("font-size", 8)
 		  .attr("x", 0) 
-		  .attr("y", 30)
+		  .attr("y", ly2 + 10)
 		  .text(function(d) {
 		      let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
 		      if (typeof(name) !== "undefined") {
@@ -1135,6 +1146,11 @@
 	     case "cim:EnergySource":
 	     case "cim:SynchronousMachine":
 		 term1_cy = (GEN_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
+		 break;
+	     case "cim:EnergyConsumer":
+	     case "cim:ConformLoad":
+	     case "cim:NonConformLoad":
+		 term1_cy = ((LOAD_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
 		 break;
 	     case "cim:PowerTransformer":
 		 term1_cy = ((TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
@@ -1339,8 +1355,8 @@
 		     seqNum = parseInt(seqNum.innerHTML);
 		 }
 		 lineData.push({
-		     x: parseInt(self.model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML),
-		     y: parseInt(self.model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML),
+		     x: parseFloat(self.model.getAttribute(point, "cim:DiagramObjectPoint.xPosition").innerHTML),
+		     y: parseFloat(self.model.getAttribute(point, "cim:DiagramObjectPoint.yPosition").innerHTML),
 		     seq: seqNum
 		 });
 	     }
