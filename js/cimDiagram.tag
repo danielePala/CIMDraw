@@ -1410,30 +1410,49 @@
 	 
 	 cnUpdate.select("path").attr("d", function(d) {
 	     let lineData = d3.select(this.parentNode).data()[0].lineData
-	     if (lineData.length === 1) {
+	     /*if (lineData.length === 1) {
 		 let cx = lineData[0].x;
 		 let cy = lineData[0].y;
+
+		 if (self.model.getBusbar(d) === null) {
+		     let cnTerms = opts.model.getTargets(
+			 [d],
+			 "ConnectivityNode.Terminals");
+		     if (cnTerms.length === 2) {
+			 return line(lineData);
+		     }    
+		 }
+
 		 lineData = [{x:cx-1, y:cy-1, seq:1},
 			     {x:cx+1, y:cy-1, seq:2},
 			     {x:cx+1, y:cy+1, seq:3},
 			     {x:cx-1, y:cy+1, seq:4},
 			     {x:cx-1, y:cy-1, seq:5}];
-	     }
+	     }*/
 	     return line(lineData);
 	 });
 	 
 	 cnEnter.append("path")
 		.attr("d", function(d) {
 		    let lineData = d3.select(this.parentNode).data()[0].lineData
-		    if (lineData.length === 1) {
+		    /*if (lineData.length === 1) {			
 			let cx = lineData[0].x;
 			let cy = lineData[0].y;
+			if (self.model.getBusbar(d) === null) {
+			    let cnTerms = opts.model.getTargets(
+				[d],
+				"ConnectivityNode.Terminals");
+			    if (cnTerms.length < 2) {
+				return line(lineData);
+			    }    
+			}
+			
 			lineData = [{x:cx-1, y:cy-1, seq:1},
 				    {x:cx+1, y:cy-1, seq:2},
 				    {x:cx+1, y:cy+1, seq:3},
 				    {x:cx-1, y:cy+1, seq:4},
 				    {x:cx-1, y:cy-1, seq:5}];
-		    }
+		    }*/
 		    return line(lineData);
 		})
 		.attr("stroke", "black")
