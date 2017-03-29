@@ -112,22 +112,7 @@
 	 {
 	     title: 'Delete',
 	     action: function(elm, d, i) {
-		 if (selected.indexOf(elm) === -1) {
-		     self.deselectAll();
-		     selected.push(elm);
-		 }
-		 quadtree.removeAll(selected); // update quadtree
-		 $(selected).filter('[data-toggle="popover"]').popover("destroy");
-		 let selection = d3.selectAll(selected);
-		 let terminals = opts.model.getTerminals(selection.data());
-		 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
-		     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
-		 }).remove();
-		 selection.remove();
-		 // delete from model
-		 for (let datum of selection.data()) {
-		     opts.model.deleteObject(datum);
-		 }
+		 self.deleteObject(elm)
 	     }
 	 },
 	 {
@@ -170,6 +155,18 @@
 	 {
 	     title: 'Delete',
 	     action: function(elm, d, i) {
+		 let cn = d.source;
+		 if (opts.model.getBusbar(cn) === null) {
+		     let cnTerms = opts.model.getTargets(
+			 [cn],
+			 "ConnectivityNode.Terminals");
+		     if (cnTerms.length === 2) {
+			 let cnUUID = d.source.attributes.getNamedItem("rdf:ID").value
+			 let cnElem = d3.select("svg").selectAll("g#"+cnUUID).node();
+			 self.deleteObject(cnElem);
+			 return;
+		     }
+		 }
 		 opts.model.removeLink(d.source, "cim:ConnectivityNode.Terminals", d.target);
 	     }
 	 }
@@ -975,6 +972,25 @@
 	     d3.contextMenu(terminalsMenu).bind(this)(d, i, nodes);
 	     d3.event.stopPropagation();
  	 });
+     }
+
+     deleteObject(elm) {
+	 if (selected.indexOf(elm) === -1) {
+	     self.deselectAll();
+	     selected.push(elm);
+	 }
+	 quadtree.removeAll(selected); // update quadtree
+	 $(selected).filter('[data-toggle="popover"]').popover("destroy");
+	 let selection = d3.selectAll(selected);
+	 let terminals = opts.model.getTerminals(selection.data());
+	 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+	     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
+	 }).remove();
+	 selection.remove();
+	 // delete from model
+	 for (let datum of selection.data()) {
+	     opts.model.deleteObject(datum);
+	 }
      }
     </script>
 
