@@ -1729,12 +1729,6 @@
 
      /** Update the given links. If links is absent, update all links */     
      updateEdges(xoffset, yoffset, svgZoom, links) {
-	 // test
-	 let svgWidth = parseInt(d3.select("svg").style("width"));
-	 let svgHeight = parseInt(d3.select("svg").style("height"));
-	 let xScale = d3.scaleLinear().domain([-xoffset/svgZoom, (svgWidth-xoffset)/svgZoom]).range([0, svgWidth]);
-	 let yScale = d3.scaleLinear().domain([-yoffset/svgZoom, (svgHeight-yoffset)/svgZoom]).range([0, svgHeight]);
-	 
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; })
@@ -1761,7 +1755,24 @@
 		  cnXY.y = cnXY.y + d.p[1];
 		  let lineData = [cnXY, terminalXY];
 		  return line(lineData);
-	      });	     
+	      });
+	 // test
+	 /*links.each(function(d) {
+	     let pathDs = [];
+	     let cn = d.source;
+	     let cnLinks = d3
+		 .select("svg")
+		 .selectAll("svg > g.diagram > g.edges > g")
+		 .filter(d => d.source === cn);
+	     let paths = cnLinks.selectAll("path");
+	     paths.each(function(d) {
+		 pathDs.push(d3.select(this).attr("d"));
+	     });
+	     console.log(pathDs);
+	     for (let pathD of pathDs) {
+		 console.log(pathD.substring(1).split("L"));
+	     }
+	 })*/
      }
 
      rotateTerm(term) {

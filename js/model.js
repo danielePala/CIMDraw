@@ -452,6 +452,17 @@ function cimModel() {
 	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 	},
 
+	saveAsCGMES() {
+	    if (typeof(data.all) !== "undefined") {
+		let all = data.all.children[0].children;
+		let allEQ = [].filter.call(all, function(el) {
+		    let eqObj = model.getSchemaObject(el.localName);
+		    return (typeof(eqObj) !== "undefined"); 
+		});
+		console.log(allEQ);
+	    }
+	},
+
 	// Serialize the current diagram. Nodes are cloned, otherwise they would
 	// be removed from the original document.
 	export() {

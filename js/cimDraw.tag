@@ -51,6 +51,7 @@
 			<ul class="dropdown-menu">
 			    <li><a href="">Open</a></li>
 			    <li><a id="cim-save" download="file.xml">Save as...</a></li>
+			    <li><a id="cgmes-save" download="file.xml">Save as CGMES (NOT WORKING YET)...</a></li>
 			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
 			</ul>
 		    </li>
@@ -288,6 +289,9 @@
 			 window.location.href = objectURL;
 		     });
 		 }
+	     });
+	     $("#cgmes-save").on("click", function() {
+		 let out = self.cimModel.saveAsCGMES();
 	     });
 	     // load diagram list
 	     $(".selectpicker").selectpicker({container: "body"});
