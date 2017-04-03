@@ -207,6 +207,10 @@
 		 let bvEnter = self.elements(cimBases, "BaseVoltage", "Base Voltages", [object]);
 		 self.createDeleteMenu(bvEnter);
 		 break;
+	     case "cim:GeographicalRegion":
+		 let geoEnter = self.elements(cimContainers, "GeographicalRegion", "Geographical Regions", [object]);
+		 self.createDeleteMenu(geoEnter);
+		 break;
 	     case "cim:Substation":
 		 let subEnter = self.elements(cimContainers, "Substation", "Substations", [object]);
 		 self.createDeleteMenu(subEnter);
@@ -485,8 +489,9 @@
 	 self.elements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
 
 	 // add buttons
-	 self.createAddButton(cimContainers, "BaseVoltage");
+	 self.createAddButton(cimBases, "BaseVoltage");
 	 self.createAddButton(cimContainers, "Substation");
+	 self.createAddButton(cimContainers, "GeographicalRegion");
 	 self.createAddButton(cimContainers, "Line");
      }
 
