@@ -212,8 +212,7 @@
 		 self.createDeleteMenu(geoEnter);
 		 break;
 	     case "cim:Substation":
-		 let subEnter = self.elements(cimContainers, "Substation", "Substations", [object]);
-		 self.createDeleteMenu(subEnter);
+		 self.substations(cimContainers, [object]);
 		 break;
 	     case "cim:Line":
 		 let lineEnter = self.elements(cimContainers, "Line", "Lines", [object]);
@@ -434,53 +433,23 @@
 	     let subGeos = self.model.getTargets(
 		 [d],
 		 "GeographicalRegion.Regions");
-	     if (subGeos.length > 0) {
-		 self.elements(
-		     d3.select(this),
-		     d.attributes.getNamedItem("rdf:ID").value + "SubGeographicalRegion",
-		     "Sub-Geographical Regions",
-		     subGeos);
-	     }
+	     self.elements(
+		 d3.select(this),
+		 d.attributes.getNamedItem("rdf:ID").value + "SubGeographicalRegion",
+		 "Sub-Geographical Regions",
+		 subGeos);
 	 });
-	 let subEnter = self.elements(cimContainers, "Substation", "Substations", allSubstations);
-	 self.createDeleteMenu(subEnter);
-	 let vlEnter = d3.selectAll(null);
-	 subEnter.each(function(d, i) {
-	     let vlevs = self.model.getTargets(
-		 [d],
-		 "Substation.VoltageLevels");
-	     if (vlevs.length > 0) {
-		 vlEnter = self.elements(
-		     d3.select(this),
-		     d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
-		     "Voltage Levels",
-		     vlevs);
-		 vlEnter.each(function(d, i) {
-		     let bays = self.model.getTargets(
-			 [d],
-			 "VoltageLevel.Bays");
-		     if (bays.length > 0) {
-			 self.elements(
-			     d3.select(this),
-			     d.attributes.getNamedItem("rdf:ID").value + "Bay",
-			     "Bays",
-			     bays);
-		     }
-		 });
-	     }
-	 });
+	 self.substations(cimContainers, allSubstations);
 	 let trafoEnter = self.elements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 trafoEnter.each(function(d, i) {
 	     let trafoEnds = self.model.getTargets(
 		 [d],
 		 "PowerTransformer.PowerTransformerEnd");
-	     if (trafoEnds.length > 0) {
-		 self.elements(
-		     d3.select(this),
-		     d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
-		     "Transformer Windings",
-		     trafoEnds);
-	     }
+	     self.elements(
+		 d3.select(this),
+		 d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
+		 "Transformer Windings",
+		 trafoEnds);
 	 });
 	 let lineEnter = self.elements(cimContainers, "Line", "Lines", allLines);
 	 self.createDeleteMenu(lineEnter);
@@ -493,6 +462,34 @@
 	 self.createAddButton(cimContainers, "Substation");
 	 self.createAddButton(cimContainers, "GeographicalRegion");
 	 self.createAddButton(cimContainers, "Line");
+     }
+
+     substations(tab, allSubstations) {
+	 let subEnter = self.elements(tab, "Substation", "Substations", allSubstations);
+	 let vlEnter = d3.selectAll(null);
+	 subEnter.each(function(d, i) {
+	     let vlevs = self.model.getTargets(
+		 [d],
+		 "Substation.VoltageLevels");
+	     vlEnter = self.elements(
+		 d3.select(this),
+		 d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
+		 "Voltage Levels",
+		 vlevs);
+	     self.createAddButton(d3.select(this), d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel");
+	     vlEnter.each(function(d, i) {
+		 let bays = self.model.getTargets(
+		     [d],
+		     "VoltageLevel.Bays");
+		 self.elements(
+		     d3.select(this),
+		     d.attributes.getNamedItem("rdf:ID").value + "Bay",
+		     "Bays",
+		     bays);
+		 self.createAddButton(d3.select(this), d.attributes.getNamedItem("rdf:ID").value + "Bay");
+	     });
+	 });
+	 self.createDeleteMenu(subEnter);
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
@@ -527,7 +524,7 @@
      createAddButton(cimContainer, name) {
 	 let elementsTopContainer = cimContainer.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
-	 let addBtn = elements.select("button.cim-add-btn");
+	 let addBtn = elementsTopContainer.select("ul#" + name + "sList > button.cim-add-btn");
 	 if (addBtn.empty() === true) {
 	     addBtn = elements
 		 .insert("li", ":first-child")
@@ -583,53 +580,54 @@
 		.append("li")
 		.attr("class", name + " CIM-object");
 	 let cimModel = this.model;
-	 elementTopContainer.append("a")
-			    .attr("class", "btn btn-primary btn-xs")
-			    .attr("role", "button")
-			    .attr("data-toggle", "collapse")
-			    .attr("href", function(d) {
-				return "#" + d.attributes.getNamedItem("rdf:ID").value;
-			    })
-	    		    .on("click", function (d) {
-				// check if we are changing some link
-				let linkToChange = d3.select("#cimTarget");
-				if (linkToChange.empty() === false) {
-				    let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0]; 
-				    let targetLink = linkToChange.data()[0];
-				    let targetLinkName = "cim:" + targetLink.attributes[0].value.substring(1);
-				    cimModel.setLink(target, targetLinkName, d);
-				    self.scrollAndRouteTo("#" + target.attributes.getNamedItem("rdf:ID").value);
-				    // we need to disable the collapse logic
-				    $(this).parent().find("ul").on("show.bs.collapse hide.bs.collapse", function(e) {
-					e.preventDefault();
-					$(this).parent().find("ul").off("show.bs.collapse hide.bs.collapse");
-				    });
-				} else {
-				    // if necessary, generate attributes and links
-				    let elementEnter = d3.select(this.parentNode).select("ul");
-				    if (elementEnter.selectAll("li.attribute").size() === 0) {
-					self.generateAttrsAndLinks(elementEnter);
-				    }
-				    // change address to 'this object'
-				    let hashComponents = window.location.hash.substring(1).split("/");
-				    let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-				    if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
-					route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
-				    }
-				}
-			    })
-			    .html(function (d) {
-				let name = cimModel.getAttribute(d, "cim:IdentifiedObject.name");
-				if (typeof(name) !== "undefined") {
-				    return name.innerHTML;
-				}
-				return "unnamed";
-			    })
-			    .call(d3.drag().on("end", function(d) {
-			        cimModel.trigger("dragend", d);
-			    }));
+	 elementTopContainer
+	     .append("a")
+	     .attr("class", "btn btn-primary btn-xs")
+	     .attr("role", "button")
+	     .attr("data-toggle", "collapse")
+	     .attr("href", function(d) {
+		 return "#" + d.attributes.getNamedItem("rdf:ID").value;
+	     })
+	     .on("click", function (d) {
+		 // check if we are changing some link
+		 let linkToChange = d3.select("#cimTarget");
+		 if (linkToChange.empty() === false) {
+		     let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0]; 
+		     let targetLink = linkToChange.data()[0];
+		     let targetLinkName = "cim:" + targetLink.attributes[0].value.substring(1);
+		     cimModel.setLink(target, targetLinkName, d);
+		     self.scrollAndRouteTo("#" + target.attributes.getNamedItem("rdf:ID").value);
+		     // we need to disable the collapse logic
+		     $(this).parent().find("ul").on("show.bs.collapse hide.bs.collapse", function(e) {
+			 e.preventDefault();
+			 $(this).parent().find("ul").off("show.bs.collapse hide.bs.collapse");
+		     });
+		 } else {
+		     // if necessary, generate attributes and links
+		     let elementEnter = d3.select(this.parentNode).select("ul");
+		     if (elementEnter.selectAll("li.attribute").size() === 0) {
+			 self.generateAttrsAndLinks(elementEnter);
+		     }
+		     // change address to 'this object'
+		     let hashComponents = window.location.hash.substring(1).split("/");
+		     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+		     if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
+			 route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
+		     }
+		 }
+	     })
+	     .html(function (d) {
+		 let name = cimModel.getAttribute(d, "cim:IdentifiedObject.name");
+		 if (typeof(name) !== "undefined") {
+		     return name.innerHTML;
+		 }
+		 return "unnamed";
+	     })
+	     .call(d3.drag().on("end", function(d) {
+		 cimModel.trigger("dragend", d);
+	     }));
 	 let elementEnter = elementTopContainer
-		.append("ul")
+	     .append("ul")
 		.attr("id", function(d) {
 		    return d.attributes.getNamedItem("rdf:ID").value;
 		})
