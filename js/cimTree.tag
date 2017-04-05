@@ -134,24 +134,15 @@
 
      // listen to 'addToActiveDiagram' event from model
      self.model.on("addToActiveDiagram", function(object) {
-	 if ($("#showAllObjects").prop('checked') === false) {
-	     self.addNewObject(object);
-	 }
+	 self.addNewObject(object);
      });
      
-     // listen to 'createObject' event from model
-     self.model.on("createObject", function(object) {
-	 if ($("#showAllObjects").prop('checked') === true) {
-	     self.addNewObject(object);
-	 }
-     });
-
      addNewObject(object) {
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
 	 let cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
-	 let generators = undefined;
+	 let equivalents = undefined;
 	 let rotMac = undefined;
 	 let loads = undefined;
 	 switch (object.nodeName) {
@@ -174,8 +165,8 @@
 		 self.elements(cimNetwork, "Junction", "Junctions", [object]);
 		 break;
 	     case "cim:EnergySource":
-		 generators = self.createTopContainer(cimNetwork, "Generator", "Generators", [object]);
-		 self.elements(generators, "EnergySource", "Energy Sources", [object]);
+		 equivalents = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", [object]);
+		 self.elements(equivalents, "EnergySource", "Energy Sources", [object]);
 		 break;
 	     case "cim:SynchronousMachine":
 		 rotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "RotatingMachines", [object]);
@@ -208,11 +199,28 @@
 		 self.createDeleteMenu(bvEnter);
 		 break;
 	     case "cim:GeographicalRegion":
-		 let geoEnter = self.elements(cimContainers, "GeographicalRegion", "Geographical Regions", [object]);
-		 self.createDeleteMenu(geoEnter);
+		 self.geoRegions(cimContainers, [object]);
 		 break;
+	     case "cim:SubGeographicalRegion":
+		 let region = self.model.getTargets([object], "SubGeographicalRegion.Region");
+		 let regionUUID = region[0].attributes.getNamedItem("rdf:ID").value;
+		 let regionG = cimContainers.selectAll("ul#" + regionUUID);
+		 self.subGeoRegions(regionG, [object]);
+		 break;		 
 	     case "cim:Substation":
 		 self.substations(cimContainers, [object]);
+		 break;
+	     case "cim:VoltageLevel":
+		 let vlSub = self.model.getTargets([object], "VoltageLevel.Substation");
+		 let subUUID = vlSub[0].attributes.getNamedItem("rdf:ID").value;
+		 let subG = cimContainers.selectAll("ul#" + subUUID);
+		 self.voltageLevels(subG, [object]);
+		 break;
+	     case "cim:Bay":
+		 let bayVl = self.model.getTargets([object], "Bay.VoltageLevel");
+		 let vlUUID = bayVl[0].attributes.getNamedItem("rdf:ID").value;
+		 let vlG = cimContainers.selectAll("ul#" + vlUUID);
+		 self.bays(vlG, [object]);
 		 break;
 	     case "cim:Line":
 		 let lineEnter = self.elements(cimContainers, "Line", "Lines", [object]);
@@ -364,6 +372,8 @@
 	 ]);
 	 yield "[" + Date.now() + "] TREE: extracted equipments";
 	 // get additional objects
+	 allSubGeoRegions = getObjects(["cim:SubGeographicalRegion"])["cim:SubGeographicalRegion"];
+	 allGeoRegions = getObjects(["cim:GeographicalRegion"])["cim:GeographicalRegion"];
 	 if (showAllObjects === false) {
 	     allContainers = self.model.getLinkedObjects(
 		 contNames,
@@ -374,18 +384,20 @@
 	     allGeneratingUnits = self.model.getLinkedObjects(
 		 genNames,
 		 "GeneratingUnit.RotatingMachine");
-	     allSubGeoRegions = self.model.getTargets(
-		 allContainers["cim:Substation"],
-		 "Substation.Region");
-	     allGeoRegions = self.model.getTargets(
-		 allSubGeoRegions,
-		 "SubGeographicalRegion.Region");
+	     allSubGeoRegions = allSubGeoRegions.concat(
+		 self.model.getTargets(
+		     allContainers["cim:Substation"],
+		     "Substation.Region"));
+	     allGeoRegions = allGeoRegions.concat(
+		 self.model.getTargets(
+		     allSubGeoRegions,
+		     "SubGeographicalRegion.Region"));
+	     allSubGeoRegions = [...new Set(allSubGeoRegions)];
+	     allGeoRegions = [...new Set(allGeoRegions)];
 	 } else {
 	     allContainers = getObjects(contNames);
 	     allMeasurements = getObjects(measNames);
 	     allGeneratingUnits = getObjects(genNames);
-	     allSubGeoRegions = getObjects(["cim:SubGeographicalRegion"])["cim:SubGeographicalRegion"];
-	     allGeoRegions = getObjects(["cim:GeographicalRegion"])["cim:GeographicalRegion"];
 	 }
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
 	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 
@@ -418,8 +430,8 @@
 	 self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
 	 self.elements(cimNetwork, "Jumper", "Jumpers", allJumpers);
 	 self.elements(cimNetwork, "Junction", "Junctions", allJunctions);
-	 let allGenerators = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", allEnergySources);
-	 self.elements(allGenerators, "EnergySource", "Energy Sources", allEquipments["cim:EnergySource"]);
+	 let allEquivalents = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", allEnergySources);
+	 self.elements(allEquivalents, "EnergySource", "Energy Sources", allEquipments["cim:EnergySource"]);
 	 let allRotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "Rotating Machines", allRotatingMachines);
 	 self.elements(allRotMac, "SynchronousMachine", "Synchronous Machines", allEquipments["cim:SynchronousMachine"]);
 	 self.elements(allRotMac, "AsynchronousMachine", "Asynchronous Machines", allEquipments["cim:AsynchronousMachine"]);
@@ -428,17 +440,8 @@
 	 self.elements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
 	 self.elements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
 	 self.elements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
-	 let geoEnter = self.elements(cimContainers, "GeographicalRegion", "Geographical Regions", allGeoRegions);
-	 geoEnter.each(function(d, i) {
-	     let subGeos = self.model.getTargets(
-		 [d],
-		 "GeographicalRegion.Regions");
-	     self.elements(
-		 d3.select(this),
-		 d.attributes.getNamedItem("rdf:ID").value + "SubGeographicalRegion",
-		 "Sub-Geographical Regions",
-		 subGeos);
-	 });
+
+	 self.geoRegions(cimContainers, allGeoRegions);
 	 self.substations(cimContainers, allSubstations);
 	 let trafoEnter = self.elements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
 	 trafoEnter.each(function(d, i) {
@@ -464,32 +467,80 @@
 	 self.createAddButton(cimContainers, "Line");
      }
 
+     geoRegions(tab, allGeoRegions) {
+	 let geoEnter = self.elements(tab, "GeographicalRegion", "Geographical Regions", allGeoRegions);
+	 geoEnter.each(function(d, i) {
+	     let subGeos = self.model.getTargets(
+		 [d],
+		 "GeographicalRegion.Regions");
+	     self.subGeoRegions(
+		 d3.select(this),
+		 subGeos);
+	     self.subAddButton(
+		 d3.select(this),
+		 "SubGeographicalRegion",
+		 "cim:SubGeographicalRegion.Region");
+	 });
+	 self.createDeleteMenu(geoEnter);
+     }
+
+     subGeoRegions(geoG, subGeos) {
+	 let geo = geoG.data()[0];
+	 let subGeoEnter = self.elements(
+	     geoG,
+	     geo.attributes.getNamedItem("rdf:ID").value + "SubGeographicalRegion",
+	     "Sub-Geographical Regions",
+	     subGeos);
+	 self.createDeleteMenu(subGeoEnter);	 
+     }
+
      substations(tab, allSubstations) {
 	 let subEnter = self.elements(tab, "Substation", "Substations", allSubstations);
-	 let vlEnter = d3.selectAll(null);
 	 subEnter.each(function(d, i) {
 	     let vlevs = self.model.getTargets(
 		 [d],
 		 "Substation.VoltageLevels");
-	     vlEnter = self.elements(
+	     self.voltageLevels(
 		 d3.select(this),
-		 d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
-		 "Voltage Levels",
 		 vlevs);
-	     self.createAddButton(d3.select(this), d.attributes.getNamedItem("rdf:ID").value + "VoltageLevel");
-	     vlEnter.each(function(d, i) {
-		 let bays = self.model.getTargets(
-		     [d],
-		     "VoltageLevel.Bays");
-		 self.elements(
-		     d3.select(this),
-		     d.attributes.getNamedItem("rdf:ID").value + "Bay",
-		     "Bays",
-		     bays);
-		 self.createAddButton(d3.select(this), d.attributes.getNamedItem("rdf:ID").value + "Bay");
-	     });
+	     self.subAddButton(
+		 d3.select(this),
+		 "VoltageLevel",
+		 "cim:VoltageLevel.Substation");
 	 });
 	 self.createDeleteMenu(subEnter);
+     }
+
+     voltageLevels(subG, vlevs) {
+	 let sub = subG.data()[0];
+	 let vlEnter = self.elements(
+	     subG,
+	     sub.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
+	     "Voltage Levels",
+	     vlevs);
+	 vlEnter.each(function(d, i) {
+	     let bays = self.model.getTargets(
+		 [d],
+		 "VoltageLevel.Bays");
+	     self.bays(
+		 d3.select(this),
+		 bays);
+	     self.subAddButton(
+		 d3.select(this),
+		 "Bay",
+		 "cim:Bay.VoltageLevel");
+	 });
+	 self.createDeleteMenu(vlEnter);
+     }
+
+     bays(vlG, bays) {
+	 let vl = vlG.data()[0];
+	 let bayEnter = self.elements(
+	     vlG,
+	     vl.attributes.getNamedItem("rdf:ID").value + "Bay",
+	     "Bays",
+	     bays);
+	 self.createDeleteMenu(bayEnter);
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
@@ -498,7 +549,7 @@
 	 if (elementsTopContainer.empty()) {
 	     elementsTopContainer = cimNetwork
 		.append("li")
-		.attr("class", name + "s" + " list-group-item");
+		.attr("class", name + "s" + " list-group-item cim-parent-container");
 	     elementsTopContainer.append("a")
 				 .attr("class", "btn btn-primary btn-xs")
 				 .attr("role", "button")
@@ -520,7 +571,7 @@
 	 return elements;
      }
 
-     // add button for containers
+     // add button for non-graphical onbjects
      createAddButton(cimContainer, name) {
 	 let elementsTopContainer = cimContainer.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
@@ -539,9 +590,30 @@
 	 }
      }
 
-     // delete menu for containers
+     subAddButton(cimContainer, type, link) {
+	 let parent = cimContainer.data()[0];
+	 let name = parent.attributes.getNamedItem("rdf:ID").value + type;
+	 let elementsTopContainer = cimContainer.select("li." + name + "s");
+	 let elements = elementsTopContainer.select("ul#" + name + "sList");
+	 let addBtn = elementsTopContainer.select("ul#" + name + "sList > button.cim-add-btn");
+	 if (addBtn.empty() === true) {
+	     addBtn = elements
+		 .insert("li", ":first-child")
+		 .append("button")
+		 .attr("class", "btn btn-default btn-xs cim-add-btn")
+		 .attr("type", "submit");
+	     addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
+	     addBtn.on("click.add", function() {
+		 let newObject = self.model.createObject("cim:" + type);
+		 self.model.setLink(newObject, link, parent);
+		 self.model.addToActiveDiagram(newObject, []);
+	     });
+	 }
+     }
+
+     // delete menu for non graphic objects
      createDeleteMenu(selection) {
-	 let btnSel = selection.select(function() { return this.parentNode; }).selectAll("a");
+	 let btnSel = selection.selectAll(function() { return this.parentNode.childNodes; }).filter("a");
 	 btnSel.on("contextmenu", d3.contextMenu(menu));
      }
 
@@ -905,6 +977,15 @@
 	     // update element count
 	     $(cimObjectContainer)
 		 .parents("li.list-group-item")
+		 .first()
+		 .find(">span")
+		 .each(function() {
+		     let elementCount = parseInt($(this).html());
+		     elementCount = elementCount - 1;
+		     $(this).html(elementCount);
+		 });
+	     $(cimObjectContainer)
+		 .parents("li.cim-parent-container")
 		 .find(">span")
 		 .each(function() {
 		     let elementCount = parseInt($(this).html());

@@ -65,9 +65,11 @@
 			    <!-- junctions are still not implemented properly for now
 			    <!--<li class="dropdown-header">Connectors</li>-->
 			    <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
-			    <li class="dropdown-header">Generators</li>
+			    <li class="dropdown-header">Equivalents</li>
 			    <li id="cim:EnergySource" onclick={enableAdd}><a>Energy Source</a></li>
+			    <li class="dropdown-header">Rotating Machines</li>
 			    <li id="cim:SynchronousMachine" onclick={enableAdd}><a>Synchronous Machine</a></li>
+			    <li id="cim:AsynchronousMachine" onclick={enableAdd}><a>Asynchronous Machine</a></li>
 			    <li class="dropdown-header">Loads</li>
 			    <li id="cim:EnergyConsumer" onclick={enableAdd}><a>Energy Consumer</a></li>
 			    <li id="cim:ConformLoad" onclick={enableAdd}><a>Conform Load</a></li>
@@ -257,14 +259,14 @@
 		 for (let equipment of equipments) {
 		     // handle busbars
 		     if (equipment.nodeName === "cim:BusbarSection") {
-			 let cn = opts.model.getConnectivityNode(equipment);
+			 cn = opts.model.getConnectivityNode(equipment);
 			 if (cn !== null) {
 			     equipment = cn;
 			 }
 		     }
 		     diagramElem = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value).node();
-		     if (node !== null) {
-			 selected.push(node);
+		     if (diagramElem !== null) {
+			 selected.push(diagramElem);
 		     }
 		 }
 		 break;

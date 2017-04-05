@@ -807,7 +807,7 @@ function cimModel() {
 		    let dobjs = model.getDiagramObjects(srcs.concat(targets));
 		    return (dobjs.length > 0);
 		});
-	    }
+	    } 
 	    return ret;
 	},
 		
@@ -910,7 +910,8 @@ function cimModel() {
 	},
 
 	// Delete an object: also, delete its terminals and graphic objects.
-	// Moreover, delete transformer windings and handle BusbarSections.
+	// Moreover, delete contained objects (like transformer windings,
+	// voltage levels, bays etc.) and handle BusbarSections.
 	deleteObject(object) {
 	    let objUUID = object.attributes.getNamedItem("rdf:ID").value;
 	    // all the links to 'object' must be deleted
@@ -985,6 +986,31 @@ function cimModel() {
 			return true;
 		    }
 		}
+		// subgeographical regions
+		if (object.nodeName === "cim:GeographicalRegion") {
+		    if (related.nodeName === "cim:SubGeographicalRegion") {
+			return true;
+		    }
+		}
+		// substations
+		if (object.nodeName === "cim:SubGeographicalRegion") {
+		    if (related.nodeName === "cim:Substation") {
+			return true;
+		    }
+		}
+		// voltage levels
+		if (object.nodeName === "cim:Substation") {
+		    if (related.nodeName === "cim:VoltageLevel") {
+			return true;
+		    }
+		}
+		// bays
+		if (object.nodeName === "cim:VoltageLevel") {
+		    if (related.nodeName === "cim:Bay") {
+			return true;
+		    }
+		}
+		
 		return false;
 	    };
 

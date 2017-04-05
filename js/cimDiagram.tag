@@ -254,6 +254,9 @@
 	     case "cim:SynchronousMachine":
 		 selection = self.drawSynchronousMachines([object]);
 		 break;
+	     case "cim:AsynchronousMachine":
+		 selection = self.drawAsynchronousMachines([object]);
+		 break;
 	     case "cim:EnergyConsumer":
 		 selection = self.drawEnergyConsumers([object]);
 		 break;
@@ -493,6 +496,7 @@
 	      "cim:Junction",
 	      "cim:EnergySource",
 	      "cim:SynchronousMachine",
+	      "cim:AsynchronousMachine",
 	      "cim:EnergyConsumer",
 	      "cim:ConformLoad",
 	      "cim:NonConformLoad",
@@ -506,6 +510,7 @@
 	 let allJunctions = allEquipments["cim:Junction"];
 	 let allEnergySources = allEquipments["cim:EnergySource"];
 	 let allSynchronousMachines = allEquipments["cim:SynchronousMachine"];
+	 let allAsynchronousMachines = allEquipments["cim:AsynchronousMachine"];
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"];
 	 let allConformLoads = allEquipments["cim:ConformLoad"];
 	 let allNonConformLoads = allEquipments["cim:NonConformLoad"];
@@ -536,7 +541,10 @@
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy sources";
 	 // synchronous machines
 	 let syncEnter = self.drawSynchronousMachines(allSynchronousMachines);
-	 yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machines";	 
+	 yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machines";
+	 // asynchronous machines
+	 let asyncEnter = self.drawAsynchronousMachines(allAsynchronousMachines);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn asynchronous machines";	 
 	 // energy consumers
 	 let enconsEnter = self.drawEnergyConsumers(allEnergyConsumers);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn energy consumers";
@@ -586,6 +594,10 @@
 	 termSelection = self.createTerminals(syncEnter);
 	 self.createMeasurements(syncEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machine terminals";
+	 // asynchronous machine terminals
+	 termSelection = self.createTerminals(asyncEnter);
+	 self.createMeasurements(asyncEnter);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn asynchronous machine terminals";
 	 // energy consumer terminals
 	 termSelection = self.createTerminals(enconsEnter);
 	 self.createMeasurements(enconsEnter);
@@ -1002,6 +1014,11 @@
 	 return self.drawGenerators(allSynchronousMachines, "SynchronousMachine");
      }
 
+     // Draw all AsynchronousMachines
+     drawAsynchronousMachines(allAsynchronousMachines) {
+	 return self.drawGenerators(allAsynchronousMachines, "AsynchronousMachine");
+     }
+     
      // Draw all EnergyConsumers
      drawEnergyConsumers(allEnergyConsumers) {
 	 return self.drawLoads(allEnergyConsumers, "EnergyConsumer");
@@ -1145,6 +1162,7 @@
 		 break;
 	     case "cim:EnergySource":
 	     case "cim:SynchronousMachine":
+	     case "cim:AsynchronousMachine":
 		 term1_cy = (GEN_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
 		 break;
 	     case "cim:EnergyConsumer":
