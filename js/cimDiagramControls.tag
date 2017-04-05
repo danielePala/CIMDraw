@@ -246,6 +246,8 @@
 	 let cimObject = opts.model.getObject(element);
 	 let equipments = null;
 	 let terminals = null;
+	 let cn = null, cnUUID = null;
+	 let diagramElem = null;
 	 switch (cimObject.nodeName) {
 	     case "cim:Substation":
 	     case "cim:Line":
@@ -260,7 +262,7 @@
 			     equipment = cn;
 			 }
 		     }
-		     let node = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value).node();
+		     diagramElem = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value).node();
 		     if (node !== null) {
 			 selected.push(node);
 		     }
@@ -272,14 +274,20 @@
 		     [cimObject],
 		     "Measurement.Terminal");
 		 for (let terminal of terminals) {
-		     let node = d3.select("svg").select("#" + terminal.attributes.getNamedItem("rdf:ID").value).node();
+		     diagramElem = d3.select("svg").select("#" + terminal.attributes.getNamedItem("rdf:ID").value).node();
 		     if (node !== null) {
 			 selected.push(node);
 		     }
 		 }
 		 break;
+	     case "cim:BusbarSection":
+		 cn = opts.model.getConnectivityNode(cimObject);
+		 cnUUID = cn.attributes.getNamedItem("rdf:ID").value;
+		 diagramElem = d3.select("svg").selectAll("g#" + cnUUID).node();
+		 selected = [diagramElem];
+		 break;
 	     default:
-		 let diagramElem = d3.select("svg").selectAll("g#"+element).node();
+		 diagramElem = d3.select("svg").selectAll("g#"+element).node();
 		 selected = [diagramElem];
 	 }
 	 self.updateSelected();
