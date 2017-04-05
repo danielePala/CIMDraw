@@ -68,6 +68,7 @@
 		<li role="presentation"><a href="#containers" aria-controls="containers" role="tab" data-toggle="tab" id="containersTab">Containers</a></li>
 		<li role="presentation"><a href="#measurements" aria-controls="measurements" role="tab" data-toggle="tab" id="measurementsTab">Measurements</a></li>
 		<li role="presentation"><a href="#bases" aria-controls="bases" role="tab" data-toggle="tab" id="basesTab">Bases</a></li>
+		<li role="presentation"><a href="#curvesAndRegs" aria-controls="curvesAndRegs" role="tab" data-toggle="tab" id="curvesAndRegsTab">Curves and Regulations</a></li>
 	    </ul>
 	    <div class="tab-content">
 		<div role="tabpanel" class="tab-pane active" id="components">
@@ -81,6 +82,9 @@
 		</div>
 		<div role="tabpanel" class="tab-pane" id="bases">
 		    <ul class="list-group" id="CIMBases"></ul>
+		</div>
+		<div role="tabpanel" class="tab-pane" id="curvesAndRegs">
+		    <ul class="list-group" id="CIMCurvesAndRegs"></ul>
 		</div>
 	    </div>
 	    
@@ -333,10 +337,12 @@
 	 d3.select("#app-tree").selectAll("#CIMContainers > li").remove();
 	 d3.select("#app-tree").selectAll("#CIMMeasurements > li").remove();
 	 d3.select("#app-tree").selectAll("#CIMBases > li").remove();
+	 d3.select("#app-tree").selectAll("#CIMCurvesAndRegs > li").remove();
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
 	 let cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
+	 let cimCurvesAndRegs = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMCurvesAndRegs");
 	 let contNames = ["cim:Substation", "cim:Line"];
 	 let measNames = ["cim:Analog", "cim:Discrete"];
 	 let genNames = ["cim:GeneratingUnit", "cim:ThermalGeneratingUnit"];
@@ -345,6 +351,7 @@
 	 let allGeneratingUnits = null;
 	 let allSubGeoRegions = null;
 	 let allGeoRegions = null;
+	 let allLoadResponses = null;
 	 // setup the right function to get objects
 	 let getObjects = self.model.getObjects;
 	 let getConnectors = self.model.getObjects;
@@ -394,10 +401,14 @@
 		     "SubGeographicalRegion.Region"));
 	     allSubGeoRegions = [...new Set(allSubGeoRegions)];
 	     allGeoRegions = [...new Set(allGeoRegions)];
+	     allLoadResponses = self.model.getLinkedObjects(
+		 ["cim:LoadResponseCharacteristic"],
+		 "LoadResponseCharacteristic.EnergyConsumer");
 	 } else {
 	     allContainers = getObjects(contNames);
 	     allMeasurements = getObjects(measNames);
 	     allGeneratingUnits = getObjects(genNames);
+	     allLoadResponses = getObjects(loadNames);
 	 }
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
 	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 
@@ -459,6 +470,7 @@
 	 let allGenUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", allGeneratingUnits["cim:GeneratingUnit"].concat(allGeneratingUnits["cim:ThermalGeneratingUnit"]));
 	 self.elements(allGenUnits, "GeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
 	 self.elements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
+	 self.elements(cimCurvesAndRegs, "LoadResponseCharacteristic", "Load Response Characteristics", allLoadResponses["cim:LoadResponseCharacteristic"]);
 
 	 // add buttons
 	 self.createAddButton(cimBases, "BaseVoltage");

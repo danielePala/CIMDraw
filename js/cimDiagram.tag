@@ -640,20 +640,24 @@
 	 
 	 // test topo
 	 /*
-	 allConnectivityNodes = self.model.getObjects(["cim:ConnectivityNode"]);
+	    allConnectivityNodes = self.model.getObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
 	 console.log(allConnectivityNodes.length);
 	 let topos = allConnectivityNodes.reduce(function(r, v) {
-	     let cnTerminals = self.model.getGraph([v], "ConnectivityNode.Terminals", "Terminal.ConnectivityNode").map(el => el.source);
-	     let switches = self.model.getGraph(cnTerminals, "Terminal.ConductingEquipment", "ConductingEquipment.Terminals").map(el => el.source).filter(function(el) {
+	     let cnTerminals = self.model.getTargets([v], "ConnectivityNode.Terminals");
+	     let switches = self.model.getTargets(cnTerminals, "Terminal.ConductingEquipment").filter(function(el) {
 		 return self.model.isA("Switch", el) === true;
 	     });
 	     switches = switches.filter(function(el) {
+		 let ret = true;
 		 // TODO: take into account measurements
-		 let status = self.model.getAttribute(el, "cim:Switch.normalOpen").textContent;
-		 return (status === "true");
+		 let status = self.model.getAttribute(el, "cim:Switch.normalOpen");
+		 if (typeof(status) !== "undefined") {
+		     ret = (status.textContent === "false")
+		 }
+		 return ret;
 	     });
-	     let swTerminals = self.model.getGraph(switches, "ConductingEquipment.Terminals", "Terminal.ConductingEquipment").map(el => el.source);
-	     let swCns = self.model.getGraph(swTerminals, "Terminal.ConnectivityNode", "ConnectivityNode.Terminals").map(el => el.source);
+	     let swTerminals = self.model.getTargets(switches, "ConductingEquipment.Terminals");
+	     let swCns = self.model.getTargets(swTerminals, "Terminal.ConnectivityNode");
 	     swCns.push(v);
 	     r.push(new Set(swCns));
 	     return r;
