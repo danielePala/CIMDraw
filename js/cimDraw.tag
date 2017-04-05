@@ -43,6 +43,10 @@
 	    </div>
 	    <div class="collapse navbar-collapse">
 		<p class="navbar-text" id="cim-filename"></p>
+		<select id="cim-diagrams" class="selectpicker navbar-left navbar-form"
+			onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
+		    <option disabled="disabled">Select a diagram</option>
+		</select>
 		<ul class="nav navbar-nav" id="cim-home-container">
 		    <li class="dropdown">
 			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
@@ -56,10 +60,6 @@
 			</ul>
 		    </li>
 		</ul>
-		<select id="cim-diagrams" class="selectpicker navbar-left navbar-form"
-			onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
-		    <option disabled="disabled">Select a diagram</option>
-		</select>
 	    </div>
 	</div>
     </nav>
