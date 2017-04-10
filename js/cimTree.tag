@@ -570,16 +570,12 @@
 				 .html(printName);
 	     elementsTopContainer.append("span")
 				 .attr("class", "badge")
-				 .html(data.length);
+				 .html(0);
 	     elements = elementsTopContainer
 		.append("ul")
 		.attr("id", name + "sList")
 		.attr("class", "collapse");
-	 } else {
-	     let elementCount = parseInt(elementsTopContainer.select("span").html());
-	     elementCount = elementCount + data.length;
-	     elementsTopContainer.select("span").html(elementCount);
-	 }
+	 } 
 	 return elements;
      }
 
@@ -644,16 +640,12 @@
 				 .html(printName);
 	     elementsTopContainer.append("span")
 				 .attr("class", "badge")
-				 .html(data.length);
+				 .html(0);
 	     elements = elementsTopContainer
 		.append("ul")
 		.attr("id", name + "sList")
 		.attr("class", "collapse");
-	 } else {
-	     let elementCount = parseInt(elementsTopContainer.select("span").html());
-	     elementCount = elementCount + data.length;
-	     elementsTopContainer.select("span").html(elementCount);
-	 }
+	 } 
 
 	 let elementTopContainer = elements
 		.selectAll("li." + name)
@@ -712,10 +704,23 @@
 	     }));
 	 let elementEnter = elementTopContainer
 	     .append("ul")
-		.attr("id", function(d) {
-		    return d.attributes.getNamedItem("rdf:ID").value;
-		})
-		.attr("class", "collapse");
+	     .attr("id", function(d) {
+		 return d.attributes.getNamedItem("rdf:ID").value;
+	     })
+	     .attr("class", "collapse");
+	 // update element count
+	 let elementCount = parseInt(elementsTopContainer.select("span").html());
+	 elementCount = elementCount + elementEnter.size();
+	 elementsTopContainer.select("span").html(elementCount);
+	 // update also the top containers (if any)
+	 let tcNode = elementsTopContainer.node(); 
+	 $(tcNode).parents("li.cim-parent-container")
+		  .find(">span")
+		  .each(function() {
+		      let elementCount = parseInt($(this).html());
+		      elementCount = elementCount + elementEnter.size();
+		      $(this).html(elementCount);
+		  });
 	 return elementEnter;
      }
 
