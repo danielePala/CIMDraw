@@ -408,7 +408,7 @@
 	     allContainers = getObjects(contNames);
 	     allMeasurements = getObjects(measNames);
 	     allGeneratingUnits = getObjects(genNames);
-	     allLoadResponses = getObjects(loadNames);
+	     allLoadResponses = getObjects(["cim:LoadResponseCharacteristic"]);
 	 }
 	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
 	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 
