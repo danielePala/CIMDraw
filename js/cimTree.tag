@@ -149,6 +149,7 @@
 	 let equivalents = undefined;
 	 let rotMac = undefined;
 	 let loads = undefined;
+	 let genUnits = undefined;
 	 switch (object.nodeName) {
 	     case "cim:ACLineSegment":
 		 self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
@@ -229,6 +230,14 @@
 	     case "cim:Line":
 		 let lineEnter = self.elements(cimContainers, "Line", "Lines", [object]);
 		 self.createDeleteMenu(lineEnter);
+		 break;
+	     case "cim:GeneratingUnit":
+		 genUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", [object]);
+		 self.elements(genUnits, "GeneratingUnit", "General Units", [object]);
+		 break;
+	     case "cim:ThermalGeneratingUnit":
+		 genUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", [object]);
+		 self.elements(genUnits, "ThermalGeneratingUnit", "Thermal Units", [object]);
 		 break;
 	     case "cim:Analog":
 		 let analogEnter = self.elements(cimMeasurements, "Analog", "Analogs", [object]);
@@ -477,6 +486,8 @@
 	 self.createAddButton(cimContainers, "Substation");
 	 self.createAddButton(cimContainers, "GeographicalRegion");
 	 self.createAddButton(cimContainers, "Line");
+	 self.createAddButton(cimContainers, "GeneratingUnit");
+	 self.createAddButton(cimContainers, "ThermalGeneratingUnit");
      }
 
      geoRegions(tab, allGeoRegions) {
