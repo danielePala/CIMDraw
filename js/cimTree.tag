@@ -146,6 +146,7 @@
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
 	 let cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
+	 let cimCurvesAndRegs = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMCurvesAndRegs");
 	 let equivalents = undefined;
 	 let rotMac = undefined;
 	 let loads = undefined;
@@ -246,6 +247,10 @@
 	     case "cim:Discrete":
 		 let discEnter = self.elements(cimMeasurements, "Discrete", "Discretes", [object]);
 		 self.createDeleteMenu(discEnter);
+		 break;
+	     case "cim:LoadResponseCharacteristic":
+		 let lrEnter = self.elements(cimCurvesAndRegs, "LoadResponseCharacteristic", "Load Response Characteristics", [object]);
+		 self.createDeleteMenu(lrEnter);
 		 break;
 	 }	 
      }
@@ -488,6 +493,7 @@
 	 self.createAddButton(cimContainers, "Line");
 	 self.createAddButton(cimContainers, "GeneratingUnit");
 	 self.createAddButton(cimContainers, "ThermalGeneratingUnit");
+	 self.createAddButton(cimCurvesAndRegs, "LoadResponseCharacteristic");
      }
 
      geoRegions(tab, allGeoRegions) {
