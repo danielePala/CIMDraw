@@ -151,8 +151,27 @@
 	     action: function(elm, d, i) {
 		 self.addNewMeasurement(elm, d, i);
 	     }
+	 },
+	 {
+	     title: 'Add regulating control',
+	     action: function(elm, d, i) {
+		 self.addRegulatingControl(elm, d, i);
+	     }
+	 },
+	 {
+	     title: 'Add tap changer control',
+	     action: function(elm, d, i) {
+		 self.addTCControl(elm, d, i);
+	     }
 	 }
      ];
+     let trafoTermsMenu = terminalsMenu.concat(
+	 [{
+	     title: 'Add ratio tap changer',
+	     action: function(elm, d, i) {
+		 self.addTC(elm, d, i);
+	     }
+	 }]);
      let edgesMenu = [
 	 {
 	     title: 'Delete',
@@ -277,8 +296,8 @@
 		     "Measurement.Terminal");
 		 for (let terminal of terminals) {
 		     diagramElem = d3.select("svg").select("#" + terminal.attributes.getNamedItem("rdf:ID").value).node();
-		     if (node !== null) {
-			 selected.push(node);
+		     if (diagramElem !== null) {
+			 selected.push(diagramElem);
 		     }
 		 }
 		 break;
@@ -974,14 +993,49 @@
 	 opts.model.addToActiveDiagram(newObject, []);
      }
 
+     addRegulatingControl(elm, d, i) {
+	 // applies to only one element
+	 self.deselectAll();
+	 let newObject = opts.model.createObject("cim:RegulatingControl");
+	 opts.model.setLink(newObject, "cim:RegulatingControl.Terminal", d);
+	 opts.model.addToActiveDiagram(newObject, []);
+     }
+
+     addTCControl(elm, d, i) {
+	 // applies to only one element
+	 self.deselectAll();
+	 let newObject = opts.model.createObject("cim:TapChangerControl");
+	 opts.model.setLink(newObject, "cim:RegulatingControl.Terminal", d);
+	 opts.model.addToActiveDiagram(newObject, []);
+     }
+
+     addTC(elm, d, i) {
+	 // applies to only one element
+	 self.deselectAll();
+	 let wind = opts.model.getTargets(
+	     [d],
+	     "Terminal.TransformerEnd")[0];
+	 let tc = opts.model.getTargets([wind], "TransformerEnd.RatioTapChanger");
+	 if (tc.length === 0) {
+	     let newObject = opts.model.createObject("cim:RatioTapChanger");
+	     opts.model.setLink(newObject, "cim:RatioTapChanger.TransformerEnd", wind);
+	     opts.model.addToActiveDiagram(newObject, []);
+	 }
+     }
+     
      addContextMenu(selection) {
 	 selection.on("contextmenu", d3.contextMenu(menu));
 	 // setup context menu for terminals
-	 let terminals = selection.selectAll("g.Terminal");
+	 let terminals = selection.filter("g:not(.PowerTransformer)").selectAll("g.Terminal");
 	 terminals.on("contextmenu", function(d, i, nodes) {
 	     d3.contextMenu(terminalsMenu).bind(this)(d, i, nodes);
 	     d3.event.stopPropagation();
  	 });
+	 let trafoTerms = selection.filter("g.PowerTransformer").selectAll("g.Terminal");
+	 trafoTerms.on("contextmenu", function(d, i, nodes) {
+	     d3.contextMenu(trafoTermsMenu).bind(this)(d, i, nodes);
+	     d3.event.stopPropagation();
+	 });
      }
 
      deleteObject(elm) {

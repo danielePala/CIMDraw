@@ -195,7 +195,13 @@
 		 self.elements(loads, "NonConformLoad", "Non Conform Loads", [object]);
 		 break;
 	     case "cim:PowerTransformer":
-		 self.elements(cimNetwork, "PowerTransformer", "Transformers", [object]);
+		 self.powerTransformers(cimNetwork, [object]);
+		 break;
+	     case "cim:RatioTapChanger":
+		 let tcEnd = self.model.getTargets([object], "RatioTapChanger.TransformerEnd");
+		 let endUUID = tcEnd[0].attributes.getNamedItem("rdf:ID").value;
+		 let endG = cimNetwork.selectAll("ul#" + endUUID);
+		 self.tapChangers(endG, [object]);
 		 break;
 	     case "cim:BusbarSection":
 		 self.elements(cimNetwork, "BusbarSection", "Nodes", [object]);
@@ -468,17 +474,7 @@
 
 	 self.geoRegions(cimContainers, allGeoRegions);
 	 self.substations(cimContainers, allSubstations);
-	 let trafoEnter = self.elements(cimNetwork, "PowerTransformer", "Transformers", allPowerTransformers);
-	 trafoEnter.each(function(d, i) {
-	     let trafoEnds = self.model.getTargets(
-		 [d],
-		 "PowerTransformer.PowerTransformerEnd");
-	     self.elements(
-		 d3.select(this),
-		 d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
-		 "Transformer Windings",
-		 trafoEnds);
-	 });
+	 self.powerTransformers(cimNetwork, allPowerTransformers);
 	 let lineEnter = self.elements(cimContainers, "Line", "Lines", allLines);
 	 self.createDeleteMenu(lineEnter);
 	 let allGenUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", allGeneratingUnits["cim:GeneratingUnit"].concat(allGeneratingUnits["cim:ThermalGeneratingUnit"]));
@@ -572,6 +568,36 @@
 	 self.createDeleteMenu(bayEnter);
      }
 
+     powerTransformers(tab, allTrafos) {
+	 let trafoEnter = self.elements(tab, "PowerTransformer", "Transformers", allTrafos);
+	 trafoEnter.each(function(d, i) {
+	     // trafo ends
+	     let trafoEnds = self.model.getTargets(
+		 [d],
+		 "PowerTransformer.PowerTransformerEnd");
+	     let trafoEndsEnter = self.elements(
+		 d3.select(this),
+		 d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
+		 "Transformer Windings",
+		 trafoEnds);
+	     // tap changer(s)
+	     trafoEndsEnter.each(function(d, i) {
+		 let tcs = self.model.getTargets([d], "TransformerEnd.RatioTapChanger");
+		 self.tapChangers(d3.select(this), tcs);
+	     });
+	 });
+     }
+
+     tapChangers(trafoG, tcs) {
+	 let trafo = trafoG.data()[0];
+	 let tcEnter = self.elements(
+	     trafoG,
+	     trafo.attributes.getNamedItem("rdf:ID").value + "RatioTapChanger",
+	     "Ratio Tap Changer",
+	     tcs);
+	 self.createDeleteMenu(tcEnter);
+     }
+
      createTopContainer(cimNetwork, name, printName, data) {
 	 let elementsTopContainer = cimNetwork.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
@@ -596,7 +622,7 @@
 	 return elements;
      }
 
-     // add button for non-graphical onbjects
+     // add button for non-graphical objects
      createAddButton(cimContainer, name) {
 	 let elementsTopContainer = cimContainer.select("li." + name + "s");
 	 let elements = elementsTopContainer.select("ul#" + name + "sList");
