@@ -31,6 +31,8 @@ function cimModel() {
     const modelNS = "http://iec.ch/TC57/61970-552/ModelDescription/1#";
     // The RDF namespace
     const rdfNS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+    // The Eqipment namespace.
+    const eqNS = "http://entsoe.eu/CIM/EquipmentShortCircuit/3/1";
     // The Diagram Layout namespace.
     const dlNS = "http://entsoe.eu/CIM/DiagramLayout/3/1";
     // An empty CIM file, used when creating a new file.
@@ -82,7 +84,7 @@ function cimModel() {
 	    if (typeof(data.eq) !== "undefined" &&
 		zipFilesProcessed === zipFilesTotal) {
 		if (typeof(data.dl) === "undefined") {
-		    data.dl = createNewDLDocument();
+		    data.dl = createNewDLDocument(data.eq);
 		}
 		buildModel(callback);
 	    }
@@ -97,23 +99,41 @@ function cimModel() {
 	};
     };
 
+    // Create a new equipment document, in case the input
+    // CGMES file is a plain XML file.
+    // This is a 'private' function (not visible in the model object).
+    function createNewEQDocument() {
+	let parser = new DOMParser();
+	let empty = parser.parseFromString(emptyFile, "application/xml");
+	// create 'FullModel' element
+	let eqModelDesc = document.createElementNS(modelNS, "md:FullModel");
+	empty.children[0].appendChild(eqModelDesc);
+	let eqModelDescID = eqModelDesc.setAttribute("rdf:about", "urn:uuid:" + generateUUID().substring(1));
+	// set the profile link
+	model.setAttribute(eqModelDesc, "md:Model.profile", eqNS);
+	return empty;
+    };
+    
     // Create a new diagram layout document, in case the input
     // CGMES file contains only the EQ profile.
     // This is a 'private' function (not visible in the model object).
-    function createNewDLDocument() {
+    function createNewDLDocument(eqDoc) {
 	let parser = new DOMParser();
 	let empty = parser.parseFromString(emptyFile, "application/xml");
-	
-	let eqModelDesc = [].filter.call(
-	    data.eq.children[0].children, function(el) {
-		return el.nodeName === "md:FullModel";
-	    })[0];
+	// create 'FullModel' element
 	let dlModelDesc = document.createElementNS(modelNS, "md:FullModel");
 	empty.children[0].appendChild(dlModelDesc);
-	let dlModelDescID = document.createAttribute("rdf:about");
-	dlModelDescID.nodeValue = eqModelDesc.attributes.getNamedItem("rdf:about").value;
-	dlModelDesc.setAttributeNode(dlModelDescID);
+	let dlModelDescID = dlModelDesc.setAttribute("rdf:about", "urn:uuid:" + generateUUID().substring(1));
+	// set the profile link
 	model.setAttribute(dlModelDesc, "md:Model.profile", dlNS);
+	// set model dependency
+	let eqModelDesc = [].filter.call(
+	    eqDoc.children[0].children, function(el) {
+		return el.nodeName === "md:FullModel";
+	    })[0];
+	let dlModelDep = dlModelDesc.ownerDocument.createElement("md:Model.DependentOn");
+	let dlModelDepVal = dlModelDep.setAttribute("rdf:resource", eqModelDesc.attributes.getNamedItem("rdf:about").value);
+	dlModelDesc.appendChild(dlModelDep);
 	return empty;
     };
 
@@ -346,6 +366,7 @@ function cimModel() {
     // that have at least one DiagramObject in the current diagram.
     // If an array of equipments is given as argument, only the
     // subgraph for that equipments is returned.
+    // This is a 'private' function (not visible in the model object).
     function getConductingEquipmentGraph(identObjs) {
 	let ceEdges = [];
 	if (arguments.length === 0) {
@@ -375,6 +396,17 @@ function cimModel() {
 	return ceEdges;
     };
 
+    // Generate a new random UUID.
+    // This is a 'private' function (not visible in the model object).
+    function generateUUID() {
+	let d = new Date().getTime();
+	let uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+	    let r = (d + Math.random()*16)%16 | 0;
+	    d = Math.floor(d/16);
+	    return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+	});
+	return "_" + uuid;
+    };
     
     // This is the fundamental object used by CIMDraw to manipulate CIM files.
     let model = {
@@ -439,28 +471,56 @@ function cimModel() {
 	    }
 	},
 
-	// Serialize the current CIM file.
+	// Serialize the current CIM file as a plain XML.
 	save() {
 	    let oSerializer = new XMLSerializer();
+	    let sXML = "";
 	    if (typeof(data.all) !== "undefined") {
-		let sXML = oSerializer.serializeToString(data.all);
+		sXML = oSerializer.serializeToString(data.all);
 		return sXML;
+	    } else {
+		let parser = new DOMParser();
+		let all = parser.parseFromString(emptyFile, "application/xml");
+		for (let datum of data.eq.children[0].children) {
+		    all.children[0].appendChild(datum.cloneNode(true));
+		}
+		for (let datum of data.dl.children[0].children) {
+		    all.children[0].appendChild(datum.cloneNode(true));
+		}
+		sXML = oSerializer.serializeToString(all);
 	    }
-	    let zip = new JSZip();
-	    zip.file("EQ.xml", oSerializer.serializeToString(data.eq));
-	    zip.file("DL.xml", oSerializer.serializeToString(data.dl));
-	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
+	    return sXML;
 	},
 
+	// Serialize the current CIM file in CGMES format.
 	saveAsCGMES() {
+	    let oSerializer = new XMLSerializer();
+	    let zip = new JSZip();
 	    if (typeof(data.all) !== "undefined") {
 		let all = data.all.children[0].children;
 		let allEQ = [].filter.call(all, function(el) {
 		    let eqObj = model.getSchemaObject(el.localName);
 		    return (typeof(eqObj) !== "undefined"); 
 		});
-		console.log(allEQ);
+		let eqData = createNewEQDocument();
+		for (let datum of allEQ) {
+		    eqData.children[0].appendChild(datum.cloneNode(true));
+		}
+		zip.file("EQ.xml", oSerializer.serializeToString(eqData));
+		let allDL = [].filter.call(all, function(el) {
+		    let dlObj = model.getDLSchemaObject(el.localName);
+		    return (typeof(dlObj) !== "undefined"); 
+		});
+		let dlData = createNewDLDocument(eqData);
+		for (let datum of allDL) {
+		    dlData.children[0].appendChild(datum.cloneNode(true));
+		}
+		zip.file("DL.xml", oSerializer.serializeToString(dlData));
+	    } else {
+		zip.file("EQ.xml", oSerializer.serializeToString(data.eq));
+		zip.file("DL.xml", oSerializer.serializeToString(data.dl));
 	    }
+	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 	},
 
 	// Serialize the current diagram. Nodes are cloned, otherwise they would
@@ -572,6 +632,14 @@ function cimModel() {
 	// Get the (EQ) schema description of a given object, e.g. Breaker. 
 	getSchemaObject(type) {
 	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
+	    return [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value === "#" + type;
+	    })[0];
+	},
+
+	// Get the (DL) schema description of a given object, e.g. Breaker. 
+	getDLSchemaObject(type) {
+	    let allSchemaObjects = model.schemaDataDL.children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value === "#" + type;
 	    })[0];
@@ -1177,16 +1245,6 @@ function cimModel() {
 	    }
 	    obj.setAttributeNode(objID);
 	    model.dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
-	    
-	    function generateUUID() {
-		var d = new Date().getTime();
-		var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-		    var r = (d + Math.random()*16)%16 | 0;
-		    d = Math.floor(d/16);
-		    return (c=='x' ? r : (r&0x3|0x8)).toString(16);
-		});
-		return "_" + uuid;
-	    };
 	    return obj;
 	},
 	

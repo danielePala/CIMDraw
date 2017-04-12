@@ -276,22 +276,20 @@
 	 };
 
 	 function loadDiagramList(filename) { 
-	     // allow saving a copy of the file 
+	     // allow saving a copy of the file as plain XML
 	     $("#cim-save").on("click", function() {
 		 let out = self.cimModel.save();
-		 if (typeof(out) === "string") {
-		     let blob = new Blob([out], {type : 'text/xml'});
-		     let objectURL = URL.createObjectURL(blob);
-		     $("#cim-save").attr("href", objectURL);
-		 } else {
-		     out.then(function(content) {
-			 let objectURL = URL.createObjectURL(content);
-			 window.location.href = objectURL;
-		     });
-		 }
+		 let blob = new Blob([out], {type : 'text/xml'});
+		 let objectURL = URL.createObjectURL(blob);
+		 $("#cim-save").attr("href", objectURL);
 	     });
+	     // allow saving a copy of the file as CGMES
 	     $("#cgmes-save").on("click", function() {
 		 let out = self.cimModel.saveAsCGMES();
+		 out.then(function(content) {
+		     let objectURL = URL.createObjectURL(content);
+		     window.location.href = objectURL;
+		 });
 	     });
 	     // load diagram list
 	     $(".selectpicker").selectpicker({container: "body"});
