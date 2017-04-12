@@ -488,11 +488,15 @@ function cimModel() {
 		    all.children[0].appendChild(datum.cloneNode(true));
 		}
 		sXML = oSerializer.serializeToString(all);
+		data.eq = undefined;
+		data.dl = undefined;
+		data.all = all;
 	    }
 	    return sXML;
 	},
 
 	// Serialize the current CIM file in CGMES format.
+	// Currently limited to EQ and DL profiles.
 	saveAsCGMES() {
 	    let oSerializer = new XMLSerializer();
 	    let zip = new JSZip();
@@ -504,18 +508,28 @@ function cimModel() {
 		});
 		let eqData = createNewEQDocument();
 		for (let datum of allEQ) {
-		    eqData.children[0].appendChild(datum.cloneNode(true));
+		    let attrs = model.getAttributes(datum);
+		    attrs.forEach(function(attr) {
+			let schAttr = model.getSchemaAttribute(datum.localName, attr.localName);
+			if (typeof(schAttr) === "undefined") {
+			    console.log(attr);
+			}
+		    });
+		    eqData.children[0].appendChild(datum);
 		}
-		zip.file("EQ.xml", oSerializer.serializeToString(eqData));
 		let allDL = [].filter.call(all, function(el) {
 		    let dlObj = model.getDLSchemaObject(el.localName);
 		    return (typeof(dlObj) !== "undefined"); 
 		});
 		let dlData = createNewDLDocument(eqData);
 		for (let datum of allDL) {
-		    dlData.children[0].appendChild(datum.cloneNode(true));
+		    dlData.children[0].appendChild(datum);
 		}
+		zip.file("EQ.xml", oSerializer.serializeToString(eqData));
 		zip.file("DL.xml", oSerializer.serializeToString(dlData));
+		data.all = undefined;
+		data.eq = eqData;
+		data.dl = dlData;
 	    } else {
 		zip.file("EQ.xml", oSerializer.serializeToString(data.eq));
 		zip.file("DL.xml", oSerializer.serializeToString(data.dl));
