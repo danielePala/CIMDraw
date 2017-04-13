@@ -45,6 +45,10 @@ function cimModel() {
     // 'eq' is for the equipment file
     // 'dl' is for the diagram layout file
     let data = {all: undefined, eq:undefined, dl:undefined};
+    // CIM schema data.
+    // 'EQ' is for the equipment schema
+    // 'DL' is for the diagram layout schema  
+    let schemaData = {EQ: null, DL: null, SV: null};
     // A map of schema attribute names vs schema attribute objects.
     // Used for faster lookup.
     let schemaAttributesMap =  new Map();
@@ -171,14 +175,14 @@ function cimModel() {
 	let rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
 	let rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
 	d3.xml(rdfsEQ, function(error, schemaDataEQ) {
-	    model.schemaDataEQ = schemaDataEQ;
-	    populateInvLinkMap(schemaDataEQ);
+	    schemaData["EQ"] = schemaDataEQ;
+	    populateInvLinkMap(schemaData["EQ"]);
 	    d3.xml(rdfsDL, function(schemaDataDL) {
-		model.schemaDataDL = schemaDataDL;
-		populateInvLinkMap(schemaDataDL);
+		schemaData["DL"] = schemaDataDL;
+		populateInvLinkMap(schemaData["DL"]);
 		d3.xml(rdfsSV, function(schemaDataSV) {
-		    model.schemaDataSV = schemaDataSV;
-		    populateInvLinkMap(schemaDataSV);
+		    schemaData["SV"] = schemaDataSV;
+		    populateInvLinkMap(schemaData["SV"]);
 		    callback(null);
 		});
 	    });
@@ -257,10 +261,20 @@ function cimModel() {
 	return allSuper;
     };
 
+    // Check if a link is set in the correct way,
+    // otherwise reverse it.
+    function checkLink(source, linkName, target) {
+	let targets = model.getTargets([source], linkName);
+	let schLink = model.getAllSchemasLink(source.localName, linkName.split(":")[1]);
+	let linkUsed = [].filter.call(schLink.children, function(el) {
+	    return el.nodeName === "cims:AssociationUsed";
+	})[0];
+	console.log(linkUsed.textContent);
+    };
+
     // Add a new link to a given source.
     // This is a 'private' function (not visible in the model object).
     function addLink(source, linkName, target) {
-	let targets = model.getTargets([source], linkName);
 	// see if the link is already set
 	if (targets.length > 0) {
 	    return;
@@ -505,14 +519,28 @@ function cimModel() {
 		let allEQ = [].filter.call(all, function(el) {
 		    let eqObj = model.getSchemaObject(el.localName);
 		    return (typeof(eqObj) !== "undefined"); 
-		});
+		}).slice();
 		let eqData = createNewEQDocument();
 		for (let datum of allEQ) {
+		    // delete non-EQ attributes
 		    let attrs = model.getAttributes(datum);
 		    attrs.forEach(function(attr) {
 			let schAttr = model.getSchemaAttribute(datum.localName, attr.localName);
 			if (typeof(schAttr) === "undefined") {
-			    console.log(attr);
+			    attr.remove();
+			}
+		    });
+		    // delete non-EQ links
+		    let links = model.getLinks(datum);
+		    links.forEach(function(link) {
+			let targets = model.getTargets([datum], link.localName);
+			targets.forEach(function(target) {
+			    console.log(datum, link.nodeName, target);
+			    checkLink(datum, link.nodeName, target);
+			});
+			let schLink = model.getSchemaLink(datum.localName, link.localName);
+			if (typeof(schLink) === "undefined") {
+			    //console.log(link);
 			}
 		    });
 		    eqData.children[0].appendChild(datum);
@@ -645,7 +673,7 @@ function cimModel() {
 
 	// Get the (EQ) schema description of a given object, e.g. Breaker. 
 	getSchemaObject(type) {
-	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
+	    let allSchemaObjects = schemaData["EQ"].children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value === "#" + type;
 	    })[0];
@@ -653,7 +681,7 @@ function cimModel() {
 
 	// Get the (DL) schema description of a given object, e.g. Breaker. 
 	getDLSchemaObject(type) {
-	    let allSchemaObjects = model.schemaDataDL.children[0].children;
+	    let allSchemaObjects = schemaData["DL"].children[0].children;
 	    return [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value === "#" + type;
 	    })[0];
@@ -666,7 +694,7 @@ function cimModel() {
 	    })[0];
 	    let typeVal = type.attributes.getNamedItem("rdf:resource").value;
 	    let enumName = typeVal.substring(1);
-	    let allSchemaObjects = model.schemaDataEQ.children[0].children;
+	    let allSchemaObjects = schemaData["EQ"].children[0].children;
 	    let enumValues = [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value.startsWith("#" + enumName + ".");
 	    });
@@ -692,7 +720,7 @@ function cimModel() {
 	getSchemaAttributes(type) {
 	    let ret = schemaAttributesMap.get(type);
 	    if (typeof(ret) === "undefined") {
-		let allSchemaObjects = model.schemaDataEQ.children[0].children;
+		let allSchemaObjects = schemaData["EQ"].children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
@@ -779,11 +807,25 @@ function cimModel() {
 	    return [typeVal, unit, multiplier];
 	},
 
-	// Get the (EQ) schema links for a given type.
-	getSchemaLinks(type) {
+	// Get the schema links for a given type.
+	// An optional 'schema' argument can be used to indicate the schema,
+	// which can be 'EQ' or 'DL'. If the argument is missing, the
+	// EQ schema is used.
+	getSchemaLinks(type, schema) {
+	    let schData = schemaData["EQ"];
+	    if (arguments.length === 2) {
+		switch (schema) {
+		case "DL":
+		    schData = schemaData["DL"];
+		    break;
+		case "SV":
+		    schData = schemaData["SV"];
+		    break;
+		}
+	    }
 	    let ret = schemaLinksMap.get(type);
 	    if (typeof(ret) === "undefined") {
-		let allSchemaObjects = model.schemaDataEQ.children[0].children;
+		let allSchemaObjects = schData.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
@@ -805,6 +847,34 @@ function cimModel() {
 		schemaLinksMap.set(type, ret);
 	    }
 	    return ret;
+	},
+
+	// Get the schema links for a given type, related to any
+	// known profile (EQ, DL...).
+	getAllSchemasLinks(type) {
+	    let ret = [];
+	    Object.keys(schemaData).forEach(function(profile) {
+		ret = ret.concat(model.getSchemaLinks(type, profile));
+	    });
+	    return ret;
+	},
+
+	// Get a specific link associated to a given type.
+	// The type is without namespace, e.g. "Breaker".
+	// An optional 'schema' argument can be used to indicate the schema,
+	// which can be 'EQ' or 'DL'. If the argument is missing, the
+	// EQ schema is used.
+	getSchemaLink(type, linkName, schema) {
+	    let schemaLinks = model.getSchemaLinks(type, schema);
+	    return schemaLinks.filter(el => el.attributes[0].value.substring(1) === linkName)[0];
+	},
+
+	// Get a specific link associated to a given type, related to any
+	// known profile (EQ, DL...).
+	getAllSchemasLink(type, linkName) {
+	    let schemaLinks = model.getAllSchemasLinks(type);
+	    
+	    return schemaLinks.filter(el => el.attributes[0].value.substring(1) === linkName)[0];
 	},
 
 	// Get the objects of a given type that have at least one
