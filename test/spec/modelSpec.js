@@ -78,4 +78,32 @@ describe("CIM model", function() {
 	expect(cnTerms.length).toBe(1);
 
     });
+
+    it("should be able to locate schema description of objects", function() {
+	let brk1 = model.getSchemaObject("Breaker");
+	let dobj1 = model.getSchemaObject("DiagramObject");
+	let brk2 = model.getSchemaObject("Breaker", "EQ");
+	let dobj2 = model.getSchemaObject("DiagramObject", "DL");
+	let dobj3 = model.getSchemaObject("DiagramObject", "EQ");
+	expect(brk1).not.toBe(null);
+	expect(dobj1).not.toBe(null);
+	expect(brk2).not.toBe(null);
+	expect(dobj2).not.toBe(null);
+	expect(dobj3).toBe(null);
+    });
+
+    /*it("should be able to locate superclasses", function() {
+	let brk1 = model.getAllSuper("Breaker");
+	let dobj1 = model.getAllSuper("DiagramObject");
+	expect(brk1.length).toBeGreaterThan(0);
+	expect(dobj1.length).toBeGreaterThan(0);
+	});*/
+
+    it("should be able to get schema-specific links for objects", function() {
+	let idobjEQ = model.getSchemaLinks("IdentifiedObject", "EQ");
+	let idobjDL = model.getSchemaLinks("IdentifiedObject", "DL");
+	expect(idobjEQ.length).toBe(0);
+	expect(idobjDL.length).toBeGreaterThan(0);
+    });
+
 });
