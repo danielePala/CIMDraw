@@ -49,6 +49,10 @@ function cimModel() {
     // 'EQ' is for the equipment schema
     // 'DL' is for the diagram layout schema  
     let schemaData = {EQ: null, DL: null, SV: null};
+    // CGMES schema files
+    const rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
+    const rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
+    const rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
     // A map of schema attribute names vs schema attribute objects.
     // Used for faster lookup.
     let schemaAttributesMap =  new Map();
@@ -167,23 +171,24 @@ function cimModel() {
 	    } 
 	}
 	
-	// let's read schema files
-	let rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
-	let rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
-	let rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
-	d3.xml(rdfsEQ, function(error, schemaDataEQ) {
-	    schemaData["EQ"] = schemaDataEQ;
-	    populateInvLinkMap(schemaData["EQ"]);
-	    d3.xml(rdfsDL, function(schemaDataDL) {
-		schemaData["DL"] = schemaDataDL;
-		populateInvLinkMap(schemaData["DL"]);
-		d3.xml(rdfsSV, function(schemaDataSV) {
-		    schemaData["SV"] = schemaDataSV;
-		    populateInvLinkMap(schemaData["SV"]);
-		    callback(null);
+	// let's read schema files, if necessary
+	if (schemaData["EQ"] === null) {
+	    d3.xml(rdfsEQ, function(error, schemaDataEQ) {
+		schemaData["EQ"] = schemaDataEQ;
+		populateInvLinkMap(schemaData["EQ"]);
+		d3.xml(rdfsDL, function(schemaDataDL) {
+		    schemaData["DL"] = schemaDataDL;
+		    populateInvLinkMap(schemaData["DL"]);
+		    d3.xml(rdfsSV, function(schemaDataSV) {
+			schemaData["SV"] = schemaDataSV;
+			populateInvLinkMap(schemaData["SV"]);
+			callback(null);
+		    });
 		});
 	    });
-	});
+	} else {
+	    callback(null);
+	}
 
 	function populateInvLinkMap(schemaData) {
 	    let allSchemaObjects = schemaData.children[0].children;
