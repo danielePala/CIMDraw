@@ -266,7 +266,7 @@ function cimModel() {
     };
 
     // Get all the superclasses for a given type.
-    // This finction works for any profile, since
+    // This function works for any profile, since
     // it is based on the getSchemaObject function.
     // This is a 'private' function (not visible in the model object).
     function getAllSuper(type) {

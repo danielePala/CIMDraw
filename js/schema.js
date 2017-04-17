@@ -1,0 +1,314 @@
+"use strict";
+
+function cimSchema() {
+    // CIM schema data.
+    // 'EQ' is for the equipment schema
+    // 'DL' is for the diagram layout schema  
+    let schemaData = {EQ: null, DL: null, SV: null};
+    // CGMES schema files
+    const rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
+    const rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
+    const rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
+    // A map of schema link names vs inverse schema link name.
+    // Used for faster lookup.
+    let schemaInvLinksMap = new Map();
+
+    // Build initial schema data structures and call a user callback.
+    // This is a 'private' function (not visible in the schema object).
+    function buildSchema(callback) {	
+	// let's read schema files, if necessary
+	if (schemaData["EQ"] === null) {
+	    d3.xml(rdfsEQ, function(error, schemaDataEQ) {
+		schemaData["EQ"] = schemaDataEQ;
+		populateInvLinkMap(schemaData["EQ"]);
+		d3.xml(rdfsDL, function(schemaDataDL) {
+		    schemaData["DL"] = schemaDataDL;
+		    populateInvLinkMap(schemaData["DL"]);
+		    d3.xml(rdfsSV, function(schemaDataSV) {
+			schemaData["SV"] = schemaDataSV;
+			populateInvLinkMap(schemaData["SV"]);
+			callback(null);
+		    });
+		});
+	    });
+	} else {
+	    callback(null);
+	}
+
+	function populateInvLinkMap(schemaData) {
+	    let allSchemaObjects = schemaData.children[0].children;
+	    for (let i in allSchemaObjects) {
+		let schemaObject = allSchemaObjects[i];
+		if (typeof(schemaObject.children) === "undefined") {
+		    continue;
+		}
+		let invRoleName = [].filter.call(schemaObject.children, function(el) {
+		    return el.nodeName === "cims:inverseRoleName";
+		})[0];
+		if (typeof(invRoleName) !== "undefined") {
+		    schemaInvLinksMap.set(
+			schemaObject.attributes[0].value.substring(1),
+			invRoleName.attributes[0].value.substring(1));
+		}
+	    }
+	};
+    };
+
+    // Get all the superclasses for a given type.
+    // This function works for any profile, since
+    // it is based on the getSchemaObject function.
+    // This is a 'private' function (not visible in the model object).
+    function getAllSuper(type) {
+	let allSuper = [];
+	let object = schema.getSchemaObject(type);
+	// handle unknown objects 
+	if (object === null) {
+	    return allSuper;
+	}
+	let aSuper = [].filter.call(object.children, function(el) {
+	    return el.nodeName === "rdfs:subClassOf";
+	})[0];
+	if (typeof(aSuper) !== "undefined") {
+	    let aSuperName = aSuper.attributes[0].value.substring(1);
+		allSuper.push(aSuperName);
+	    allSuper = allSuper.concat(getAllSuper(aSuperName));
+	}
+	return allSuper;
+    };
+
+    // Check if a link is set in the correct way,
+    // otherwise reverse it.
+    function checkLink(source, linkName) {
+	let ret = linkName;
+	let schLink = schema.getAllSchemasLink(source.localName, linkName.split(":")[1]);
+	if (typeof(schLink) !== "undefined") {
+	    let linkUsed = [].filter.call(schLink.children, function(el) {
+		return el.nodeName === "cims:AssociationUsed";
+	    })[0];
+	    if (linkUsed.textContent === "No") {
+		let invLinkName = schemaInvLinksMap.get(linkName.split(":")[1]);
+		ret = "cim:" + invLinkName;
+	    } 
+	}
+	return ret;
+    };
+
+    let schema = {
+    	// Get the schema description of a given object, e.g. Breaker.
+	// If this function is called with only one argument, it will
+	// search into all of the known schemas, otherwise it will search
+	// in the requested schema only.
+	// Some objects are defined in more than one schema (like the
+	// Breaker object, for example). However, this is not a problem
+	// since the definition is the same in all of the schemas.
+	getSchemaObject(type, schema) {
+	    let ret = null;
+	    for (let profile of Object.keys(schemaData)) {
+		if (arguments.length === 2 && schema !== profile) {
+		    continue;
+		}
+		let schData = schemaData[profile];
+		let allSchemaObjects = schData.children[0].children;
+		let schObj = [].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value === "#" + type;
+		})[0];
+		if (typeof(schObj) !== "undefined") {
+		    ret = schObj;
+		    break;
+		}
+	    };
+	    return ret;
+	},
+
+	// Get the (EQ) schema enumeration values of a given attribute.
+	getSchemaEnumValues(attr) {
+	    let type = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "rdfs:range";
+	    })[0];
+	    let typeVal = type.attributes.getNamedItem("rdf:resource").value;
+	    let enumName = typeVal.substring(1);
+	    let allSchemaObjects = schemaData["EQ"].children[0].children;
+	    let enumValues = [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value.startsWith("#" + enumName + ".");
+	    });
+	    return enumValues.map(el => [].filter.call(el.children, function(el) {
+		return el.nodeName === "rdfs:label";
+	    })[0].textContent);
+	},
+
+	// Get the enum name a given attribute.
+	// It is not limited to EQ schema.
+	getSchemaEnumName(attr) {
+	    let type = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "rdfs:range";
+	    })[0];
+	    let typeVal = type.attributes.getNamedItem("rdf:resource").value;
+	    let enumName = typeVal.substring(1);
+	    return enumName;
+	},
+
+	// Get all the attributes associated to a given type.
+	// The type is without namespace, e.g. "Breaker".
+	// An optional 'schema' argument can be used to indicate the schema,
+	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
+	// EQ schema is used.
+	getSchemaAttributes(type, schema) {
+	    let schData = schemaData["EQ"];
+	    if (arguments.length === 2) {
+		schData = schemaData[schema];
+	    }
+	    let allSchemaObjects = schData.children[0].children;
+	    let ret = [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value.startsWith("#" + type + ".");
+	    });
+	    let supers = getAllSuper(type);
+	    for (let i in supers) {
+		ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+		}));
+	    }
+	    ret = ret.filter(function(el) {
+		let name = el.attributes[0].value;
+		let isLiteral = false;
+		let localName = name.split(".")[1];
+		if (typeof(localName) !== "undefined") {
+		    isLiteral = (localName.toLowerCase().charAt(0) === localName.charAt(0));
+		}
+		return isLiteral;
+	    });
+	    return ret;
+	},
+
+	// Get a specific attribute associated to a given type.
+	// The type is without namespace, e.g. "Breaker".
+	// An optional 'schema' argument can be used to indicate the schema,
+	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
+	// EQ schema is used.
+	getSchemaAttribute(type, attrName, schema) {
+	    let schemaAttributes = schema.getSchemaAttributes(type, schema);
+	    return schemaAttributes.filter(el => el.attributes[0].value.substring(1) === attrName)[0];
+	},
+
+	// Test if a given attribute is an enum.
+	// It is not limited to EQ schema.
+	isEnum(attr) {
+	    let type = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "cims:dataType";
+	    })[0];
+	    // enums don't have a dataType
+	    if (typeof(type) === "undefined") {
+		return true;
+	    }
+	    return false;
+	},
+
+	// Get the type of a given attribute.
+	// It is not limited to EQ schema.
+	getSchemaAttributeType(attr) {
+	    let unit = "none";
+	    let multiplier = "none";
+	    if (schema.isEnum(attr)) {
+		return ["#Enum", unit, multiplier];
+	    }
+	    let type = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "cims:dataType";
+	    })[0];
+	    let typeVal = type.attributes.getNamedItem("rdf:resource").value;
+	    let typeObj = schema.getSchemaObject(typeVal.substring(1));
+	    let typeStereotype = [].filter.call(typeObj.children, function(el) {
+		return el.nodeName === "cims:stereotype";
+	    })[0].textContent;
+	    
+	    if (typeStereotype === "CIMDatatype") {
+		let valueObj = schema.getSchemaObject(typeVal.substring(1) + ".value");
+		let unitObj = schema.getSchemaObject(typeVal.substring(1) + ".unit");
+		let multiplierObj = schema.getSchemaObject(typeVal.substring(1) + ".multiplier");
+		typeVal = [].filter.call(valueObj.children, function(el) {
+		    return el.nodeName === "cims:dataType";
+		})[0].attributes.getNamedItem("rdf:resource").value;
+		if (unitObj !== null) {
+		    unit = [].filter.call(unitObj.children, function(el) {
+			return el.nodeName === "cims:isFixed";
+		    })[0].attributes.getNamedItem("rdfs:Literal").value;
+		}
+		if (multiplierObj !== null) {
+		    let isFixed = [].filter.call(multiplierObj.children, function(el) {
+			return el.nodeName === "cims:isFixed";
+		    })[0];
+		    if (typeof(isFixed) !== "undefined") {
+			multiplier = isFixed.attributes.getNamedItem("rdfs:Literal").value;
+		    } 
+		}
+	    } 
+	    return [typeVal, unit, multiplier];
+	},
+
+	// Get the schema links for a given type.
+	// An optional 'schema' argument can be used to indicate the schema,
+	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
+	// EQ schema is used.
+	getSchemaLinks(type, schema) {
+	    let schData = schemaData["EQ"];
+	    if (arguments.length === 2) {
+		schData = schemaData[schema];
+	    }
+	    let allSchemaObjects = schData.children[0].children;
+	    let ret = [].filter.call(allSchemaObjects, function(el) {
+		return el.attributes[0].value.startsWith("#" + type + ".");
+	    });
+	    let supers = getAllSuper(type);
+	    for (let i in supers) {
+		ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+		}));
+	    }
+	    ret = ret.filter(function(el) {
+		let name = el.attributes[0].value;
+		let isLiteral = false;
+		let localName = name.split(".")[1];
+		if (typeof(localName) !== "undefined") {
+		    isLiteral = (localName.toLowerCase().charAt(0) !== localName.charAt(0));
+		}
+		return isLiteral;
+	    });
+	    return ret;
+	},
+
+	// Get the schema links for a given type, related to any
+	// known profile (EQ, DL...).
+	getAllSchemasLinks(type) {
+	    let ret = [];
+	    Object.keys(schemaData).forEach(function(profile) {
+		ret = ret.concat(schema.getSchemaLinks(type, profile));
+	    });
+	    return ret;
+	},
+
+	// Get a specific link associated to a given type.
+	// The type is without namespace, e.g. "Breaker".
+	// An optional 'schema' argument can be used to indicate the schema,
+	// which can be 'EQ' or 'DL'. If the argument is missing, the
+	// EQ schema is used.
+	getSchemaLink(type, linkName, schema) {
+	    let schemaLinks = schema.getSchemaLinks(type, schema);
+	    return schemaLinks.filter(el => el.attributes[0].value.substring(1) === linkName)[0];
+	},
+
+	// Get a specific link associated to a given type, related to any
+	// known profile (EQ, DL...).
+	getAllSchemasLink(type, linkName) {
+	    let schemaLinks = schema.getAllSchemasLinks(type);
+	    return schemaLinks.filter(el => el.attributes[0].value.substring(1) === linkName)[0];
+	},
+
+    	// Test weather an object is of a given type.
+	isA(type, object) {
+	    if (getAllSuper(object.localName).indexOf(type) < 0) {
+		return false;
+	    }
+	    return true;
+	}
+    };
+
+    return schema;
+};
