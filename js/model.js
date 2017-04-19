@@ -151,7 +151,7 @@ function cimModel() {
 	// set the profile link
 	model.setAttribute(modelDesc, "md:Model.profile", ns);
 	// set model dependency
-	deps.each(function(dep) {
+	deps.forEach(function(dep) {
 	    let depModelDesc = [].filter.call(
 		dep.children[0].children, function(el) {
 		    return el.nodeName === "md:FullModel";
@@ -569,9 +569,9 @@ function cimModel() {
 		// create EQ file
 		let eqDoc = profile("EQ", eqNS, all, []);
 		// create DL file
-		let dlDoc = profile("DL", dlNS, all, [eq]);
+		let dlDoc = profile("DL", dlNS, all, [eqDoc]);
 		// create SV file
-		let svDoc = profile("SV", svNS, all, [eq]);
+		let svDoc = profile("SV", svNS, all, [eqDoc]);
 		zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
 		zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
 		zip.file("SV.xml", oSerializer.serializeToString(svDoc));
