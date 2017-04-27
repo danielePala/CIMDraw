@@ -771,7 +771,7 @@
 	 let elementDiv = elementEnter
 		.selectAll("li.attribute")
 		.data(function(d) {
-		    return self.model.getSchemaAttributes(d.localName); 
+		    return self.model.schema.getSchemaAttributes(d.localName); 
 		})
 		.enter()
 		.append("li")
@@ -788,7 +788,7 @@
 		});
 	 // String attributes 
 	 elementDiv.filter(function(d) {
-	     let attrType = self.model.getSchemaAttributeType(d);
+	     let attrType = self.model.schema.getSchemaAttributeType(d);
 	     return attrType[0] === "#String";
 	 }).append("input")
 		   .attr("class", "form-control")
@@ -797,7 +797,7 @@
 		   .on("input", attrInput);
 	 // Integer attributes
 	 elementDiv.filter(function(d) {
-	     let attrType = self.model.getSchemaAttributeType(d);
+	     let attrType = self.model.schema.getSchemaAttributeType(d);
 	     return attrType[0] === "#Integer";
 	 }).append("input")
 		   .attr("class", "form-control")
@@ -806,7 +806,7 @@
 	 	   .on("input", attrInput);
 	 // Float attributes
 	 elementDiv.filter(function(d) {
-	     let attrType = self.model.getSchemaAttributeType(d);
+	     let attrType = self.model.schema.getSchemaAttributeType(d);
 	     return (attrType[0] === "#Float" || attrType[0] === "#Decimal");
 	 }).append("input")
 		   .attr("class", "form-control")
@@ -816,7 +816,7 @@
 	 	   .on("input", attrInput);
 	 // Boolean attributes
 	 let elementBool = elementDiv.filter(function(d) {
-	     let attrType = self.model.getSchemaAttributeType(d);
+	     let attrType = self.model.schema.getSchemaAttributeType(d);
 	     return attrType[0] === "#Boolean";
 	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
 	 let elementBoolBtn = elementBool.append("button").attr("type", "button")
@@ -831,7 +831,7 @@
 	 elementBoolList.append("li").on("click", setBoolAttr).append("a").text("false");
 	 // Enum attributes
 	 let elementEnum = elementDiv.filter(function(d) {
-	     return self.model.isEnum(d);
+	     return self.model.schema.isEnum(d);
 	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
 	 let elementEnumBtn = elementEnum.append("button").attr("type", "button")
 		    .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
@@ -844,7 +844,7 @@
 	 elementEnumList
 	     .selectAll("li")
 	     .data(function(d) {
-		 return self.model.getSchemaEnumValues(d);
+		 return self.model.schema.getSchemaEnumValues(d);
 	     })
 	     .enter()
 	     .append("li")
@@ -916,7 +916,7 @@
 	     let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
 	     let attr = d3.select($(this).parents("li.attribute").first().get(0)).data()[0];
 	     let attrName = "cim:" + attr.attributes[0].value.substring(1);
-	     let value = self.model.getSchemaEnumName(attr) + "." + d;
+	     let value = self.model.schema.getSchemaEnumName(attr) + "." + d;
 	     // update the model
 	     self.model.setEnum(object, attrName, value);
 	 };
@@ -929,7 +929,7 @@
 	 let elementLink = elementEnter
 	        .selectAll("li.link")
 	        .data(function(d) {
-		    return self.model.getSchemaLinks(d.localName)
+		    return self.model.schema.getSchemaLinks(d.localName)
 			       .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
 			       .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal")
 			       .filter(el => el.attributes[0].value !== "#Measurement.Terminal")

@@ -461,7 +461,7 @@
 		 $(selected).filter('[data-toggle="popover"]').popover("toggle");
 		 quadtree.removeAll(selected); // update quadtree
 		 // handle movement of cn
-		 if (opts.model.isA("ConductingEquipment", d) === true) {
+		 if (opts.model.schema.isA("ConductingEquipment", d) === true) {
 		     let terminals = opts.model.getTerminals([d]);
 		     let cns = opts.model.getTargets(
 			 terminals,
@@ -969,7 +969,7 @@
 	     self.updateSelected();
 	 }
 	 let newObject = null;
-	 if (opts.model.isA("Switch", d) === true) {
+	 if (opts.model.schema.isA("Switch", d) === true) {
 		 newObject = opts.model.createObject("cim:Discrete");
 	 } else {
 	     newObject = opts.model.createObject("cim:Analog");

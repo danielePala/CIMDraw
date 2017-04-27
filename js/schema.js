@@ -1,3 +1,24 @@
+/*
+  Fundamental functions to use CGMES schemas.
+
+  Copyright 2017 Daniele Pala <daniele.pala@rse-web.it>
+
+  This file is part of CIMDraw.
+
+  CIMDraw is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  CIMDraw is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with CIMDraw. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 "use strict";
 
 function cimSchema() {
@@ -9,50 +30,6 @@ function cimSchema() {
     const rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
-    // A map of schema link names vs inverse schema link name.
-    // Used for faster lookup.
-    let schemaInvLinksMap = new Map();
-
-    // Build initial schema data structures and call a user callback.
-    // This is a 'private' function (not visible in the schema object).
-    function buildSchema(callback) {	
-	// let's read schema files, if necessary
-	if (schemaData["EQ"] === null) {
-	    d3.xml(rdfsEQ, function(error, schemaDataEQ) {
-		schemaData["EQ"] = schemaDataEQ;
-		populateInvLinkMap(schemaData["EQ"]);
-		d3.xml(rdfsDL, function(schemaDataDL) {
-		    schemaData["DL"] = schemaDataDL;
-		    populateInvLinkMap(schemaData["DL"]);
-		    d3.xml(rdfsSV, function(schemaDataSV) {
-			schemaData["SV"] = schemaDataSV;
-			populateInvLinkMap(schemaData["SV"]);
-			callback(null);
-		    });
-		});
-	    });
-	} else {
-	    callback(null);
-	}
-
-	function populateInvLinkMap(schemaData) {
-	    let allSchemaObjects = schemaData.children[0].children;
-	    for (let i in allSchemaObjects) {
-		let schemaObject = allSchemaObjects[i];
-		if (typeof(schemaObject.children) === "undefined") {
-		    continue;
-		}
-		let invRoleName = [].filter.call(schemaObject.children, function(el) {
-		    return el.nodeName === "cims:inverseRoleName";
-		})[0];
-		if (typeof(invRoleName) !== "undefined") {
-		    schemaInvLinksMap.set(
-			schemaObject.attributes[0].value.substring(1),
-			invRoleName.attributes[0].value.substring(1));
-		}
-	    }
-	};
-    };
 
     // Get all the superclasses for a given type.
     // This function works for any profile, since
@@ -86,15 +63,59 @@ function cimSchema() {
 		return el.nodeName === "cims:AssociationUsed";
 	    })[0];
 	    if (linkUsed.textContent === "No") {
-		let invLinkName = schemaInvLinksMap.get(linkName.split(":")[1]);
+		let invLinkName = schema.schemaInvLinksMap.get(linkName.split(":")[1]);
 		ret = "cim:" + invLinkName;
 	    } 
 	}
 	return ret;
     };
 
-    let schema = {
-    	// Get the schema description of a given object, e.g. Breaker.
+    let schema = {	
+	// A map of schema link names vs inverse schema link name.
+	// Used for faster lookup.
+	schemaInvLinksMap: new Map(),
+	
+	// Build initial schema data structures and call a user callback.
+	buildSchema(callback) {	
+	    // let's read schema files, if necessary
+	    if (schemaData["EQ"] === null) {
+		d3.xml(rdfsEQ, function(error, schemaDataEQ) {
+		    schemaData["EQ"] = schemaDataEQ;
+		    populateInvLinkMap(schemaData["EQ"]);
+		    d3.xml(rdfsDL, function(schemaDataDL) {
+			schemaData["DL"] = schemaDataDL;
+			populateInvLinkMap(schemaData["DL"]);
+			d3.xml(rdfsSV, function(schemaDataSV) {
+			    schemaData["SV"] = schemaDataSV;
+			    populateInvLinkMap(schemaData["SV"]);
+			    callback(null);
+			});
+		    });
+		});
+	    } else {
+		callback(null);
+	    }
+
+	    function populateInvLinkMap(schemaData) {
+		let allSchemaObjects = schemaData.children[0].children;
+		for (let i in allSchemaObjects) {
+		    let schemaObject = allSchemaObjects[i];
+		    if (typeof(schemaObject.children) === "undefined") {
+			continue;
+		    }
+		    let invRoleName = [].filter.call(schemaObject.children, function(el) {
+			return el.nodeName === "cims:inverseRoleName";
+		    })[0];
+		    if (typeof(invRoleName) !== "undefined") {
+			schema.schemaInvLinksMap.set(
+			    schemaObject.attributes[0].value.substring(1),
+			    invRoleName.attributes[0].value.substring(1));
+		    }
+		}
+	    };
+	},
+
+	// Get the schema description of a given object, e.g. Breaker.
 	// If this function is called with only one argument, it will
 	// search into all of the known schemas, otherwise it will search
 	// in the requested schema only.
@@ -149,13 +170,13 @@ function cimSchema() {
 
 	// Get all the attributes associated to a given type.
 	// The type is without namespace, e.g. "Breaker".
-	// An optional 'schema' argument can be used to indicate the schema,
+	// An optional 'schemaName' argument can be used to indicate the schema,
 	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
 	// EQ schema is used.
-	getSchemaAttributes(type, schema) {
+	getSchemaAttributes(type, schemaName) {
 	    let schData = schemaData["EQ"];
-	    if (arguments.length === 2) {
-		schData = schemaData[schema];
+	    if (typeof(schemaName) !== "undefined") {
+		schData = schemaData[schemaName];
 	    }
 	    let allSchemaObjects = schData.children[0].children;
 	    let ret = [].filter.call(allSchemaObjects, function(el) {
@@ -181,11 +202,11 @@ function cimSchema() {
 
 	// Get a specific attribute associated to a given type.
 	// The type is without namespace, e.g. "Breaker".
-	// An optional 'schema' argument can be used to indicate the schema,
+	// An optional 'schemaName' argument can be used to indicate the schema,
 	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
 	// EQ schema is used.
-	getSchemaAttribute(type, attrName, schema) {
-	    let schemaAttributes = schema.getSchemaAttributes(type, schema);
+	getSchemaAttribute(type, attrName, schemaName) {
+	    let schemaAttributes = schema.getSchemaAttributes(type, schemaName);
 	    return schemaAttributes.filter(el => el.attributes[0].value.substring(1) === attrName)[0];
 	},
 
@@ -247,10 +268,10 @@ function cimSchema() {
 	// An optional 'schema' argument can be used to indicate the schema,
 	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
 	// EQ schema is used.
-	getSchemaLinks(type, schema) {
+	getSchemaLinks(type, schemaName) {
 	    let schData = schemaData["EQ"];
 	    if (arguments.length === 2) {
-		schData = schemaData[schema];
+		schData = schemaData[schemaName];
 	    }
 	    let allSchemaObjects = schData.children[0].children;
 	    let ret = [].filter.call(allSchemaObjects, function(el) {

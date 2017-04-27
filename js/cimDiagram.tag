@@ -645,7 +645,7 @@
 	 let topos = allConnectivityNodes.reduce(function(r, v) {
 	     let cnTerminals = self.model.getTargets([v], "ConnectivityNode.Terminals");
 	     let switches = self.model.getTargets(cnTerminals, "Terminal.ConductingEquipment").filter(function(el) {
-		 return self.model.isA("Switch", el) === true;
+		 return self.model.schema.isA("Switch", el) === true;
 	     });
 	     switches = switches.filter(function(el) {
 		 let ret = true;

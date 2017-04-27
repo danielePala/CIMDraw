@@ -50,7 +50,7 @@ describe("CIM model", function() {
 
     it("should be able to read a schema attribute", function() {
 	// read a random attribute
-	let attribute = model.getSchemaAttribute("Breaker", "Switch.retained");
+	let attribute = model.schema.getSchemaAttribute("Breaker", "Switch.retained");
 	expect(typeof(attribute)).not.toBe(undefined);
     });
 
@@ -80,11 +80,11 @@ describe("CIM model", function() {
     });
 
     it("should be able to locate schema description of objects", function() {
-	let brk1 = model.getSchemaObject("Breaker");
-	let dobj1 = model.getSchemaObject("DiagramObject");
-	let brk2 = model.getSchemaObject("Breaker", "EQ");
-	let dobj2 = model.getSchemaObject("DiagramObject", "DL");
-	let dobj3 = model.getSchemaObject("DiagramObject", "EQ");
+	let brk1 = model.schema.getSchemaObject("Breaker");
+	let dobj1 = model.schema.getSchemaObject("DiagramObject");
+	let brk2 = model.schema.getSchemaObject("Breaker", "EQ");
+	let dobj2 = model.schema.getSchemaObject("DiagramObject", "DL");
+	let dobj3 = model.schema.getSchemaObject("DiagramObject", "EQ");
 	expect(brk1).not.toBe(null);
 	expect(dobj1).not.toBe(null);
 	expect(brk2).not.toBe(null);
@@ -100,8 +100,8 @@ describe("CIM model", function() {
 	});*/
 
     it("should be able to get schema-specific links for objects", function() {
-	let idobjEQ = model.getSchemaLinks("IdentifiedObject", "EQ");
-	let idobjDL = model.getSchemaLinks("IdentifiedObject", "DL");
+	let idobjEQ = model.schema.getSchemaLinks("IdentifiedObject", "EQ");
+	let idobjDL = model.schema.getSchemaLinks("IdentifiedObject", "DL");
 	expect(idobjEQ.length).toBe(0);
 	expect(idobjDL.length).toBeGreaterThan(0);
     });
