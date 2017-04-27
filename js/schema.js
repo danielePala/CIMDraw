@@ -53,23 +53,6 @@ function cimSchema() {
 	return allSuper;
     };
 
-    // Check if a link is set in the correct way,
-    // otherwise reverse it.
-    function checkLink(source, linkName) {
-	let ret = linkName;
-	let schLink = schema.getAllSchemasLink(source.localName, linkName.split(":")[1]);
-	if (typeof(schLink) !== "undefined") {
-	    let linkUsed = [].filter.call(schLink.children, function(el) {
-		return el.nodeName === "cims:AssociationUsed";
-	    })[0];
-	    if (linkUsed.textContent === "No") {
-		let invLinkName = schema.schemaInvLinksMap.get(linkName.split(":")[1]);
-		ret = "cim:" + invLinkName;
-	    } 
-	}
-	return ret;
-    };
-
     let schema = {	
 	// A map of schema link names vs inverse schema link name.
 	// Used for faster lookup.
@@ -265,12 +248,12 @@ function cimSchema() {
 	},
 
 	// Get the schema links for a given type.
-	// An optional 'schema' argument can be used to indicate the schema,
+	// An optional 'schemaName' argument can be used to indicate the schema,
 	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
 	// EQ schema is used.
 	getSchemaLinks(type, schemaName) {
 	    let schData = schemaData["EQ"];
-	    if (arguments.length === 2) {
+	    if (typeof(schemaName) !== "undefined") {
 		schData = schemaData[schemaName];
 	    }
 	    let allSchemaObjects = schData.children[0].children;
@@ -307,11 +290,11 @@ function cimSchema() {
 
 	// Get a specific link associated to a given type.
 	// The type is without namespace, e.g. "Breaker".
-	// An optional 'schema' argument can be used to indicate the schema,
+	// An optional 'schemaName' argument can be used to indicate the schema,
 	// which can be 'EQ' or 'DL'. If the argument is missing, the
 	// EQ schema is used.
-	getSchemaLink(type, linkName, schema) {
-	    let schemaLinks = schema.getSchemaLinks(type, schema);
+	getSchemaLink(type, linkName, schemaName) {
+	    let schemaLinks = schema.getSchemaLinks(type, schemaName);
 	    return schemaLinks.filter(el => el.attributes[0].value.substring(1) === linkName)[0];
 	},
 
@@ -328,6 +311,26 @@ function cimSchema() {
 		return false;
 	    }
 	    return true;
+	},
+
+	// Check if a link is set in the correct way (according to CGMES schema).
+	// The function doesn't modify the link, it just returns the
+	// name of the correct link: this will be equal to linkName if the
+	// link is set in the correct way, otherwise it will equal the reverse
+	// link name.
+	checkLink(source, linkName) {
+	    let ret = linkName;
+	    let schLink = schema.getAllSchemasLink(source.localName, linkName.split(":")[1]);
+	    if (typeof(schLink) !== "undefined") {
+		let linkUsed = [].filter.call(schLink.children, function(el) {
+		    return el.nodeName === "cims:AssociationUsed";
+		})[0];
+		if (linkUsed.textContent === "No") {
+		let invLinkName = schema.schemaInvLinksMap.get(linkName.split(":")[1]);
+		    ret = "cim:" + invLinkName;
+		} 
+	    }
+	    return ret;
 	}
     };
 

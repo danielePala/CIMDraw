@@ -470,7 +470,7 @@ function cimModel() {
 		for (let datum of all) {
 		    let links = model.getLinks(datum);
 		    links.forEach(function(link) {
-			let linkToUse = checkLink(datum, link.nodeName);
+			let linkToUse = model.schema.checkLink(datum, link.nodeName);
 			if (linkToUse !== link.nodeName) {
 			    let targets = model.getTargets([datum], link.localName);
 			    targets.forEach(function(target) {
@@ -516,7 +516,7 @@ function cimModel() {
 		    // delete non-profile attributes
 		    let attrs = model.getAttributes(datum);
 		    attrs.forEach(function(attr) {
-			let schAttr = model.getSchemaAttribute(datum.localName, attr.localName, profile);
+			let schAttr = model.schema.getSchemaAttribute(datum.localName, attr.localName, profile);
 			if (typeof(schAttr) === "undefined") {
 			    attr.remove();
 			}
@@ -524,7 +524,7 @@ function cimModel() {
 		    // delete non-profile links
 		    let links = model.getLinks(datum);
 		    links.forEach(function(link) {		  
-			let schLink = model.getSchemaLink(datum.localName, link.localName, profile);
+			let schLink = model.schema.getSchemaLink(datum.localName, link.localName, profile);
 			if (typeof(schLink) === "undefined") {
 			    link.remove();
 			}
