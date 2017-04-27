@@ -55,7 +55,8 @@
 			<ul class="dropdown-menu">
 			    <li><a href="">Open</a></li>
 			    <li><a id="cim-save" download="file.xml">Save as...</a></li>
-			    <li><a id="cgmes-save" download="file.xml">Save as CGMES (NOT WORKING YET)...</a></li>
+			    <li><a id="cgmes-save">Save as CGMES (NOT WORKING YET)...</a></li>
+			    <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
 			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
 			</ul>
 		    </li>
@@ -275,7 +276,8 @@
 	     };
 	 };
 
-	 function loadDiagramList(filename) { 
+	 function loadDiagramList(filename) {
+	     $("#cim-save").off("click");
 	     // allow saving a copy of the file as plain XML
 	     $("#cim-save").on("click", function() {
 		 let out = self.cimModel.save();
@@ -283,14 +285,17 @@
 		 let objectURL = URL.createObjectURL(blob);
 		 $("#cim-save").attr("href", objectURL);
 	     });
+	     $("#cgmes-save").off("click");
 	     // allow saving a copy of the file as CGMES
-	     $("#cgmes-save").on("click", function() {
+	     $("#cgmes-save").on("click", cgmesSave);
+	     function cgmesSave() {
 		 let out = self.cimModel.saveAsCGMES();
 		 out.then(function(content) {
 		     let objectURL = URL.createObjectURL(content);
-		     $("#cgmes-save").attr("href", objectURL);
+		     $("#cgmes-download").attr("href", objectURL);
+		     document.getElementById("cgmes-download").click();
 		 });
-	     });
+	     };
 	     // load diagram list
 	     $(".selectpicker").selectpicker({container: "body"});
 	     d3.select("#cim-diagrams").selectAll("option").remove();

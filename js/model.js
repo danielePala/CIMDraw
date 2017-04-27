@@ -464,7 +464,7 @@ function cimModel() {
 	    let oSerializer = new XMLSerializer();
 	    let zip = new JSZip();
 	    if (typeof(data.all) !== "undefined") {
-		let all = data.all.children[0].children;
+		let all = data.all.children[0].cloneNode(true).children;
 		// set links according to CGMES schemas
 		let linksToChange = [];
 		for (let datum of all) {
@@ -491,10 +491,6 @@ function cimModel() {
 		zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
 		zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
 		zip.file("SV.xml", oSerializer.serializeToString(svDoc));
-		data.all = undefined;
-		data.eq = eqDoc;
-		data.dl = dlDoc;
-		data.sv = svDoc;
 	    } else {
 		zip.file("EQ.xml", oSerializer.serializeToString(data.eq));
 		zip.file("DL.xml", oSerializer.serializeToString(data.dl));
@@ -505,7 +501,7 @@ function cimModel() {
 		let all = [].filter.call(data, function(el) {
 		    let obj = model.schema.getSchemaObject(el.localName, name);
 		    return (obj !== null); 
-		}).slice();
+		});
 		let doc = cgmesDocument(ns, deps);
 		populateProfile(doc, all, name);
 		return doc;
@@ -761,7 +757,7 @@ function cimModel() {
 	    if (typeof(attribute) !== "undefined") {
 		attribute.innerHTML = value;
 	    } else {
-		attribute = object.ownerDocument.createElement(attrName);
+		attribute = object.ownerDocument.createElementNS(cimNS, attrName);
 		attribute.innerHTML = value;
 		object.appendChild(attribute);
 	    }
