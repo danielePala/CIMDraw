@@ -288,7 +288,7 @@
 		 let out = self.cimModel.saveAsCGMES();
 		 out.then(function(content) {
 		     let objectURL = URL.createObjectURL(content);
-		     window.location.href = objectURL;
+		     $("#cgmes-save").attr("href", objectURL);
 		 });
 	     });
 	     // load diagram list
