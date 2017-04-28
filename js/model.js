@@ -55,11 +55,15 @@ function cimModel() {
     function parseZip(callback, zip) {
 	let parser = new DOMParser();
 	let zipFilesProcessed = 0;
-	let zipFilesTotal = 0; 
+	let zipFilesTotal = 0;
+	let eqdata = null;
+	let dldata = null;
+	let svdata = null;
 	function success(content) {
 	    zipFilesProcessed = zipFilesProcessed + 1;
-	    if (typeof(data.eq) === "undefined" ||
-		typeof(data.dl) === "undefined") {
+	    if (eqdata === null ||
+		dldata === null ||
+		svdata === null) {
 		let parsed = parser.parseFromString(content, "application/xml");
 		let fullModel = [].filter.call(
 		    parsed.children[0].children, function(el) {
@@ -67,18 +71,35 @@ function cimModel() {
 		    })[0];
 		let profile = model.getAttribute(fullModel, "md:Model.profile");
 		if (profile.textContent.includes("Equipment")) {
-		    data.eq = parsed;
+		    eqdata = parsed;
 		}
 		if (profile.textContent.includes("DiagramLayout")) {
-		    data.dl = parsed;
+		    dldata = parsed;
+		}
+		if (profile.textContent.includes("StateVariables")) {
+		    svdata = parsed;
 		}
 	    }
 	    // at the end we need to have at least the EQ file
-	    if (typeof(data.eq) !== "undefined" &&
+	    if (eqdata !== null &&
 		zipFilesProcessed === zipFilesTotal) {
-		if (typeof(data.dl) === "undefined") {
-		    data.dl = createNewDLDocument(data.eq);
+		let all = parser.parseFromString(emptyFile, "application/xml");
+		for (let datum of eqdata.children[0].children) {
+		    all.children[0].appendChild(datum);
 		}
+		if (dldata !== null) {
+		    for (let datum of dldata.children[0].children) {
+			all.children[0].appendChild(datum);
+		    }
+		}
+		if (svdata !== null) {
+		    for (let datum of svdata.children[0].children) {
+			all.children[0].appendChild(datum);
+		    }
+		}
+		// TODO: handle rdf:about and remove FullModel objects
+		data.all = all;
+		
 		buildModel(callback);
 	    }
 	};
