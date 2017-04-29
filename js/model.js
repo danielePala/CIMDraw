@@ -37,16 +37,16 @@ function cimModel() {
     const dlNS = "http://entsoe.eu/CIM/DiagramLayout/3/1";
     // The State Variables namespace.
     const svNS = "http://entsoe.eu/CIM/StateVariables/4/1";
+    // The Topology namespace
+    const tpNS = "http://entsoe.eu/CIM/Topology/4/1";
     // An empty CIM file, used when creating a new file.
     const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
 	  "<rdf:RDF xmlns:cim=\""+ cimNS + "\" xmlns:entsoe=\"" + entsoeNS +
 	  "\" xmlns:md=\"" + modelNS + "\" xmlns:rdf=\"" + rdfNS + "\">" +
 	  "</rdf:RDF>";
     // CIM data for the current file.
-    // 'all' is used for plain RDF/XML files
-    // 'eq' is for the equipment file
-    // 'dl' is for the diagram layout file
-    let data = {all: undefined, eq:undefined, dl:undefined, sv: undefined};
+    // 'all' contains all the CIM Objects, in a single document.
+    let data = {all: null};
 
     // Parse and load an ENTSO-E CIM file. Only the EQ and DL profiles
     // are parsed. The given callback is called after having loaded
@@ -59,11 +59,13 @@ function cimModel() {
 	let eqdata = null;
 	let dldata = null;
 	let svdata = null;
+	let tpdata = null;
 	function success(content) {
 	    zipFilesProcessed = zipFilesProcessed + 1;
 	    if (eqdata === null ||
 		dldata === null ||
-		svdata === null) {
+		svdata === null ||
+		tpdata === null) {
 		let parsed = parser.parseFromString(content, "application/xml");
 		let fullModel = [].filter.call(
 		    parsed.children[0].children, function(el) {
@@ -78,6 +80,9 @@ function cimModel() {
 		}
 		if (profile.textContent.includes("StateVariables")) {
 		    svdata = parsed;
+		}
+		if (profile.textContent.includes("Topology")) {
+		    tpdata = parsed;
 		}
 	    }
 	    // at the end we need to have at least the EQ file
@@ -100,6 +105,14 @@ function cimModel() {
 		}
 		if (svdata !== null) {
 		    for (let datum of svdata.children[0].children) {
+			if (datum.nodeName === "md:FullModel") {
+			    continue;
+			}
+			all.children[0].appendChild(datum.cloneNode(true));
+		    }
+		}
+		if (tpdata !== null) {
+		    for (let datum of tpdata.children[0].children) {
 			if (datum.nodeName === "md:FullModel") {
 			    continue;
 			}
@@ -197,20 +210,6 @@ function cimModel() {
 	let term = model.cimObject("cim:Terminal");
 	addLink(term, "cim:Terminal.ConductingEquipment", object);
 	return term;
-    };
-
-    // Get the document for the given CIM object.
-    // This is a 'private' function (not visible in the model object).
-    function getDocument(cimObjName) {
-	if (typeof(data.all) !== "undefined") {
-	    return data.all;
-	}
-	// can be Diagram Layout or Equipment
-	if (["cim:Diagram", "cim:DiagramObject", "cim:DiagramObjectPoint"].indexOf(cimObjName) > -1) {
-	    return data.dl;
-	} else {
-	    return data.eq;
-	}
     };
 
     // Add a new link to a given source.
@@ -432,23 +431,7 @@ function cimModel() {
 	save() {
 	    let oSerializer = new XMLSerializer();
 	    let sXML = "";
-	    if (typeof(data.all) !== "undefined") {
-		sXML = oSerializer.serializeToString(data.all);
-		return sXML;
-	    } else {
-		let parser = new DOMParser();
-		let all = parser.parseFromString(emptyFile, "application/xml");
-		for (let datum of data.eq.children[0].children) {
-		    all.children[0].appendChild(datum.cloneNode(true));
-		}
-		for (let datum of data.dl.children[0].children) {
-		    all.children[0].appendChild(datum.cloneNode(true));
-		}
-		sXML = oSerializer.serializeToString(all);
-		data.eq = undefined;
-		data.dl = undefined;
-		data.all = all;
-	    }
+	    sXML = oSerializer.serializeToString(data.all);
 	    return sXML;
 	},
 
@@ -457,38 +440,33 @@ function cimModel() {
 	saveAsCGMES() {
 	    let oSerializer = new XMLSerializer();
 	    let zip = new JSZip();
-	    if (typeof(data.all) !== "undefined") {
-		let all = data.all.children[0].cloneNode(true).children;
-		// set links according to CGMES schemas
-		let linksToChange = [];
-		for (let datum of all) {
-		    let links = model.getLinks(datum);
-		    links.forEach(function(link) {
-			let linkToUse = model.schema.checkLink(datum, link.nodeName);
-			if (linkToUse !== link.nodeName) {
-			    let targets = model.getTargets([datum], link.localName);
-			    targets.forEach(function(target) {
-				linksToChange.push({s: target, l: linkToUse, t: datum});
-			    });
-			}
-		    });
-		}
-		linksToChange.forEach(function(linkToChange) {
-		    model.setLink(linkToChange.s, linkToChange.l, linkToChange.t);
+	    let all = data.all.children[0].cloneNode(true).children;
+	    // set links according to CGMES schemas
+	    let linksToChange = [];
+	    for (let datum of all) {
+		let links = model.getLinks(datum);
+		links.forEach(function(link) {
+		    let linkToUse = model.schema.checkLink(datum, link.nodeName);
+		    if (linkToUse !== link.nodeName) {
+			let targets = model.getTargets([datum], link.localName);
+			targets.forEach(function(target) {
+			    linksToChange.push({s: target, l: linkToUse, t: datum});
+			});
+		    }
 		});
-		// create EQ file
-		let eqDoc = profile("EQ", eqNS, all, []);
-		// create DL file
-		let dlDoc = profile("DL", dlNS, all, [eqDoc]);
-		// create SV file
-		let svDoc = profile("SV", svNS, all, [eqDoc]);
-		zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
-		zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
-		zip.file("SV.xml", oSerializer.serializeToString(svDoc));
-	    } else {
-		zip.file("EQ.xml", oSerializer.serializeToString(data.eq));
-		zip.file("DL.xml", oSerializer.serializeToString(data.dl));
 	    }
+	    linksToChange.forEach(function(linkToChange) {
+		model.setLink(linkToChange.s, linkToChange.l, linkToChange.t);
+	    });
+	    // create EQ file
+	    let eqDoc = profile("EQ", eqNS, all, []);
+	    // create DL file
+	    let dlDoc = profile("DL", dlNS, all, [eqDoc]);
+	    // create SV file
+	    let svDoc = profile("SV", svNS, all, [eqDoc]);
+	    zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
+	    zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
+	    zip.file("SV.xml", oSerializer.serializeToString(svDoc));
 	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 
 	    function profile(name, ns, data, deps) {
@@ -1063,7 +1041,7 @@ function cimModel() {
 
 	// TODO: this should probably be private.
 	cimObject(name, uuid) {
-	    let document = getDocument(name);
+	    let document = data.all;
 	    let obj = document.createElementNS(cimNS, name);
 	    document.children[0].appendChild(obj);
 	    let objID = document.createAttribute("rdf:ID");
