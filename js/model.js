@@ -129,8 +129,10 @@ function cimModel() {
 	let modelDesc = document.createElementNS(modelNS, "md:FullModel");
 	empty.children[0].appendChild(modelDesc);
 	let modelDescID = modelDesc.setAttribute("rdf:about", "urn:uuid:" + generateUUID().substring(1));
-	// set the profile link
-	model.setAttribute(modelDesc, "md:Model.profile", ns);
+	// set the profile link TODO: use setAttribute()
+	let attribute = modelDesc.ownerDocument.createElementNS(modelNS, "md:Model.profile");
+	attribute.innerHTML = ns;
+	modelDesc.appendChild(attribute);
 	// set model dependency
 	deps.forEach(function(dep) {
 	    let depModelDesc = [].filter.call(
