@@ -85,19 +85,28 @@ function cimModel() {
 		zipFilesProcessed === zipFilesTotal) {
 		let all = parser.parseFromString(emptyFile, "application/xml");
 		for (let datum of eqdata.children[0].children) {
-		    all.children[0].appendChild(datum);
+		    if (datum.nodeName === "md:FullModel") {
+			continue;
+		    }
+		    all.children[0].appendChild(datum.cloneNode(true));
 		}
 		if (dldata !== null) {
 		    for (let datum of dldata.children[0].children) {
-			all.children[0].appendChild(datum);
+			if (datum.nodeName === "md:FullModel") {
+			    continue;
+			}
+			all.children[0].appendChild(datum.cloneNode(true));
 		    }
 		}
 		if (svdata !== null) {
 		    for (let datum of svdata.children[0].children) {
-			all.children[0].appendChild(datum);
+			if (datum.nodeName === "md:FullModel") {
+			    continue;
+			}
+			all.children[0].appendChild(datum.cloneNode(true));
 		    }
 		}
-		// TODO: handle rdf:about and remove FullModel objects
+		// TODO: handle rdf:about
 		data.all = all;
 		
 		buildModel(callback);
@@ -112,45 +121,7 @@ function cimModel() {
 	    });
 	};
     };
-
-    // Create a new equipment document, in case the input
-    // CGMES file is a plain XML file.
-    // This is a 'private' function (not visible in the model object).
-    function createNewEQDocument() {
-	let parser = new DOMParser();
-	let empty = parser.parseFromString(emptyFile, "application/xml");
-	// create 'FullModel' element
-	let eqModelDesc = document.createElementNS(modelNS, "md:FullModel");
-	empty.children[0].appendChild(eqModelDesc);
-	let eqModelDescID = eqModelDesc.setAttribute("rdf:about", "urn:uuid:" + generateUUID().substring(1));
-	// set the profile link
-	model.setAttribute(eqModelDesc, "md:Model.profile", eqNS);
-	return empty;
-    };
     
-    // Create a new diagram layout document, in case the input
-    // CGMES file contains only the EQ profile.
-    // This is a 'private' function (not visible in the model object).
-    function createNewDLDocument(eqDoc) {
-	let parser = new DOMParser();
-	let empty = parser.parseFromString(emptyFile, "application/xml");
-	// create 'FullModel' element
-	let dlModelDesc = document.createElementNS(modelNS, "md:FullModel");
-	empty.children[0].appendChild(dlModelDesc);
-	let dlModelDescID = dlModelDesc.setAttribute("rdf:about", "urn:uuid:" + generateUUID().substring(1));
-	// set the profile link
-	model.setAttribute(dlModelDesc, "md:Model.profile", dlNS);
-	// set model dependency
-	let eqModelDesc = [].filter.call(
-	    eqDoc.children[0].children, function(el) {
-		return el.nodeName === "md:FullModel";
-	    })[0];
-	let dlModelDep = dlModelDesc.ownerDocument.createElement("md:Model.DependentOn");
-	let dlModelDepVal = dlModelDep.setAttribute("rdf:resource", eqModelDesc.attributes.getNamedItem("rdf:about").value);
-	dlModelDesc.appendChild(dlModelDep);
-	return empty;
-    };
-
     function cgmesDocument(ns, deps) {
 	let parser = new DOMParser();
 	let empty = parser.parseFromString(emptyFile, "application/xml");

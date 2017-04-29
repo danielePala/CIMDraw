@@ -30,7 +30,9 @@ function cimSchema() {
     const rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
-
+    let schemaAttrsMap = new Map();
+    let schemaLinksMap = new Map();
+    
     // Get all the superclasses for a given type.
     // This function works for any profile, since
     // it is based on the getSchemaObject function.
@@ -106,7 +108,7 @@ function cimSchema() {
 	// Breaker object, for example). However, this is not a problem
 	// since the definition is the same in all of the schemas.
 	getSchemaObject(type, schema) {
-	    let ret = null;
+	    let ret = null; 
 	    for (let profile of Object.keys(schemaData)) {
 		if (arguments.length === 2 && schema !== profile) {
 		    continue;
@@ -157,29 +159,39 @@ function cimSchema() {
 	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
 	// EQ schema is used.
 	getSchemaAttributes(type, schemaName) {
-	    let schData = schemaData["EQ"];
+	    let key = type;
 	    if (typeof(schemaName) !== "undefined") {
-		schData = schemaData[schemaName];
+		    key = key + schemaName;
+	    } else {
+		key = key + "EQ";
 	    }
-	    let allSchemaObjects = schData.children[0].children;
-	    let ret = [].filter.call(allSchemaObjects, function(el) {
-		return el.attributes[0].value.startsWith("#" + type + ".");
-	    });
-	    let supers = getAllSuper(type);
-	    for (let i in supers) {
-		ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
-		    return el.attributes[0].value.startsWith("#" + supers[i] + ".");
-		}));
-	    }
-	    ret = ret.filter(function(el) {
-		let name = el.attributes[0].value;
-		let isLiteral = false;
-		let localName = name.split(".")[1];
-		if (typeof(localName) !== "undefined") {
-		    isLiteral = (localName.toLowerCase().charAt(0) === localName.charAt(0));
+	    let ret = schemaAttrsMap.get(key);
+	    if (typeof(ret) === "undefined") {
+		let schData = schemaData["EQ"];
+		if (typeof(schemaName) !== "undefined") {
+		    schData = schemaData[schemaName];
 		}
-		return isLiteral;
-	    });
+		let allSchemaObjects = schData.children[0].children;
+		ret = [].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith("#" + type + ".");
+		});
+		let supers = getAllSuper(type);
+		for (let i in supers) {
+		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
+			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+		    }));
+		}
+		ret = ret.filter(function(el) {
+		    let name = el.attributes[0].value;
+		    let isLiteral = false;
+		    let localName = name.split(".")[1];
+		    if (typeof(localName) !== "undefined") {
+			isLiteral = (localName.toLowerCase().charAt(0) === localName.charAt(0));
+		    }
+		    return isLiteral;
+		});
+		schemaAttrsMap.set(key, ret);
+	    }
 	    return ret;
 	},
 
@@ -252,29 +264,39 @@ function cimSchema() {
 	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
 	// EQ schema is used.
 	getSchemaLinks(type, schemaName) {
-	    let schData = schemaData["EQ"];
+	    let key = type;
 	    if (typeof(schemaName) !== "undefined") {
-		schData = schemaData[schemaName];
+		key = key + schemaName;
+	    } else {
+		key = key + "EQ";
 	    }
-	    let allSchemaObjects = schData.children[0].children;
-	    let ret = [].filter.call(allSchemaObjects, function(el) {
-		return el.attributes[0].value.startsWith("#" + type + ".");
-	    });
-	    let supers = getAllSuper(type);
-	    for (let i in supers) {
-		ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
-		    return el.attributes[0].value.startsWith("#" + supers[i] + ".");
-		}));
-	    }
-	    ret = ret.filter(function(el) {
-		let name = el.attributes[0].value;
-		let isLiteral = false;
-		let localName = name.split(".")[1];
-		if (typeof(localName) !== "undefined") {
-		    isLiteral = (localName.toLowerCase().charAt(0) !== localName.charAt(0));
+	    let ret = schemaLinksMap.get(key);
+	    if (typeof(ret) === "undefined") {
+		let schData = schemaData["EQ"];
+		if (typeof(schemaName) !== "undefined") {
+		    schData = schemaData[schemaName];
 		}
-		return isLiteral;
-	    });
+		let allSchemaObjects = schData.children[0].children;
+		ret = [].filter.call(allSchemaObjects, function(el) {
+		    return el.attributes[0].value.startsWith("#" + type + ".");
+		});
+		let supers = getAllSuper(type);
+		for (let i in supers) {
+		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
+			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+		    }));
+		}
+		ret = ret.filter(function(el) {
+		    let name = el.attributes[0].value;
+		    let isLiteral = false;
+		    let localName = name.split(".")[1];
+		    if (typeof(localName) !== "undefined") {
+			isLiteral = (localName.toLowerCase().charAt(0) !== localName.charAt(0));
+		    }
+		    return isLiteral;
+		});
+		schemaLinksMap.set(key, ret);
+	    }
 	    return ret;
 	},
 
