@@ -119,7 +119,6 @@ function cimModel() {
 			all.children[0].appendChild(datum.cloneNode(true));
 		    }
 		}
-		// TODO: handle rdf:about
 		data.all = all;
 		
 		buildModel(callback);
@@ -187,6 +186,30 @@ function cimModel() {
 		    }
 		}   
 	    } 
+	}
+	// handle rdf:about
+	for (let i in allObjects) {
+	    let object = allObjects[i];
+	    let about = object.attributes.getNamedItem("rdf:about");
+	    if (about !== null) {
+		let target = model.dataMap.get(about.value);
+		// copy attributes and links
+		for (let attr of model.getAttributes(object)) {
+		    target.appendChild(attr.cloneNode(true));
+		}
+		for (let link of model.getLinks(object)) {
+		    target.appendChild(link.cloneNode(true));
+		    // update links map
+		    let key = link.localName + link.attributes[0].value;
+		    let val = model.linksMap.get(key);
+		    if (typeof(val) === "undefined") {
+			model.linksMap.set(key, [target]);
+		    } else {
+			val.push(target);
+		    }
+		}
+		object.remove();
+	    }
 	}
 
 	model.schema.buildSchema(callback);
@@ -464,9 +487,12 @@ function cimModel() {
 	    let dlDoc = profile("DL", dlNS, all, [eqDoc]);
 	    // create SV file
 	    let svDoc = profile("SV", svNS, all, [eqDoc]);
+	    // create TP file
+	    let tpDoc = profile("TP", tpNS, all, [eqDoc]);
 	    zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
 	    zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
 	    zip.file("SV.xml", oSerializer.serializeToString(svDoc));
+	    zip.file("TP.xml", oSerializer.serializeToString(tpDoc));
 	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 
 	    function profile(name, ns, data, deps) {
@@ -480,23 +506,49 @@ function cimModel() {
 	    };
 	    
 	    function populateProfile(doc, data, profile) {
-		for (let datum of data) {
-		    // delete non-profile attributes
-		    let attrs = model.getAttributes(datum);
+		for (let i in data) {
+		    let datum = data[i].cloneNode();
+		    // take profile attributes
+		    let attrs = model.getAttributes(data[i]);
 		    attrs.forEach(function(attr) {
 			let schAttr = model.schema.getSchemaAttribute(datum.localName, attr.localName, profile);
-			if (typeof(schAttr) === "undefined") {
-			    attr.remove();
+			if (typeof(schAttr) !== "undefined") {
+			    datum.appendChild(attr);
 			}
 		    });
-		    // delete non-profile links
-		    let links = model.getLinks(datum);
+		    // take profile links
+		    let links = model.getLinks(data[i]);
 		    links.forEach(function(link) {		  
 			let schLink = model.schema.getSchemaLink(datum.localName, link.localName, profile);
-			if (typeof(schLink) === "undefined") {
-			    link.remove();
+			if (typeof(schLink) !== "undefined") {
+			    datum.appendChild(link);
 			}
 		    });
+		    // take profile enums
+		    let enums = model.getEnums(data[i]);
+		    enums.forEach(function(en) {		  
+			let schEnum = model.schema.getSchemaAttribute(datum.localName, en.localName, profile);
+			if (typeof(schEnum) !== "undefined") {
+			    datum.appendChild(en);
+			}
+		    });
+		    // handle rdf:about
+		    let schDesc = model.schema.getSchemaObject(datum.localName, profile);
+		    let stereotype = [].filter.call(schDesc.children, function(el) {
+			return el.nodeName === "cims:stereotype";
+		    })[0];
+		    if (typeof(stereotype) !== "undefined") {
+			let val = stereotype.textContent;
+			if (val === "Description") {
+			    console.log(val);
+			    // we must use rdf:about
+			    let idVal = datum.attributes.getNamedItem("rdf:ID").value; 
+			    datum.removeAttribute("rdf:ID");
+			    let about = datum.ownerDocument.createAttribute("rdf:about");
+			    about.value = "#" + idVal;
+			    datum.setAttributeNode(about);
+			}
+		    }
 		    doc.children[0].appendChild(datum);
 		}
 	    };

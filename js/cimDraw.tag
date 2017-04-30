@@ -55,7 +55,7 @@
 			<ul class="dropdown-menu">
 			    <li><a href="">Open</a></li>
 			    <li><a id="cim-save" download="file.xml">Save as...</a></li>
-			    <li><a id="cgmes-save">Save as CGMES (NOT WORKING YET)...</a></li>
+			    <li><a id="cgmes-save">Save as CGMES (EXPERIMENTAL)...</a></li>
 			    <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
 			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
 			</ul>

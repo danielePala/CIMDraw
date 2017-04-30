@@ -24,12 +24,15 @@
 function cimSchema() {
     // CIM schema data.
     // 'EQ' is for the equipment schema
-    // 'DL' is for the diagram layout schema  
-    let schemaData = {EQ: null, DL: null, SV: null};
+    // 'DL' is for the diagram layout schema
+    // 'SV' is the state variables schema
+    // 'TP' is the topology schema
+    let schemaData = {EQ: null, DL: null, SV: null, TP: null};
     // CGMES schema files
     const rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
-    const rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf"
+    const rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
+    const rdfsTP = "rdf-schema/TopologyProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     let schemaAttrsMap = new Map();
     let schemaLinksMap = new Map();
     
@@ -73,7 +76,11 @@ function cimSchema() {
 			d3.xml(rdfsSV, function(schemaDataSV) {
 			    schemaData["SV"] = schemaDataSV;
 			    populateInvLinkMap(schemaData["SV"]);
-			    callback(null);
+			    d3.xml(rdfsTP, function(schemaDataTP) {
+				schemaData["TP"] = schemaDataTP;
+				populateInvLinkMap(schemaData["TP"]);
+				callback(null);
+			    });
 			});
 		    });
 		});
@@ -261,7 +268,7 @@ function cimSchema() {
 
 	// Get the schema links for a given type.
 	// An optional 'schemaName' argument can be used to indicate the schema,
-	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
+	// which can be 'EQ', 'DL', 'SV' or 'TP'. If the argument is missing, the
 	// EQ schema is used.
 	getSchemaLinks(type, schemaName) {
 	    let key = type;
