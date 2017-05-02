@@ -463,10 +463,10 @@ function cimModel() {
 	saveAsCGMES() {
 	    let oSerializer = new XMLSerializer();
 	    let zip = new JSZip();
-	    let all = data.all.children[0].cloneNode(true).children;
+	    let all = null;
 	    // set links according to CGMES schemas
 	    let linksToChange = [];
-	    for (let datum of all) {
+	    for (let datum of data.all.children[0].children) {
 		let links = model.getLinks(datum);
 		links.forEach(function(link) {
 		    let linkToUse = model.schema.checkLink(datum, link.nodeName);
@@ -481,6 +481,7 @@ function cimModel() {
 	    linksToChange.forEach(function(linkToChange) {
 		model.setLink(linkToChange.s, linkToChange.l, linkToChange.t);
 	    });
+	    all = data.all.children[0].cloneNode(true).children;
 	    // create EQ file
 	    let eqDoc = profile("EQ", eqNS, all, []);
 	    // create DL file
@@ -540,7 +541,6 @@ function cimModel() {
 		    if (typeof(stereotype) !== "undefined") {
 			let val = stereotype.textContent;
 			if (val === "Description") {
-			    console.log(val);
 			    // we must use rdf:about
 			    let idVal = datum.attributes.getNamedItem("rdf:ID").value; 
 			    datum.removeAttribute("rdf:ID");
@@ -549,7 +549,9 @@ function cimModel() {
 			    datum.setAttributeNode(about);
 			}
 		    }
-		    doc.children[0].appendChild(datum);
+		    if (datum.children.length > 0) {
+			doc.children[0].appendChild(datum);
+		    }
 		}
 	    };
 	},
