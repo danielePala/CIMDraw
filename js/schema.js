@@ -27,14 +27,17 @@ function cimSchema() {
     // 'DL' is for the diagram layout schema
     // 'SV' is the state variables schema
     // 'TP' is the topology schema
-    let schemaData = {EQ: null, DL: null, SV: null, TP: null};
+    // 'SSH' is the steady state hypothesis schema
+    let schemaData = {EQ: null, DL: null, SV: null, TP: null, SSH: null};
     // CGMES schema files
     const rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsTP = "rdf-schema/TopologyProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
+    const rdfsSSH = "rdf-schema/SteadyStateHypothesisProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     let schemaAttrsMap = new Map();
     let schemaLinksMap = new Map();
+    let schemaObjsMap = new Map();
     
     // Get all the superclasses for a given type.
     // This function works for any profile, since
@@ -79,7 +82,11 @@ function cimSchema() {
 			    d3.xml(rdfsTP, function(schemaDataTP) {
 				schemaData["TP"] = schemaDataTP;
 				populateInvLinkMap(schemaData["TP"]);
-				callback(null);
+				d3.xml(rdfsSSH, function(schemaDataSSH) {
+				    schemaData["SSH"] = schemaDataSSH;
+				    populateInvLinkMap(schemaData["SSH"]);
+				    callback(null);
+				});
 			    });
 			});
 		    });
@@ -120,13 +127,21 @@ function cimSchema() {
 		if (arguments.length === 2 && schema !== profile) {
 		    continue;
 		}
+		// try to get from map
+		let schObj = schemaObjsMap.get(profile+type);
+		if (typeof(schObj) !== "undefined") {
+		    ret = schObj;
+		    break;
+		}
+		// not found in map, search and add it
 		let schData = schemaData[profile];
 		let allSchemaObjects = schData.children[0].children;
-		let schObj = [].filter.call(allSchemaObjects, function(el) {
+		schObj = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value === "#" + type;
 		})[0];
 		if (typeof(schObj) !== "undefined") {
 		    ret = schObj;
+		    schemaObjsMap.set(profile+type, schObj);
 		    break;
 		}
 	    };
@@ -268,7 +283,7 @@ function cimSchema() {
 
 	// Get the schema links for a given type.
 	// An optional 'schemaName' argument can be used to indicate the schema,
-	// which can be 'EQ', 'DL', 'SV' or 'TP'. If the argument is missing, the
+	// which can be 'EQ', 'DL', 'SV', 'TP' or 'SSH'. If the argument is missing, the
 	// EQ schema is used.
 	getSchemaLinks(type, schemaName) {
 	    let key = type;

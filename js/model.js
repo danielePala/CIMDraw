@@ -39,6 +39,8 @@ function cimModel() {
     const svNS = "http://entsoe.eu/CIM/StateVariables/4/1";
     // The Topology namespace
     const tpNS = "http://entsoe.eu/CIM/Topology/4/1";
+    // The Steady State Hypothesis namespace
+    const sshNS = "http://entsoe.eu/CIM/SteadyStateHypothesis/1/1";
     // An empty CIM file, used when creating a new file.
     const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
 	  "<rdf:RDF xmlns:cim=\""+ cimNS + "\" xmlns:entsoe=\"" + entsoeNS +
@@ -490,10 +492,13 @@ function cimModel() {
 	    let svDoc = profile("SV", svNS, all, [eqDoc]);
 	    // create TP file
 	    let tpDoc = profile("TP", tpNS, all, [eqDoc]);
+	    // create SSH file
+	    let sshDoc = profile("SSH", sshNS, all, [eqDoc]);
 	    zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
 	    zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
 	    zip.file("SV.xml", oSerializer.serializeToString(svDoc));
 	    zip.file("TP.xml", oSerializer.serializeToString(tpDoc));
+	    zip.file("SSH.xml", oSerializer.serializeToString(sshDoc));
 	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 
 	    function profile(name, ns, data, deps) {
