@@ -154,14 +154,21 @@ function cimSchema() {
 	    return ret;
 	},
 
-	// Get the (EQ) schema enumeration values of a given attribute.
-	getSchemaEnumValues(attr) {
+	// Get the schema enumeration values of a given attribute.
+	// An optional 'schemaName' argument can be used to indicate the schema,
+	// which can be 'EQ', 'DL', 'SV', 'TP', 'SSH' or 'GL'.
+	// If the argument is missing, the EQ schema is used.
+	getSchemaEnumValues(attr, schemaName) {
+	    let key = "EQ";
+	    if (typeof(schemaName) !== "undefined") {
+		    key = schemaName;
+	    } 
 	    let type = [].filter.call(attr.children, function(el) {
 		return el.nodeName === "rdfs:range";
 	    })[0];
 	    let typeVal = type.attributes.getNamedItem("rdf:resource").value;
 	    let enumName = typeVal.substring(1);
-	    let allSchemaObjects = schemaData["EQ"].children[0].children;
+	    let allSchemaObjects = schemaData[key].children[0].children;
 	    let enumValues = [].filter.call(allSchemaObjects, function(el) {
 		return el.attributes[0].value.startsWith("#" + enumName + ".");
 	    });
@@ -171,7 +178,7 @@ function cimSchema() {
 	},
 
 	// Get the enum name a given attribute.
-	// It is not limited to EQ schema.
+	// It works for every known schema.
 	getSchemaEnumName(attr) {
 	    let type = [].filter.call(attr.children, function(el) {
 		return el.nodeName === "rdfs:range";
@@ -184,8 +191,8 @@ function cimSchema() {
 	// Get all the attributes associated to a given type.
 	// The type is without namespace, e.g. "Breaker".
 	// An optional 'schemaName' argument can be used to indicate the schema,
-	// which can be 'EQ', 'DL' or 'SV'. If the argument is missing, the
-	// EQ schema is used.
+	// which can be 'EQ', 'DL', 'SV', 'TP', 'SSH' or 'GL'.
+	// If the argument is missing, the EQ schema is used.
 	getSchemaAttributes(type, schemaName) {
 	    let key = type;
 	    if (typeof(schemaName) !== "undefined") {
@@ -289,8 +296,8 @@ function cimSchema() {
 
 	// Get the schema links for a given type.
 	// An optional 'schemaName' argument can be used to indicate the schema,
-	// which can be 'EQ', 'DL', 'SV', 'TP', 'SSH' or 'GL'. If the argument is missing, the
-	// EQ schema is used.
+	// which can be 'EQ', 'DL', 'SV', 'TP', 'SSH' or 'GL'.
+	// If the argument is missing, the EQ schema is used.
 	getSchemaLinks(type, schemaName) {
 	    let key = type;
 	    if (typeof(schemaName) !== "undefined") {
@@ -341,8 +348,8 @@ function cimSchema() {
 	// Get a specific link associated to a given type.
 	// The type is without namespace, e.g. "Breaker".
 	// An optional 'schemaName' argument can be used to indicate the schema,
-	// which can be 'EQ' or 'DL'. If the argument is missing, the
-	// EQ schema is used.
+	// which can be 'EQ', 'DL', 'SV', 'TP', 'SSH' or 'GL'.
+	// If the argument is missing, the EQ schema is used.
 	getSchemaLink(type, linkName, schemaName) {
 	    let schemaLinks = schema.getSchemaLinks(type, schemaName);
 	    return schemaLinks.filter(el => el.attributes[0].value.substring(1) === linkName)[0];

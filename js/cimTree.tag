@@ -22,6 +22,8 @@
 <cimTree>
     <style>
      .tree {
+	 display: flex;
+	 flex-flow: column;
 	 max-height: 800px;
 	 min-width: 500px;
 	 overflow: scroll;
@@ -45,22 +47,33 @@
      ul {
 	 list-style-type: none;
      }
+
+     #tree-controls {
+	 padding-bottom: 10px;
+	 align-self: center;
+     }
+
+     #cim-search-form {
+	 align-self: center;
+     }
     </style>
 
     <div class="app-tree" id="app-tree">
 	<div class="tree">
-	    <form class="form-inline">
+	    <div class="btn-group" data-toggle="buttons" id="tree-controls">
+		<label class="btn btn-primary">
+		    <input type="checkbox" autocomplete="off" id="showAllObjects"> Show all objects
+		</label>
+		<label class="btn btn-primary">
+		    <input type="checkbox" autocomplete="off" id="sshInput">Power flow input
+		</label>
+	    </div>
+
+	    <form class="form-inline" id="cim-search-form">
 		<div class="form-group">
 		    <input type="search" class="form-control" id="cim-search-key" placeholder="Search..."></input>
 		</div>
 		<button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button>
-	    </form>
-	    <form>
-		<div class="checkbox">
-		    <label>
-			<input type="checkbox" id="showAllObjects"> Show all objects</input>
-		    </label>
-		</div>
 	    </form>
 	    <!-- Nav tabs -->
 	    <ul class="nav nav-tabs" role="tablist">
@@ -119,6 +132,9 @@
 
 	 $("#showAllObjects").change(function() {
 	     self.createTree(this.checked);
+	 });
+	 $("#sshInput").change(function() {
+	     self.resetAttrs();
 	 });
      });
 
@@ -328,6 +344,7 @@
 	 self.diagramName = decodeURI(self.model.activeDiagramName);
 	 $("#showAllObjects").prop("checked", true);
 	 $("#showAllObjects").change();
+	 $("#showAllObjects").parent().addClass("active");
      });
 
      createTree(showAllObjects) {
@@ -349,6 +366,7 @@
 	 self.diagramName = decodeURI(diagramName);
 	 $("#showAllObjects").prop("checked", false);
 	 $("#showAllObjects").change();
+	 $("#showAllObjects").parent().removeClass("active");
      }
 
      self.createTreeGenerator = function*(showAllObjects) {
@@ -768,24 +786,121 @@
      }
 
      generateAttrsAndLinks(elementEnter) {
-	 let elementDiv = elementEnter
-		.selectAll("li.attribute")
+	 let elementDiv = createTopDivs(elementEnter, $("#sshInput").prop('checked') === false, "EQ");
+	 self.generateAttributes(elementDiv);
+	 let sshDiv = createTopDivs(elementEnter, $("#sshInput").prop('checked') === true, "SSH");
+	 self.generateAttributes(sshDiv);
+
+	 function createTopDivs(elementEnter, visible, profile) {
+	     let elementDiv = elementEnter
+		.selectAll("li.attribute." + profile)
 		.data(function(d) {
-		    return self.model.schema.getSchemaAttributes(d.localName); 
+		    let attrs = self.model.schema.getSchemaAttributes(d.localName, profile);
+		    return attrs.filter(el => el.attributes[0].value !== "#IdentifiedObject.mRID"); 
 		})
 		.enter()
 		.append("li")
-		.attr("class", "attribute")
+		.attr("class", "attribute " + profile)
+		.style("display", function(d) {
+		    if (visible === true) {
+			return null;
+		    } else {
+			return "none";
+		    }
+		})
 		.attr("title", function(d) {
 		    return [].filter.call(d.children, function(el) {
 			return el.nodeName === "rdfs:comment"
 		    })[0].textContent;
 		})
 		.append("div").attr("class", "input-group input-group-sm");
-	 elementDiv.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
+	     return elementDiv;
+	 };
+	 
+	 // add links
+	 let elementLink = elementEnter
+	        .selectAll("li.link")
+	        .data(function(d) {
+		    return self.model.schema.getSchemaLinks(d.localName)
+			       .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
+			       .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal")
+			       .filter(el => el.attributes[0].value !== "#Measurement.Terminal")
+			       .filter(el => el.attributes[0].value !== "#Measurement.PowerSystemResource")
+			       .filter(el => el.attributes[0].value !== "#Discrete.ValueAliasSet"); 
+		})
+	        .enter()
+	        .append("li")
+		.attr("class", "link").attr("title", function(d) {
+		    return [].filter.call(d.children, function(el) {
+			return el.nodeName === "rdfs:comment"
+		    })[0].textContent;
+		}).append("div").attr("class", "input-group input-group-sm");
+	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
 		.html(function (d) {
 		    return d.attributes[0].value.substring(1).split(".")[1]; 
 		});
+	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-btn-group");
+	 elementLinkBtn.append("button")
+		       .attr("class","btn btn-default btn-xs")
+	 	       .attr("id", "cimLinkBtn")
+		       .attr("type", "submit")
+		       .on("click", function (d) {
+			   let targetUUID = "#" + d3.select(this).attr("cim-target"); 
+			   self.scrollAndRouteTo(targetUUID);
+		       })
+		       .attr("cim-target", function(d) {
+			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
+			   let targetObj = self.model.getTargets(
+			       [source],
+			       d.attributes[0].value.substring(1))[0];
+			   if (typeof(targetObj) === "undefined") {
+			       return "none";
+			   }
+			   return targetObj.attributes.getNamedItem("rdf:ID").value;
+		       })
+		       .html(function (d) {
+			   let targetObj = self.model.getObject(d3.select(this).attr("cim-target"));
+			   if (typeof(targetObj) === "undefined") {
+			       d3.select(this).attr("disabled", "disabled");
+			       return "none";
+			   }
+			   let name = self.model.getAttribute(targetObj, "cim:IdentifiedObject.name");
+			   if (typeof(name) !== "undefined") {
+			       return name.innerHTML;
+			   }
+			   return "unnamed";
+		    });
+	 elementLinkBtn.append("button")
+	            .attr("class","btn btn-default btn-xs")
+	            .attr("type", "submit")
+	            .on("click", function (d) {
+			$(this).parent().attr("id", "cimTarget");
+		    })
+	            .html("change");
+	 elementLinkBtn.append("button")
+	               .attr("class","btn btn-default btn-xs")
+	               .attr("type", "submit")
+		       .attr("id", "cimRemoveBtn")
+	               .on("click", function (d) {
+			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
+			   let linkName = "cim:" + d.attributes[0].value.substring(1);
+			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+			   self.model.removeLink(source, linkName, target);
+		       })
+	               .html(function() {
+			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+			   if (typeof(target) === "undefined") {
+			       d3.select(this).attr("disabled", "disabled");
+			   }
+			   return "remove";
+		       });
+     }
+
+     generateAttributes(elementDiv) {
+	 elementDiv.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
+		   .html(function (d) {
+		       return d.attributes[0].value.substring(1).split(".")[1]; 
+		   });
 	 // String attributes 
 	 elementDiv.filter(function(d) {
 	     let attrType = self.model.schema.getSchemaAttributeType(d);
@@ -820,10 +935,10 @@
 	     return attrType[0] === "#Boolean";
 	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
 	 let elementBoolBtn = elementBool.append("button").attr("type", "button")
-		    .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
-		    .attr("data-toggle", "dropdown")
-		    .attr("aria-haspopup", "true")
-		    .attr("aria-expanded", "false");
+					 .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
+					 .attr("data-toggle", "dropdown")
+					 .attr("aria-haspopup", "true")
+					 .attr("aria-expanded", "false");
 	 elementBoolBtn.append("span").attr("class", "boolVal").each(setBoolValueFromModel);
 	 elementBoolBtn.append("span").attr("class", "caret");
 	 let elementBoolList = elementBool.append("ul").attr("class", "dropdown-menu");
@@ -834,10 +949,10 @@
 	     return self.model.schema.isEnum(d);
 	 }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
 	 let elementEnumBtn = elementEnum.append("button").attr("type", "button")
-		    .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
-		    .attr("data-toggle", "dropdown")
-		    .attr("aria-haspopup", "true")
-		    .attr("aria-expanded", "false");
+					 .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
+					 .attr("data-toggle", "dropdown")
+					 .attr("aria-haspopup", "true")
+					 .attr("aria-expanded", "false");
 	 elementEnumBtn.append("span").attr("class", "enumVal").each(setEnumValueFromModel);
 	 elementEnumBtn.append("span").attr("class", "caret");
 	 let elementEnumList = elementEnum.append("ul").attr("class", "dropdown-menu");
@@ -925,83 +1040,6 @@
 	     let attrName = "cim:" + d.attributes[0].value.substring(1);
 	     self.model.setAttribute(object, attrName, this.value);
 	 };
-	 // add links
-	 let elementLink = elementEnter
-	        .selectAll("li.link")
-	        .data(function(d) {
-		    return self.model.schema.getSchemaLinks(d.localName)
-			       .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
-			       .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal")
-			       .filter(el => el.attributes[0].value !== "#Measurement.Terminal")
-			       .filter(el => el.attributes[0].value !== "#Measurement.PowerSystemResource")
-			       .filter(el => el.attributes[0].value !== "#Discrete.ValueAliasSet"); 
-		})
-	        .enter()
-	        .append("li")
-		.attr("class", "link").attr("title", function(d) {
-		    return [].filter.call(d.children, function(el) {
-			return el.nodeName === "rdfs:comment"
-		    })[0].textContent;
-		}).append("div").attr("class", "input-group input-group-sm");
-	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
-		.html(function (d) {
-		    return d.attributes[0].value.substring(1).split(".")[1]; 
-		});
-	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-btn-group");
-	 elementLinkBtn.append("button")
-		       .attr("class","btn btn-default btn-xs")
-	 	       .attr("id", "cimLinkBtn")
-		       .attr("type", "submit")
-		       .on("click", function (d) {
-			   let targetUUID = "#" + d3.select(this).attr("cim-target"); 
-			   self.scrollAndRouteTo(targetUUID);
-		       })
-		       .attr("cim-target", function(d) {
-			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
-			   let targetObj = self.model.getTargets(
-			       [source],
-			       d.attributes[0].value.substring(1))[0];
-			   if (typeof(targetObj) === "undefined") {
-			       return "none";
-			   }
-			   return targetObj.attributes.getNamedItem("rdf:ID").value;
-		       })
-		       .html(function (d) {
-			   let targetObj = self.model.getObject(d3.select(this).attr("cim-target"));
-			   if (typeof(targetObj) === "undefined") {
-			       d3.select(this).attr("disabled", "disabled");
-			       return "none";
-			   }
-			   let name = self.model.getAttribute(targetObj, "cim:IdentifiedObject.name");
-			   if (typeof(name) !== "undefined") {
-			       return name.innerHTML;
-			   }
-			   return "unnamed";
-		    });
-	 elementLinkBtn.append("button")
-	            .attr("class","btn btn-default btn-xs")
-	            .attr("type", "submit")
-	            .on("click", function (d) {
-			$(this).parent().attr("id", "cimTarget");
-		    })
-	            .html("change");
-	 elementLinkBtn.append("button")
-	               .attr("class","btn btn-default btn-xs")
-	               .attr("type", "submit")
-		       .attr("id", "cimRemoveBtn")
-	               .on("click", function (d) {
-			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
-			   let linkName = "cim:" + d.attributes[0].value.substring(1);
-			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
-			   self.model.removeLink(source, linkName, target);
-		       })
-	               .html(function() {
-			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
-			   if (typeof(target) === "undefined") {
-			       d3.select(this).attr("disabled", "disabled");
-			   }
-			   return "remove";
-		       });
      }
 
      moveTo(uuid) {
@@ -1080,7 +1118,15 @@
 	 };
      }
 
-     
+     resetAttrs() {
+	 if ($("#sshInput").prop('checked') === true) {
+	     d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").style("display", "none");
+	     d3.select("#app-tree").selectAll("li.attribute.SSH").style("display", null);
+	 } else {
+	     d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").style("display", null);
+	     d3.select("#app-tree").selectAll("li.attribute.SSH").style("display", "none");
+	 }
+     }
     </script> 
     
 </cimTree>
