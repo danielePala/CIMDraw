@@ -41,6 +41,8 @@ function cimModel() {
     const tpNS = "http://entsoe.eu/CIM/Topology/4/1";
     // The Steady State Hypothesis namespace
     const sshNS = "http://entsoe.eu/CIM/SteadyStateHypothesis/1/1";
+    // The Geographical Location schema
+    const glNS = "http://entsoe.eu/CIM/GeographicalLocation/2/1";
     // An empty CIM file, used when creating a new file.
     const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
 	  "<rdf:RDF xmlns:cim=\""+ cimNS + "\" xmlns:entsoe=\"" + entsoeNS +
@@ -50,9 +52,8 @@ function cimModel() {
     // 'all' contains all the CIM Objects, in a single document.
     let data = {all: null};
 
-    // Parse and load an ENTSO-E CIM file. Only the EQ and DL profiles
-    // are parsed. The given callback is called after having loaded
-    // the model.
+    // Parse and load an ENTSO-E CIM file.
+    // The given callback is called after having loaded the model.
     // This is a 'private' function (not visible in the model object).
     function parseZip(callback, zip) {
 	let parser = new DOMParser();
@@ -62,12 +63,16 @@ function cimModel() {
 	let dldata = null;
 	let svdata = null;
 	let tpdata = null;
+	let sshdata = null;
+	let gldata = null;
 	function success(content) {
 	    zipFilesProcessed = zipFilesProcessed + 1;
 	    if (eqdata === null ||
 		dldata === null ||
 		svdata === null ||
-		tpdata === null) {
+		tpdata === null ||
+		sshdata === null ||
+		gldata === null) {
 		let parsed = parser.parseFromString(content, "application/xml");
 		let fullModel = [].filter.call(
 		    parsed.children[0].children, function(el) {
@@ -86,6 +91,12 @@ function cimModel() {
 		if (profile.textContent.includes("Topology")) {
 		    tpdata = parsed;
 		}
+		if (profile.textContent.includes("SteadyStateHypothesis")) {
+		    sshdata = parsed;
+		}
+		if (profile.textContent.includes("GeographicalLocation")) {
+		    gldata = parsed;
+		}		
 	    }
 	    // at the end we need to have at least the EQ file
 	    if (eqdata !== null &&
@@ -121,8 +132,24 @@ function cimModel() {
 			all.children[0].appendChild(datum.cloneNode(true));
 		    }
 		}
+		if (sshdata !== null) {
+		    for (let datum of sshdata.children[0].children) {
+			if (datum.nodeName === "md:FullModel") {
+			    continue;
+			}
+			all.children[0].appendChild(datum.cloneNode(true));
+		    }
+		}
+		if (gldata !== null) {
+		    for (let datum of gldata.children[0].children) {
+			if (datum.nodeName === "md:FullModel") {
+			    continue;
+			}
+			all.children[0].appendChild(datum.cloneNode(true));
+		    }
+		}
+
 		data.all = all;
-		
 		buildModel(callback);
 	    }
 	};
@@ -461,7 +488,6 @@ function cimModel() {
 	},
 
 	// Serialize the current CIM file in CGMES format.
-	// Currently limited to EQ and DL profiles.
 	saveAsCGMES() {
 	    let oSerializer = new XMLSerializer();
 	    let zip = new JSZip();
@@ -494,11 +520,14 @@ function cimModel() {
 	    let tpDoc = profile("TP", tpNS, all, [eqDoc]);
 	    // create SSH file
 	    let sshDoc = profile("SSH", sshNS, all, [eqDoc]);
+	    // create GL file
+	    let glDoc = profile("GL", glNS, all, [eqDoc]);
 	    zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
 	    zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
 	    zip.file("SV.xml", oSerializer.serializeToString(svDoc));
 	    zip.file("TP.xml", oSerializer.serializeToString(tpDoc));
 	    zip.file("SSH.xml", oSerializer.serializeToString(sshDoc));
+	    zip.file("GL.xml", oSerializer.serializeToString(glDoc));
 	    return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 
 	    function profile(name, ns, data, deps) {

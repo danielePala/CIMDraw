@@ -28,13 +28,15 @@ function cimSchema() {
     // 'SV' is the state variables schema
     // 'TP' is the topology schema
     // 'SSH' is the steady state hypothesis schema
-    let schemaData = {EQ: null, DL: null, SV: null, TP: null, SSH: null};
+    // 'GL' is the Geographical Location schema
+    let schemaData = {EQ: null, DL: null, SV: null, TP: null, SSH: null, GL: null};
     // CGMES schema files
     const rdfsEQ = "rdf-schema/EquipmentProfileCoreShortCircuitOperationRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsDL = "rdf-schema/DiagramLayoutProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsSV = "rdf-schema/StateVariablesProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsTP = "rdf-schema/TopologyProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     const rdfsSSH = "rdf-schema/SteadyStateHypothesisProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
+    const rdfsGL = "rdf-schema/GeographicalLocationProfileRDFSAugmented-v2_4_15-16Feb2016.rdf";
     let schemaAttrsMap = new Map();
     let schemaLinksMap = new Map();
     let schemaObjsMap = new Map();
@@ -85,7 +87,11 @@ function cimSchema() {
 				d3.xml(rdfsSSH, function(schemaDataSSH) {
 				    schemaData["SSH"] = schemaDataSSH;
 				    populateInvLinkMap(schemaData["SSH"]);
-				    callback(null);
+				    d3.xml(rdfsGL, function(schemaDataGL) {
+					schemaData["GL"] = schemaDataGL;
+					populateInvLinkMap(schemaData["GL"]);
+					callback(null);
+				    });
 				});
 			    });
 			});
@@ -283,7 +289,7 @@ function cimSchema() {
 
 	// Get the schema links for a given type.
 	// An optional 'schemaName' argument can be used to indicate the schema,
-	// which can be 'EQ', 'DL', 'SV', 'TP' or 'SSH'. If the argument is missing, the
+	// which can be 'EQ', 'DL', 'SV', 'TP', 'SSH' or 'GL'. If the argument is missing, the
 	// EQ schema is used.
 	getSchemaLinks(type, schemaName) {
 	    let key = type;
