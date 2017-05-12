@@ -935,7 +935,7 @@ function cimModel() {
 
 	    function checkRelatedObject(object, related) {
 		// terminals of conducting equipment
-		if (object.nodeName !== "cim:ConnectivityNode") {
+		if (model.schema.isA("ConductingEquipment", object)) {
 		    if (related.nodeName === "cim:Terminal") {
 			return true;
 		    }

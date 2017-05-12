@@ -278,6 +278,10 @@
 		 let tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", [object]);
 		 self.createDeleteMenu(tccEnter);
 		 break;
+	     case "cim:RegulatingControl":
+		 let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", [object]);
+		 self.createDeleteMenu(rcEnter);
+		 break;
 	     default:
 		 console.log(object);
 	 }	 
@@ -454,7 +458,10 @@
 	     allGeneratingUnits = getObjects(genNames);
 	     allLoadResponses = getObjects(["cim:LoadResponseCharacteristic"]);
 	 }
-	 let allBaseVoltages = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"]; 
+	 let noDiagObjs = self.model.getObjects(["cim:BaseVoltage", "cim:TapChangerControl", "cim:RegulatingControl"])
+	 let allBaseVoltages = noDiagObjs["cim:BaseVoltage"];
+	 let allTapChangerControls = noDiagObjs["cim:TapChangerControl"];
+	 let allRegulatingControls = noDiagObjs["cim:RegulatingControl"];
 	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
 	 let allACLines = allEquipments["cim:ACLineSegment"]; 
@@ -505,7 +512,10 @@
 	 self.elements(allGenUnits, "GeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
 	 self.elements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
 	 self.elements(cimCurvesAndRegs, "LoadResponseCharacteristic", "Load Response Characteristics", allLoadResponses["cim:LoadResponseCharacteristic"]);
-	 self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", []);
+	 let tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", allTapChangerControls);
+	 self.createDeleteMenu(tccEnter);
+	 let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", allRegulatingControls);
+	 self.createDeleteMenu(rcEnter);
 	 
 	 // add buttons
 	 self.createAddButton(cimBases, "BaseVoltage");
@@ -621,11 +631,6 @@
 	     "Ratio Tap Changer",
 	     tcs);
 	 self.createDeleteMenu(tcEnter);
-	 // handle tap changer controls
-	 let tccs = self.model.getTargets(tcs, "TapChanger.TapChangerControl");
-	 let cimCurvesAndRegs = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMCurvesAndRegs");
-	 let tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", tccs);
-	 self.createDeleteMenu(tccEnter);
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
