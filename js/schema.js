@@ -71,7 +71,7 @@ function cimSchema() {
 	// Build initial schema data structures and call a user callback.
 	buildSchema(callback) {	
 	    // let's read schema files, if necessary
-	    if (schemaData["EQ"] === null) {
+	    if (schemaData["EQ"] === null) {		
 		d3.xml(rdfsEQ, function(error, schemaDataEQ) {
 		    schemaData["EQ"] = schemaDataEQ;
 		    populateInvLinkMap(schemaData["EQ"]);

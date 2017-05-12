@@ -274,6 +274,12 @@
 		 let lrEnter = self.elements(cimCurvesAndRegs, "LoadResponseCharacteristic", "Load Response Characteristics", [object]);
 		 self.createDeleteMenu(lrEnter);
 		 break;
+	     case "cim:TapChangerControl":
+		 let tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", [object]);
+		 self.createDeleteMenu(tccEnter);
+		 break;
+	     default:
+		 console.log(object);
 	 }	 
      }
 
@@ -499,7 +505,8 @@
 	 self.elements(allGenUnits, "GeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
 	 self.elements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
 	 self.elements(cimCurvesAndRegs, "LoadResponseCharacteristic", "Load Response Characteristics", allLoadResponses["cim:LoadResponseCharacteristic"]);
-
+	 self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", []);
+	 
 	 // add buttons
 	 self.createAddButton(cimBases, "BaseVoltage");
 	 self.createAddButton(cimContainers, "Substation");
@@ -614,6 +621,11 @@
 	     "Ratio Tap Changer",
 	     tcs);
 	 self.createDeleteMenu(tcEnter);
+	 // handle tap changer controls
+	 let tccs = self.model.getTargets(tcs, "TapChanger.TapChangerControl");
+	 let cimCurvesAndRegs = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMCurvesAndRegs");
+	 let tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", tccs);
+	 self.createDeleteMenu(tccEnter);
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
@@ -832,12 +844,17 @@
 	     let elementLink = elementEnter
 	        .selectAll("li.link." + profile)
 	        .data(function(d) {
+		    // unwanted links
+		    let hiddenLinks = ["#TransformerEnd.Terminal",
+				       "#PowerTransformerEnd.PowerTransformer",
+				       "#RatioTapChanger.TransformerEnd",
+				       "#RegulatingControl.Terminal",
+				       "#Measurement.Terminal",
+				       "#Measurement.PowerSystemResource",
+				       "#Discrete.ValueAliasSet"];
 		    return self.model.schema.getSchemaLinks(d.localName, profile)
 			       .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
-			       .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal")
-			       .filter(el => el.attributes[0].value !== "#Measurement.Terminal")
-			       .filter(el => el.attributes[0].value !== "#Measurement.PowerSystemResource")
-			       .filter(el => el.attributes[0].value !== "#Discrete.ValueAliasSet"); 
+			       .filter(el => hiddenLinks.indexOf(el.attributes[0].value) < 0)
 		})
 	        .enter()
 	        .append("li")
