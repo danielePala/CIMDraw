@@ -82,6 +82,7 @@
 		<li role="presentation"><a href="#measurements" aria-controls="measurements" role="tab" data-toggle="tab" id="measurementsTab">Measurements</a></li>
 		<li role="presentation"><a href="#bases" aria-controls="bases" role="tab" data-toggle="tab" id="basesTab">Bases</a></li>
 		<li role="presentation"><a href="#curvesAndRegs" aria-controls="curvesAndRegs" role="tab" data-toggle="tab" id="curvesAndRegsTab">Curves and Regulations</a></li>
+		<li role="presentation"><a href="#limits" aria-controls="limits" role="tab" data-toggle="tab" id="limitsTab">Operational Limits</a></li>
 	    </ul>
 	    <div class="tab-content">
 		<div role="tabpanel" class="tab-pane active" id="components">
@@ -98,6 +99,9 @@
 		</div>
 		<div role="tabpanel" class="tab-pane" id="curvesAndRegs">
 		    <ul class="list-group" id="CIMCurvesAndRegs"></ul>
+		</div>
+		<div role="tabpanel" class="tab-pane" id="limits">
+		    <ul class="list-group" id="CIMLimits"></ul>
 		</div>
 	    </div>
 	    
@@ -118,6 +122,9 @@
      ];
      
      self.on("mount", function() {
+	 $("form").submit(function(event) {
+	     event.preventDefault();
+	 });
 	 // setup search button
 	 $("#cimTreeSearchBtn").on("click", function() {
 	     let searchKey = document.getElementById("cim-search-key").value;
@@ -386,11 +393,13 @@
 	 d3.select("#app-tree").selectAll("#CIMMeasurements > li").remove();
 	 d3.select("#app-tree").selectAll("#CIMBases > li").remove();
 	 d3.select("#app-tree").selectAll("#CIMCurvesAndRegs > li").remove();
+	 d3.select("#app-tree").selectAll("#CIMLimits > li").remove();
 	 let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
 	 let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
 	 let cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
 	 let cimCurvesAndRegs = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMCurvesAndRegs");
+	 let cimLimits = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMLimits");
 	 let contNames = ["cim:Substation", "cim:Line"];
 	 let measNames = ["cim:Analog", "cim:Discrete"];
 	 let genNames = ["cim:GeneratingUnit", "cim:ThermalGeneratingUnit"];
@@ -400,6 +409,7 @@
 	 let allSubGeoRegions = null;
 	 let allGeoRegions = null;
 	 let allLoadResponses = null;
+	 let allLimitSets = null;
 	 // setup the right function to get objects
 	 let getObjects = self.model.getObjects;
 	 let getConnectors = self.model.getObjects;
@@ -452,11 +462,15 @@
 	     allLoadResponses = self.model.getLinkedObjects(
 		 ["cim:LoadResponseCharacteristic"],
 		 "LoadResponseCharacteristic.EnergyConsumer");
+	     allLimitSets = self.model.getLinkedObjects(
+		 ["cim:OperationalLimitSet"],
+		 "OperationalLimitSet.Equipment");
 	 } else {
 	     allContainers = getObjects(contNames);
 	     allMeasurements = getObjects(measNames);
 	     allGeneratingUnits = getObjects(genNames);
 	     allLoadResponses = getObjects(["cim:LoadResponseCharacteristic"]);
+	     allLimitSets = getObjects(["cim:OperationalLimitSet"]);
 	 }
 	 let noDiagObjs = self.model.getObjects(["cim:BaseVoltage", "cim:TapChangerControl", "cim:RegulatingControl"])
 	 let allBaseVoltages = noDiagObjs["cim:BaseVoltage"];
@@ -516,6 +530,8 @@
 	 self.createDeleteMenu(tccEnter);
 	 let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", allRegulatingControls);
 	 self.createDeleteMenu(rcEnter);
+	 let limEnter = self.elements(cimLimits, "OperationalLimitSet", "Operational Limit Sets", allLimitSets["cim:OperationalLimitSet"]);
+	 self.createDeleteMenu(limEnter);
 	 
 	 // add buttons
 	 self.createAddButton(cimBases, "BaseVoltage");
@@ -525,6 +541,7 @@
 	 self.createAddButton(cimContainers, "GeneratingUnit");
 	 self.createAddButton(cimContainers, "ThermalGeneratingUnit");
 	 self.createAddButton(cimCurvesAndRegs, "LoadResponseCharacteristic");
+	 self.createAddButton(cimLimits, "OperationalLimitSet");
      }
 
      geoRegions(tab, allGeoRegions) {
