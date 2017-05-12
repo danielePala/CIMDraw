@@ -786,16 +786,27 @@
      }
 
      generateAttrsAndLinks(elementEnter) {
-	 let elementDiv = createTopDivs(elementEnter, $("#sshInput").prop('checked') === false, "EQ");
+	 // add attributes
+	 let elementDiv = createTopDivs($("#sshInput").prop('checked') === false, "EQ");
 	 self.generateAttributes(elementDiv);
-	 let sshDiv = createTopDivs(elementEnter, $("#sshInput").prop('checked') === true, "SSH");
+	 let sshDiv = createTopDivs($("#sshInput").prop('checked') === true, "SSH");
 	 self.generateAttributes(sshDiv);
-
-	 function createTopDivs(elementEnter, visible, profile) {
+	 // add links
+	 let eqLinks = createLinkDivs($("#sshInput").prop('checked') === false, "EQ");
+	 self.generateLinks(eqLinks);
+	 let sshLinks = createLinkDivs($("#sshInput").prop('checked') === true, "SSH");
+	 self.generateLinks(sshLinks);
+	 
+	 function createTopDivs(visible, profile) {
 	     let elementDiv = elementEnter
 		.selectAll("li.attribute." + profile)
 		.data(function(d) {
 		    let attrs = self.model.schema.getSchemaAttributes(d.localName, profile);
+		    let existing = elementEnter.selectAll("li.attribute > div > span.cim-tree-attribute-name").nodes().map(node => node.textContent);
+		    attrs = attrs.filter(function(attr) {
+			let attrName = attr.attributes[0].value.substring(1).split(".")[1];
+			return existing.indexOf(attrName) < 0;
+		    });
 		    return attrs.filter(el => el.attributes[0].value !== "#IdentifiedObject.mRID"); 
 		})
 		.enter()
@@ -816,12 +827,12 @@
 		.append("div").attr("class", "input-group input-group-sm");
 	     return elementDiv;
 	 };
-	 
-	 // add links
-	 let elementLink = elementEnter
-	        .selectAll("li.link")
+
+	 function createLinkDivs(visible, profile) {
+	     let elementLink = elementEnter
+	        .selectAll("li.link." + profile)
 	        .data(function(d) {
-		    return self.model.schema.getSchemaLinks(d.localName)
+		    return self.model.schema.getSchemaLinks(d.localName, profile)
 			       .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
 			       .filter(el => el.attributes[0].value !== "#TransformerEnd.Terminal")
 			       .filter(el => el.attributes[0].value !== "#Measurement.Terminal")
@@ -830,70 +841,14 @@
 		})
 	        .enter()
 	        .append("li")
-		.attr("class", "link").attr("title", function(d) {
+		.attr("class", "link " + profile)
+		.attr("title", function(d) {
 		    return [].filter.call(d.children, function(el) {
 			return el.nodeName === "rdfs:comment"
 		    })[0].textContent;
 		}).append("div").attr("class", "input-group input-group-sm");
-	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
-		.html(function (d) {
-		    return d.attributes[0].value.substring(1).split(".")[1]; 
-		});
-	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-btn-group");
-	 elementLinkBtn.append("button")
-		       .attr("class","btn btn-default btn-xs")
-	 	       .attr("id", "cimLinkBtn")
-		       .attr("type", "submit")
-		       .on("click", function (d) {
-			   let targetUUID = "#" + d3.select(this).attr("cim-target"); 
-			   self.scrollAndRouteTo(targetUUID);
-		       })
-		       .attr("cim-target", function(d) {
-			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
-			   let targetObj = self.model.getTargets(
-			       [source],
-			       d.attributes[0].value.substring(1))[0];
-			   if (typeof(targetObj) === "undefined") {
-			       return "none";
-			   }
-			   return targetObj.attributes.getNamedItem("rdf:ID").value;
-		       })
-		       .html(function (d) {
-			   let targetObj = self.model.getObject(d3.select(this).attr("cim-target"));
-			   if (typeof(targetObj) === "undefined") {
-			       d3.select(this).attr("disabled", "disabled");
-			       return "none";
-			   }
-			   let name = self.model.getAttribute(targetObj, "cim:IdentifiedObject.name");
-			   if (typeof(name) !== "undefined") {
-			       return name.innerHTML;
-			   }
-			   return "unnamed";
-		    });
-	 elementLinkBtn.append("button")
-	            .attr("class","btn btn-default btn-xs")
-	            .attr("type", "submit")
-	            .on("click", function (d) {
-			$(this).parent().attr("id", "cimTarget");
-		    })
-	            .html("change");
-	 elementLinkBtn.append("button")
-	               .attr("class","btn btn-default btn-xs")
-	               .attr("type", "submit")
-		       .attr("id", "cimRemoveBtn")
-	               .on("click", function (d) {
-			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
-			   let linkName = "cim:" + d.attributes[0].value.substring(1);
-			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
-			   self.model.removeLink(source, linkName, target);
-		       })
-	               .html(function() {
-			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
-			   if (typeof(target) === "undefined") {
-			       d3.select(this).attr("disabled", "disabled");
-			   }
-			   return "remove";
-		       });
+	     return elementLink;
+	 };
      }
 
      generateAttributes(elementDiv) {
@@ -1042,6 +997,68 @@
 	 };
      }
 
+     generateLinks(elementLink) {
+	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
+		    .html(function (d) {
+			return d.attributes[0].value.substring(1).split(".")[1]; 
+		    });
+	 let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-btn-group");
+	 elementLinkBtn.append("button")
+		       .attr("class","btn btn-default btn-xs")
+	 	       .attr("id", "cimLinkBtn")
+		       .attr("type", "submit")
+		       .on("click", function (d) {
+			   let targetUUID = "#" + d3.select(this).attr("cim-target"); 
+			   self.scrollAndRouteTo(targetUUID);
+		       })
+		       .attr("cim-target", function(d) {
+			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
+			   let targetObj = self.model.getTargets(
+			       [source],
+			       d.attributes[0].value.substring(1))[0];
+			   if (typeof(targetObj) === "undefined") {
+			       return "none";
+			   }
+			   return targetObj.attributes.getNamedItem("rdf:ID").value;
+		       })
+		       .html(function (d) {
+			   let targetObj = self.model.getObject(d3.select(this).attr("cim-target"));
+			   if (typeof(targetObj) === "undefined") {
+			       d3.select(this).attr("disabled", "disabled");
+			       return "none";
+			   }
+			   let name = self.model.getAttribute(targetObj, "cim:IdentifiedObject.name");
+			   if (typeof(name) !== "undefined") {
+			       return name.innerHTML;
+			   }
+			   return "unnamed";
+		       });
+	 elementLinkBtn.append("button")
+	               .attr("class","btn btn-default btn-xs")
+	               .attr("type", "submit")
+	               .on("click", function (d) {
+			   $(this).parent().attr("id", "cimTarget");
+		       })
+	               .html("change");
+	 elementLinkBtn.append("button")
+	               .attr("class","btn btn-default btn-xs")
+	               .attr("type", "submit")
+		       .attr("id", "cimRemoveBtn")
+	               .on("click", function (d) {
+			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
+			   let linkName = "cim:" + d.attributes[0].value.substring(1);
+			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+			   self.model.removeLink(source, linkName, target);
+		       })
+	               .html(function() {
+			   let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+			   if (typeof(target) === "undefined") {
+			       d3.select(this).attr("disabled", "disabled");
+			   }
+			   return "remove";
+		       });
+     }
+
      moveTo(uuid) {
 	 let target = null, targetChild = null;
 	 let hoverD = self.model.getObject(uuid);
@@ -1121,10 +1138,14 @@
      resetAttrs() {
 	 if ($("#sshInput").prop('checked') === true) {
 	     d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").style("display", "none");
+	     d3.select("#app-tree").selectAll("li.link:not(.SSH)").style("display", "none");
 	     d3.select("#app-tree").selectAll("li.attribute.SSH").style("display", null);
+	     d3.select("#app-tree").selectAll("li.link.SSH").style("display", null);
 	 } else {
 	     d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").style("display", null);
+	     d3.select("#app-tree").selectAll("li.link:not(.SSH)").style("display", null);
 	     d3.select("#app-tree").selectAll("li.attribute.SSH").style("display", "none");
+	     d3.select("#app-tree").selectAll("li.link.SSH").style("display", "none");
 	 }
      }
     </script> 
