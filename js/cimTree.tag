@@ -864,6 +864,13 @@
 	        .enter()
 	        .append("li")
 		.attr("class", "link " + profile)
+		.style("display", function(d) {
+		    if (visible === true) {
+			return null;
+		    } else {
+			return "none";
+		    }
+		})
 		.attr("title", function(d) {
 		    return [].filter.call(d.children, function(el) {
 			return el.nodeName === "rdfs:comment"
