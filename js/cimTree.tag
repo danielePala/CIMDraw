@@ -889,9 +889,13 @@
 		    }
 		})
 		.attr("title", function(d) {
-		    return [].filter.call(d.children, function(el) {
+		    let comment = [].filter.call(d.children, function(el) {
 			return el.nodeName === "rdfs:comment"
-		    })[0].textContent;
+		    });
+		    if (comment.length > 0) {
+			return comment[0].textContent;
+		    }
+		    return null;
 		}).append("div").attr("class", "input-group input-group-sm");
 	     return elementLink;
 	 };
