@@ -541,7 +541,6 @@
 	 self.createAddButton(cimContainers, "GeneratingUnit");
 	 self.createAddButton(cimContainers, "ThermalGeneratingUnit");
 	 self.createAddButton(cimCurvesAndRegs, "LoadResponseCharacteristic");
-	 self.createAddButton(cimLimits, "OperationalLimitSet");
      }
 
      geoRegions(tab, allGeoRegions) {
