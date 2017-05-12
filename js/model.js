@@ -222,6 +222,9 @@ function cimModel() {
 	    let about = object.attributes.getNamedItem("rdf:about");
 	    if (about !== null) {
 		let target = model.dataMap.get(about.value);
+		if (typeof(target) === "undefined") {
+		    continue;
+		}
 		// copy attributes and links
 		for (let attr of model.getAttributes(object)) {
 		    target.appendChild(attr.cloneNode(true));
