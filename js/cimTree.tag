@@ -170,6 +170,7 @@
 	 let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
 	 let cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
 	 let cimCurvesAndRegs = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMCurvesAndRegs");
+	 let cimLimits = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMLimits");
 	 let equivalents = undefined;
 	 let rotMac = undefined;
 	 let loads = undefined;
@@ -288,6 +289,9 @@
 	     case "cim:RegulatingControl":
 		 let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", [object]);
 		 self.createDeleteMenu(rcEnter);
+		 break;
+	     case "cim:OperationalLimitSet":
+		 self.limitSets(cimLimits, [object]);
 		 break;
 	     default:
 		 console.log(object);
@@ -530,8 +534,7 @@
 	 self.createDeleteMenu(tccEnter);
 	 let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", allRegulatingControls);
 	 self.createDeleteMenu(rcEnter);
-	 let limEnter = self.elements(cimLimits, "OperationalLimitSet", "Operational Limit Sets", allLimitSets["cim:OperationalLimitSet"]);
-	 self.createDeleteMenu(limEnter);
+	 self.limitSets(cimLimits, allLimitSets["cim:OperationalLimitSet"]);
 	 
 	 // add buttons
 	 self.createAddButton(cimBases, "BaseVoltage");
@@ -647,6 +650,23 @@
 	     "Ratio Tap Changer",
 	     tcs);
 	 self.createDeleteMenu(tcEnter);
+     }
+
+     limitSets(tab, allLimits) {
+	 let limSetEnter = self.elements(tab, "OperationalLimitSet", "Operational Limit Sets", allLimits);
+	 limSetEnter.each(function(d, i) {
+	     // limits
+	     let lims = self.model.getTargets(
+		 [d],
+		 "OperationalLimitSet.OperationalLimitValue");
+	     let limEnter = self.elements(
+		 d3.select(this),
+		 d.attributes.getNamedItem("rdf:ID").value + "OperationalLimit",
+		 "Operational Limits",
+		 lims);
+	     self.createDeleteMenu(limEnter);
+	 });
+	 self.createDeleteMenu(limSetEnter);
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
@@ -865,14 +885,17 @@
 	     let elementLink = elementEnter
 	        .selectAll("li.link." + profile)
 	        .data(function(d) {
-		    // unwanted links
+		    // links we don't want to show in the tree
 		    let hiddenLinks = ["#TransformerEnd.Terminal",
 				       "#PowerTransformerEnd.PowerTransformer",
 				       "#RatioTapChanger.TransformerEnd",
 				       "#RegulatingControl.Terminal",
 				       "#Measurement.Terminal",
 				       "#Measurement.PowerSystemResource",
-				       "#Discrete.ValueAliasSet"];
+				       "#Discrete.ValueAliasSet",
+				       "#OperationalLimitSet.Terminal",
+				       "#OperationalLimitSet.Equipment",
+				       "#OperationalLimit.OperationalLimitSet"];
 		    return self.model.schema.getSchemaLinks(d.localName, profile)
 			       .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
 			       .filter(el => hiddenLinks.indexOf(el.attributes[0].value) < 0)

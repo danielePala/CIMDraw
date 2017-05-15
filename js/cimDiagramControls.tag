@@ -143,6 +143,12 @@
 	     action: function(elm, d, i) {
 		 self.addNewMeasurement(elm, d, i);
 	     }
+	 },
+	 {
+	     title: 'Add new operational limit set',
+	     action: function(elm, d, i) {
+		 self.addNewLimitSet(elm, d, i);
+	     }
 	 }
      ];
      let terminalsMenu = [
@@ -150,6 +156,12 @@
 	     title: 'Add new measurement',
 	     action: function(elm, d, i) {
 		 self.addNewMeasurement(elm, d, i);
+	     }
+	 },
+	 {
+	     title: 'Add new operational limit set',
+	     action: function(elm, d, i) {
+		 self.addNewLimitSet(elm, d, i);
 	     }
 	 },
 	 {
@@ -988,6 +1000,33 @@
 		 }
 	     } else {
 		 opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", d);
+	     }
+	 }
+	 opts.model.addToActiveDiagram(newObject, []);
+     }
+
+     addNewLimitSet(elm, d, i) {
+	 // applies to only one element
+	 self.deselectAll();
+	 if (d.nodeName !== "cim:Terminal") { // TODO: select element associated with terminal
+	     selected.push(elm);
+	     self.updateSelected();
+	 }
+	 let newObject = opts.model.createObject("cim:OperationalLimitSet");;
+	 if (d.nodeName === "cim:Terminal") {
+	     let psr = opts.model.getTargets(
+		 [d],
+		 "Terminal.ConductingEquipment")[0];
+	     opts.model.setLink(newObject, "cim:OperationalLimitSet.Terminal", d);
+	     opts.model.setLink(newObject, "cim:OperationalLimitSet.Equipment", psr);
+	 } else {
+	     if (d.nodeName === "cim:ConnectivityNode") {
+		 let busbar = opts.model.getBusbar(d);
+		 if (busbar !== null) {
+		     opts.model.setLink(newObject, "cim:OperationalLimitSet.Equipment", busbar);
+		 }
+	     } else {
+		 opts.model.setLink(newObject, "cim:OperationalLimitSet.Equipment", d);
 	     }
 	 }
 	 opts.model.addToActiveDiagram(newObject, []);
