@@ -1018,7 +1018,6 @@
 		 [d],
 		 "Terminal.ConductingEquipment")[0];
 	     opts.model.setLink(newObject, "cim:OperationalLimitSet.Terminal", d);
-	     opts.model.setLink(newObject, "cim:OperationalLimitSet.Equipment", psr);
 	 } else {
 	     if (d.nodeName === "cim:ConnectivityNode") {
 		 let busbar = opts.model.getBusbar(d);

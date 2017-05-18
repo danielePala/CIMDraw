@@ -628,7 +628,7 @@ function cimModel() {
 	    }
 	    let allEqContainers = model.getLinkedObjects(
 		["cim:Substation", "cim:Line"],
-		"EquipmentContainer.Equipments");
+		["EquipmentContainer.Equipments"]);
 	    let allSubstations = allEqContainers["cim:Substation"];
 	    for (let substation of allSubstations) {
 		data.children[0].appendChild(substation.cloneNode(true));
@@ -760,24 +760,37 @@ function cimModel() {
 	// Get all the objects of the given types that either
 	// have at least a diagram object in the current diagram or are
 	// linked to some object which is in the current diagram
-	// via the given link. The 'types' parameter must be an array of
+	// via the given links. Each link can also be composed of multiple
+	// 'steps', in case the path to the equipment is a complex one.
+	// The 'steps' are separated by a slash '/'.
+	// For example, to 
+	// The 'types' parameter must be an array of
 	// namespace qualified types, like ["cim:Substation", "cim:Line"].
 	// The output is an object whose keys are the types and the values
 	// are the corresponding arrays, like {cim:Substation: [sub1, sub2],
 	// cim:Line: [line1]}. Each object returned is an Element.
 	// This function is useful for many CIM objects, like:
 	// Substations, Lines, Measurements, GeneratingUnits, RegulatingControls.
-	getLinkedObjects(types, linkName) {
+	getLinkedObjects(types, pathNames) {
 	    let ret = {};
 	    for (let type of types) {
 		ret[type] = model.getObjects([type])[type].filter(function(src) {
 		    let srcs = [src];
-		    if (type === "cim:Substation") { // substations are not so simple
-			let vlevs = model.getTargets([src], "Substation.VoltageLevels");
-			let bays = model.getTargets(vlevs, "VoltageLevel.Bays");
-			srcs = srcs.concat(vlevs).concat(bays);
+		    let targets = [];
+		    for (let pathName of pathNames) {
+			let pathParts = pathName.split("/");
+			let curTargets = [src];
+			for (let i=0; i < pathParts.length - 1; i++) {
+			    curTargets = model.getTargets(curTargets, pathParts[i]);  
+			}
+			srcs = srcs.concat(curTargets);
 		    }
-		    let targets = model.getTargets(srcs, linkName);
+		    
+		    for (let pathName of pathNames) {
+			let pathParts = pathName.split("/");
+			let last = pathParts.length - 1;
+			targets = targets.concat(model.getTargets(srcs, pathParts[last]));
+		    }
 		    let dobjs = model.getDiagramObjects(srcs.concat(targets));
 		    return (dobjs.length > 0);
 		});

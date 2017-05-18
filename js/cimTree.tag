@@ -446,13 +446,15 @@
 	 if (showAllObjects === false) {
 	     allContainers = self.model.getLinkedObjects(
 		 contNames,
-		 "EquipmentContainer.Equipments");
+		 ["EquipmentContainer.Equipments",
+		  "Substation.VoltageLevels/EquipmentContainer.Equipments",
+		  "Substation.VoltageLevels/VoltageLevel.Bays/EquipmentContainer.Equipments"]);
 	     allMeasurements = self.model.getLinkedObjects(
 		 measNames,
-		 "Measurement.PowerSystemResource");
+		 ["Measurement.PowerSystemResource"]);
 	     allGeneratingUnits = self.model.getLinkedObjects(
 		 genNames,
-		 "GeneratingUnit.RotatingMachine");
+		 ["GeneratingUnit.RotatingMachine"]);
 	     allSubGeoRegions = allSubGeoRegions.concat(
 		 self.model.getTargets(
 		     allContainers["cim:Substation"],
@@ -465,10 +467,10 @@
 	     allGeoRegions = [...new Set(allGeoRegions)];
 	     allLoadResponses = self.model.getLinkedObjects(
 		 ["cim:LoadResponseCharacteristic"],
-		 "LoadResponseCharacteristic.EnergyConsumer");
+		 ["LoadResponseCharacteristic.EnergyConsumer"]);
 	     allLimitSets = self.model.getLinkedObjects(
 		 ["cim:OperationalLimitSet"],
-		 "OperationalLimitSet.Equipment");
+		 ["OperationalLimitSet.Equipment", "OperationalLimitSet.Terminal"]);
 	 } else {
 	     allContainers = getObjects(contNames);
 	     allMeasurements = getObjects(measNames);
