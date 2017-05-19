@@ -637,55 +637,6 @@
 	
 	 self.forceTick();
 	 self.trigger("render");
-	 
-	 // test topo
-	 /*
-	    allConnectivityNodes = self.model.getObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
-	 console.log(allConnectivityNodes.length);
-	 let topos = allConnectivityNodes.reduce(function(r, v) {
-	     let cnTerminals = self.model.getTargets([v], "ConnectivityNode.Terminals");
-	     let switches = self.model.getTargets(cnTerminals, "Terminal.ConductingEquipment").filter(function(el) {
-		 return self.model.schema.isA("Switch", el) === true;
-	     });
-	     switches = switches.filter(function(el) {
-		 let ret = true;
-		 // TODO: take into account measurements
-		 let status = self.model.getAttribute(el, "cim:Switch.normalOpen");
-		 if (typeof(status) !== "undefined") {
-		     ret = (status.textContent === "false")
-		 }
-		 return ret;
-	     });
-	     let swTerminals = self.model.getTargets(switches, "ConductingEquipment.Terminals");
-	     let swCns = self.model.getTargets(swTerminals, "Terminal.ConnectivityNode");
-	     swCns.push(v);
-	     r.push(new Set(swCns));
-	     return r;
-	 }, []);
-
-	 let oldSize = topos.length;
-	 let newSize = 0;
-	 while (oldSize !== newSize) {
-	     oldSize = topos.length;
-	     topos = topos.reduce(function(r, v) {
-		 let merged = false;
-		 for (let i in r) {
-		     let topo = r[i];
-		     let intersection = new Set([...v].filter(x => topo.has(x)));
-		     if (intersection.size > 0) {
-			 merged = true;
-			 r[i] = new Set([...topo].concat([...v]));
-		     }
-		 }
-		 if (merged === false) {
-		     r.push(v);
-		 }
-		 return r;
-	     }, []);
-	     newSize = topos.length;
-	 }
-	 console.log(topos);
-	 */
      }
 
      createEdges(edges) {

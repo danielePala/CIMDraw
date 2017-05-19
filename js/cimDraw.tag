@@ -54,13 +54,14 @@
 			</a>
 			<ul class="dropdown-menu">
 			    <li><a href="">Open</a></li>
-			    <li><a id="cim-save" download="file.xml">Save as...</a></li>
+			    <li><a id="cim-save" download="file.xml">Save as RDF/XML...</a></li>
 			    <li><a id="cgmes-save">Save as CGMES (EXPERIMENTAL)...</a></li>
 			    <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
 			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
 			</ul>
 		    </li>
 		</ul>
+		<cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
 	    </div>
 	</div>
     </nav>
@@ -234,6 +235,7 @@
 		     });
 		 }
 	     });
+	     self.trigger("diagrams");
 	 });
 
 	 // here we show a certain diagram

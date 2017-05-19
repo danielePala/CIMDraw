@@ -370,6 +370,42 @@ function cimSchema() {
 	    return true;
 	},
 
+	// Test weather an object is concrete in the given schema.
+	isConcrete(obj, schemaName) {
+	    let ret = false;
+	    let schDesc = schema.getSchemaObject(obj.localName, schemaName);
+	    let stereotypes = [].filter.call(schDesc.children, function(el) {
+		return el.nodeName === "cims:stereotype";
+	    });
+	    stereotypes.forEach(function(stereotype) {
+		let resource = stereotype.attributes.getNamedItem("rdf:resource");
+		if (resource !== null) {
+		    let val = resource.value;
+		    if (val === "http://iec.ch/TC57/NonStandard/UML#concrete") {
+			ret = true;
+		    }
+		}
+	    });
+	    return ret;
+	},
+
+	// Test weather an object is an external reference in the given schema.
+	// (i.e. rdf:about should be used when serializing according to CGMES)
+	isDescription(obj, schemaName) {
+	    let ret = false;
+	    let schDesc = schema.getSchemaObject(obj.localName, schemaName);
+	    let stereotypes = [].filter.call(schDesc.children, function(el) {
+		return el.nodeName === "cims:stereotype";
+	    });
+	    stereotypes.forEach(function(stereotype) {
+		let val = stereotype.textContent;
+		if (val === "Description") {
+		    ret = true;
+		}
+	    });
+	    return ret;
+	},
+
 	// Check if a link is set in the correct way (according to CGMES schema).
 	// The function doesn't modify the link, it just returns the
 	// name of the correct link: this will be equal to linkName if the

@@ -571,22 +571,17 @@ function cimModel() {
 			}
 		    });
 		    // handle rdf:about
-		    let schDesc = model.schema.getSchemaObject(datum.localName, profile);
-		    let stereotype = [].filter.call(schDesc.children, function(el) {
-			return el.nodeName === "cims:stereotype";
-		    })[0];
-		    if (typeof(stereotype) !== "undefined") {
-			let val = stereotype.textContent;
-			if (val === "Description") {
-			    // we must use rdf:about
-			    let idVal = datum.attributes.getNamedItem("rdf:ID").value; 
-			    datum.removeAttribute("rdf:ID");
-			    let about = datum.ownerDocument.createAttribute("rdf:about");
-			    about.value = "#" + idVal;
-			    datum.setAttributeNode(about);
-			}
+		    let isAbout = model.schema.isDescription(datum, profile);
+		    let isConcrete = model.schema.isConcrete(datum, profile);
+		    if (isAbout === true) {
+			// we must use rdf:about
+			let idVal = datum.attributes.getNamedItem("rdf:ID").value; 
+			datum.removeAttribute("rdf:ID");
+			let about = datum.ownerDocument.createAttribute("rdf:about");
+			about.value = "#" + idVal;
+			datum.setAttributeNode(about);
 		    }
-		    if (datum.children.length > 0) {
+		    if (isConcrete === true && (isAbout === false || datum.children.length > 0)) {
 			doc.children[0].appendChild(datum);
 		    }
 		}
