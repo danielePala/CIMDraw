@@ -37,6 +37,21 @@
 	</li>
     </ul>
 
+    <!-- modal for topology processor info -->
+    <div class="modal fade" id="tpStatusModal" tabindex="-1" role="dialog" aria-labelledby="tpStatusModalLabel">
+	<div class="modal-dialog modal-lg" role="document">
+	    <div class="modal-content">
+		<div class="modal-header">
+		    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		    <h4 class="modal-title" id="seConfigModalLabel">Topology processor results</h4>
+		</div>
+		<div class="modal-body">
+		    <p id="tpMsg">Loading...</p>
+		</div>
+	    </div>
+	</div>
+    </div>
+
     <script>
      "use strict";
      let self = this;
@@ -46,7 +61,13 @@
      });
 
      run(e) {
-	 calcTopology(opts.model);
+	 $("#tpMsg").text("Loading...");
+	 $("#tpStatusModal").modal("show");
+	 $("#tpStatusModal").on("shown.bs.modal", function (e) {
+	     let topos = calcTopology(opts.model);
+	     $("#tpMsg").text("Done (" + topos.length + " nodes calculated).");
+	 });
+
      }
      
     </script>
