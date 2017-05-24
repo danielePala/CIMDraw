@@ -190,7 +190,7 @@ function cimModel() {
     
     // Build initial model data structures and call a user callback.
     // This is a 'private' function (not visible in the model object).
-    function buildModel(callback) {
+    function buildModel(callback) {	
 	// build a map (UUID)->(object) and a map
 	// (link name, target UUID)->(source objects)
 	let allObjects = getAllObjects();
@@ -243,7 +243,6 @@ function cimModel() {
 		object.remove();
 	    }
 	}
-
 	model.schema.buildSchema(callback);
     };
 

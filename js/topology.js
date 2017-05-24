@@ -21,7 +21,7 @@
 
 function calcTopology(model) {
     // get all connectivity nodes
-    allConnectivityNodes = model.getObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
+    let allConnectivityNodes = model.getObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
     let topos = [];
     let actNodes = allConnectivityNodes;
     while(actNodes.length > 0) {
