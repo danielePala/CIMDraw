@@ -1312,6 +1312,12 @@ function cimModel() {
 		model.trigger("createdDiagram");
 	    }
 	    model.trigger("changedDiagram");
+	},
+
+	setMode(newMode) {
+	    if (newMode === "NODE_BREAKER" || newMode === "BUS_BRANCH") {
+		mode = newMode;
+	    }
 	}
     };
     riot.observable(model);
