@@ -51,6 +51,8 @@ function cimModel() {
     // CIM data for the current file.
     // 'all' contains all the CIM Objects, in a single document.
     let data = {all: null};
+    // The current mode of operation: NODE_BREAKER or BUS_BRANCH.
+    let mode = "NODE_BREAKER";
 
     // Parse and load an ENTSO-E CIM file.
     // The given callback is called after having loaded the model.
@@ -481,7 +483,7 @@ function cimModel() {
 	    }
 	},
 
-	// Serialize the current CIM file as a plain XML.
+	// Serialize the current CIM file as a plain RDF/XML file.
 	save() {
 	    let oSerializer = new XMLSerializer();
 	    let sXML = "";
@@ -616,9 +618,9 @@ function cimModel() {
 	    for (let terminal of allTerminals) {
 		data.children[0].appendChild(terminal.cloneNode(true));
 	    }
-	    let allConnectivityNodes = model.getConnectivityNodes();
-	    for (let connectivityNode of allConnectivityNodes) {
-		data.children[0].appendChild(connectivityNode.cloneNode(true));
+	    let allNodes = model.getNodes();
+	    for (let node of allNodes) {
+		data.children[0].appendChild(node.cloneNode(true));
 	    }
 	    let allEqContainers = model.getLinkedObjects(
 		["cim:Substation", "cim:Line"],
@@ -714,11 +716,17 @@ function cimModel() {
 	    return ret;
 	},
 
-	// Get the connectivity nodes that belong to the current diagram.
-	getConnectivityNodes() {
-	    let allConnectivityNodes = model.getObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
-	    let graphic = model.getGraphicObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
-	    let nonGraphic = allConnectivityNodes.filter(el => graphic.indexOf(el) === -1);
+	// Get the nodes that belong to the current diagram. Depending on the
+	// mode of operation, they will be connectivity nodes or
+	// topological nodes.
+	getNodes() {
+	    let nodesType = "cim:ConnectivityNode";
+	    if (mode === "BUS_BRANCH") {
+		nodesType = "cim:TopologicalNode";
+	    }
+	    let allNodes = model.getObjects([nodesType])[nodesType];
+	    let graphic = model.getGraphicObjects([nodesType])[nodesType];
+	    let nonGraphic = allNodes.filter(el => graphic.indexOf(el) === -1);
 	    nonGraphic = nonGraphic.filter(function(d) {
 		let busbarSection = model.getBusbar(d);
 		let equipments = model.getEquipments(d);
@@ -739,7 +747,7 @@ function cimModel() {
 		let graphic = model.getGraphicObjects([type])[type];
 		let nonGraphic = allObjs.filter(el => graphic.indexOf(el) === -1);
 		nonGraphic = nonGraphic.filter(function(d) {
-		    let cn = model.getConnectivityNode(d);
+		    let cn = model.getNode(d);
 		    if (cn !== null) {
 		    let dobjs = model.getDiagramObjects([cn]);
 			return (dobjs.length > 0);
@@ -872,8 +880,12 @@ function cimModel() {
 		term2 = createTerminal(newElement);
 	    }
 	    if (type === "cim:BusbarSection") {
-		let cn = model.cimObject("cim:ConnectivityNode");
-		addLink(term1, "cim:Terminal.ConnectivityNode", cn);
+		let nodesType = "ConnectivityNode";
+		if (mode === "BUS_BRANCH") {
+		    nodesType = "TopologicalNode";
+		}
+		let node = model.cimObject("cim:" + nodesType);
+		addLink(term1, "cim:Terminal." + nodesType, node);
 	    }
 	    if (type === "cim:PowerTransformer") {
 		// TODO: the number of windings should be configurable
@@ -898,13 +910,13 @@ function cimModel() {
 	    // all the links to 'object' must be deleted
 	    let linksToDelete = [];
 	    let objsToDelete = [];
-	    // handle connectivity nodes
-	    if (object.nodeName === "cim:ConnectivityNode") {
+	    // handle nodes
+	    if (object.nodeName === "cim:ConnectivityNode" || object.nodeName === "cim:TopologicalNode") {
 		objsToDelete = getBusbars(object);
 	    }
 	    // handle busbars
 	    if (object.nodeName === "cim:BusbarSection") {
-		objsToDelete = getConnectivityNode(object);
+		objsToDelete = getNode(object);
 	    }
 	    
 	    for (let [linkAndTarget, sources] of model.linksMap) {
@@ -995,51 +1007,64 @@ function cimModel() {
 		return false;
 	    };
 
-	    // functions to navigate busbars <-> connectivity nodes.
-	    // these are internal to this function, since they don't
+	    // Functions to navigate busbars <-> nodes.
+	    // Depending on the mode of operation, they will be connectivity nodes
+	    // or topological nodes.
+	    // These are internal to this function, since they don't
 	    // filter by diagram, while in all other situations you
 	    // want that filter.
-	    function getConnectivityNode(busbar) {
+	    function getNode(busbar) {
+		let nodesType = "ConnectivityNode";
+		if (mode === "BUS_BRANCH") {
+		    nodesType = "TopologicalNode";
+		}
 		if (busbar.nodeName === "cim:BusbarSection") {
 		    let terminal = model.getTargets(
 			[busbar],
 			"ConductingEquipment.Terminals");
 		    let cn = model.getTargets(
 			terminal,
-			"Terminal.ConnectivityNode");
+			"Terminal." + nodesType);
 		    return cn;		
 		}
 		return [];
 	    };
 
-	    function getBusbars(connectivityNode) {
-		if (connectivityNode.nodeName === "cim:ConnectivityNode") {
-		    let cnTerminals = model.getTargets(
-			[connectivityNode],
-			"ConnectivityNode.Terminals");
-		    // let's try to get some equipment
-		    let equipments = model.getTargets(
-			cnTerminals,
-			"Terminal.ConductingEquipment");
-		    let busbars = equipments.filter(
-			el => el.nodeName === "cim:BusbarSection");
-		    return busbars;
+	    function getBusbars(node) {
+		let nodeTerm = "ConnectivityNode.Terminals";
+		if (mode === "BUS_BRANCH") {
+		    nodeTerm = "TopologicalNode.Terminal";
 		}
-		return [];
+		let terminals = model.getTargets(
+		    [node],
+		    nodeTerm);
+		// let's try to get some equipment
+		let equipments = model.getTargets(
+		    terminals,
+		    "Terminal.ConductingEquipment");
+		let busbars = equipments.filter(
+		    el => el.nodeName === "cim:BusbarSection");
+		return busbars;
 	    };
 
 	    model.trigger("deleteObject", objUUID);
 	},
 
-	// Function to navigate busbar -> connectivity node.
-	getConnectivityNode(busbar) {
+	// Function to navigate busbar -> node.
+	// Depending on the mode of operation, it will be a connectivity node
+	// or a topological node.
+	getNode(busbar) {
+	    let nodesType = "ConnectivityNode";
+	    if (mode === "BUS_BRANCH") {
+		nodesType = "TopologicalNode";
+	    }
 	    if (busbar.nodeName === "cim:BusbarSection") {
 		let terminal = model.getTargets(
 		    [busbar],
 		    "ConductingEquipment.Terminals");
 		let cn = model.getTargets(
 		    terminal,
-		    "Terminal.ConnectivityNode");
+		    "Terminal." + nodesType);
 		if (cn.length === 0) {
 		    return null;
 		}
@@ -1048,22 +1073,26 @@ function cimModel() {
 	    return null;
 	},
 
-	// Function to navigate connectivity node -> busbar.
+	// Function to navigate node -> busbar.
+	// Depending on the mode of operation, it must be a connectivity node
+	// or a topological node.
 	// It filters by diagram (i.e. the busbar
-	// OR the connectivity node must be in the diagram).
-	getBusbar(connectivityNode) {
-	    if (connectivityNode.nodeName === "cim:ConnectivityNode") {
-		let terminals = model.getTargets(
-		    [connectivityNode],
-		    "ConnectivityNode.Terminals");
-		let equipments = model.getTargets(
-		    terminals,
-		    "Terminal.ConductingEquipment");
-		let busbars = equipments.filter(el => el.localName === "BusbarSection");
-		let dobjs = model.getDiagramObjects([connectivityNode].concat(busbars));
-		if (busbars.length > 0 && dobjs.length > 0) {
-		    return busbars[0];
-		}
+	// OR the node must be in the diagram).
+	getBusbar(node) {
+	    let nodesType = "ConnectivityNode";
+	    if (mode === "BUS_BRANCH") {
+		nodesType = "TopologicalNode";
+	    }
+	    let terminals = model.getTargets(
+		[node],
+		nodesType + ".Terminals");
+	    let equipments = model.getTargets(
+		terminals,
+		"Terminal.ConductingEquipment");
+	    let busbars = equipments.filter(el => el.localName === "BusbarSection");
+	    let dobjs = model.getDiagramObjects([node].concat(busbars));
+	    if (busbars.length > 0 && dobjs.length > 0) {
+		return busbars[0];
 	    }
 	    return null;
 	},
@@ -1107,7 +1136,7 @@ function cimModel() {
 	updateActiveDiagram(object, lineData) {
 	    // save new position.
 	    let dobjs = model.getDiagramObjects([object]);
-	    if (object.nodeName === "cim:ConnectivityNode" && dobjs.length === 0) {
+	    if ((object.nodeName === "cim:ConnectivityNode" || object.nodeName === "cim:TopologicalNode") && dobjs.length === 0) {
 		let equipments = model.getEquipments(object);
 		let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
 		if (typeof(busbarSection) !== "undefined") {
@@ -1246,14 +1275,21 @@ function cimModel() {
 	},
 
 	// Get the equipments in the current diagram associated to the
-	// given connectivity node.
-	getEquipments(connectivityNode) {
-	    let cnTerminals = model.getTargets(
-		[connectivityNode],
-		"ConnectivityNode.Terminals");
+	// given node.
+	// Depending on the mode of operation, it must be a connectivity node
+	// or a topological node.
+	getEquipments(node) {
+	    let nodeTerm = "ConnectivityNode.Terminals";
+	    if (mode === "BUS_BRANCH") {
+		nodeTerm = "TopologicalNode.Terminal";
+	    }
+	    
+	    let terminals = model.getTargets(
+		[node],
+		nodeTerm);
 	    // let's try to get some equipment
 	    let equipments = model.getTargets(
-		cnTerminals,
+		terminals,
 		"Terminal.ConductingEquipment");
 	    equipments = getConductingEquipmentGraph(equipments)
 		.map(el => el.source);
