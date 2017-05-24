@@ -83,6 +83,9 @@
      const TERMINAL_RADIUS = 2; // radius of terminals
      const TERMINAL_OFFSET = 1; // distance between element and its terminals
      let self = this;
+     let NODE_CLASS = "ConnectivityNode";
+     let NODE_TERM = "ConnectivityNode.Terminals";
+     let TERM_NODE = "Terminal.ConnectivityNode";
      self.model = opts.model;
      
      // listen to 'showDiagram' event from parent
@@ -107,6 +110,12 @@
 	 d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
 	 // draw grid
 	 self.drawGrid(1.0);
+	 let mode = self.model.getMode();
+	 if (mode === "BUS_BRANCH") {
+	     NODE_CLASS = "TopologicalNode";
+	     NODE_TERM = "TopologicalNode.Terminal";
+	     TERM_NODE = "Terminal.TopologicalNode";
+	 }
      });
      
      // listen to 'transform' event
@@ -135,7 +144,7 @@
 		 let uuid = object.attributes.getNamedItem("rdf:ID").value;
 		 // special case for busbars
 		 if (object.nodeName === "cim:BusbarSection") {
-		     let cn = self.model.getConnectivityNode(object);
+		     let cn = self.model.getNode(object);
 		     if (cn === null) {
 			 return;
 		     }
@@ -179,7 +188,7 @@
 	     if (typeof(psr) !== "undefined") {
 		 // handle busbars
 		 if (psr.nodeName === "cim:BusbarSection") {
-		     psr = self.model.getConnectivityNode(psr);
+		     psr = self.model.getNode(psr);
 		 }	 
 		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		 let psrSelection = d3.select("g#" + psrUUID);
@@ -197,7 +206,7 @@
 	     if (typeof(psr) !== "undefined") {
 		 // handle busbars
 		 if (psr.nodeName === "cim:BusbarSection") {
-		     psr = self.model.getConnectivityNode(psr);
+		     psr = self.model.getNode(psr);
 		 }	 
 		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		 let psrSelection = d3.select("g#" + psrUUID);
@@ -215,8 +224,8 @@
 		 selection = self.drawACLines([object])[0];
 		 self.createTerminals(selection);
 	     break;
-	 case "cim:ConnectivityNode":
-	     self.drawConnectivityNodes([object]);
+	 case "cim:" + NODE_CLASS:
+	     self.drawNodes([object]);
 	     break;
 	 }
 	 let type = object.localName;
@@ -269,8 +278,8 @@
 	     case "cim:PowerTransformer":
 		 selection = self.drawPowerTransformers([object]);
 		 break;
-	     case "cim:ConnectivityNode":
-		 selection = self.drawConnectivityNodes([object]);
+	     case "cim:" + NODE_CLASS:
+		 selection = self.drawNodes([object]);
 		 break;
 	 }
 	 
@@ -284,14 +293,14 @@
 		 "ConductingEquipment.Terminals");
 	     let cn = self.model.getTargets(
 		 terminal,
-		 "Terminal.ConnectivityNode")[0];
-	     selection = self.drawConnectivityNodes([cn]);
+		 TERM_NODE)[0];
+	     selection = self.drawNodes([cn]);
 	     let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
 	     let eqTerminals = self.model.getTerminals(equipments);
 	     for (let eqTerminal of eqTerminals) {
 		 let eqCn = self.model.getTargets(
 		     [eqTerminal],
-		     "Terminal.ConnectivityNode")[0];
+		     TERM_NODE)[0];
 		 if (eqCn === cn) {
 		     let newEdge = {source: cn, target: eqTerminal};
 		     self.createEdges([newEdge]);
@@ -309,20 +318,20 @@
 	     for (let terminal of terminals) {
 		 let cn = self.model.getTargets(
 		     [terminal],
-		     "Terminal.ConnectivityNode")[0];
+		     TERM_NODE)[0];
 		 if (typeof(cn) !== "undefined") {
 		     let equipments = self.model.getEquipments(cn);
 		     // let's try to get a busbar section
 		     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];		     
 		     equipments = equipments.filter(el => el !== busbarSection);
 		     if (equipments.length > 1) {
-			 self.drawConnectivityNodes([cn]);
+			 self.drawNodes([cn]);
 
 			 let eqTerminals = self.model.getTerminals(equipments);
 			 for (let eqTerminal of eqTerminals) {
 			     let eqCn = self.model.getTargets(
 				 [eqTerminal],
-				 "Terminal.ConnectivityNode")[0];
+				 TERM_NODE)[0];
 			     if (eqCn === cn) {
 				 let newEdge = {source: cn, target: eqTerminal};
 				 self.createEdges([newEdge]);
@@ -341,15 +350,15 @@
      // TODO: should check also the connectivity node
      self.model.on("addLink", function(source, linkName, target) {
 	 switch (linkName) {
-	     case "cim:Terminal.ConnectivityNode":
-	     case "cim:ConnectivityNode.Terminals":
+	     case "cim:" + TERM_NODE:
+	     case "cim:" + NODE_TERM:
 		 let cn = undefined;
 		 let term = undefined;
-		 if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
+		 if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:" + NODE_CLASS) {
 		     cn = source;
 		     term = target;
 		 } else {
-		     if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
+		     if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:" + NODE_CLASS) {
 			 term = source;
 			 cn = target;
 		     } else {
@@ -409,7 +418,7 @@
 		 if (typeof(psr) !== "undefined") {
 		     // handle busbars
 		     if (psr.nodeName === "cim:BusbarSection") {
-			 psr = self.model.getConnectivityNode(psr);
+			 psr = self.model.getNode(psr);
 		     }	 
 		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		     let psrSelection = d3.select("g#" + psrUUID);
@@ -431,22 +440,22 @@
 		 if (typeof(psr) !== "undefined") {
 		     // handle busbars
 		     if (psr.nodeName === "cim:BusbarSection") {
-			 psr = self.model.getConnectivityNode(psr);
+			 psr = self.model.getNode(psr);
 		     }	 
 		     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		     let psrSelection = d3.select("g#" + psrUUID);
 		     self.createMeasurements(psrSelection);
 		 }
 		 break;
-	     case "cim:Terminal.ConnectivityNode":
-	     case "cim:ConnectivityNode.Terminals":
+	     case "cim:" + TERM_NODE:
+	     case "cim:" + NODE_TERM:
 		 let cn = undefined;
 		 let term = undefined;
-		 if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:ConnectivityNode") {
+		 if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:" + NODE_CLASS) {
 		     cn = source;
 		     term = target;
 		 } else {
-		     if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:ConnectivityNode") {
+		     if (source.nodeName === "cim:Terminal" && target.nodeName === "cim:" + NODE_CLASS) {
 			 term = source;
 			 cn = target;
 		     } else {
@@ -484,8 +493,8 @@
 
 	 self.model.selectDiagram(decodeURI(diagramName));
 	 self.diagramName = decodeURI(diagramName);
-	 let allConnectivityNodes = self.model.getConnectivityNodes();
-	 yield "[" + Date.now() + "] DIAGRAM: extracted connectivity nodes";
+	 let allNodes = self.model.getNodes();
+	 yield "[" + Date.now() + "] DIAGRAM: extracted nodes";
 	 
 	 let allEquipments = self.model.getGraphicObjects(
 	     ["cim:ACLineSegment",
@@ -558,7 +567,7 @@
 	 let trafoEnter = self.drawPowerTransformers(allPowerTransformers);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformers";
 	 // connectivity nodes
-	 let cnEnter = self.drawConnectivityNodes(allConnectivityNodes);
+	 let cnEnter = self.drawNodes(allNodes);
 	 self.createMeasurements(cnEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn connectivity nodes";
 
@@ -669,7 +678,7 @@
 	     let svs = [];
 	     let terminals = self.model.getTerminals([d]);
 	     // get the measurements for this equipment
-	     if (d.nodeName === "cim:ConnectivityNode") {		 
+	     if (d.nodeName === "cim:" + NODE_CLASS) {		 
 		 let busbar = self.model.getBusbar(d);
 		 if (busbar === null) {
 		     return;
@@ -1144,7 +1153,7 @@
 	     .each(function(d, i) {
 		 let cn = self.model.getTargets(
 		     [d],
-		     "Terminal.ConnectivityNode")[0];
+		     TERM_NODE)[0];
 		 let lineData = d3.select(this.parentNode).datum().lineData;
 		 let start = lineData[0];
 		 let end = lineData[lineData.length-1];
@@ -1240,7 +1249,7 @@
 	     // we need to check if the other terminal must be moved
 	     let otherCn = self.model.getTargets(
 		 [otherTerm],
-		 "Terminal.ConnectivityNode")[0];
+		 TERM_NODE)[0];
 	     let termToChange = otherTerm;
 	     let cnToChange = otherCn;
 	     if(typeof(otherCn) !== "undefined") {
@@ -1352,80 +1361,43 @@
 	 return lineData;
      }
      
-     // Draw all ConnectivityNodes
-     drawConnectivityNodes(allConnectivityNodes) {
+     // Draw all nodes (connectivity or topological)
+     drawNodes(allNodes) {
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
 		      .y(function(d) { return d.y; }); 
 	 
-	 for (let cn of allConnectivityNodes) {
+	 for (let cn of allNodes) {
 	     self.calcLineData(cn);
 	 }
 	 
-	 if (d3.select("svg").select("g.ConnectivityNodes").empty()) {
+	 if (d3.select("svg").select("g." + NODE_CLASS + "s").empty()) {
 	     d3.select("svg").select("g.diagram").append("g")
-	       .attr("class", "ConnectivityNodes");
+	       .attr("class", NODE_CLASS + "s");
 	 }
 	 
 	 let cnUpdate = d3.select("svg")
-			  .select("g.ConnectivityNodes")
-			  .selectAll("g.ConnectivityNode")
-			  .data(allConnectivityNodes, function (d) {
+			  .select("g." + NODE_CLASS + "s")
+			  .selectAll("g." + NODE_CLASS)
+			  .data(allNodes, function (d) {
 			      return d.attributes.getNamedItem("rdf:ID").value;
 			  });
 
 	 let cnEnter = cnUpdate.enter()
 			       .append("g")
-			       .attr("class", "ConnectivityNode")
+			       .attr("class", NODE_CLASS)
 			       .attr("id", function(d) {
 				   return d.attributes.getNamedItem("rdf:ID").value;
 			       });
 	 
 	 cnUpdate.select("path").attr("d", function(d) {
 	     let lineData = d3.select(this.parentNode).data()[0].lineData
-	     /*if (lineData.length === 1) {
-		 let cx = lineData[0].x;
-		 let cy = lineData[0].y;
-
-		 if (self.model.getBusbar(d) === null) {
-		     let cnTerms = opts.model.getTargets(
-			 [d],
-			 "ConnectivityNode.Terminals");
-		     if (cnTerms.length === 2) {
-			 return line(lineData);
-		     }    
-		 }
-
-		 lineData = [{x:cx-1, y:cy-1, seq:1},
-			     {x:cx+1, y:cy-1, seq:2},
-			     {x:cx+1, y:cy+1, seq:3},
-			     {x:cx-1, y:cy+1, seq:4},
-			     {x:cx-1, y:cy-1, seq:5}];
-	     }*/
 	     return line(lineData);
 	 });
 	 
 	 cnEnter.append("path")
 		.attr("d", function(d) {
 		    let lineData = d3.select(this.parentNode).data()[0].lineData
-		    /*if (lineData.length === 1) {			
-			let cx = lineData[0].x;
-			let cy = lineData[0].y;
-			if (self.model.getBusbar(d) === null) {
-			    let cnTerms = opts.model.getTargets(
-				[d],
-				"ConnectivityNode.Terminals");
-			    if (cnTerms.length < 2) {
-				return line(lineData);
-			    }    
-			}
-			
-			lineData = [{x:cx-1, y:cy-1, seq:1},
-				    {x:cx+1, y:cy-1, seq:2},
-				    {x:cx+1, y:cy+1, seq:3},
-				    {x:cx-1, y:cy+1, seq:4},
-				    {x:cx-1, y:cy-1, seq:5}];
-		    }*/
 		    return line(lineData);
 		})
 		.attr("stroke", "black")
@@ -1474,7 +1446,7 @@
 	 let hoverD = self.model.getObject(uuid);
 	 // handle busbars
 	 if (hoverD.nodeName === "cim:BusbarSection") {
-	     hoverD = self.model.getConnectivityNode(hoverD);
+	     hoverD = self.model.getNode(hoverD);
 	 }
 
 	 // handle substations and lines
@@ -1486,7 +1458,7 @@
 	     for (let equipment of equipments) {
 		 // handle busbars
 		 if (equipment.nodeName === "cim:BusbarSection") {
-		     let cn = self.model.getConnectivityNode(equipment);
+		     let cn = self.model.getNode(equipment);
 		     if (cn !== null) {
 			 equipment = cn;
 		     }

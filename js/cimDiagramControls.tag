@@ -87,6 +87,9 @@
     <script>
      "use strict";
      let self = this;
+     let NODE_CLASS = "ConnectivityNode";
+     let NODE_TERM = "ConnectivityNode.Terminals";
+     let TERM_NODE = "Terminal.ConnectivityNode";
      let quadtree = d3.quadtree();
      let selected = [];
      let menu = [
@@ -192,7 +195,7 @@
 		 if (opts.model.getBusbar(cn) === null) {
 		     let cnTerms = opts.model.getTargets(
 			 [cn],
-			 "ConnectivityNode.Terminals");
+			 NODE_TERM);
 		     if (cnTerms.length === 2) {
 			 let cnUUID = d.source.attributes.getNamedItem("rdf:ID").value
 			 let cnElem = d3.select("svg").selectAll("g#"+cnUUID).node();
@@ -200,7 +203,7 @@
 			 return;
 		     }
 		 }
-		 opts.model.removeLink(d.source, "cim:ConnectivityNode.Terminals", d.target);
+		 opts.model.removeLink(d.source, "cim:" + NODE_TERM, d.target);
 	     }
 	 }
      ];
@@ -270,6 +273,12 @@
 	     self.disableAll();
 	     self.enableConnect();
 	 });
+	 let mode = opts.model.getMode();
+	 if (mode === "BUS_BRANCH") {
+	     NODE_CLASS = "TopologicalNode";
+	     NODE_TERM = "TopologicalNode.Terminal";
+	     TERM_NODE = "Terminal.TopologicalNode";
+	 }
 	 
      });
 
@@ -290,7 +299,7 @@
 		 for (let equipment of equipments) {
 		     // handle busbars
 		     if (equipment.nodeName === "cim:BusbarSection") {
-			 cn = opts.model.getConnectivityNode(equipment);
+			 cn = opts.model.getNode(equipment);
 			 if (cn !== null) {
 			     equipment = cn;
 			 }
@@ -314,7 +323,7 @@
 		 }
 		 break;
 	     case "cim:BusbarSection":
-		 cn = opts.model.getConnectivityNode(cimObject);
+		 cn = opts.model.getNode(cimObject);
 		 cnUUID = cn.attributes.getNamedItem("rdf:ID").value;
 		 diagramElem = d3.select("svg").selectAll("g#" + cnUUID).node();
 		 selected = [diagramElem];
@@ -477,14 +486,14 @@
 		     let terminals = opts.model.getTerminals([d]);
 		     let cns = opts.model.getTargets(
 			 terminals,
-			 "Terminal.ConnectivityNode");
+			 TERM_NODE);
 		     for (let cn of cns) {
 			 if (opts.model.getBusbar(cn) !== null) {
 			     continue;
 			 }
 			 let cnTerms = opts.model.getTargets(
 			     [cn],
-			     "ConnectivityNode.Terminals");
+			     NODE_TERM);
 			 if (cnTerms.length === 2) {
 			     let cnToMove = {cn: cn, cnTerms: cnTerms};
 			     cnsToMove.push(cnToMove);
@@ -672,7 +681,7 @@
 	       if (typeof(termToChange) !== "undefined") {
 		   let cn = opts.model.getTargets(
 		       [d],
-		       "Terminal.ConnectivityNode")[0];
+		       TERM_NODE)[0];
 		   d3.select("svg").selectAll("svg > path").attr("d", null);
 		   d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
 		   
@@ -682,7 +691,7 @@
 		       if (termToChange.rotation > 0) {
 			   term1XY = self.parent.rotateTerm(termToChange);
 		       }
-		       cn = opts.model.cimObject("cim:ConnectivityNode");
+		       cn = opts.model.cimObject("cim:" + NODE_CLASS);
 		       opts.model.setAttribute(cn, "cim:IdentifiedObject.name", "new1");
 		       cn.x = (term1XY.x + termXY.x)/2;
 		       cn.y = (term1XY.y + termXY.y)/2;
@@ -690,7 +699,7 @@
 		   }
 		   d3.select("svg").on("mousemove", null);
 		   // update the model
-		   let schemaLinkName = "cim:Terminal.ConnectivityNode";
+		   let schemaLinkName = "cim:" + TERM_NODE;
 		   opts.model.setLink(termToChange, schemaLinkName, cn);
 		   opts.model.setLink(d, schemaLinkName, cn);
 		   path.datum(null);
@@ -714,7 +723,7 @@
 		   });
 	       }
 	   });
-	 d3.select("svg").selectAll("svg > g.diagram > g.ConnectivityNodes > g.ConnectivityNode")
+	 d3.select("svg").selectAll("svg > g.diagram > g." + NODE_CLASS + "s > g." + NODE_CLASS)
 	   .on("click", function (d) {
 	       connect(d);
 	   });
@@ -730,7 +739,7 @@
 	     if (typeof(termToChange) !== "undefined") {
 		 d3.select("svg").on("mousemove", null);
 		 // update the model
-		 opts.model.setLink(termToChange, "cim:Terminal.ConnectivityNode", cn);
+		 opts.model.setLink(termToChange, "cim:" + TERM_NODE, cn);
 		 d3.select("svg > path").datum(null);
 	     }
 	 };
@@ -740,7 +749,7 @@
 	 d3.select("body").on("keyup.connect", null);
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
 	   .on("click", null);
-	 d3.select("svg").selectAll("svg > g.diagram > g.ConnectivityNodes > g.ConnectivityNode")
+	 d3.select("svg").selectAll("svg > g.diagram > g." + NODE_CLASS + "s > g." + NODE_CLASS)
 	   .on("click", null);
 	 d3.select("svg").selectAll("svg > g.diagram > g.edges > g")
 	   .on("click", null);
@@ -926,7 +935,7 @@
 	 // 'normal' elements
 	 d3.select(hoverD)
 	   .filter("g:not(.ACLineSegment)")
-	   .filter("g:not(.ConnectivityNode)")
+	   .filter("g:not(." + NODE_CLASS + ")")
 	   .filter("g:not(.Terminal)")
 	   .each(function (d) {
 	       d3.select(this).append("rect")
@@ -942,7 +951,7 @@
 	   });
 	 // resizable elements (TODO: junction)
 	 let res = d3.select(hoverD)
-		     .filter("g.ACLineSegment,g.ConnectivityNode") 
+		     .filter("g.ACLineSegment,g." + NODE_CLASS) 
 		     .selectAll("g.resize")
 		     .data(function(d) {
 			 // data is the element plus the coordinate point seq number
@@ -993,7 +1002,7 @@
 	     opts.model.setLink(newObject, "cim:Measurement.Terminal", d);
 	     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", psr);
 	 } else {
-	     if (d.nodeName === "cim:ConnectivityNode") {
+	     if (d.nodeName === "cim:" + NODE_CLASS) {
 		 let busbar = opts.model.getBusbar(d);
 		 if (busbar !== null) {
 		     opts.model.setLink(newObject, "cim:Measurement.PowerSystemResource", busbar);
@@ -1019,7 +1028,7 @@
 		 "Terminal.ConductingEquipment")[0];
 	     opts.model.setLink(newObject, "cim:OperationalLimitSet.Terminal", d);
 	 } else {
-	     if (d.nodeName === "cim:ConnectivityNode") {
+	     if (d.nodeName === "cim:" + NODE_CLASS) {
 		 let busbar = opts.model.getBusbar(d);
 		 if (busbar !== null) {
 		     opts.model.setLink(newObject, "cim:OperationalLimitSet.Equipment", busbar);

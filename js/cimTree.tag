@@ -1136,8 +1136,8 @@
      moveTo(uuid) {
 	 let target = null, targetChild = null;
 	 let hoverD = self.model.getObject(uuid);
-	 // handle connectivity nodes
-	 if (hoverD.nodeName === "cim:ConnectivityNode") {
+	 // handle nodes
+	 if (hoverD.nodeName === "cim:ConnectivityNode" || hoverD.nodeName === "cim:TopologicalNode") {
 	     let equipments = self.model.getEquipments(hoverD);
 	     // let's try to get a busbar section
 	     let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];

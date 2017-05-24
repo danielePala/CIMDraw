@@ -749,7 +749,7 @@ function cimModel() {
 		nonGraphic = nonGraphic.filter(function(d) {
 		    let cn = model.getNode(d);
 		    if (cn !== null) {
-		    let dobjs = model.getDiagramObjects([cn]);
+			let dobjs = model.getDiagramObjects([cn]);
 			return (dobjs.length > 0);
 		    }
 		    return false;
@@ -1314,6 +1314,10 @@ function cimModel() {
 	    model.trigger("changedDiagram");
 	},
 
+	getMode() {
+	    return mode;
+	},
+	
 	setMode(newMode) {
 	    if (newMode === "NODE_BREAKER" || newMode === "BUS_BRANCH") {
 		mode = newMode;
