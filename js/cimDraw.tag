@@ -62,6 +62,14 @@
 		    </li>
 		</ul>
 		<cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
+		<div class="btn-group navbar-right" data-toggle="buttons" id="cim-mode-toggle">
+		    <label class="btn btn-primary active navbar-btn">
+			<input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
+		    </label>
+		    <label class="btn btn-primary navbar-btn">
+			<input type="radio" name="options" id="planning" autocomplete="off"> Planning
+		    </label>
+		</div>
 	    </div>
 	</div>
     </nav>
@@ -174,6 +182,21 @@
 	     cimFileReader = null;
 	     route("/" + cimFile.name + "/diagrams");
 	 });
+
+	 $("#operational").change(function() {
+	     self.cimModel.setMode("NODE_BREAKER");
+	     let hashComponents = window.location.hash.substring(1).split("/");
+	     let file = hashComponents[0];
+	     route("/" + file + "/diagrams");
+	 });
+
+	 $("#planning").change(function() {
+	     self.cimModel.setMode("BUS_BRANCH");
+	     let hashComponents = window.location.hash.substring(1).split("/");
+	     let file = hashComponents[0];
+	     route("/" + file + "/diagrams");
+	 });
+
 	 
 	 // This is the initial route ("the home page").
 	 route(function(name) {
@@ -184,6 +207,7 @@
 	     $("#cim-load-container").hide();
 	     $("#cim-home-container").hide();
 	     $(".selectpicker").selectpicker("hide");
+	     $("#cim-mode-toggle").hide();
 	     // main logic
 	     $("#cim-file-input").fileinput("reset");
 	     $("#cim-file-input").fileinput("enable");
@@ -210,7 +234,8 @@
 	 route('/*/diagrams', function() {
 	     // things to show
 	     $("#cim-home-container").show();
-	     $(".selectpicker").selectpicker("show"); 
+	     $(".selectpicker").selectpicker("show");
+	     $("#cim-mode-toggle").show();
 	     // things to hide
 	     $("#cim-local-file-component").hide();
 	     $("#app-container").hide();

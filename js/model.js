@@ -1299,6 +1299,11 @@ function cimModel() {
 	// Selects a given diagram in the current CIM file.
 	// TODO: perform some checks...
 	selectDiagram(diagramName) {
+	    if (diagramName === null) {
+		// unselect diagram
+		model.activeDiagram = undefined;
+		model.activeDiagramName = "none";
+	    }
 	    if (diagramName !== model.activeDiagramName) {
 		model.activeDiagramName = diagramName;
 		model.activeDiagram = model.getObjects(["cim:Diagram"])["cim:Diagram"]
