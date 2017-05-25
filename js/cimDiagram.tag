@@ -97,6 +97,12 @@
 	     self.moveTo(element);
 	     self.trigger("moveTo", element);
          }
+	 let mode = self.model.getMode();
+	 if (mode === "BUS_BRANCH") {
+	     NODE_CLASS = "TopologicalNode";
+	     NODE_TERM = "TopologicalNode.Terminal";
+	     TERM_NODE = "Terminal.TopologicalNode";
+	 }
      });
 
      // listen to 'mount' event
@@ -110,12 +116,6 @@
 	 d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
 	 // draw grid
 	 self.drawGrid(1.0);
-	 let mode = self.model.getMode();
-	 if (mode === "BUS_BRANCH") {
-	     NODE_CLASS = "TopologicalNode";
-	     NODE_TERM = "TopologicalNode.Terminal";
-	     TERM_NODE = "Terminal.TopologicalNode";
-	 }
      });
      
      // listen to 'transform' event

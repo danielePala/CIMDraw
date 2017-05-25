@@ -272,14 +272,7 @@
 	 $("#connect").change(function() {
 	     self.disableAll();
 	     self.enableConnect();
-	 });
-	 let mode = opts.model.getMode();
-	 if (mode === "BUS_BRANCH") {
-	     NODE_CLASS = "TopologicalNode";
-	     NODE_TERM = "TopologicalNode.Terminal";
-	     TERM_NODE = "Terminal.TopologicalNode";
-	 }
-	 
+	 });	 
      });
 
      // listen to 'moveTo' event from parent
@@ -337,6 +330,13 @@
      
      // listen to 'render' event from parent
      self.parent.on("render", function() {
+	 // select mode
+	 let mode = opts.model.getMode();
+	 if (mode === "BUS_BRANCH") {
+	     NODE_CLASS = "TopologicalNode";
+	     NODE_TERM = "TopologicalNode.Terminal";
+	     TERM_NODE = "Terminal.TopologicalNode";
+	 }
 	 // setup quadtree
 	 let points = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
 	 let edges = d3.select("svg").selectAll("svg > g.diagram > g.edges > g");

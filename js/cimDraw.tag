@@ -62,14 +62,7 @@
 		    </li>
 		</ul>
 		<cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
-		<div class="btn-group navbar-right" data-toggle="buttons" id="cim-mode-toggle">
-		    <label class="btn btn-primary active navbar-btn">
-			<input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
-		    </label>
-		    <label class="btn btn-primary navbar-btn">
-			<input type="radio" name="options" id="planning" autocomplete="off"> Planning
-		    </label>
-		</div>
+		<p class="navbar-text navbar-right" id="cim-mode">Mode: Operational</p>
 	    </div>
 	</div>
     </nav>
@@ -153,6 +146,32 @@
 		</div>
 	    </div>
 	</div>
+
+	<!-- Modal for selecting the modeling type: bus-branch vs node-breaker -->
+	<div class="modal fade" id="cimModeModal" tabindex="-1" role="dialog" aria-labelledby="cimModeModalLabel">
+	    <div class="modal-dialog" role="document">
+		<div class="modal-content">
+		    <div class="modal-header">
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			<h4 class="modal-title" id="cimModeModalLabel">Choose the diagram type</h4>
+		    </div>
+		    <div class="modal-body">
+			<div class="btn-group" data-toggle="buttons">
+			    <label class="btn btn-primary active">
+				<input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
+			    </label>
+			    <label class="btn btn-primary">
+				<input type="radio" name="options" id="planning" autocomplete="off"> Planning
+			    </label>
+			</div>
+		    </div>
+		    <div class="modal-footer">
+			<button type="button" class="btn btn-primary" id="cim-create-new-modal">Create</button>
+		    </div>
+		</div>
+	    </div>
+	</div>
+
    
     </div>
 
@@ -161,6 +180,14 @@
      let self = this;
      self.cimModel = cimModel();
      let diagramsToLoad = 2;
+
+     self.cimModel.on("setMode", function(mode) {
+	 if (mode === "NODE_BREAKER") {
+	     $("#cim-mode").text("Mode: Operational");
+	 } else {
+	     $("#cim-mode").text("Mode: Planning");
+	 }
+     });
      
      self.on("loaded", function() {
 	 diagramsToLoad = diagramsToLoad - 1;
@@ -177,26 +204,24 @@
 	 let cimFileReader = {};
 	 $(".selectpicker").selectpicker({container: "body"});
 
-	 $("#cim-create-new-container").on("click", function() {
-	     cimFile = {name: "new1"};
-	     cimFileReader = null;
-	     route("/" + cimFile.name + "/diagrams");
-	 });
-
 	 $("#operational").change(function() {
 	     self.cimModel.setMode("NODE_BREAKER");
-	     let hashComponents = window.location.hash.substring(1).split("/");
-	     let file = hashComponents[0];
-	     route("/" + file + "/diagrams");
 	 });
 
 	 $("#planning").change(function() {
 	     self.cimModel.setMode("BUS_BRANCH");
-	     let hashComponents = window.location.hash.substring(1).split("/");
-	     let file = hashComponents[0];
-	     route("/" + file + "/diagrams");
+	 });
+	 
+	 $("#cim-create-new-container").on("click", function() {
+	     cimFile = {name: "new1"};
+	     cimFileReader = null;
+	     $("#cimModeModal").modal("show");
+	     //route("/" + cimFile.name + "/diagrams");
 	 });
 
+	 $("#cim-create-new-modal").on("click", function() {
+	     route("/" + cimFile.name + "/diagrams");
+	 });
 	 
 	 // This is the initial route ("the home page").
 	 route(function(name) {
@@ -207,7 +232,7 @@
 	     $("#cim-load-container").hide();
 	     $("#cim-home-container").hide();
 	     $(".selectpicker").selectpicker("hide");
-	     $("#cim-mode-toggle").hide();
+	     $("#cim-mode").hide();
 	     // main logic
 	     $("#cim-file-input").fileinput("reset");
 	     $("#cim-file-input").fileinput("enable");
@@ -235,11 +260,12 @@
 	     // things to show
 	     $("#cim-home-container").show();
 	     $(".selectpicker").selectpicker("show");
-	     $("#cim-mode-toggle").show();
+	     $("#cim-mode").show();
 	     // things to hide
 	     $("#cim-local-file-component").hide();
 	     $("#app-container").hide();
 	     $("#cim-export").parent().addClass("disabled");
+	     $("#cimModeModal").modal("hide");
 	     // main logic
 	     $("#loadingDiagramMsg").text("loading CIM network...");
 	     $("#loadingModal").off("shown.bs.modal");
@@ -250,6 +276,9 @@
 		     self.cimModel.load(cimFile, cimFileReader, function() {
 			 loadDiagramList(cimFile.name);
 			 $("#loadingModal").modal("hide");
+			 if (cimFile.name !== "new1") {
+			     selectMode();
+			 }
 		     }); 
 		 } else {
 		     let hashComponents = window.location.hash.substring(1).split("/");
@@ -257,8 +286,20 @@
 		     self.cimModel.loadRemote("/" + file, function() {
 			 loadDiagramList(file);
 			 $("#loadingModal").modal("hide");
+			 selectMode();
 		     });
 		 }
+
+		 function selectMode() {
+		     let nodes = self.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
+		     let cns = nodes["cim:ConnectivityNode"];
+		     let tns = nodes["cim:TopologicalNode"];
+		     if (cns.length > 0 || tns.length === 0) {
+			 self.cimModel.setMode("NODE_BREAKER");
+		     } else {
+			 self.cimModel.setMode("BUS_BRANCH");
+		     }
+		 };
 	     });
 	     self.trigger("diagrams");
 	 });

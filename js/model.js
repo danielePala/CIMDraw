@@ -1299,11 +1299,6 @@ function cimModel() {
 	// Selects a given diagram in the current CIM file.
 	// TODO: perform some checks...
 	selectDiagram(diagramName) {
-	    if (diagramName === null) {
-		// unselect diagram
-		model.activeDiagram = undefined;
-		model.activeDiagramName = "none";
-	    }
 	    if (diagramName !== model.activeDiagramName) {
 		model.activeDiagramName = diagramName;
 		model.activeDiagram = model.getObjects(["cim:Diagram"])["cim:Diagram"]
@@ -1327,6 +1322,7 @@ function cimModel() {
 	    if (newMode === "NODE_BREAKER" || newMode === "BUS_BRANCH") {
 		mode = newMode;
 	    }
+	    model.trigger("setMode", mode);
 	}
     };
     riot.observable(model);
