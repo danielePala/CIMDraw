@@ -72,3 +72,32 @@ function calcTopology(model) {
     });
     return topos;
 };
+
+/*function calcAdmittanceMatrix(model) {
+    // update topology (TODO: not needed in planning)
+    calcTopology(model);
+    let topos = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
+    topos.forEach(function(topo) {
+	let terms = model.getTargets([topo], "TopologicalNode.Terminal"); // TODO: can be via conn nodes
+	let aclines = model.getTargets(terms, "Terminal.ConductingEquipment").filter(function(el) {
+	    return model.schema.isA("ACLineSegment", el) === true;
+	});
+	aclines.forEach(function(acline) {
+	    let r = model.getAttribute(acline, "cim:ACLineSegment.r");
+	    let x = model.getAttribute(acline, "cim:ACLineSegment.x");
+	    let g = model.getAttribute(acline, "cim:ACLineSegment.gch");
+	    let b = model.getAttribute(acline, "cim:ACLineSegment.bch");
+	    // TODO: install math.js
+	    let Z = math.complex(r, x);
+	    let Y = math.complex(g, b);
+	    let Z0 = math.sqrt(math.divide(Z, Y));
+	    let Ka = math.sqrt(math.multiply(Z, Y));
+	    let A = math.cosh(Ka);
+	    let B = math.multiply(Z0, math.sinh(Ka));
+	    let Binv = math.divide(1, B);
+	    // get target topo...
+	    
+	});
+    });
+};
+*/

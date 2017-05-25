@@ -153,18 +153,23 @@
 		<div class="modal-content">
 		    <div class="modal-header">
 			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-			<h4 class="modal-title" id="cimModeModalLabel">Choose the diagram type</h4>
+			<h4 class="modal-title" id="cimModeModalLabel">Choose diagram type</h4>
 		    </div>
 		    <div class="modal-body">
-			<div class="btn-group" data-toggle="buttons">
-			    <label class="btn btn-primary active">
-				<input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
-			    </label>
-			    <label class="btn btn-primary">
-				<input type="radio" name="options" id="planning" autocomplete="off"> Planning
-			    </label>
+			<div class="row center-block">
+			    <div class="col-md-12">	    
+				<div class="btn-group" data-toggle="buttons">
+				    <label class="btn btn-primary active">
+					<input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
+				    </label>
+				    <label class="btn btn-primary">
+					<input type="radio" name="options" id="planning" autocomplete="off"> Planning
+				    </label>
+				</div>
+			    </div>
 			</div>
 		    </div>
+
 		    <div class="modal-footer">
 			<button type="button" class="btn btn-primary" id="cim-create-new-modal">Create</button>
 		    </div>
