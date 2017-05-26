@@ -73,31 +73,46 @@ function calcTopology(model) {
     return topos;
 };
 
+// TODO: install math.js
 /*function calcAdmittanceMatrix(model) {
+    let ret = math.zeros(topos.length, topos.length, "sparse"); // the admittance matrix is sparse
+    let objs = model.getObjects(["cim:TopologicalNode", "cim:ACLineSegment"]);
     // update topology (TODO: not needed in planning)
     calcTopology(model);
-    let topos = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
-    topos.forEach(function(topo) {
-	let terms = model.getTargets([topo], "TopologicalNode.Terminal"); // TODO: can be via conn nodes
-	let aclines = model.getTargets(terms, "Terminal.ConductingEquipment").filter(function(el) {
-	    return model.schema.isA("ACLineSegment", el) === true;
-	});
-	aclines.forEach(function(acline) {
-	    let r = model.getAttribute(acline, "cim:ACLineSegment.r");
-	    let x = model.getAttribute(acline, "cim:ACLineSegment.x");
-	    let g = model.getAttribute(acline, "cim:ACLineSegment.gch");
-	    let b = model.getAttribute(acline, "cim:ACLineSegment.bch");
-	    // TODO: install math.js
-	    let Z = math.complex(r, x);
-	    let Y = math.complex(g, b);
-	    let Z0 = math.sqrt(math.divide(Z, Y));
-	    let Ka = math.sqrt(math.multiply(Z, Y));
-	    let A = math.cosh(Ka);
-	    let B = math.multiply(Z0, math.sinh(Ka));
-	    let Binv = math.divide(1, B);
-	    // get target topo...
-	    
-	});
+    let topos = objs["cim:TopologicalNode"];
+    // assign a number to topos
+    let topoMap = new Map();
+    for (let i in topos) {
+	topoMap.add(topo, i);
+    }
+    let aclines =  objs["cim:ACLineSegment"];
+    aclines.forEach(function(acline) {
+	// get associated topos
+	let aclTerms = model.getTargets([acline], "ConductingEquipment.Terminals");
+	let aclTopos = model.getTargets(aclTerms, "Terminal.TopologicalNode"); // TODO: can be via conn nodes
+	let topo1idx = topoMap.get(aclTopos[0]);
+	let topo2idx = topoMap.get(aclTopos[1]);
+	// calculate pi-model parameters
+	let r = model.getAttribute(acline, "cim:ACLineSegment.r");
+	let x = model.getAttribute(acline, "cim:ACLineSegment.x");
+	let g = model.getAttribute(acline, "cim:ACLineSegment.gch");
+	let b = model.getAttribute(acline, "cim:ACLineSegment.bch");
+	let Z = math.complex(r, x);
+	let Y = math.complex(g, b);
+	let Z0 = math.sqrt(math.divide(Z, Y));
+	let Ka = math.sqrt(math.multiply(Z, Y));
+	let A = math.cosh(Ka);
+	let B = math.multiply(Z0, math.sinh(Ka));
+	let y12part = math.divide(1, B);
+	let y10part = math.divide(math.subtract(A, 1), B);
+	// modify admittance matrix
+	let y10 = ret.subset(math.index(topo1idx, topo1idx));
+	let y12 = ret.subset(math.index(topo1idx, topo2idx));
+	let y20 = ret.subset(math.index(topo2idx, topo2idx));
+	ret.subset(math.index(topo1idx, topo1idx), y10 + y10part);
+	ret.subset(math.index(topo1idx, topo2idx), y12 - y12part);
+	ret.subset(math.index(topo2idx, topo1idx), y12 - y12part);
+	ret.subset(math.index(topo2idx, topo2idx), y20 + y10part); // y20part is equal to y10part
     });
 };
 */
