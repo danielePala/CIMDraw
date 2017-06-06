@@ -55,9 +55,10 @@
 			<ul class="dropdown-menu">
 			    <li><a href="">Open</a></li>
 			    <li><a id="cim-save" download="file.xml">Save as RDF/XML...</a></li>
-			    <li><a id="cgmes-save">Save as CGMES (EXPERIMENTAL)...</a></li>
+			    <li><a id="cgmes-save">Save as CGMES...</a></li>
 			    <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
 			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
+			    <li><a id="matpower-export">Export to Matpower (NOT WORKING YET)...</a></li>
 			</ul>
 		    </li>
 		</ul>
@@ -369,6 +370,12 @@
 		     document.getElementById("cgmes-download").click();
 		 });
 	     };
+	     $("#matpower-export").off("click");
+	     // allow saving a copy of the file as plain XML
+	     $("#matpower-export").on("click", function() {
+		 exportToMatpower(self.cimModel);
+	     });
+	     
 	     // load diagram list
 	     $(".selectpicker").selectpicker({container: "body"});
 	     d3.select("#cim-diagrams").selectAll("option").remove();

@@ -695,6 +695,13 @@ function cimModel() {
 	    return ret;
 	},
 
+	getSubObjects(superType) {
+	    let allObjects = getAllObjects();
+	    return allObjects.filter(function(el) {
+		return model.schema.isA(superType, el) === true;
+	    });
+	},
+
 	// Get the objects of a given type that have at least one
 	// DiagramObject in the current diagram.
 	// The input is an array of types, like ["cim:ACLineSegment", "cim:Breaker"].
