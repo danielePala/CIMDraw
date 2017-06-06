@@ -11,6 +11,8 @@ function exportToMatpower(model) {
     // bus
     mpcFile = mpcFile + "mpc.bus = [";
     let allNodes = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
+    // We consider as generators all the rotating machines (in principle, both sync and async)
+    // which are associated with a generating unit.
     let genUnits = model.getSubObjects("GeneratingUnit");
     let machines = model.getTargets(genUnits, "GeneratingUnit.RotatingMachine");
     let busNums = new Map();
@@ -36,6 +38,9 @@ function exportToMatpower(model) {
     // gen
     mpcFile = mpcFile + "mpc.gen = [";
     for (let i in machines) {
+	// TODO: the values should be aggregated per generating unit (i.e. a generating unit
+	// can include more than one machine. All the machines in a generating unit should
+	// be connected to the same bus (is this explicitly declared in CIM?).
 	let terminals = model.getTargets([machines[i]], "ConductingEquipment.Terminals");
 	let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
 	let genUnit = model.getTargets([machines[i]], "RotatingMachine.GeneratingUnit")[0];
