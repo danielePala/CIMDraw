@@ -593,7 +593,11 @@ function cimModel() {
 	// be removed from the original document.
 	export() {
 	    let parser = new DOMParser();
+	    let serializer = new XMLSerializer();
 	    let data = parser.parseFromString(emptyFile, "application/xml");
+	    if (typeof(model.activeDiagram) === "undefined") {
+		return serializer.serializeToString(data);
+	    }
 	    // fill the file
 	    data.children[0].appendChild(model.activeDiagram.cloneNode(true));
 	    let allDiagramObjects = model.getTargets(
@@ -660,8 +664,7 @@ function cimModel() {
 		data.children[0].appendChild(analogValue.cloneNode(true));
 	    }
 	    
-	    var oSerializer = new XMLSerializer();
-	    var sXML = oSerializer.serializeToString(data);
+	    let sXML = serializer.serializeToString(data);
 	    return sXML;
 	},
 
@@ -695,6 +698,7 @@ function cimModel() {
 	    return ret;
 	},
 
+	// Get all the objects which have 'superType' as a superclass
 	getSubObjects(superType) {
 	    let allObjects = getAllObjects();
 	    return allObjects.filter(function(el) {
