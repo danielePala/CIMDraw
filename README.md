@@ -32,9 +32,7 @@ The app starts by asking for a CIM file: you can load one RDF/XML file,
 or a split representation with many files (e.g. EQ, DL, SV etc) according to 
 the [ENTSO-E CGMES profile](https://www.entsoe.eu/major-projects/common-information-model-cim/cim-for-grid-models-exchange/standards/Pages/default.aspx).
 In the second case, you just load the whole zip file, no need to uncompress it.
-Alternatively, it is possible to create a new file from scratch: in this case, a plain RDF/XML 
-file will be created.
-In any case, **only node-breaker network representations are supported**. 
+Alternatively, it is possible to create a new file from scratch. In any case (new file or editing of an existing file), it is possible to choose the preferred output format. At the moment **only node-breaker network representations are fully supported** but experimental support for bus-branch representations is already present and can be tested. 
 
 ![file selection](doc/01_select_file.png)
 

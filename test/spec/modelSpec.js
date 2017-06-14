@@ -10,12 +10,24 @@ describe("CIM model", function() {
 	    done();
 	});
     });
-    
-    it("should be able to create a new empty file", function() {
+
+    // Test the save() function
+    it("should be able to create and save a new empty file (RDF/XML)", function() {
 	let out = model.save();
 	expect(typeof(out)).toBe("string");
     });
 
+    // test the saveAsCGMES() function
+    it("should be able to create and save a new empty file (ENTSO-E)", function() {
+	let out = model.saveAsCGMES();
+	expect(typeof(out)).toBe("object");
+    });
+
+    it("should be able to export the current diagram (with no diagram selected)", function() {
+	let out = model.export();
+	expect(typeof(out)).toBe("string");
+    });
+    
     it("should not contain any diagram", function() {
 	let diagramList = model.getDiagramList();
 	expect(diagramList.length).toBe(0);
@@ -26,6 +38,11 @@ describe("CIM model", function() {
 	let diagramList = model.getDiagramList();
 	expect(diagramList.length).toBe(1);
 	expect(diagramList[0]).toBe("test");
+    });
+
+    it("should be able to export the current diagram (called test)", function() {
+	let out = model.export();
+	expect(typeof(out)).toBe("string");
     });
 
     it("should start empty", function() {
