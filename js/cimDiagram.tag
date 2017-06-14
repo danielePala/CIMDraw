@@ -700,7 +700,7 @@
 	     if (measurements.length > 0 || svs.length > 0) {
 		 let tooltip = self.createTooltip(measurements, svs);
 		 
-		 $(this).popover({title: "<b>Measurements</b>",
+		 $(this).popover({title: "<b>Element Status Info</b>",
 				  content: tooltip,
 				  container: "body",
 				  html: true,
@@ -720,6 +720,7 @@
      createTooltip(measurements, svs) {
 	 let tooltip = "";
 	 if (measurements.length > 0) {
+	     tooltip = tooltip + "<b>Measurements</b><br><br>";
 	     let tooltipLines = [];
 	     for (let measurement of measurements) {
 		 let type = "unnamed";
@@ -914,8 +915,9 @@
      drawSwitches(allSwitches, type, color) {
 	 let line = d3.line()
 		      .x(function(d) { return d.x; })
-		      .y(function(d) { return d.y; });
-
+		      .y(function(d) { return d.y; })
+		      .curve(d3.curveLinearClosed);
+	 
 	 let swEnter = self.createSelection(type, allSwitches)[1];
 	 let xStart = (SWITCH_WIDTH/2) * (-1);
 	 let xEnd = (SWITCH_WIDTH/2);
@@ -927,8 +929,7 @@
 		    return line([{x:xStart, y:yStart, seq:1},
 				 {x:xEnd, y:yStart, seq:2},
 				 {x:xEnd, y:yEnd, seq:3},
-				 {x:xStart, y:yEnd, seq:4},
-				 {x:xStart, y:yStart, seq:5}]);		    
+				 {x:xStart, y:yEnd, seq:4}]);		    
 		})
 		.attr("fill", function(d) {
 		    let value = "0"; // default is OPEN
