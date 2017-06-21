@@ -58,7 +58,7 @@
 			    <li><a id="cgmes-save">Save as CGMES...</a></li>
 			    <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
 			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
-			    <li><a id="matpower-export">Export to Matpower (NOT WORKING YET)...</a></li>
+			    <li><a id="matpower-export" download="file.m">Export to Matpower (NOT WORKING YET)...</a></li>
 			</ul>
 		    </li>
 		</ul>
@@ -335,14 +335,14 @@
 		 }
 		 self.cimModel.selectDiagram(decodeURI(name));
 		 loadDiagramList(decodeURI(file));
-		 $('.selectpicker').selectpicker('val', decodeURI("#" + file + "/diagrams/" + name));
+		 $(".selectpicker").selectpicker("val", decodeURI("#" + file + "/diagrams/" + name));
 		 self.trigger("showDiagram", file, name, element);
 		 $("#app-container").show();
 
 		 // allow exporting a copy of the diagram 
 		 $("#cim-export").on("click", function() {
 		     let out = self.cimModel.export();
-		     let blob = new Blob([out], {type : 'text/xml'});
+		     let blob = new Blob([out], {type : "text/xml"});
 		     let objectURL = URL.createObjectURL(blob);
 		     $("#cim-export").attr("href", objectURL);
 		 });
@@ -355,7 +355,7 @@
 	     // allow saving a copy of the file as plain XML
 	     $("#cim-save").on("click", function() {
 		 let out = self.cimModel.save();
-		 let blob = new Blob([out], {type : 'text/xml'});
+		 let blob = new Blob([out], {type : "text/xml"});
 		 let objectURL = URL.createObjectURL(blob);
 		 $("#cim-save").attr("href", objectURL);
 	     });
@@ -373,7 +373,10 @@
 	     $("#matpower-export").off("click");
 	     // allow saving a copy of the file as plain XML
 	     $("#matpower-export").on("click", function() {
-		 exportToMatpower(self.cimModel);
+		 let out = exportToMatpower(self.cimModel);
+		 let blob = new Blob([out], {type : "text/plain"});
+		 let objectURL = URL.createObjectURL(blob);
+		 $("#matpower-export").attr("href", objectURL);
 	     });
 	     
 	     // load diagram list

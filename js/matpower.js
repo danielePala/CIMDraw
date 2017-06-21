@@ -11,10 +11,6 @@ function exportToMatpower(model) {
     // bus
     mpcFile = mpcFile + "mpc.bus = [";
     let allNodes = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
-    // We consider as generators all the rotating machines (in principle, both sync and async)
-    // which are associated with a generating unit.
-    let genUnits = model.getSubObjects("GeneratingUnit");
-    let machines = model.getTargets(genUnits, "GeneratingUnit.RotatingMachine");
     let busNums = new Map();
     for (let i in allNodes) {
 	let busNum = parseInt(i) + 1;
@@ -36,21 +32,26 @@ function exportToMatpower(model) {
     }
     mpcFile = mpcFile + "];\n"
     // gen
+    // The general handling of generators is not really clear in CIM: in particular,
+    // a Generating Unit may contain more than one machine, and moreover the association
+    // may involve both sync and async machines.
+    // A first implementation will consider then a Generating Unit may contain
+    // at most one machine and always assume that the machine is a synchronous one.
+    // This simplification is also reported in the CIM Primer, when illustrating the
+    // mapping fro CIM to PSS/E.
+    let machines = model.getObjects(["cim:SynchronousMachine"])["cim:SynchronousMachine"];
     mpcFile = mpcFile + "mpc.gen = [";
-    for (let i in machines) {
-	// TODO: the values should be aggregated per generating unit (i.e. a generating unit
-	// can include more than one machine. All the machines in a generating unit should
-	// be connected to the same bus (is this explicitly declared in CIM?).
-	let terminals = model.getTargets([machines[i]], "ConductingEquipment.Terminals");
+    machines.forEach(function(machine) {
+	let terminals = model.getTargets([machine], "ConductingEquipment.Terminals");
 	let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
-	let genUnit = model.getTargets([machines[i]], "RotatingMachine.GeneratingUnit")[0];
+	let genUnit = model.getTargets([machine], "RotatingMachine.GeneratingUnit")[0];
 	nodes.forEach(function(node) {
 	    let busNum = busNums.get(node);
-	    let p = getAttrDefault(machines[i], "cim:RotatingMachine.p", "0");
-	    let q = getAttrDefault(machines[i], "cim:RotatingMachine.q", "0");
-	    let qmax = getAttrDefault(machines[i], "cim:SynchronousMachine.maxQ", "0");
-	    let qmin = getAttrDefault(machines[i], "cim:SynchronousMachine.minQ", "0");
-	    let mbase = getAttrDefault(machines[i], "cim:SynchronousMachine.ratedS", baseMVA);
+	    let p = getAttrDefault(machine, "cim:RotatingMachine.p", "0");
+	    let q = getAttrDefault(machine, "cim:RotatingMachine.q", "0");
+	    let qmax = getAttrDefault(machine, "cim:SynchronousMachine.maxQ", "0");
+	    let qmin = getAttrDefault(machine, "cim:SynchronousMachine.minQ", "0");
+	    let mbase = getAttrDefault(machine, "cim:SynchronousMachine.ratedS", baseMVA);
 	    let pmax = getAttrDefault(genUnit, "cim:GeneratingUnit.maxOperatingP", "0");
 	    let pmin = getAttrDefault(genUnit, "cim:GeneratingUnit.minOperatingP", "0");
 	    mpcFile = mpcFile + busNum + "\t"; // bus
@@ -76,11 +77,17 @@ function exportToMatpower(model) {
 	    mpcFile = mpcFile + 0 + ";\t"; // apf
 	    mpcFile = mpcFile + "\n";
 	});
-    }
+    });
     mpcFile = mpcFile + "];\n"
+    // branch
+    mpcFile = mpcFile + "mpc.branch = [";
+    
+    mpcFile = mpcFile + "];\n";
     
     console.log(mpcFile);
-
+    
+    return mpcFile;
+		     
     function getAttrDefault(el, attr, defVal) {
 	let ret = model.getAttribute(el, attr);
 	if (typeof(ret) === "undefined") {
