@@ -18,6 +18,7 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "% system MVA base\n";
     mpcFile = mpcFile + "mpc.baseMVA = " + baseMVA + ";\n";
     // bus
+    mpcFile = mpcFile + "% bus data\n";
     mpcFile = mpcFile + "mpc.bus = [\n";
     mpcFile = mpcFile + "%bus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin\n";
     let busNums = new Map();
@@ -51,6 +52,7 @@ function exportToMatpower(model) {
     // This simplification is also reported in the CIM Primer, when illustrating the
     // mapping from CIM to PSS/E.
     let machines = model.getObjects(["cim:SynchronousMachine"])["cim:SynchronousMachine"];
+    mpcFile = mpcFile + "% generator data\n";
     mpcFile = mpcFile + "mpc.gen = [\n";
     mpcFile = mpcFile + "%bus\tPg\tQg\tQmax\tQmin\tVg\tmBase\tstatus\tPmax\tPmin\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\n";
     machines.forEach(function(machine) {
@@ -67,47 +69,82 @@ function exportToMatpower(model) {
 	    let pmax = getAttrDefault(genUnit, "cim:GeneratingUnit.maxOperatingP", "0");
 	    let pmin = getAttrDefault(genUnit, "cim:GeneratingUnit.minOperatingP", "0");
 	    mpcFile = mpcFile + busNum + "\t"; // bus
-	    mpcFile = mpcFile + p + "\t"; // Pg
-	    mpcFile = mpcFile + q + "\t"; // Qg
-	    mpcFile = mpcFile + qmax + "\t"; // Qmax
-	    mpcFile = mpcFile + qmin + "\t"; // Qmin
-	    mpcFile = mpcFile + 1 + "\t"; // Vg
-	    mpcFile = mpcFile + mbase + "\t"; // mBase
-	    mpcFile = mpcFile + 1 + "\t"; // status
-	    mpcFile = mpcFile + pmax + "\t"; // Pmax
-	    mpcFile = mpcFile + pmin + "\t"; // Pmin
-	    mpcFile = mpcFile + 0 + "\t"; // Pc1
-	    mpcFile = mpcFile + 0 + "\t"; // Pc2
-	    mpcFile = mpcFile + 0 + "\t"; // Qc1min
-	    mpcFile = mpcFile + 0 + "\t"; // Qc1max
-	    mpcFile = mpcFile + 0 + "\t"; // Qc2min
-	    mpcFile = mpcFile + 0 + "\t"; // Qc2max
-	    mpcFile = mpcFile + 0 + "\t"; // ramp_agc
-	    mpcFile = mpcFile + 0 + "\t"; // ramp_10
-	    mpcFile = mpcFile + 0 + "\t"; // ramp_30
-	    mpcFile = mpcFile + 0 + "\t"; // ramp_q
-	    mpcFile = mpcFile + 0 + ";\t"; // apf
+	    mpcFile = mpcFile + p + "\t";      // Pg
+	    mpcFile = mpcFile + q + "\t";      // Qg
+	    mpcFile = mpcFile + qmax + "\t";   // Qmax
+	    mpcFile = mpcFile + qmin + "\t";   // Qmin
+	    mpcFile = mpcFile + 1 + "\t";      // Vg
+	    mpcFile = mpcFile + mbase + "\t";  // mBase
+	    mpcFile = mpcFile + 1 + "\t";      // status
+	    mpcFile = mpcFile + pmax + "\t";   // Pmax
+	    mpcFile = mpcFile + pmin + "\t";   // Pmin
+	    mpcFile = mpcFile + 0 + "\t";      // Pc1
+	    mpcFile = mpcFile + 0 + "\t";      // Pc2
+	    mpcFile = mpcFile + 0 + "\t";      // Qc1min
+	    mpcFile = mpcFile + 0 + "\t";      // Qc1max
+	    mpcFile = mpcFile + 0 + "\t";      // Qc2min
+	    mpcFile = mpcFile + 0 + "\t";      // Qc2max
+	    mpcFile = mpcFile + 0 + "\t";      // ramp_agc
+	    mpcFile = mpcFile + 0 + "\t";      // ramp_10
+	    mpcFile = mpcFile + 0 + "\t";      // ramp_30
+	    mpcFile = mpcFile + 0 + "\t";      // ramp_q
+	    mpcFile = mpcFile + 0 + ";\t";     // apf
 	    mpcFile = mpcFile + "\n";
 	});
     });
     mpcFile = mpcFile + "];\n"
-    // branch (including transformers)
-    let aclines = model.getObjects(["cim:ACLineSegment"])["cim:ACLineSegment"]; 
+    // branch (lines)
+    let aclines = model.getObjects(["cim:ACLineSegment"])["cim:ACLineSegment"];
+    mpcFile = mpcFile + "% branch data\n";
     mpcFile = mpcFile + "mpc.branch = [\n";
+    mpcFile = mpcFile + "%fbus\ttbus\tr\tx\tb\trateA\trateB\trateC\tratio\tangle\tstatus\tangmin\tangmax\n";
     aclines.forEach(function(acline) {
 	let terms = model.getTargets([acline], "ConductingEquipment.Terminals");
-	let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
-	// calculate base impedance: z_base = (v_base)^2/s_base
-	let baseVobj = model.getTargets(nodes, "TopologicalNode.BaseVoltage")[0];
-	let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
-	let baseZ = (parseInt(baseV) * parseInt(baseV)) / parseInt(baseMVA);
-	
-	mpcFile = mpcFile + busNums.get(nodes[0]) + "\t"; // “from” bus number
-	mpcFile = mpcFile + busNums.get(nodes[1]) + "\t"; // “to” bus number
+	let nodes = model.getTargets(terms, "Terminal.TopologicalNode");
+	if (nodes.length === 2) {
+	    // calculate base impedance: z_base = (v_base)^2/s_base
+	    let baseVobj = model.getTargets(nodes, "TopologicalNode.BaseVoltage")[0];
+	    let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
+	    let baseZ = (parseFloat(baseV) * parseFloat(baseV)) / parseFloat(baseMVA);
+	    let r = getAttrDefault(acline, "cim:ACLineSegment.r", "0");
+	    let x = getAttrDefault(acline, "cim:ACLineSegment.x", "0");
+	    let b = getAttrDefault(acline, "cim:ACLineSegment.bch", "0"); 
+	    let rpu = parseFloat(r) / baseZ; 
+	    let xpu = parseFloat(x) / baseZ;
+	    let bpu = parseFloat(b) / baseZ;
+	    mpcFile = mpcFile + busNums.get(nodes[0]) + "\t"; // “from” bus number
+	    mpcFile = mpcFile + busNums.get(nodes[1]) + "\t"; // “to” bus number
+	    mpcFile = mpcFile + rpu + "\t";                   // resistance (p.u.)
+	    mpcFile = mpcFile + xpu + "\t";                   // reactance (p.u.)
+	    mpcFile = mpcFile + bpu + "\t";                   // total line charging susceptance (p.u.)
+	    mpcFile = mpcFile + 0 + "\t";                     // MVA rating A (long term rating)
+	    mpcFile = mpcFile + 0 + "\t";                     // MVA rating B (short term rating)
+	    mpcFile = mpcFile + 0 + "\t";                     // MVA rating C (emergency rating)
+	    mpcFile = mpcFile + 0 + "\t";                     // transformer off nominal turns ratio
+	    mpcFile = mpcFile + 0 + "\t";                     // transformer phase shift angle (degrees)
+	    mpcFile = mpcFile + 1 + "\t";                     // initial branch status, 1 = in-service, 0 = out-of-service
+	    mpcFile = mpcFile + "-360" + "\t";                // minimum angle difference
+	    mpcFile = mpcFile + "360" + ";\t";                // maximum angle difference
+	    mpcFile = mpcFile + "\n";
+	}
     });
+    // branch (transformers)
+    let trafos = model.getObjects(["cim:PowerTransformer"])["cim:PowerTransformer"];
+    trafos.forEach(function(trafo) {
+	// A PowerTransformerEnd is associated with each Terminal of a PowerTransformer.
+	// The impedance values r, r0, x, and x0 of a PowerTransformerEnd represents a star equivalent as follows:
+	// 1) for a two Terminal PowerTransformer the high voltage PowerTransformerEnd has non zero values on r, r0,
+	//    x, and x0 while the low voltage PowerTransformerEnd has zero values for r, r0, x, and x0.
+	// 2) for a three Terminal PowerTransformer the three PowerTransformerEnds represents a star equivalent with
+	//    each leg in the star represented by r, r0, x, and x0 values.
+	// 3) for a PowerTransformer with more than three Terminals the PowerTransformerEnd impedance values cannot
+	//    be used. Instead use the TransformerMeshImpedance or split the transformer into multiple PowerTransformers.
+	
+    });
+    
     mpcFile = mpcFile + "];\n";
     
-    console.log(mpcFile);
+    
     
     return mpcFile;
 		     
