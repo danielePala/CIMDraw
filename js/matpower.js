@@ -21,7 +21,6 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "mpc.bus = [\n";
     mpcFile = mpcFile + "%bus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin\n";
     let busNums = new Map();
-    console.log(allNodes);
     for (let i in allNodes) {
 	let baseVobj = model.getTargets([allNodes[i]], "TopologicalNode.BaseVoltage")[0];
 	let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
@@ -35,10 +34,10 @@ function exportToMatpower(model) {
 	mpcFile = mpcFile + 1 + "\t";        // area
 	mpcFile = mpcFile + 1 + "\t";        // Vm
 	mpcFile = mpcFile + 0 + "\t";        // Va
-	mpcFile = mpcFile + baseV + "\t";      // baseKV
+	mpcFile = mpcFile + baseV + "\t";    // baseKV
 	mpcFile = mpcFile + 1 + "\t";        // zone
 	mpcFile = mpcFile + 1.1 + "\t";      // Vmax
-	mpcFile = mpcFile + 0.9 + ";\t";      // Vmin
+	mpcFile = mpcFile + 0.9 + ";\t";     // Vmin
 	mpcFile = mpcFile + "\n";
 	busNums.set(allNodes[i], busNum);
     }
@@ -92,9 +91,20 @@ function exportToMatpower(model) {
 	});
     });
     mpcFile = mpcFile + "];\n"
-    // branch
-    mpcFile = mpcFile + "mpc.branch = [";
-    
+    // branch (including transformers)
+    let aclines = model.getObjects(["cim:ACLineSegment"])["cim:ACLineSegment"]; 
+    mpcFile = mpcFile + "mpc.branch = [\n";
+    aclines.forEach(function(acline) {
+	let terms = model.getTargets([acline], "ConductingEquipment.Terminals");
+	let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
+	// calculate base impedance: z_base = (v_base)^2/s_base
+	let baseVobj = model.getTargets(nodes, "TopologicalNode.BaseVoltage")[0];
+	let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
+	let baseZ = (parseInt(baseV) * parseInt(baseV)) / parseInt(baseMVA);
+	
+	mpcFile = mpcFile + busNums.get(nodes[0]) + "\t"; // “from” bus number
+	mpcFile = mpcFile + busNums.get(nodes[1]) + "\t"; // “to” bus number
+    });
     mpcFile = mpcFile + "];\n";
     
     console.log(mpcFile);
