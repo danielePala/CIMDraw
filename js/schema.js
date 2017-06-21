@@ -57,7 +57,7 @@ function cimSchema() {
 	})[0];
 	if (typeof(aSuper) !== "undefined") {
 	    let aSuperName = aSuper.attributes[0].value.substring(1);
-		allSuper.push(aSuperName);
+	    allSuper.push(aSuperName);
 	    allSuper = allSuper.concat(getAllSuper(aSuperName));
 	}
 	return allSuper;
@@ -364,6 +364,9 @@ function cimSchema() {
 
     	// Test weather an object is of a given type.
 	isA(type, object) {
+	    if (object.localName === type) {
+		return true;
+	    }
 	    if (getAllSuper(object.localName).indexOf(type) < 0) {
 		return false;
 	    }

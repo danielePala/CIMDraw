@@ -790,9 +790,9 @@
 		 if (typeof(self.model.getAttribute(sv, "cim:SvPowerFlow.q")) !== "undefined") {
 		     q = self.model.getAttribute(sv, "cim:SvPowerFlow.q").textContent;
 		 }
-		 let actLine = "Active Power: " + parseFloat(p).toFixed(2) + " [kW]";
+		 let actLine = "Active Power: " + parseFloat(p).toFixed(2) + " [MW]";
 		 actLine = actLine + "<br>";
-		 actLine = actLine + "Reactive power: " + parseFloat(q).toFixed(2) + " [kVAr]";
+		 actLine = actLine + "Reactive power: " + parseFloat(q).toFixed(2) + " [MVAr]";
 		 actLine = actLine + "<br>";
 		 tooltip = tooltip + actLine;
 	     }	 

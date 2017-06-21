@@ -26,10 +26,19 @@ function exportToMatpower(model) {
 	let baseVobj = model.getTargets([allNodes[i]], "TopologicalNode.BaseVoltage")[0];
 	let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
 	let busNum = parseInt(i) + 1;
+	let terms = model.getTargets([allNodes[i]], "TopologicalNode.Terminal");
+	let eqs = model.getTargets(terms, "Terminal.ConductingEquipment");
+	let loads = eqs.filter(el => model.schema.isA("EnergyConsumer", el) === true);
+	let pd = 0.0;
+	let qd = 0.0;
+	loads.forEach(function(load) {
+	    pd = pd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.p", "0.0"));
+	    qd = qd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.q", "0.0"));
+	});
 	mpcFile = mpcFile + busNum + "\t";   // bus_i
 	mpcFile = mpcFile + 2 + "\t";        // type
-	mpcFile = mpcFile + 0 + "\t";        // Pd
-	mpcFile = mpcFile + 0 + "\t";        // Qd
+	mpcFile = mpcFile + pd + "\t";       // Pd
+	mpcFile = mpcFile + qd + "\t";       // Qd
 	mpcFile = mpcFile + 0 + "\t";        // Gs
 	mpcFile = mpcFile + 0 + "\t";        // Bs
 	mpcFile = mpcFile + 1 + "\t";        // area
@@ -139,12 +148,54 @@ function exportToMatpower(model) {
 	//    each leg in the star represented by r, r0, x, and x0 values.
 	// 3) for a PowerTransformer with more than three Terminals the PowerTransformerEnd impedance values cannot
 	//    be used. Instead use the TransformerMeshImpedance or split the transformer into multiple PowerTransformers.
-	
+	let trafoEnds = model.getTargets([trafo], "PowerTransformer.PowerTransformerEnd");
+	// process the two Terminal PowerTransformers
+	if (trafoEnds.length === 2) {
+	    // find the high voltage PowerTransformerEnd
+	    let hvEnd = trafoEnds[0];
+	    let lvEnd = trafoEnds[1];
+	    let r = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.r", "0");
+	    let x = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.x", "0");
+	    if (r === "0" && x === "0") {
+		lvEnd = trafoEnds[0];
+		hvEnd = trafoEnds[1];
+		r = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.r", "0");
+		x = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.x", "0");
+	    }
+	    let b = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.x", "0");
+	    let hvTerm = model.getTargets([hvEnd], "TransformerEnd.Terminal");
+	    let hvNode = model.getTargets(hvTerm, "Terminal.TopologicalNode")[0];
+	    let lvTerm = model.getTargets([lvEnd], "TransformerEnd.Terminal");
+	    let lvNode = model.getTargets(lvTerm, "Terminal.TopologicalNode")[0];
+	    // calculate base impedance: z_base = (v_base)^2/s_base
+	    let baseVobj = model.getTargets([hvNode], "TopologicalNode.BaseVoltage")[0];
+	    let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
+	    let baseZ = (parseFloat(baseV) * parseFloat(baseV)) / parseFloat(baseMVA);
+            let rpu = parseFloat(r) / baseZ;
+	    let xpu = parseFloat(x) / baseZ;
+	    let bpu = parseFloat(b) / baseZ;
+	    // get also the lv nominal voltage
+	    let lvVobj = model.getTargets([lvNode], "TopologicalNode.BaseVoltage")[0];
+	    let lvV = getAttrDefault(lvVobj, "cim:BaseVoltage.nominalVoltage", "0");
+	    // calculate nominal trafo ratio
+	    let ratio = parseFloat(lvV) / parseFloat(baseV);
+	    mpcFile = mpcFile + busNums.get(lvNode) + "\t"; // “from” bus number
+	    mpcFile = mpcFile + busNums.get(hvNode) + "\t"; // “to” bus number
+	    mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
+	    mpcFile = mpcFile + xpu + "\t";                 // reactance (p.u.)
+	    mpcFile = mpcFile + bpu + "\t";                 // total line charging susceptance (p.u.)
+	    mpcFile = mpcFile + 0 + "\t";                   // MVA rating A (long term rating)
+	    mpcFile = mpcFile + 0 + "\t";                   // MVA rating B (short term rating)
+	    mpcFile = mpcFile + 0 + "\t";                   // MVA rating C (emergency rating)
+	    mpcFile = mpcFile + ratio + "\t";               // transformer off nominal turns ratio
+	    mpcFile = mpcFile + 0 + "\t";                   // transformer phase shift angle (degrees)
+	    mpcFile = mpcFile + 1 + "\t";                   // initial branch status, 1 = in-service, 0 = out-of-service
+	    mpcFile = mpcFile + "-360" + "\t";              // minimum angle difference
+	    mpcFile = mpcFile + "360" + ";\t";              // maximum angle difference
+	    mpcFile = mpcFile + "\n";	    
+	}
     });
-    
     mpcFile = mpcFile + "];\n";
-    
-    
     
     return mpcFile;
 		     
