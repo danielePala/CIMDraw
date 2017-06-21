@@ -35,6 +35,10 @@
 	 min-width: 170px;
      }
 
+     .cim-tree-attribute-uom {
+	 width: 30px;
+     }
+     
      .cim-tree-btn-group {
 	 float: left;
 	 width: 100%;
@@ -926,7 +930,7 @@
      }
 
      generateAttributes(elementDiv) {
-	 elementDiv.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
+	 elementDiv.append("span").attr("class", "input-group-addon cim-tree-attribute-name")
 		   .html(function (d) {
 		       return d.attributes[0].value.substring(1).split(".")[1]; 
 		   });
@@ -949,15 +953,24 @@
 		   .attr("type", "number")
 	 	   .on("input", attrInput);
 	 // Float attributes
-	 elementDiv.filter(function(d) {
+	 let floats = elementDiv.filter(function(d) {
 	     let attrType = self.model.schema.getSchemaAttributeType(d);
 	     return (attrType[0] === "#Float" || attrType[0] === "#Decimal");
-	 }).append("input")
-		   .attr("class", "form-control")
-		   .each(setFloatValueFromModel)
-		   .attr("type", "number")
-		   .attr("step", "0.00001")
-	 	   .on("input", attrInput);
+	 });
+	 floats.append("input")
+	       .attr("class", "form-control")
+	       .each(setFloatValueFromModel)
+	       .attr("type", "number")
+	       .attr("step", "0.00001")
+	       .on("input", attrInput);
+	 floats.append("span").attr("class", "input-group-addon cim-tree-attribute-uom")
+	       .html(function (d) {
+		   let attrType = self.model.schema.getSchemaAttributeType(d);
+		   if (attrType[2] === "none") {
+		       return attrType[1];
+		   }
+		   return attrType[2] + attrType[1];
+	       });
 	 // Boolean attributes
 	 let elementBool = elementDiv.filter(function(d) {
 	     let attrType = self.model.schema.getSchemaAttributeType(d);
@@ -1072,7 +1085,7 @@
      }
 
      generateLinks(elementLink) {
-	 elementLink.append("span").attr("id", "sizing-addon3").attr("class", "input-group-addon cim-tree-attribute-name")
+	 elementLink.append("span").attr("class", "input-group-addon cim-tree-attribute-name")
 		    .html(function (d) {
 			return d.attributes[0].value.substring(1).split(".")[1]; 
 		    });
