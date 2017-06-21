@@ -78,7 +78,9 @@ function calcTopology(model) {
 	});
 	// find the base voltage of this node
 	// we have two ways: via conducting equipment, or via containment in
-	// a voltage level
+	// a voltage level: in the second case it can also be that
+	// the equipment is contained in a bay, which in turn is contained
+	// in a voltage level.
 	let terms = model.getTargets(topo, "ConnectivityNode.Terminals");
 	let eqs = model.getTargets(terms, "Terminal.ConductingEquipment");
 	let baseVs =  model.getTargets(eqs, "ConductingEquipment.BaseVoltage");
@@ -101,6 +103,11 @@ function calcTopology(model) {
 	    }
 	    
 	}
+	// find the terminals of this node
+	// this is just the union of the terminals of all the connectivity nodes
+	terms.forEach(function(term) {
+	    model.setLink(term, "cim:Terminal.TopologicalNode", tobj);
+	});
 	ret.push(tobj);
     });
     return ret;

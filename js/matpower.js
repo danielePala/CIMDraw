@@ -12,11 +12,14 @@ function exportToMatpower(model) {
 	allNodes = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
     }
     // version
+    mpcFile = mpcFile + "% MATPOWER Case Format : Version 2\n";
     mpcFile = mpcFile + "mpc.version = '" + version + "';\n";
     // baseMVA
+    mpcFile = mpcFile + "% system MVA base\n";
     mpcFile = mpcFile + "mpc.baseMVA = " + baseMVA + ";\n";
     // bus
-    mpcFile = mpcFile + "mpc.bus = [";
+    mpcFile = mpcFile + "mpc.bus = [\n";
+    mpcFile = mpcFile + "%bus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin\n";
     let busNums = new Map();
     console.log(allNodes);
     for (let i in allNodes) {
@@ -47,9 +50,10 @@ function exportToMatpower(model) {
     // A first implementation will consider then a Generating Unit may contain
     // at most one machine and always assume that the machine is a synchronous one.
     // This simplification is also reported in the CIM Primer, when illustrating the
-    // mapping fro CIM to PSS/E.
+    // mapping from CIM to PSS/E.
     let machines = model.getObjects(["cim:SynchronousMachine"])["cim:SynchronousMachine"];
-    mpcFile = mpcFile + "mpc.gen = [";
+    mpcFile = mpcFile + "mpc.gen = [\n";
+    mpcFile = mpcFile + "%bus\tPg\tQg\tQmax\tQmin\tVg\tmBase\tstatus\tPmax\tPmin\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\n";
     machines.forEach(function(machine) {
 	let terminals = model.getTargets([machine], "ConductingEquipment.Terminals");
 	let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
