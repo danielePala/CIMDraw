@@ -4,15 +4,24 @@ function exportToMatpower(model) {
     let version = "2";
     let baseMVA = "100";
 
+    // if in node-breaker mode, we should execute the topology processor
+    let allNodes = [];
+    if (model.getMode() === "NODE_BREAKER") {
+	allNodes = calcTopology(model);
+    } else {
+	allNodes = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
+    }
     // version
     mpcFile = mpcFile + "mpc.version = '" + version + "';\n";
     // baseMVA
     mpcFile = mpcFile + "mpc.baseMVA = " + baseMVA + ";\n";
     // bus
     mpcFile = mpcFile + "mpc.bus = [";
-    let allNodes = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
     let busNums = new Map();
+    console.log(allNodes);
     for (let i in allNodes) {
+	let baseVobj = model.getTargets([allNodes[i]], "TopologicalNode.BaseVoltage")[0];
+	let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
 	let busNum = parseInt(i) + 1;
 	mpcFile = mpcFile + busNum + "\t";   // bus_i
 	mpcFile = mpcFile + 2 + "\t";        // type
@@ -23,7 +32,7 @@ function exportToMatpower(model) {
 	mpcFile = mpcFile + 1 + "\t";        // area
 	mpcFile = mpcFile + 1 + "\t";        // Vm
 	mpcFile = mpcFile + 0 + "\t";        // Va
-	mpcFile = mpcFile + 230 + "\t";      // baseKV
+	mpcFile = mpcFile + baseV + "\t";      // baseKV
 	mpcFile = mpcFile + 1 + "\t";        // zone
 	mpcFile = mpcFile + 1.1 + "\t";      // Vmax
 	mpcFile = mpcFile + 0.9 + ";\t";      // Vmin

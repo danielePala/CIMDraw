@@ -20,6 +20,13 @@
 */
 
 function calcTopology(model) {
+    let ret = [];
+    // delete all topological nodes
+    let allNodes = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
+    let nodeUUIDs = allNodes.map(el => el.attributes.getNamedItem("rdf:ID").value);
+    nodeUUIDs.forEach(function(nodeUUID) {
+	model.deleteObject(model.getObject(nodeUUID));
+    });
     // get all connectivity nodes
     let allConnectivityNodes = model.getObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
     let topos = [];
@@ -69,8 +76,34 @@ function calcTopology(model) {
 	topo.forEach(function(cn) {
 	    model.setLink(cn, "cim:ConnectivityNode.TopologicalNode", tobj);
 	});
+	// find the base voltage of this node
+	// we have two ways: via conducting equipment, or via containment in
+	// a voltage level
+	let terms = model.getTargets(topo, "ConnectivityNode.Terminals");
+	let eqs = model.getTargets(terms, "Terminal.ConductingEquipment");
+	let baseVs =  model.getTargets(eqs, "ConductingEquipment.BaseVoltage");
+	if (baseVs.length > 0) {
+	    model.setLink(tobj, "cim:TopologicalNode.BaseVoltage", baseVs[0]); 
+	} else {
+	    let containers = model.getTargets(eqs, "Equipment.EquipmentContainer");
+	    // we can use both voltage leves and bays
+	    let vlevs = containers.filter(el => model.schema.isA("VoltageLevel", el));
+	    baseVs =  model.getTargets(vlevs, "VoltageLevel.BaseVoltage");
+	    if (baseVs.length > 0) {
+		model.setLink(tobj, "cim:TopologicalNode.BaseVoltage", baseVs[0]);
+	    } else {
+		let bays = containers.filter(el => model.schema.isA("Bay", el));
+		vlevs =  model.getTargets(bays, "Bay.VoltageLevel");
+		baseVs =  model.getTargets(vlevs, "VoltageLevel.BaseVoltage");
+		if (baseVs.length > 0) {
+		    model.setLink(tobj, "cim:TopologicalNode.BaseVoltage", baseVs[0]);
+		}
+	    }
+	    
+	}
+	ret.push(tobj);
     });
-    return topos;
+    return ret;
 };
 
 // TODO: install math.js
