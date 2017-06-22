@@ -36,7 +36,7 @@ function exportToMatpower(model) {
 	    qd = qd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.q", "0.0"));
 	});
 	mpcFile = mpcFile + busNum + "\t";   // bus_i
-	mpcFile = mpcFile + 2 + "\t";        // type
+	mpcFile = mpcFile + 1 + "\t";        // type
 	mpcFile = mpcFile + pd + "\t";       // Pd
 	mpcFile = mpcFile + qd + "\t";       // Qd
 	mpcFile = mpcFile + 0 + "\t";        // Gs
@@ -126,9 +126,9 @@ function exportToMatpower(model) {
 	    mpcFile = mpcFile + rpu + "\t";                   // resistance (p.u.)
 	    mpcFile = mpcFile + xpu + "\t";                   // reactance (p.u.)
 	    mpcFile = mpcFile + bpu + "\t";                   // total line charging susceptance (p.u.)
-	    mpcFile = mpcFile + 0 + "\t";                     // MVA rating A (long term rating)
-	    mpcFile = mpcFile + 0 + "\t";                     // MVA rating B (short term rating)
-	    mpcFile = mpcFile + 0 + "\t";                     // MVA rating C (emergency rating)
+	    mpcFile = mpcFile + 1000 + "\t";                     // MVA rating A (long term rating)
+	    mpcFile = mpcFile + 1000 + "\t";                     // MVA rating B (short term rating)
+	    mpcFile = mpcFile + 1000 + "\t";                     // MVA rating C (emergency rating)
 	    mpcFile = mpcFile + 0 + "\t";                     // transformer off nominal turns ratio
 	    mpcFile = mpcFile + 0 + "\t";                     // transformer phase shift angle (degrees)
 	    mpcFile = mpcFile + 1 + "\t";                     // initial branch status, 1 = in-service, 0 = out-of-service
@@ -184,9 +184,9 @@ function exportToMatpower(model) {
 	    mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
 	    mpcFile = mpcFile + xpu + "\t";                 // reactance (p.u.)
 	    mpcFile = mpcFile + bpu + "\t";                 // total line charging susceptance (p.u.)
-	    mpcFile = mpcFile + 0 + "\t";                   // MVA rating A (long term rating)
-	    mpcFile = mpcFile + 0 + "\t";                   // MVA rating B (short term rating)
-	    mpcFile = mpcFile + 0 + "\t";                   // MVA rating C (emergency rating)
+	    mpcFile = mpcFile + 1000 + "\t";                   // MVA rating A (long term rating)
+	    mpcFile = mpcFile + 1000 + "\t";                   // MVA rating B (short term rating)
+	    mpcFile = mpcFile + 1000 + "\t";                   // MVA rating C (emergency rating)
 	    mpcFile = mpcFile + ratio + "\t";               // transformer off nominal turns ratio
 	    mpcFile = mpcFile + 0 + "\t";                   // transformer phase shift angle (degrees)
 	    mpcFile = mpcFile + 1 + "\t";                   // initial branch status, 1 = in-service, 0 = out-of-service

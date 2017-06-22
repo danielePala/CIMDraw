@@ -1519,7 +1519,7 @@
 	 // linear scan for coarse approximation
 	 for (let scanLength = 0; scanLength <= pathLength; scanLength += precision) {
 	     let scan = pathNode.getPointAtLength(scanLength);
-	     if (source.rotation > 0) {
+	     if (source.rotation !== 0) {
 		 scan = self.rotate(scan, source.rotation);
 	     }
 	     let scanDistance = distance2(scan);
@@ -1536,7 +1536,7 @@
 	     let beforeLength = bestLength - precision;
 	     if (beforeLength >= 0) {
 		 let before = pathNode.getPointAtLength(beforeLength);
-		 if (source.rotation > 0) {
+		 if (source.rotation !== 0) {
 		     before = self.rotate(before, source.rotation);
 		 }
 		 let beforeDistance = distance2(before);
@@ -1551,7 +1551,7 @@
 	     let afterLength = bestLength + precision;
 	     if (afterLength <= pathLength) {
 		 let after = pathNode.getPointAtLength(afterLength);
-		 if (source.rotation > 0) {
+		 if (source.rotation !== 0) {
 		     after = self.rotate(after, source.rotation);
 		 }
 		 let afterDistance = distance2(after);
@@ -1687,7 +1687,7 @@
 	      .attr("d", function(d) {
 		  let cnXY = {x: d.source.x, y: d.source.y};
 		  let terminalXY = {x: d.target.x, y: d.target.y};
-		  if (d.target.rotation > 0) {
+		  if (d.target.rotation !== 0) {
 		      terminalXY = self.rotateTerm(d.target);
 		  }	
 
