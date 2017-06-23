@@ -178,6 +178,7 @@
 	 let equivalents = undefined;
 	 let rotMac = undefined;
 	 let loads = undefined;
+	 let allComps = undefined;
 	 let genUnits = undefined;
 	 switch (object.nodeName) {
 	     case "cim:ACLineSegment":
@@ -221,6 +222,14 @@
 	     case "cim:NonConformLoad":
 		 loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
 		 self.elements(loads, "NonConformLoad", "Non Conform Loads", [object]);
+		 break;
+	     case "cim:LinearShuntCompensator":
+		 allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", [object]);
+		 self.elements(allComps, "LinearShuntCompensator", "Linear", [object]);
+		 break;
+	     case "cim:NonlinearShuntCompensator":
+		 allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", [object]);
+		 self.elements(allComps, "NonlinearShuntCompensator", "Nonlinear", [object]);
 		 break;
 	     case "cim:PowerTransformer":
 		 self.powerTransformers(cimNetwork, [object]);

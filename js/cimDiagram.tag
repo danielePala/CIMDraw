@@ -76,6 +76,9 @@
      // load-related defs
      const LOAD_HEIGHT = 20;  // height of load elements
      const LOAD_WIDTH = 30;  // width of load elements
+     // compensator-related defs
+     const COMP_HEIGHT = 10;  // height of compensator elements
+     const COMP_WIDTH = 30;  // width of compensator elements
      // trafo-related defs
      const TRAFO_HEIGHT = 50;  // height of transformer elements
      const TRAFO_RADIUS = 15;
@@ -510,7 +513,9 @@
 	      "cim:ConformLoad",
 	      "cim:NonConformLoad",
 	      "cim:PowerTransformer",
-	      "cim:BusbarSection"]);
+	      "cim:BusbarSection",
+	      "cim:LinearShuntCompensator",
+	      "cim:NonlinearShuntCompensator"]);
 	 let allACLines = allEquipments["cim:ACLineSegment"];
 	 let allBreakers = allEquipments["cim:Breaker"];
 	 let allDisconnectors = allEquipments["cim:Disconnector"]; 
@@ -525,6 +530,8 @@
 	 let allNonConformLoads = allEquipments["cim:NonConformLoad"];
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"];
 	 let allBusbarSections = allEquipments["cim:BusbarSection"];
+	 let allLinearShuntCompensators = allEquipments["cim:LinearShuntCompensator"];
+	 let allNonlinearShuntCompensators = allEquipments["cim:NonlinearShuntCompensator"];
 	 yield "[" + Date.now() + "] DIAGRAM: extracted equipments";
 	 
 	 // AC Lines
@@ -566,6 +573,12 @@
 	 // power transformers
 	 let trafoEnter = self.drawPowerTransformers(allPowerTransformers);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformers";
+	 // linear shunt compensators
+	 let lshuntEnter = self.drawLinearCompensators(allLinearShuntCompensators);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn linear shunt compensators";
+	 // nonlinear shunt compensators
+	 let nlshuntEnter = self.drawNonlinearCompensators(allNonlinearShuntCompensators);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn nonlinear shunt compensators";
 	 // connectivity nodes
 	 let cnEnter = self.drawNodes(allNodes);
 	 self.createMeasurements(cnEnter);
@@ -623,7 +636,15 @@
 	 termSelection = self.createTerminals(trafoEnter);
 	 self.createMeasurements(trafoEnter);
 	 yield "[" + Date.now() + "] DIAGRAM: drawn power transformer terminals";
-
+	 // linear shunt compensator terminals
+	 termSelection = self.createTerminals(lshuntEnter);
+	 self.createMeasurements(lshuntEnter);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn linear shunt compensator terminals";
+	 // nonlinear shunt compensator terminals
+	 termSelection = self.createTerminals(nlshuntEnter);
+	 self.createMeasurements(nlshuntEnter);
+	 yield "[" + Date.now() + "] DIAGRAM: drawn nonlinear shunt compensator terminals";
+	 
 	 d3.select("svg").on("mouseover", function() {
 	     self.model.on("dragend", dragend);
 	 }).on("mouseout",function() {
@@ -998,7 +1019,17 @@
      drawNonConformLoads(allNonConformLoads) {
 	 return self.drawLoads(allNonConformLoads, "NonConformLoad");
      }
-     
+
+     // Draw all LinearShuntCompensators
+     drawLinearCompensators(allLinearShuntCompensators) {
+	 return self.drawCompensators(allLinearShuntCompensators, "LinearShuntCompensator");
+     }
+
+     // Draw all NonlinearShuntCompensators
+     drawNonlinearCompensators(allNonlinearShuntCompensators) {
+	 return self.drawCompensators(allNonlinearShuntCompensators, "NonlinearShuntCompensator");
+     }
+
      // Draw all generators
      drawGenerators(allGens, type) {
 	 let genEnter = self.createSelection(type, allGens)[1];
@@ -1070,6 +1101,51 @@
 	 return loadEnter;
      }
 
+     // Draw all compensators
+     drawCompensators(allCompensators, type) {
+	 let line = d3.line()
+		      .x(function(d) { return d.x; })
+		      .y(function(d) { return d.y; });
+	 let compEnter = self.createSelection(type, allCompensators)[1];
+	 let cx1 = (COMP_WIDTH/2) * (-1);
+	 let cx2 = (COMP_WIDTH/2);
+	 let cy1 = (COMP_HEIGHT/2) * (-1);
+	 let cy2 = (COMP_HEIGHT/2);
+
+	 compEnter.append("path")
+		  .attr("d", function(d) {
+		      return line([
+			  {x: cx1, y: cy1, seq:1},
+			  {x: cx2, y: cy1, seq:2}]);
+		  })
+		  .attr("fill", "white")
+		  .attr("stroke", "black")
+		  .attr("stroke-width", 4);
+	 compEnter.append("path")
+		  .attr("d", function(d) {
+		      return line([
+			  {x: cx1, y: cy2, seq:1},
+			  {x: cx2, y: cy2, seq:2}]);
+		  })
+		  .attr("fill", "white")
+		  .attr("stroke", "black")
+		  .attr("stroke-width", 4);
+	 compEnter.append("text")
+	 	  .attr("class", "cim-object-text")
+		  .style("text-anchor", "middle")
+		  .attr("font-size", 8)
+		  .attr("x", 0) 
+		  .attr("y", cy2 + 10)
+		  .text(function(d) {
+		      let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
+		      if (typeof(name) !== "undefined") {
+			  return name.innerHTML;
+			}
+		      return "";
+		  });
+	 return compEnter;
+     }
+     
      // Draw all PowerTransformers
      drawPowerTransformers(allPowerTransformers) {
 	 let trafoEnter = this.createSelection("PowerTransformer", allPowerTransformers)[1];
@@ -1138,6 +1214,10 @@
 	     case "cim:PowerTransformer":
 		 term1_cy = ((TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
 		 term2_cy = (TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
+		 break;
+	     case "cim:LinearShuntCompensator":
+	     case "cim:NonlinearShuntCompensator":
+		 term1_cy = ((COMP_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
 		 break;
 	     default:
 		 term2_cy = 30;
