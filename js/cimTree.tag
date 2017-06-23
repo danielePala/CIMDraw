@@ -441,7 +441,9 @@
 	     "cim:AsynchronousMachine",
 	     "cim:EnergyConsumer",
 	     "cim:ConformLoad",
-	     "cim:NonConformLoad"
+	     "cim:NonConformLoad",
+	     "cim:LinearShuntCompensator",
+	     "cim:NonlinearShuntCompensator"
 	 ]);
 	 yield "[" + Date.now() + "] TREE: extracted equipments";
 	 // get additional objects
@@ -500,6 +502,8 @@
 	 let allEnergyConsumers = allEquipments["cim:EnergyConsumer"] 
 	                              .concat(allEquipments["cim:ConformLoad"])
 	                              .concat(allEquipments["cim:NonConformLoad"]);
+	 let allCompensators = allEquipments["cim:LinearShuntCompensator"]
+     .concat(allEquipments["cim:nonlinearShuntCompensator"]);
 	 let allSubstations = allContainers["cim:Substation"];
 	 yield "[" + Date.now() + "] TREE: extracted substations";
 	 let allLines = allContainers["cim:Line"];
@@ -525,6 +529,9 @@
 	 self.elements(allLoads, "EnergyConsumer", "Energy Consumers", allEquipments["cim:EnergyConsumer"]);
 	 self.elements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
 	 self.elements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
+	 let allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", allCompensators);
+	 self.elements(allComps, "LinearShuntCompensator", "Linear", allEquipments["cim:LinearShuntCompensator"]);
+	 self.elements(allComps, "NonlinearShuntCompensator", "Nonlinear", allEquipments["cim:NonlinearShuntCompensator"]);
 	 self.elements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
 
 	 self.geoRegions(cimContainers, allGeoRegions);
