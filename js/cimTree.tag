@@ -1002,6 +1002,15 @@
 	 let elementBoolList = elementBool.append("ul").attr("class", "dropdown-menu");
 	 elementBoolList.append("li").on("click", setBoolAttr).append("a").text("true");
 	 elementBoolList.append("li").on("click", setBoolAttr).append("a").text("false");
+	 // DateTime attributes (note: such input types are not supported by Firefox) 
+	 elementDiv.filter(function(d) {
+	     let attrType = self.model.schema.getSchemaAttributeType(d);
+	     return attrType[0] === "#DateTime";
+	 }).append("input")
+		   .attr("class", "form-control")
+		   .each(setValueFromModel)
+		   .attr("type", "datetime-local") 
+		   .on("input", attrInput);
 	 // Enum attributes
 	 let elementEnum = elementDiv.filter(function(d) {
 	     return self.model.schema.isEnum(d);
