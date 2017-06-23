@@ -70,8 +70,8 @@ function exportToMatpower(model) {
 	let genUnit = model.getTargets([machine], "RotatingMachine.GeneratingUnit")[0];
 	nodes.forEach(function(node) {
 	    let busNum = busNums.get(node);
-	    let p = getAttrDefault(machine, "cim:RotatingMachine.p", "0");
-	    let q = getAttrDefault(machine, "cim:RotatingMachine.q", "0");
+	    let p = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.p", "0")) * (-1.0);
+	    let q = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.q", "0")) * (-1.0);
 	    let qmax = getAttrDefault(machine, "cim:SynchronousMachine.maxQ", "0");
 	    let qmin = getAttrDefault(machine, "cim:SynchronousMachine.minQ", "0");
 	    let mbase = getAttrDefault(machine, "cim:SynchronousMachine.ratedS", baseMVA);
