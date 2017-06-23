@@ -120,7 +120,7 @@ function exportToMatpower(model) {
 	    let b = getAttrDefault(acline, "cim:ACLineSegment.bch", "0"); 
 	    let rpu = parseFloat(r) / baseZ; 
 	    let xpu = parseFloat(x) / baseZ;
-	    let bpu = parseFloat(b) / baseZ;
+	    let bpu = parseFloat(b) * baseZ;
 	    mpcFile = mpcFile + busNums.get(nodes[0]) + "\t"; // “from” bus number
 	    mpcFile = mpcFile + busNums.get(nodes[1]) + "\t"; // “to” bus number
 	    mpcFile = mpcFile + rpu + "\t";                   // resistance (p.u.)
@@ -162,7 +162,7 @@ function exportToMatpower(model) {
 		r = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.r", "0");
 		x = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.x", "0");
 	    }
-	    let b = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.x", "0");
+	    let b = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.b", "0");
 	    let hvTerm = model.getTargets([hvEnd], "TransformerEnd.Terminal");
 	    let hvNode = model.getTargets(hvTerm, "Terminal.TopologicalNode")[0];
 	    let lvTerm = model.getTargets([lvEnd], "TransformerEnd.Terminal");
@@ -173,7 +173,7 @@ function exportToMatpower(model) {
 	    let baseZ = (parseFloat(baseV) * parseFloat(baseV)) / parseFloat(baseMVA);
             let rpu = parseFloat(r) / baseZ;
 	    let xpu = parseFloat(x) / baseZ;
-	    let bpu = parseFloat(b) / baseZ;
+	    let bpu = parseFloat(b) * baseZ;
 	    // get also the lv nominal voltage
 	    let lvVobj = model.getTargets([lvNode], "TopologicalNode.BaseVoltage")[0];
 	    let lvV = getAttrDefault(lvVobj, "cim:BaseVoltage.nominalVoltage", "0");
