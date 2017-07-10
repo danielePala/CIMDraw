@@ -1563,8 +1563,12 @@
 	 let newZoom = 1;
 	 let newx = -hoverD.x*newZoom + (svgWidth/2);
 	 let newy = -hoverD.y*newZoom + (svgHeight/2);
+	 // apply a transition to the moving
+	 let trans = d3.transition()
+	               .duration(750)
+	               .ease(d3.easeLinear);
 	 let t = d3.zoomIdentity.translate(newx, newy).scale(1);
-	 d3.selectAll("svg").select("g.diagram").attr("transform", t);
+	 d3.selectAll("svg").select("g.diagram").transition(trans).attr("transform", t);
 	 d3.zoom().transform(d3.selectAll("svg"), t);
 	 self.trigger("transform");
      }
