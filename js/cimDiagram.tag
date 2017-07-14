@@ -77,7 +77,7 @@
      const LOAD_HEIGHT = 20;  // height of load elements
      const LOAD_WIDTH = 30;  // width of load elements
      // compensator-related defs
-     const COMP_HEIGHT = 10;  // height of compensator elements
+     const COMP_HEIGHT = 20;  // height of compensator elements
      const COMP_WIDTH = 30;  // width of compensator elements
      // trafo-related defs
      const TRAFO_HEIGHT = 50;  // height of transformer elements
@@ -1109,9 +1109,29 @@
 	 let compEnter = self.createSelection(type, allCompensators)[1];
 	 let cx1 = (COMP_WIDTH/2) * (-1);
 	 let cx2 = (COMP_WIDTH/2);
-	 let cy1 = (COMP_HEIGHT/2) * (-1);
-	 let cy2 = (COMP_HEIGHT/2);
+	 let cy1 = (COMP_HEIGHT/2) * (-1) * 0.4;
+	 let cy2 = (COMP_HEIGHT/2) * 0.4;
+	 let ty1 = (TERMINAL_OFFSET + (COMP_HEIGHT/2)) * (-1);
+	 let ty2 = (TERMINAL_OFFSET + (COMP_HEIGHT/2));
 
+	 compEnter.append("path")
+		  .attr("d", function(d) {
+		      return line([
+			  {x: 0, y: ty1, seq:1},
+			  {x: 0, y: cy1, seq:2}]);
+		  })
+		  .attr("fill", "white")
+		  .attr("stroke", "black")
+		  .attr("stroke-width", 1);
+	 compEnter.append("path")
+		  .attr("d", function(d) {
+		      return line([
+			  {x: 0, y: cy2, seq:1},
+			  {x: 0, y: ty2, seq:2}]);
+		  })
+		  .attr("fill", "white")
+		  .attr("stroke", "black")
+		  .attr("stroke-width", 1);
 	 compEnter.append("path")
 		  .attr("d", function(d) {
 		      return line([
@@ -1135,7 +1155,7 @@
 		  .style("text-anchor", "middle")
 		  .attr("font-size", 8)
 		  .attr("x", 0) 
-		  .attr("y", cy2 + 10)
+		  .attr("y", ty2 + 10)
 		  .text(function(d) {
 		      let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
 		      if (typeof(name) !== "undefined") {
