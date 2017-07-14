@@ -74,6 +74,9 @@
 			    <li id="cim:EnergyConsumer" onclick={enableAdd}><a>Energy Consumer</a></li>
 			    <li id="cim:ConformLoad" onclick={enableAdd}><a>Conform Load</a></li>
 			    <li id="cim:NonConformLoad" onclick={enableAdd}><a>Non Conform Load</a></li>
+			    <li class="dropdown-header">Compensators</li>
+			    <li id="cim:LinearShuntCompensator" onclick={enableAdd}><a>Linear</a></li>
+			    <li id="cim:NonlinearShuntCompensator" onclick={enableAdd}><a>Nonlinear</a></li>
 			    <li class="dropdown-header">Transformers</li>
 			    <li id="cim:PowerTransformer" onclick={enableAdd}><a>Two-winding Transformer</a></li>
 			</ul>

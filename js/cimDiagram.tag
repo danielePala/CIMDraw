@@ -278,6 +278,12 @@
 	     case "cim:NonConformLoad":
 		 selection = self.drawNonConformLoads([object]);
 		 break;
+	     case "cim:LinearShuntCompensator":
+		 selection = self.drawLinearCompensators([object]);
+		 break;
+	     case "cim:NonlinearShuntCompensator":
+		 selection = self.drawNonlinearCompensators([object]);
+		 break;		 
 	     case "cim:PowerTransformer":
 		 selection = self.drawPowerTransformers([object]);
 		 break;
