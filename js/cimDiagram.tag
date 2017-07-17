@@ -1177,21 +1177,53 @@
 	 let trafoEnter = this.createSelection("PowerTransformer", allPowerTransformers)[1];
 	 let wind1y = TRAFO_RADIUS - (TRAFO_HEIGHT/2);
 	 let wind2y = (TRAFO_HEIGHT/2) - TRAFO_RADIUS;
+
+	 let twoWind = trafoEnter.filter(function(d) {
+	     let winds = self.model.getTargets([d], "PowerTransformer.PowerTransformerEnd");
+	     return winds.length === 2;
+	 });
+	 let threeWind = trafoEnter.filter(function(d) {
+	     let winds = self.model.getTargets([d], "PowerTransformer.PowerTransformerEnd");
+	     return winds.length === 3;
+	 });
+
+	 twoWind.append("circle")
+		.attr("r", TRAFO_RADIUS)
+		.attr("cx", 0) 
+		.attr("cy", wind1y)
+		.attr("fill", "none")
+		.attr("stroke", "black")
+		.attr("stroke-width", 4);
+	 twoWind.append("circle")
+	        .attr("r", TRAFO_RADIUS)
+	        .attr("cx", 0)
+	        .attr("cy", wind2y)
+	        .attr("fill", "none")
+	        .attr("stroke", "black")
+	        .attr("stroke-width", 4);
+	 threeWind.append("circle")
+		.attr("r", TRAFO_RADIUS)
+		.attr("cx", 0) 
+		.attr("cy", wind1y)
+		.attr("fill", "none")
+		.attr("stroke", "black")
+		.attr("stroke-width", 4);
+	 threeWind.append("circle")
+		.attr("r", TRAFO_RADIUS)
+		.attr("cx", (TRAFO_RADIUS/2) * (-1)) 
+		.attr("cy", wind2y)
+		.attr("fill", "none")
+		.attr("stroke", "black")
+		.attr("stroke-width", 4);
+	 threeWind.append("circle")
+	        .attr("r", TRAFO_RADIUS)
+	        .attr("cx", (TRAFO_RADIUS/2))
+	        .attr("cy", wind2y)
+	        .attr("fill", "none")
+	        .attr("stroke", "black")
+	        .attr("stroke-width", 4);
+
 	 
-	 trafoEnter.append("circle")
-		   .attr("r", TRAFO_RADIUS)
-		   .attr("cx", 0) 
-		   .attr("cy", wind1y)
-		   .attr("fill", "none")
-		   .attr("stroke", "black")
-		   .attr("stroke-width", 4);
-	 trafoEnter.append("circle")
-	           .attr("r", TRAFO_RADIUS)
-	           .attr("cx", 0)
-	           .attr("cy", wind2y)
-	           .attr("fill", "none")
-	           .attr("stroke", "black")
-	           .attr("stroke-width", 4);
 	 trafoEnter.append("text")
 	 	   .attr("class", "cim-object-text")
 		   .style("text-anchor", "end")
@@ -1210,7 +1242,10 @@
      }
 
      // Adds terminals to the objects contained in the selection.
-     // The elements must all be of the same type (e.g. switches, loads...)
+     // The elements must all be of the same type (e.g. switches, loads...).
+     // This function is quite complicated because we want to draw terminals
+     // in the "correct" place, i.e. as close as possible to the
+     // associated bus.
      createTerminals(eqSelection) {
 	 let term1_cy = 0; // default y coordinate for first terminal
 	 let term2_cy = 30; // default y coordinate for second terminal (if present)
@@ -1273,7 +1308,7 @@
 
 		 let eqRot = d3.select(this.parentNode).datum().rotation;
 		 let terminals = self.model.getTerminals(d3.select(this.parentNode).data());
-		 if (typeof(cn) !== "undefined" && terminals.length > 1) {
+		 if (typeof(cn) !== "undefined" && terminals.length === 2) {
 		     let dist1 = 0;
 		     let dist2 = 0;
 		     // handle rotation
@@ -1299,7 +1334,23 @@
 		 } else {
 		     if (lineData.length === 1) {
 			 d.x = eqX;
-			 d.y = eqY + term1_cy*(1-i) + term2_cy*i;						    
+			 // here we have a special case for three-winding transformers
+			 if (terminals.length === 3) {
+			     if (i === 0) {
+				 d.y = eqY + term1_cy;
+			     }
+			     if (i === 1) {
+				 d.x = d.x - (TRAFO_RADIUS/2);
+				 d.y = eqY + term2_cy;
+			     }
+			     if (i === 2) {
+				 d.x = d.x + (TRAFO_RADIUS/2);
+				 d.y = eqY + term2_cy;
+			     }
+			     
+			 } else {
+			     d.y = eqY + term1_cy*(1-i) + term2_cy*i;
+			 }
 		     } else {
 			 d.x = eqX + start.x*(1-i)+end.x*i;
 			 d.y = eqY + start.y*(1-i)+end.y*i;
