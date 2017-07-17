@@ -870,16 +870,30 @@ function cimModel() {
         },
 
         // Create an object of a given type.
-        createObject(type, uuid) {
-            let newElement = model.cimObject(type, uuid);
+	// An optional second argument may contain an object with
+	// with specific creation options: an "uuid" field
+	// can be passed in order to force the use of a specific UUID,
+	// a "windNum" option can be passed in order to specify the
+	// number of windings of a transformer (ignored for other
+	// objects), which defaults to 2.
+        createObject(type, options) {
+            let newElement = model.cimObject(type, options);
             model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
             if (model.schema.isA("ConductingEquipment", newElement) === false) {
                 // if not a conducting equipment, we are done
                 model.trigger("createObject", newElement);
                 return newElement;
             }
+	    // see if we have the "windNum" option
+	    let windNum = 2;
+	    if (typeof(options) !== "undefined") {
+		if (typeof(options.windNum) !== "undefined") {
+		    windNum = options.windNum;
+		}
+	    }
             let term1 = createTerminal(newElement);
             let term2 = null;
+	    let term3 = null;
             // create second terminal if needed
             if (type === "cim:ACLineSegment" ||
                 type === "cim:Breaker" ||
@@ -890,6 +904,12 @@ function cimModel() {
                 type === "cim:PowerTransformer") {
                 term2 = createTerminal(newElement);
             }
+	    // create third terminal if needed
+	    if (type === "cim:PowerTransformer") {
+		if (windNum === 3) {
+		    term3 = createTerminal(newElement);
+		}
+	    }
             if (type === "cim:BusbarSection") {
                 let nodesType = "ConnectivityNode";
                 if (mode === "BUS_BRANCH") {
@@ -899,7 +919,6 @@ function cimModel() {
                 addLink(term1, "cim:Terminal." + nodesType, node);
             }
             if (type === "cim:PowerTransformer") {
-                // TODO: the number of windings should be configurable
                 let w1 = model.cimObject("cim:PowerTransformerEnd");
                 let w2 = model.cimObject("cim:PowerTransformerEnd");
                 model.setAttribute(w1, "cim:IdentifiedObject.name", "winding1");
@@ -908,6 +927,12 @@ function cimModel() {
                 addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w2);
                 addLink(w1, "cim:TransformerEnd.Terminal", term1);
                 addLink(w2, "cim:TransformerEnd.Terminal", term2);
+		if (windNum === 3) {
+		    let w3 = model.cimObject("cim:PowerTransformerEnd");
+		    model.setAttribute(w3, "cim:IdentifiedObject.name", "winding3");
+		    addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w3);
+		    addLink(w3, "cim:TransformerEnd.Terminal", term3);
+		}
             }
             model.trigger("createObject", newElement);
             return newElement;
@@ -1178,7 +1203,11 @@ function cimModel() {
         },
 
         // TODO: this should probably be private.
-        cimObject(name, uuid) {
+        cimObject(name, options) {
+	    let uuid = undefined;
+	    if (typeof(options) !== "undefined") {
+		uuid = options.uuid;
+	    }
             let document = data.all;
             let obj = document.createElementNS(cimNS, name);
             document.children[0].appendChild(obj);

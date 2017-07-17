@@ -79,6 +79,7 @@
 			    <li id="cim:NonlinearShuntCompensator" onclick={enableAdd}><a>Nonlinear</a></li>
 			    <li class="dropdown-header">Transformers</li>
 			    <li id="cim:PowerTransformer" onclick={enableAdd}><a>Two-winding Transformer</a></li>
+			    <li id="cim:PowerTransformer" onclick={enableAdd}><a>Three-winding Transformer</a></li>
 			</ul>
 		    </div>
 		    
@@ -773,6 +774,10 @@
      enableAdd(e) {
 	 let type = e.target.parentNode.id;
 	 let text = e.target.textContent;
+	 let options = undefined;
+	 if (text === "Three-winding Transformer") {
+	     options = {windNum: 3};
+	 }
 	 self.disableAll();
 	 d3.select(self.root).selectAll("label").classed("active", false);
 	 $("input").prop('checked', false);
@@ -780,7 +785,7 @@
 	 self.status = "ADD" + type;
 	 d3.select("svg").on("click.add", clicked);
 	 function clicked() {
-	     let newObject = opts.model.createObject(type);
+	     let newObject = opts.model.createObject(type, options);
 	     self.parent.addToDiagram(newObject);
 	 }
      }
