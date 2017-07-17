@@ -1090,13 +1090,13 @@ function cimModel() {
         // It filters by diagram (i.e. the busbar
         // OR the node must be in the diagram).
         getBusbar(node) {
-            let nodesType = "ConnectivityNode";
+            let nodeTerm = "ConnectivityNode.Terminals";
             if (mode === "BUS_BRANCH") {
-                nodesType = "TopologicalNode";
+                nodeTerm = "TopologicalNode.Terminal";
             }
             let terminals = model.getTargets(
                 [node],
-                nodesType + ".Terminals");
+                nodeTerm);
             let equipments = model.getTargets(
                 terminals,
                 "Terminal.ConductingEquipment");

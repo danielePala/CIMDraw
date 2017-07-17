@@ -484,7 +484,9 @@
 		 }
 		 $(selected).filter('[data-toggle="popover"]').popover("toggle");
 		 quadtree.removeAll(selected); // update quadtree
-		 // handle movement of cn
+		 // handle movement of cn, for the special case when
+		 // the cn connects only two elements and there is no
+		 // busbar section associated to it.
 		 if (opts.model.schema.isA("ConductingEquipment", d) === true) {
 		     let terminals = opts.model.getTerminals([d]);
 		     let cns = opts.model.getTargets(
