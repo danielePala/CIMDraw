@@ -1308,6 +1308,8 @@
 
 		 let eqRot = d3.select(this.parentNode).datum().rotation;
 		 let terminals = self.model.getTerminals(d3.select(this.parentNode).data());
+		 // decide where to put terminals. TODO: should handle
+		 // an arbitrary number of terminals, not only two.
 		 if (typeof(cn) !== "undefined" && terminals.length === 2) {
 		     let dist1 = 0;
 		     let dist2 = 0;

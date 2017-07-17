@@ -23,24 +23,47 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "%bus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin\n";
     let busNums = new Map();
     for (let i in allNodes) {
+	let type = 1;
 	let baseVobj = model.getTargets([allNodes[i]], "TopologicalNode.BaseVoltage")[0];
 	let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
 	let busNum = parseInt(i) + 1;
 	let terms = model.getTargets([allNodes[i]], "TopologicalNode.Terminal");
 	let eqs = model.getTargets(terms, "Terminal.ConductingEquipment");
 	let loads = eqs.filter(el => model.schema.isA("EnergyConsumer", el) === true);
+	let shunts = eqs.filter(el => model.schema.isA("ShuntCompensator", el) === true);
+	let gens = eqs.filter(el => model.schema.isA("SynchronousMachine", el) === true);
 	let pd = 0.0;
 	let qd = 0.0;
 	loads.forEach(function(load) {
 	    pd = pd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.p", "0.0"));
 	    qd = qd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.q", "0.0"));
 	});
+	let gs = 0.0;
+	let bs = 0.0;
+	shunts.forEach(function(shunt) {
+	    let numSections = parseFloat(getAttrDefault(shunt, "cim:ShuntCompensator.sections", "0.0"));
+	    let gSection = parseFloat(getAttrDefault(shunt, "cim:LinearShuntCompensator.gPerSection", "0.0"));
+	    let bSection = parseFloat(getAttrDefault(shunt, "cim:LinearShuntCompensator.bPerSection", "0.0"));
+	    gs = gs + (gSection * numSections);
+	    bs = bs + (bSection * numSections);
+	});
+	if (gens.length > 0 || shunts.length > 0) {
+	    type = 2;
+	}
+	let slack = gens.filter(function(gen) {
+	    let refPrio = parseInt(getAttrDefault(gen, "cim:SynchronousMachine.referencePriority", "0"));
+	    return refPrio > 0;
+	});
+	if (slack.length > 0) {
+	    type = 3;
+	}
+	
 	mpcFile = mpcFile + busNum + "\t";   // bus_i
-	mpcFile = mpcFile + 1 + "\t";        // type
+	mpcFile = mpcFile + type + "\t";     // type
 	mpcFile = mpcFile + pd + "\t";       // Pd
 	mpcFile = mpcFile + qd + "\t";       // Qd
-	mpcFile = mpcFile + 0 + "\t";        // Gs
-	mpcFile = mpcFile + 0 + "\t";        // Bs
+	mpcFile = mpcFile + gs + "\t";       // Gs
+	mpcFile = mpcFile + bs + "\t";       // Bs
 	mpcFile = mpcFile + 1 + "\t";        // area
 	mpcFile = mpcFile + 1 + "\t";        // Vm
 	mpcFile = mpcFile + 0 + "\t";        // Va
