@@ -1265,7 +1265,7 @@
 	     case "cim:EnergySource":
 	     case "cim:SynchronousMachine":
 	     case "cim:AsynchronousMachine":
-		 term1_cy = (GEN_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
+		 term1_cy = ((GEN_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
 		 break;
 	     case "cim:EnergyConsumer":
 	     case "cim:ConformLoad":

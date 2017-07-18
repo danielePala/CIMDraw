@@ -31,8 +31,12 @@ function cimModel() {
     const modelNS = "http://iec.ch/TC57/61970-552/ModelDescription/1#";
     // The RDF namespace
     const rdfNS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
-    // The Eqipment namespace.
-    const eqNS = "http://entsoe.eu/CIM/EquipmentShortCircuit/3/1";
+    // The Eqipment Core namespace.
+    const eqcNS = "http://entsoe.eu/CIM/EquipmentCore/3/1";
+    // The Eqipment Operation namespace.
+    const eqoNS = "http://entsoe.eu/CIM/EquipmentOperation/3/1";
+    // The Eqipment Short Circuit namespace.
+    const eqsNS = "http://entsoe.eu/CIM/EquipmentShortCircuit/3/1";
     // The Diagram Layout namespace.
     const dlNS = "http://entsoe.eu/CIM/DiagramLayout/3/1";
     // The State Variables namespace.
@@ -165,7 +169,7 @@ function cimModel() {
         };
     };
     
-    function cgmesDocument(ns, deps) {
+    function cgmesDocument(nss, deps) {
         let parser = new DOMParser();
         let empty = parser.parseFromString(emptyFile, "application/xml");
         // create 'FullModel' element
@@ -173,9 +177,11 @@ function cimModel() {
         empty.children[0].appendChild(modelDesc);
         let modelDescID = modelDesc.setAttribute("rdf:about", "urn:uuid:" + generateUUID().substring(1));
         // set the profile link TODO: use setAttribute()
-        let attribute = modelDesc.ownerDocument.createElementNS(modelNS, "md:Model.profile");
-        attribute.innerHTML = ns;
-        modelDesc.appendChild(attribute);
+	nss.forEach(function(ns) {
+            let attribute = modelDesc.ownerDocument.createElementNS(modelNS, "md:Model.profile");
+            attribute.innerHTML = ns;
+            modelDesc.appendChild(attribute);
+	});
         // set model dependency
         deps.forEach(function(dep) {
             let depModelDesc = [].filter.call(
@@ -514,18 +520,22 @@ function cimModel() {
                 model.setLink(linkToChange.s, linkToChange.l, linkToChange.t);
             });
             all = data.all.children[0].cloneNode(true).children;
+	    let eqNames = [eqcNS];
+	    if (mode === "NODE_BREAKER") {
+		eqNames.push(eqoNS);
+	    }
             // create EQ file
-            let eqDoc = profile("EQ", eqNS, all, []);
+            let eqDoc = profile("EQ", eqNames, all, []);
             // create DL file
-            let dlDoc = profile("DL", dlNS, all, [eqDoc]);
+            let dlDoc = profile("DL", [dlNS], all, [eqDoc]);
             // create SV file
-            let svDoc = profile("SV", svNS, all, [eqDoc]);
+            let svDoc = profile("SV", [svNS], all, [eqDoc]);
             // create TP file
-            let tpDoc = profile("TP", tpNS, all, [eqDoc]);
+            let tpDoc = profile("TP", [tpNS], all, [eqDoc]);
             // create SSH file
-            let sshDoc = profile("SSH", sshNS, all, [eqDoc]);
+            let sshDoc = profile("SSH", [sshNS], all, [eqDoc]);
             // create GL file
-            let glDoc = profile("GL", glNS, all, [eqDoc]);
+            let glDoc = profile("GL", [glNS], all, [eqDoc]);
             zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
             zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
             zip.file("SV.xml", oSerializer.serializeToString(svDoc));
@@ -534,12 +544,12 @@ function cimModel() {
             zip.file("GL.xml", oSerializer.serializeToString(glDoc));
             return zip.generateAsync({type:"blob", compression: "DEFLATE"});
 
-            function profile(name, ns, data, deps) {
+            function profile(name, nss, data, deps) {
                 let all = [].filter.call(data, function(el) {
                     let obj = model.schema.getSchemaObject(el.localName, name);
                     return (obj !== null); 
                 });
-                let doc = cgmesDocument(ns, deps);
+                let doc = cgmesDocument(nss, deps);
                 populateProfile(doc, all, name);
                 return doc;
             };
