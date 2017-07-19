@@ -1243,6 +1243,7 @@
 	     );
 	     let hashComponents = window.location.hash.substring(1).split("/");
 	     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+	     route(basePath);
 	     route(basePath + "/" + targetUUID.substring(1));
 	 };
      }
