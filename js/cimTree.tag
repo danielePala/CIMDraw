@@ -804,11 +804,21 @@
 		 // check if we are changing some link
 		 let linkToChange = d3.select("#cimTarget");
 		 if (linkToChange.empty() === false) {
-		     let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0]; 
+		     let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0];
+		     let targetUUID = target.attributes.getNamedItem("rdf:ID").value;
 		     let targetLink = linkToChange.data()[0];
 		     let targetLinkName = "cim:" + targetLink.attributes[0].value.substring(1);
 		     cimModel.setLink(target, targetLinkName, d);
-		     self.scrollAndRouteTo("#" + target.attributes.getNamedItem("rdf:ID").value);
+		     let hashComponents = window.location.hash.substring(1).split("/");
+		     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+		     let shouldReplace = false;
+		     if (hashComponents.length > 3) {
+			 if (targetUUID === hashComponents[3]) {
+			     shouldReplace = true;
+			 }
+		     }
+		     route(basePath, null, shouldReplace);
+		     route(basePath + "/" + targetUUID, null, true);
 		     // we need to disable the collapse logic
 		     $(this).parent().find("ul").on("show.bs.collapse hide.bs.collapse", function(e) {
 			 e.preventDefault();
@@ -1121,7 +1131,9 @@
 		       .attr("type", "submit")
 		       .on("click", function (d) {
 			   let targetUUID = "#" + d3.select(this).attr("cim-target"); 
-			   self.scrollAndRouteTo(targetUUID);
+			   let hashComponents = window.location.hash.substring(1).split("/");
+			   let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+			   route(basePath + "/" + targetUUID.substring(1));
 		       })
 		       .attr("cim-target", function(d) {
 			   let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
@@ -1194,7 +1206,7 @@
 	 let tabId = $(target).parents("div.tab-pane").first().attr("id") + "Tab";
 	 $("#" + tabId).tab("show");
 	 d3.select(target).select("a").attr("class", "btn btn-danger btn-xs");
-	 self.scrollAndRouteTo("#" + uuid);
+	 self.scrollTo("#" + uuid);
      }
      
      deleteObject(objectUUID) {
@@ -1224,18 +1236,24 @@
 	 }
      }
 
-     scrollAndRouteTo(targetUUID) {
+     scrollTo(targetUUID) {
 	 if ($(targetUUID).parents(".collapse:not(.in)").last().length !== 0) {
+	     $(targetUUID).parents(".collapse:not(.in)").on("shown.bs.collapse", function() {
+                 let elementEnter = d3.select(this.parentNode).filter(".CIM-object").select("ul");
+		 if (elementEnter.selectAll("li.attribute").size() === 0) {
+		     self.generateAttrsAndLinks(elementEnter);
+		 }
+	     });
 	     $(targetUUID).parents(".collapse:not(.in)").last().on("shown.bs.collapse", function() {
-		 scrollAndRouteToVisible(targetUUID);
+		 scrollToVisible(targetUUID);
 		 $(this).off("shown.bs.collapse");
 	     });
 	 } else {
-	     scrollAndRouteToVisible(targetUUID);
+	     scrollToVisible(targetUUID);
 	 }
 	 $(targetUUID).parents(".collapse:not(.in)").collapse("show");
 
-	 function scrollAndRouteToVisible(targetUUID) {
+	 function scrollToVisible(targetUUID) {
 	     $(".tree").scrollTop(
 		 $(".tree").scrollTop() + (
 		     $(".tree").find(targetUUID).parent().offset().top - $(".tree").offset().top
@@ -1243,8 +1261,6 @@
 	     );
 	     let hashComponents = window.location.hash.substring(1).split("/");
 	     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-	     route(basePath);
-	     route(basePath + "/" + targetUUID.substring(1));
 	 };
      }
 
