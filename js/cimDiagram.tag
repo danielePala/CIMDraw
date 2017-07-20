@@ -1844,7 +1844,7 @@
 		      .curve(d3.curveStepBefore); 
 	 if (arguments.length === 3) {
 	     links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g"); 
-	 }
+	 } 
 
 	 links.select("path")
 	      .attr("d", function(d) {

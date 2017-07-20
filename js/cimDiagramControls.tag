@@ -214,6 +214,7 @@
      // move one point of the multi-segment. "lineData" coordinates
      // are relative to d.x and d.y, and the first point is always (0,0).
      // Therefore, we must handle the translation of the first point in a different way.
+     // TODO: doesn't work when object is rotated
      let resizeDrag = d3.drag().on("drag", function(d) {
 	 // hide popovers
 	 $(selected).filter('[data-toggle="popover"]').popover("hide");
@@ -506,7 +507,11 @@
 			 }
 		     }
 		 }
-
+		 let terminals = opts.model.getTerminals(d3.selectAll(selected).data());
+		 let links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+		     return d3.selectAll(selected).data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
+		 });
+		 links.select("path").attr("stroke", "green").attr("stroke-width", "3");
 	     })
 	     .on("drag", function(d) {
 		 $(selected).filter('[data-toggle="popover"]').popover("hide");
@@ -539,6 +544,11 @@
 	     .on("end", function(d) {
 		 quadtree.addAll(selected); // update quadtree
 		 cnsToMove = [];
+		 let terminals = opts.model.getTerminals(d3.selectAll(selected).data());
+		 let links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+		     return d3.selectAll(selected).data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
+		 });
+		 links.select("path").attr("stroke", "black").attr("stroke-width", "1");
 	     });
 	 d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
 	 d3.select("svg").select("g.brush").call(
