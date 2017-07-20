@@ -1237,14 +1237,13 @@
      }
 
      scrollTo(targetUUID) {
-	 if ($(targetUUID).parents(".collapse:not(.in)").last().length !== 0) {
-	     $(targetUUID).parents(".collapse:not(.in)").on("shown.bs.collapse", function() {
+	 if ($(targetUUID).parents(".collapse:not(.in)").length !== 0) {
+	     $(targetUUID).parents(".collapse:not(.in)").on("shown.bs.collapse", function(event) {
+		 event.stopPropagation();
                  let elementEnter = d3.select(this.parentNode).filter(".CIM-object").select("ul");
 		 if (elementEnter.selectAll("li.attribute").size() === 0) {
 		     self.generateAttrsAndLinks(elementEnter);
 		 }
-	     });
-	     $(targetUUID).parents(".collapse:not(.in)").last().on("shown.bs.collapse", function() {
 		 scrollToVisible(targetUUID);
 		 $(this).off("shown.bs.collapse");
 	     });
@@ -1259,8 +1258,6 @@
 		     $(".tree").find(targetUUID).parent().offset().top - $(".tree").offset().top
 		 )
 	     );
-	     let hashComponents = window.location.hash.substring(1).split("/");
-	     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
 	 };
      }
 
