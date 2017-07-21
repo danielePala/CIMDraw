@@ -1864,6 +1864,14 @@
 		  cnXY.y = cnXY.y + d.p[1];
 		  let lineData = [cnXY, terminalXY];
 		  return line(lineData);
+	      }).attr("stroke-dasharray", function(d) {
+		  let connected = self.model.getAttribute(d.target, "cim:ACDCTerminal.connected");
+		  if (typeof(connected) !== "undefined") {
+		      if (connected.textContent === "false") {
+			  return "5, 5";
+		      }
+		  }
+		  return null;
 	      });
 	 // test
 	 /*links.each(function(d) {

@@ -503,7 +503,8 @@
 		 ["LoadResponseCharacteristic.EnergyConsumer"]);
 	     allLimitSets = self.model.getLinkedObjects(
 		 ["cim:OperationalLimitSet"],
-		 ["OperationalLimitSet.Equipment", "OperationalLimitSet.Terminal"]);
+		 ["OperationalLimitSet.Equipment",
+		  "OperationalLimitSet.Terminal/Terminal.ConductingEquipment"]);
 	 } else {
 	     allContainers = getObjects(contNames);
 	     allMeasurements = getObjects(measNames);
