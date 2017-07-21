@@ -214,17 +214,17 @@
      // move one point of the multi-segment. "lineData" coordinates
      // are relative to d.x and d.y, and the first point is always (0,0).
      // Therefore, we must handle the translation of the first point in a different way.
-     // TODO: doesn't work when object is rotated
      let resizeDrag = d3.drag().on("drag", function(d) {
 	 // hide popovers
 	 $(selected).filter('[data-toggle="popover"]').popover("hide");
 	 let p = d[0].lineData.filter(el => el.seq === d[1])[0];
+	 let ev = self.parent.rotate({x: d3.event.x, y: d3.event.y}, d[0].rotation);
 	 if (p.seq !== 1) {
 	     p.x = d3.event.x;
 	     p.y = d3.event.y;
 	 } else {
-	     d[0].x = d[0].x + d3.event.x;
-	     d[0].y = d[0].y + d3.event.y;
+	     d[0].x = d[0].x + ev.x;
+	     d[0].y = d[0].y + ev.y;
 	     for (let point of d[0].lineData) {
 		 if (point.seq === 1) {
 		     continue;
@@ -241,12 +241,14 @@
 	     let transform = d3.zoomTransform(d3.select("svg").node());
 	     if (d3.event.x === point.x) {
 		 let m = ((point.x + d[0].x) * transform.k) + transform.x;
-		 self.highlight("x", m);
+		 let mr = (d[0].y * transform.k) + transform.y;
+		 self.highlight("x", m, {val: d[0].rotation, x: m, y: mr});
 		 break;
 	     } else {
 		 if (d3.event.y === point.y) {
 		     let m = ((point.y + d[0].y) * transform.k) + transform.y;
-		     self.highlight("y", m);
+		     let mr = (d[0].x * transform.k) + transform.x;
+		     self.highlight("y", m, {val: d[0].rotation, x: mr, y: m});
 		     break;
 		 } else {
 		     self.highlight(null);
@@ -908,30 +910,38 @@
 	 };
      }
 
-     highlight(direction, val) {
+     highlight(direction, val, rotation) {
 	 let hG = d3.select("svg").select("g.diagram-highlight");
+	 let x1 = null;
+	 let y1 = null;
+	 let x2 = null;
+	 let y2 = null;
+	 let height = parseInt(d3.select("svg").style("height"));
+	 let width = parseInt(d3.select("svg").style("width"));
+	 let size = Math.max(height, width) * 2;
 	 if (direction === "x") {
-	     let height = parseInt(d3.select("svg").style("height"));
-	     hG.select("line.highlight")
-	       .attr("x1", val) 
-	       .attr("y1", 0)
-	       .attr("x2", val) 
-	       .attr("y2", height);
+	     x1 = val;
+	     y1 = size * (-1);
+	     x2 = val;
+	     y2 = size;
 	 } else {
 	     if (direction === "y") {
-		 let width = parseInt(d3.select("svg").style("width"));
-		 hG.select("line.highlight")
-		   .attr("x1", 0)
-		   .attr("y1", val)
-		   .attr("x2", width)
-		   .attr("y2", val);
-	     } else {
-		 hG.select("line.highlight")
-		   .attr("x1", null)
-		   .attr("y1", null)
-		   .attr("x2", null)
-		   .attr("y2", null);
-	     }
+		 x1 = size * (-1);
+		 y1 = val;
+		 x2 = size;
+		 y2 = val;
+	     } 
+	 }
+	 hG.select("line.highlight")
+					.attr("x1", x1)
+					.attr("y1", y1)
+					.attr("x2", x2)
+					.attr("y2", y2);
+	 
+	 if (arguments.length === 3) {
+		 hG.attr("transform", "rotate(" + rotation.val + "," + rotation.x + "," + rotation.y + ")");
+	 } else {
+	     hG.attr("transform", null);
 	 }
      }
 
