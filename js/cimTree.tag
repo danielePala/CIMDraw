@@ -434,6 +434,24 @@
 	     getObjects = self.model.getGraphicObjects;
 	     getConnectors = self.model.getConnectors;
 	 }
+	 // in bus-branch mode, we artificially add busbar sections
+	 // (1-1 correspondence with topological nodes)
+	 if (self.model.getMode() === "BUS_BRANCH") {
+	     let objects = self.model.getObjects(["cim:BusbarSection", "cim:TopologicalNode"]); 
+	     if (objects["cim:BusbarSection"].length === 0) {
+		 objects["cim:TopologicalNode"].forEach(function(topo) {
+		     let newObj = self.model.createObject("cim:BusbarSection");
+		     let term = self.model.getTargets([newObj], "ConductingEquipment.Terminals")[0];
+		     let newTopo = self.model.getTargets([term], "Terminal.TopologicalNode")[0];
+		     self.model.setLink(term, "cim:Terminal.TopologicalNode", topo);
+		     let name = self.model.getAttribute(topo, "cim:IdentifiedObject.name");
+		     if (typeof(name) !== "undefined") {
+			 self.model.setAttribute(newObj, "cim:IdentifiedObject.name", name.innerHTML);
+		     }
+		     self.model.deleteObject(newTopo);
+		 });
+	     }
+	 }
 
 	 // get all equipments
 	 let allEquipments = getObjects([
@@ -497,7 +515,7 @@
 	 let allBaseVoltages = noDiagObjs["cim:BaseVoltage"];
 	 let allTapChangerControls = noDiagObjs["cim:TapChangerControl"];
 	 let allRegulatingControls = noDiagObjs["cim:RegulatingControl"];
-	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"]; 
+	 let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"];
 	 let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
 	 let allACLines = allEquipments["cim:ACLineSegment"]; 
 	 let allBreakers = allEquipments["cim:Breaker"]; 

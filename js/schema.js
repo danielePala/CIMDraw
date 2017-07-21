@@ -45,9 +45,9 @@ function cimSchema() {
     // This function works for any profile, since
     // it is based on the getSchemaObject function.
     // This is a 'private' function (not visible in the model object).
-    function getAllSuper(type) {
+    function getAllSuper(type, profile) {
 	let allSuper = [];
-	let object = schema.getSchemaObject(type);
+	let object = schema.getSchemaObject(type, profile);
 	// handle unknown objects 
 	if (object === null) {
 	    return allSuper;
@@ -58,7 +58,7 @@ function cimSchema() {
 	if (typeof(aSuper) !== "undefined") {
 	    let aSuperName = aSuper.attributes[0].value.substring(1);
 	    allSuper.push(aSuperName);
-	    allSuper = allSuper.concat(getAllSuper(aSuperName));
+	    allSuper = allSuper.concat(getAllSuper(aSuperName, profile));
 	}
 	return allSuper;
     };
@@ -125,12 +125,14 @@ function cimSchema() {
 	// search into all of the known schemas, otherwise it will search
 	// in the requested schema only.
 	// Some objects are defined in more than one schema (like the
-	// Breaker object, for example). However, this is not a problem
-	// since the definition is the same in all of the schemas.
+	// Breaker object, for example). In this case
+	// the definition may not be the same in all of the schemas
+	// (an example is TopologicalNode), so the second argument
+	// should be provided.
 	getSchemaObject(type, schema) {
 	    let ret = null; 
 	    for (let profile of Object.keys(schemaData)) {
-		if (arguments.length === 2 && schema !== profile) {
+		if (typeof(schema) !== "undefined" && schema !== profile) {
 		    continue;
 		}
 		// try to get from map
@@ -195,22 +197,19 @@ function cimSchema() {
 	// If the argument is missing, the EQ schema is used.
 	getSchemaAttributes(type, schemaName) {
 	    let key = type;
+	    let schemaNameDef = "EQ";
 	    if (typeof(schemaName) !== "undefined") {
-		    key = key + schemaName;
-	    } else {
-		key = key + "EQ";
-	    }
+		schemaNameDef = schemaName;
+	    } 
+	    key = key + schemaNameDef;
 	    let ret = schemaAttrsMap.get(key);
 	    if (typeof(ret) === "undefined") {
-		let schData = schemaData["EQ"];
-		if (typeof(schemaName) !== "undefined") {
-		    schData = schemaData[schemaName];
-		}
+		let schData = schemaData[schemaNameDef];
 		let allSchemaObjects = schData.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
 		    return el.attributes[0].value.startsWith("#" + type + ".");
 		});
-		let supers = getAllSuper(type);
+		let supers = getAllSuper(type, schemaNameDef);
 		for (let i in supers) {
 		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
 			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
