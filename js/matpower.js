@@ -65,7 +65,7 @@ function exportToMatpower(model) {
 	mpcFile = mpcFile + gs + "\t";       // Gs
 	mpcFile = mpcFile + bs + "\t";       // Bs
 	mpcFile = mpcFile + 1 + "\t";        // area
-	mpcFile = mpcFile + 1 + "\t";        // Vm
+	mpcFile = mpcFile + 1 + "\t";        // Vm 
 	mpcFile = mpcFile + 0 + "\t";        // Va
 	mpcFile = mpcFile + baseV + "\t";    // baseKV
 	mpcFile = mpcFile + 1 + "\t";        // zone
@@ -105,7 +105,7 @@ function exportToMatpower(model) {
 	    mpcFile = mpcFile + q + "\t";      // Qg
 	    mpcFile = mpcFile + qmax + "\t";   // Qmax
 	    mpcFile = mpcFile + qmin + "\t";   // Qmin
-	    mpcFile = mpcFile + 1 + "\t";      // Vg
+	    mpcFile = mpcFile + 1 + "\t";      // Vg (TODO: defined by RegulatingControl.targetValue)
 	    mpcFile = mpcFile + mbase + "\t";  // mBase
 	    mpcFile = mpcFile + 1 + "\t";      // status
 	    mpcFile = mpcFile + pmax + "\t";   // Pmax
@@ -149,9 +149,9 @@ function exportToMatpower(model) {
 	    mpcFile = mpcFile + rpu + "\t";                   // resistance (p.u.)
 	    mpcFile = mpcFile + xpu + "\t";                   // reactance (p.u.)
 	    mpcFile = mpcFile + bpu + "\t";                   // total line charging susceptance (p.u.)
-	    mpcFile = mpcFile + 1000 + "\t";                     // MVA rating A (long term rating)
-	    mpcFile = mpcFile + 1000 + "\t";                     // MVA rating B (short term rating)
-	    mpcFile = mpcFile + 1000 + "\t";                     // MVA rating C (emergency rating)
+	    mpcFile = mpcFile + 1000 + "\t";                  // MVA rating A (long term rating)
+	    mpcFile = mpcFile + 1000 + "\t";                  // MVA rating B (short term rating)
+	    mpcFile = mpcFile + 1000 + "\t";                  // MVA rating C (emergency rating)
 	    mpcFile = mpcFile + 0 + "\t";                     // transformer off nominal turns ratio
 	    mpcFile = mpcFile + 0 + "\t";                     // transformer phase shift angle (degrees)
 	    mpcFile = mpcFile + 1 + "\t";                     // initial branch status, 1 = in-service, 0 = out-of-service
@@ -201,17 +201,21 @@ function exportToMatpower(model) {
 	    let lvVobj = model.getTargets([lvNode], "TopologicalNode.BaseVoltage")[0];
 	    let lvV = getAttrDefault(lvVobj, "cim:BaseVoltage.nominalVoltage", "0");
 	    // calculate nominal trafo ratio
-	    let ratio = parseFloat(lvV) / parseFloat(baseV);
+	    // TODO: this is wrong: must be calculated (in percent) as
+	    // (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
+	    // while the sign depends on the position of the tap changer.
+	    let ratio = 1.0; //parseFloat(lvV) / parseFloat(baseV);
+	    let shift = -30.0; // TODO: depends on the connection kind of the windings
 	    mpcFile = mpcFile + busNums.get(lvNode) + "\t"; // “from” bus number
 	    mpcFile = mpcFile + busNums.get(hvNode) + "\t"; // “to” bus number
 	    mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
 	    mpcFile = mpcFile + xpu + "\t";                 // reactance (p.u.)
 	    mpcFile = mpcFile + bpu + "\t";                 // total line charging susceptance (p.u.)
-	    mpcFile = mpcFile + 1000 + "\t";                   // MVA rating A (long term rating)
-	    mpcFile = mpcFile + 1000 + "\t";                   // MVA rating B (short term rating)
-	    mpcFile = mpcFile + 1000 + "\t";                   // MVA rating C (emergency rating)
+	    mpcFile = mpcFile + 1000 + "\t";                // MVA rating A (long term rating)
+	    mpcFile = mpcFile + 1000 + "\t";                // MVA rating B (short term rating)
+	    mpcFile = mpcFile + 1000 + "\t";                // MVA rating C (emergency rating)
 	    mpcFile = mpcFile + ratio + "\t";               // transformer off nominal turns ratio
-	    mpcFile = mpcFile + 0 + "\t";                   // transformer phase shift angle (degrees)
+	    mpcFile = mpcFile + shift + "\t";               // transformer phase shift angle (degrees)
 	    mpcFile = mpcFile + 1 + "\t";                   // initial branch status, 1 = in-service, 0 = out-of-service
 	    mpcFile = mpcFile + "-360" + "\t";              // minimum angle difference
 	    mpcFile = mpcFile + "360" + ";\t";              // maximum angle difference
