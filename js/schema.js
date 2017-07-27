@@ -302,6 +302,22 @@ function cimSchema() {
 	    return [typeVal, unit, multiplier];
 	},
 
+	// Get the stereotype of a given attribute, if present.
+	// Note that this is not the usual stereotype which identifies
+	// if this is an attribute, but the one with a text content
+	// (in particular the profile identification, like "Operation"
+	// or "ShortCircuit".
+	// It is not limited to EQ schema. 
+	getSchemaStereotype(attr) {
+	    let stereotype = [].filter.call(attr.children, function(el) {
+		return el.nodeName === "cims:stereotype" && el.textContent !== "";
+	    });
+	    if (stereotype.length > 0) {
+		return stereotype[0].textContent;
+	    }
+	    return null;
+	},
+
 	// Get the schema links for a given type.
 	// An optional 'schemaName' argument can be used to indicate the schema,
 	// which can be 'EQ', 'DL', 'SV', 'TP', 'SSH' or 'GL'.

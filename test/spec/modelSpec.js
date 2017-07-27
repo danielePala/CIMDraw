@@ -123,4 +123,13 @@ describe("CIM model", function() {
 	expect(idobjDL.length).toBeGreaterThan(0);
     });
 
+    it("should be able to get schema stereotypes for object attributes", function() {
+	let attr1 = model.schema.getSchemaAttribute("AsynchronousMachine", "AsynchronousMachine.ratedMechanicalPower", "EQ");
+	let stereotype1 = model.schema.getSchemaStereotype(attr1);
+	expect(stereotype1).toBe("ShortCircuit");
+	let attr2 = model.schema.getSchemaAttribute("IdentifiedObject", "IdentifiedObject.name", "EQ");
+	let stereotype2 = model.schema.getSchemaStereotype(attr2);
+	expect(stereotype2).toBe(null);
+    });
+    
 });

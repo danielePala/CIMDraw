@@ -921,6 +921,12 @@
 		    if (about.startsWith("#") === false) {
 			ret = ret + " entsoe";
 		    }
+		    if (profile === "EQ") {
+			let stereotype = self.model.schema.getSchemaStereotype(d);
+			if (stereotype !== null) {
+			    ret = ret + " " + stereotype;
+			}
+		    }
 		    return ret;
 		})
 		.style("display", function(d) {
