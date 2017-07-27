@@ -915,7 +915,14 @@
 		})
 		.enter()
 		.append("li")
-		.attr("class", "attribute " + profile)
+		.attr("class", function(d) {
+		    let ret = "attribute " + profile;
+		    let about = d.attributes.getNamedItem("rdf:about").value;
+		    if (about.startsWith("#") === false) {
+			ret = ret + " entsoe";
+		    }
+		    return ret;
+		})
 		.style("display", function(d) {
 		    if (visible === true) {
 			return null;
@@ -977,7 +984,9 @@
      generateAttributes(elementDiv) {
 	 elementDiv.append("span").attr("class", "input-group-addon cim-tree-attribute-name")
 		   .html(function (d) {
-		       return d.attributes[0].value.substring(1).split(".")[1]; 
+		       let about = d.attributes.getNamedItem("rdf:about").value;
+		       about = about.substring(about.indexOf("#")); // only the part after the "#"
+		       return about.split(".")[1]; 
 		   });
 	 // String attributes 
 	 elementDiv.filter(function(d) {
@@ -1133,7 +1142,13 @@
 	 };
 	 function attrInput(d) {
 	     let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
-	     let attrName = "cim:" + d.attributes[0].value.substring(1);
+	     let about = d.attributes.getNamedItem("rdf:about").value;
+	     let ns = "cim:";
+	     if (about.startsWith("#") === false) {
+		 ns = "entsoe:";
+	     }
+	     about = about.substring(about.indexOf("#") + 1); 
+	     let attrName = ns + about;
 	     self.model.setAttribute(object, attrName, this.value);
 	 };
      }

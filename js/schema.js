@@ -207,18 +207,27 @@ function cimSchema() {
 		let schData = schemaData[schemaNameDef];
 		let allSchemaObjects = schData.children[0].children;
 		ret = [].filter.call(allSchemaObjects, function(el) {
-		    return el.attributes[0].value.startsWith("#" + type + ".");
+		    let about = el.attributes.getNamedItem("rdf:about").value;
+		    return about.startsWith("#" + type + ".");
+		    // use the code below to get also the ENTSO-E custom attributes
+		    //return about.indexOf("#" + type + ".") > -1;
 		});
 		let supers = getAllSuper(type, schemaNameDef);
 		for (let i in supers) {
 		    ret = ret.concat([].filter.call(allSchemaObjects, function(el) {
-			return el.attributes[0].value.startsWith("#" + supers[i] + ".");
+			let about = el.attributes.getNamedItem("rdf:about").value;
+			return about.startsWith("#" + supers[i] + ".");
+			// use the code below to get also the ENTSO-E custom attributes
+			//return about.indexOf("#" + supers[i] + ".") > -1;
 		    }));
 		}
+		// we assume that attributes always start with a lowercase letter,
+		// while links always start with an uppercase one.
 		ret = ret.filter(function(el) {
-		    let name = el.attributes[0].value;
+		    let about = el.attributes.getNamedItem("rdf:about").value;
+		    about = about.substring(about.indexOf("#")); // only the part after the "#"
 		    let isLiteral = false;
-		    let localName = name.split(".")[1];
+		    let localName = about.split(".")[1];
 		    if (typeof(localName) !== "undefined") {
 			isLiteral = (localName.toLowerCase().charAt(0) === localName.charAt(0));
 		    }

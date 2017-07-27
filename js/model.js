@@ -856,7 +856,11 @@ function cimModel() {
             if (typeof(attribute) !== "undefined") {
                 attribute.innerHTML = value;
             } else {
-                attribute = object.ownerDocument.createElementNS(cimNS, attrName);
+		let ns = cimNS;
+		if (attrName.startsWith("entsoe:")) {
+		    ns = entsoeNS;
+		}
+                attribute = object.ownerDocument.createElementNS(ns, attrName);
                 attribute.innerHTML = value;
                 object.appendChild(attribute);
             }
