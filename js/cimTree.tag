@@ -381,6 +381,15 @@
 	 $("#showAllObjects").parent().addClass("active");
      });
 
+     // listen to 'setMode' event from model
+     // this is used in order to hide operational stuff
+     // when working in bus-branch mode.
+     self.model.on("setMode", function(mode) {
+	 if (mode === "BUS_BRANCH") {
+	     $("#measurementsTab").hide();
+	 }
+     });
+
      createTree(showAllObjects) {
 	 let treeRender = self.createTreeGenerator(showAllObjects);
 	 function periodic() {
@@ -925,6 +934,9 @@
 			let stereotype = self.model.schema.getSchemaStereotype(d);
 			if (stereotype !== null) {
 			    ret = ret + " " + stereotype;
+			}
+			if (stereotype === "Operation" && self.model.getMode() === "BUS_BRANCH") {
+			    ret = ret + " hidden";
 			}
 		    }
 		    return ret;
