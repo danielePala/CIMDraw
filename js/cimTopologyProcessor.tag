@@ -64,7 +64,7 @@
 	 $("#tpMsg").text("Loading...");
 	 $("#tpStatusModal").modal("show");
 	 $("#tpStatusModal").on("shown.bs.modal", function (e) {
-	     let topos = calcTopology(opts.model);
+	     let topos = topologyProcessor(opts.model).calcTopology();
 	     $("#tpMsg").text("Done (" + topos.length + " nodes calculated).");
 	 });
 

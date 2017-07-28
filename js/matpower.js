@@ -6,8 +6,9 @@ function exportToMatpower(model) {
 
     // if in node-breaker mode, we should execute the topology processor
     let allNodes = [];
+    let tp = topologyProcessor(model);
     if (model.getMode() === "NODE_BREAKER") {
-	allNodes = calcTopology(model);
+	allNodes = tp.calcTopology();
     } else {
 	allNodes = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
     }
@@ -27,7 +28,7 @@ function exportToMatpower(model) {
 	let baseVobj = model.getTargets([allNodes[i]], "TopologicalNode.BaseVoltage")[0];
 	let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
 	let busNum = parseInt(i) + 1;
-	let terms = model.getTargets([allNodes[i]], "TopologicalNode.Terminal");
+	let terms = tp.getTerminals(allNodes[i]); //model.getTargets([allNodes[i]], "TopologicalNode.Terminal");
 	let eqs = model.getTargets(terms, "Terminal.ConductingEquipment");
 	let loads = eqs.filter(el => model.schema.isA("EnergyConsumer", el) === true);
 	let shunts = eqs.filter(el => model.schema.isA("ShuntCompensator", el) === true);
@@ -88,7 +89,7 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "mpc.gen = [\n";
     mpcFile = mpcFile + "%bus\tPg\tQg\tQmax\tQmin\tVg\tmBase\tstatus\tPmax\tPmin\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\n";
     machines.forEach(function(machine) {
-	let terminals = model.getTargets([machine], "ConductingEquipment.Terminals");
+	let terminals = tp.getTerminals(machine); //model.getTargets([machine], "ConductingEquipment.Terminals");
 	let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
 	let genUnit = model.getTargets([machine], "RotatingMachine.GeneratingUnit")[0];
 	nodes.forEach(function(node) {
@@ -131,8 +132,13 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "mpc.branch = [\n";
     mpcFile = mpcFile + "%fbus\ttbus\tr\tx\tb\trateA\trateB\trateC\tratio\tangle\tstatus\tangmin\tangmax\n";
     aclines.forEach(function(acline) {
-	let terms = model.getTargets([acline], "ConductingEquipment.Terminals");
+	let terms = tp.getTerminals(acline); 
 	let nodes = model.getTargets(terms, "Terminal.TopologicalNode");
+	// TODO: a valid case is that conducting equipment can be connected in
+	// one end and open in the other. In particular for an AC line segment,
+	// where the reactive line charging can be significant, this is a
+	// relevant case. In this case nodes.length === 1, and a "dummy"
+	// second node must be created.
 	if (nodes.length === 2) {
 	    // calculate base impedance: z_base = (v_base)^2/s_base
 	    let baseVobj = model.getTargets(nodes, "TopologicalNode.BaseVoltage")[0];
@@ -163,14 +169,21 @@ function exportToMatpower(model) {
     // branch (transformers)
     let trafos = model.getObjects(["cim:PowerTransformer"])["cim:PowerTransformer"];
     trafos.forEach(function(trafo) {
-	// A PowerTransformerEnd is associated with each Terminal of a PowerTransformer.
-	// The impedance values r, r0, x, and x0 of a PowerTransformerEnd represents a star equivalent as follows:
-	// 1) for a two Terminal PowerTransformer the high voltage PowerTransformerEnd has non zero values on r, r0,
-	//    x, and x0 while the low voltage PowerTransformerEnd has zero values for r, r0, x, and x0.
-	// 2) for a three Terminal PowerTransformer the three PowerTransformerEnds represents a star equivalent with
+	// A PowerTransformerEnd is associated with each Terminal of a
+	// PowerTransformer.
+	// The impedance values r, r0, x, and x0 of a PowerTransformerEnd
+	// represents a star equivalent as follows:
+	// 1) for a two Terminal PowerTransformer the high voltage
+	//    PowerTransformerEnd has non zero values on r, r0,
+	//    x, and x0 while the low voltage PowerTransformerEnd has
+	//    zero values for r, r0, x, and x0.
+	// 2) for a three Terminal PowerTransformer the three
+	//    PowerTransformerEnds represents a star equivalent with
 	//    each leg in the star represented by r, r0, x, and x0 values.
-	// 3) for a PowerTransformer with more than three Terminals the PowerTransformerEnd impedance values cannot
-	//    be used. Instead use the TransformerMeshImpedance or split the transformer into multiple PowerTransformers.
+	// 3) for a PowerTransformer with more than three Terminals the
+	//    PowerTransformerEnd impedance values cannot
+	//    be used. Instead use the TransformerMeshImpedance or split
+	//    the transformer into multiple PowerTransformers.
 	let trafoEnds = model.getTargets([trafo], "PowerTransformer.PowerTransformerEnd");
 	// process the two Terminal PowerTransformers
 	if (trafoEnds.length === 2) {
@@ -186,40 +199,42 @@ function exportToMatpower(model) {
 		x = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.x", "0");
 	    }
 	    let b = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.b", "0");
-	    let hvTerm = model.getTargets([hvEnd], "TransformerEnd.Terminal");
+	    let hvTerm = tp.getTerminals(hvEnd); //model.getTargets([hvEnd], "TransformerEnd.Terminal");
 	    let hvNode = model.getTargets(hvTerm, "Terminal.TopologicalNode")[0];
-	    let lvTerm = model.getTargets([lvEnd], "TransformerEnd.Terminal");
+	    let lvTerm = tp.getTerminals(lvEnd); //model.getTargets([lvEnd], "TransformerEnd.Terminal");
 	    let lvNode = model.getTargets(lvTerm, "Terminal.TopologicalNode")[0];
-	    // calculate base impedance: z_base = (v_base)^2/s_base
-	    let baseVobj = model.getTargets([hvNode], "TopologicalNode.BaseVoltage")[0];
-	    let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
-	    let baseZ = (parseFloat(baseV) * parseFloat(baseV)) / parseFloat(baseMVA);
-            let rpu = parseFloat(r) / baseZ;
-	    let xpu = parseFloat(x) / baseZ;
-	    let bpu = parseFloat(b) * baseZ;
-	    // get also the lv nominal voltage
-	    let lvVobj = model.getTargets([lvNode], "TopologicalNode.BaseVoltage")[0];
-	    let lvV = getAttrDefault(lvVobj, "cim:BaseVoltage.nominalVoltage", "0");
-	    // calculate nominal trafo ratio
-	    // TODO: this is wrong: must be calculated (in percent) as
-	    // (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
-	    // while the sign depends on the position of the tap changer.
-	    let ratio = 1.0; //parseFloat(lvV) / parseFloat(baseV);
-	    let shift = -30.0; // TODO: depends on the connection kind of the windings
-	    mpcFile = mpcFile + busNums.get(lvNode) + "\t"; // “from” bus number
-	    mpcFile = mpcFile + busNums.get(hvNode) + "\t"; // “to” bus number
-	    mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
-	    mpcFile = mpcFile + xpu + "\t";                 // reactance (p.u.)
-	    mpcFile = mpcFile + bpu + "\t";                 // total line charging susceptance (p.u.)
-	    mpcFile = mpcFile + 1000 + "\t";                // MVA rating A (long term rating)
-	    mpcFile = mpcFile + 1000 + "\t";                // MVA rating B (short term rating)
-	    mpcFile = mpcFile + 1000 + "\t";                // MVA rating C (emergency rating)
-	    mpcFile = mpcFile + ratio + "\t";               // transformer off nominal turns ratio
-	    mpcFile = mpcFile + shift + "\t";               // transformer phase shift angle (degrees)
-	    mpcFile = mpcFile + 1 + "\t";                   // initial branch status, 1 = in-service, 0 = out-of-service
-	    mpcFile = mpcFile + "-360" + "\t";              // minimum angle difference
-	    mpcFile = mpcFile + "360" + ";\t";              // maximum angle difference
-	    mpcFile = mpcFile + "\n";	    
+	    if (hvTerm.length === 1 && lvTerm.length === 1) {
+		// calculate base impedance: z_base = (v_base)^2/s_base
+		let baseVobj = model.getTargets([hvNode], "TopologicalNode.BaseVoltage")[0];
+		let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
+		let baseZ = (parseFloat(baseV) * parseFloat(baseV)) / parseFloat(baseMVA);
+		let rpu = parseFloat(r) / baseZ;
+		let xpu = parseFloat(x) / baseZ;
+		let bpu = parseFloat(b) * baseZ;
+		// get also the lv nominal voltage
+		let lvVobj = model.getTargets([lvNode], "TopologicalNode.BaseVoltage")[0];
+		let lvV = getAttrDefault(lvVobj, "cim:BaseVoltage.nominalVoltage", "0");
+		// calculate nominal trafo ratio
+		// TODO: this is wrong: must be calculated (in percent) as
+		// (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
+		// while the sign depends on the position of the tap changer.
+		let ratio = 1.0; //parseFloat(lvV) / parseFloat(baseV);
+		let shift = -30.0; // TODO: depends on the connection kind of the windings
+		mpcFile = mpcFile + busNums.get(lvNode) + "\t"; // “from” bus number
+		mpcFile = mpcFile + busNums.get(hvNode) + "\t"; // “to” bus number
+		mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
+		mpcFile = mpcFile + xpu + "\t";                 // reactance (p.u.)
+		mpcFile = mpcFile + bpu + "\t";                 // total line charging susceptance (p.u.)
+		mpcFile = mpcFile + 1000 + "\t";                // MVA rating A (long term rating)
+		mpcFile = mpcFile + 1000 + "\t";                // MVA rating B (short term rating)
+		mpcFile = mpcFile + 1000 + "\t";                // MVA rating C (emergency rating)
+		mpcFile = mpcFile + ratio + "\t";               // transformer off nominal turns ratio
+		mpcFile = mpcFile + shift + "\t";               // transformer phase shift angle (degrees)
+		mpcFile = mpcFile + 1 + "\t";                   // initial branch status, 1 = in-service, 0 = out-of-service
+		mpcFile = mpcFile + "-360" + "\t";              // minimum angle difference
+		mpcFile = mpcFile + "360" + ";\t";              // maximum angle difference
+		mpcFile = mpcFile + "\n";	    
+	    }
 	}
     });
     mpcFile = mpcFile + "];\n";

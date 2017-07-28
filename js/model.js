@@ -841,7 +841,9 @@ function cimModel() {
             });
         },
 
-        // Get a specific attribute of a given object.
+        // Get a specific attribute of a given object. If the attribute
+	// is not found the function returns undefined. The attribute
+	// name must be namespace qualified (e.g. "cim:ACDCTerminal.connected").
         getAttribute(object, attrName) {
             if (typeof(object) === "undefined") {
                 return "undefined";
@@ -850,7 +852,9 @@ function cimModel() {
             return attributes.filter(el => el.nodeName === attrName)[0];
         },
 
-        // Set a specific attribute of a given object. If it doesen't exists, it is created.
+        // Set a specific attribute of a given object. If it doesen't exists,
+	// it is created. The attribute name must be namespace qualified 
+	// (e.g. "cim:ACDCTerminal.connected").
         setAttribute(object, attrName, value) {
             let attribute = model.getAttribute(object, attrName);
             if (typeof(attribute) !== "undefined") {
