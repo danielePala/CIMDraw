@@ -146,12 +146,6 @@
 	     }
 	 },
 	 {
-	     title: 'Add new measurement',
-	     action: function(elm, d, i) {
-		 self.addNewMeasurement(elm, d, i);
-	     }
-	 },
-	 {
 	     title: 'Add new operational limit set',
 	     action: function(elm, d, i) {
 		 self.addNewLimitSet(elm, d, i);
@@ -159,12 +153,6 @@
 	 }
      ];
      let terminalsMenu = [
-	 {
-	     title: 'Add new measurement',
-	     action: function(elm, d, i) {
-		 self.addNewMeasurement(elm, d, i);
-	     }
-	 },
 	 {
 	     title: 'Add new operational limit set',
 	     action: function(elm, d, i) {
@@ -343,6 +331,23 @@
 	     NODE_CLASS = "TopologicalNode";
 	     NODE_TERM = "TopologicalNode.Terminal";
 	     TERM_NODE = "Terminal.TopologicalNode";
+	 } else {
+	     menu.push(
+		 {
+		     title: 'Add new measurement',
+		     action: function(elm, d, i) {
+			 self.addNewMeasurement(elm, d, i);
+		     }
+		 }
+	     );
+	     terminalsMenu.push(
+		 {
+		     title: 'Add new measurement',
+		     action: function(elm, d, i) {
+			 self.addNewMeasurement(elm, d, i);
+		     }
+		 }
+	     );
 	 }
 	 // setup quadtree
 	 let points = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
