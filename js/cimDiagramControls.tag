@@ -279,7 +279,7 @@
 	 $("#connect").change(function() {
 	     self.disableAll();
 	     self.enableConnect();
-	 });	 
+	 });
      });
 
      // listen to 'moveTo' event from parent
@@ -362,6 +362,37 @@
 	 self.enableDrag();
 	 $("#cim-diagram-controls").show();
 	 $("#cim-diagram-elements").show();
+	 // modality for drag+zoom
+	 d3.select("body")
+	   .on("keydown", function() {
+	       if (typeof(d3.event) === "undefined") {
+		   return;
+	       }
+	       // trap the ctrl key being pressed
+	       if (d3.event.ctrlKey) {
+		   self.disableDrag();
+		   // delete any brush
+		   d3.select("svg").select("g.brush").call(d3.brush().move, null);
+		   self.disableZoom();
+		   self.disableForce();
+		   self.enableZoom();
+	       }
+	   })
+	   .on("keyup", function() {
+	       self.disableZoom();
+	       switch(self.status) {
+		   case"DRAG":
+		       if (d3.event.keyCode === 17) { // "Control"
+			   self.enableDrag();
+		       }
+		       break;
+		   case "FORCE":
+		       if (d3.event.keyCode === 17) { // "Control"
+			   self.enableForce();
+		       }
+		       break;
+	       }
+	   });
      });
 
      // listen to 'addToDiagram' event from parent 
@@ -415,38 +446,6 @@
      self.parent.on("createEdges", function(edgesEnter) {
 	 edgesEnter.on("contextmenu", d3.contextMenu(edgesMenu));
      });
-
-     // modality for drag+zoom
-     d3.select("body")
-       .on("keydown", function() {
-	   if (typeof(d3.event) === "undefined") {
-	       return;
-	   }
-	   // trap the ctrl key being pressed
-	   if (d3.event.ctrlKey) {
-	       self.disableDrag();
-	       // delete any brush
-	       d3.select("svg").select("g.brush").call(d3.brush().move, null);
-	       self.disableZoom();
-	       self.disableForce();
-	       self.enableZoom();
-	   }
-       })
-       .on("keyup", function() {
-	   self.disableZoom();
-	   switch(self.status) {
-	       case"DRAG":
-		   if (d3.event.keyCode === 17) { // "Control"
-		       self.enableDrag();
-		   }
-		   break;
-	       case "FORCE":
-		   if (d3.event.keyCode === 17) { // "Control"
-		       self.enableForce();
-		   }
-		   break;
-	   }
-       });
 
      disableAll() {
 	 self.disableDrag();
