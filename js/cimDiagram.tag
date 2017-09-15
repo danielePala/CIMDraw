@@ -702,7 +702,8 @@
 	 psrSelection.attr("data-toggle", "popover");	 
 	 psrSelection.each(function(d) {
 	     let measurements = [];
-	     let svs = [];
+	     let svPFs = [];
+	     let svVs = self.model.getTargets([d], "TopologicalNode.SvVoltage");
 	     let terminals = self.model.getTerminals([d]);
 	     // get the measurements for this equipment
 	     if (d.nodeName === "cim:" + NODE_CLASS) {		 
@@ -719,13 +720,13 @@
 		     "PowerSystemResource.Measurements");
 	     }
 	     for (let terminal of terminals) {
-		 let actTermSvs = self.model.getTargets(
+		 let actTermSvPFs = self.model.getTargets(
 		     [terminal],
 		     "Terminal.SvPowerFlow");
-		 svs = svs.concat(actTermSvs);
+		 svPFs = svPFs.concat(actTermSvPFs);
 	     }
-	     if (measurements.length > 0 || svs.length > 0) {
-		 let tooltip = self.createTooltip(measurements, svs);
+	     if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0) {
+		 let tooltip = self.createTooltip(measurements, svPFs, svVs);
 		 
 		 $(this).popover({title: "<b>Element Status Info</b>",
 				  content: tooltip,
@@ -744,7 +745,7 @@
 	 })
      }
 
-     createTooltip(measurements, svs) {
+     createTooltip(measurements, svPFs, svVs) {
 	 let tooltip = "";
 	 if (measurements.length > 0) {
 	     tooltip = tooltip + "<b>Measurements</b><br><br>";
@@ -804,12 +805,12 @@
 	 }
 
 	 // power flow results
-	 if (svs.length > 0) {
+	 if (svPFs.length > 0) {
 	     if (measurements.length > 0) {
 		 tooltip = tooltip + "<br>";
 	     }
-	     tooltip = tooltip + "<b>Power flow results</b><br><br>";
-	     for (let sv of svs) {
+	     tooltip = tooltip + "<b>Power flow results (Power)</b><br><br>";
+	     for (let sv of svPFs) {
 		 let p = 0.0, q = 0.0;
 		 if (typeof(self.model.getAttribute(sv, "cim:SvPowerFlow.p")) !== "undefined") { 
 		     p = self.model.getAttribute(sv, "cim:SvPowerFlow.p").textContent;
@@ -823,6 +824,27 @@
 		 actLine = actLine + "<br>";
 		 tooltip = tooltip + actLine;
 	     }	 
+	 }
+
+	 if (svVs.length > 0) {
+	     if (measurements.length > 0 || svPFs.length > 0 ) {
+		 tooltip = tooltip + "<br>";
+	     }
+	     tooltip = tooltip + "<b>Power flow results (Voltage)</b><br><br>";
+	     for (let sv of svVs) {
+		 let v = 0.0, ang = 0.0;
+		 if (typeof(self.model.getAttribute(sv, "cim:SvVoltage.v")) !== "undefined") {
+		     v = self.model.getAttribute(sv, "cim:SvVoltage.v").textContent;
+		 }
+		 if (typeof(self.model.getAttribute(sv, "cim:SvVoltage.angle")) !== "undefined") {
+		     ang = self.model.getAttribute(sv, "cim:SvVoltage.angle").textContent;
+		 }
+		 let actLine = "Voltage magnitude: " + parseFloat(v).toFixed(2) + " [kV]";
+		 actLine = actLine + "<br>";
+		 actLine = actLine + "Voltage angle: " + parseFloat(ang).toFixed(2) + " [deg]";
+		 actLine = actLine + "<br>";
+		 tooltip = tooltip + actLine;
+	     }
 	 }
 	 return tooltip;
      }
