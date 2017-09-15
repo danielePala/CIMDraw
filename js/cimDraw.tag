@@ -58,7 +58,7 @@
 			    <li><a id="cgmes-save">Save as CGMES...</a></li>
 			    <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
 			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
-			    <li><a id="matpower-export" download="file.m">Export to Matpower (NOT WORKING YET)...</a></li>
+			    <li><a id="matpower-export" download="file.m">Export to Matpower (EXPERIMENTAL)...</a></li>
 			</ul>
 		    </li>
 		</ul>
