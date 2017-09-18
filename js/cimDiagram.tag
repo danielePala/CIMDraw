@@ -165,6 +165,10 @@
 		 let psr = self.model.getTargets(
 		     analog,
 		     "Measurement.PowerSystemResource")[0];
+		 // handle busbars
+		 if (psr.nodeName === "cim:BusbarSection") {
+		     psr = self.model.getNode(psr);
+		 }
 		 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
 		 let psrSelection = d3.select("g#" + psrUUID);
 		 self.createMeasurements(psrSelection);
