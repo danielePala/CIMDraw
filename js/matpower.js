@@ -243,7 +243,7 @@ function exportToMatpower(model) {
 		let ratio = 1.0 + corr;
 		let hvClock = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
 		let lvClock = getAttrDefault(lvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
-		let shift = -30.0 * (parseFloat(hvClock) + parseFloat(lvClock)); // TODO: check the "minus" sign
+		let shift = 30.0 * (parseFloat(hvClock) + parseFloat(lvClock)); 
 		mpcFile = mpcFile + busNums.get(lvNode) + "\t"; // “from” bus number
 		mpcFile = mpcFile + busNums.get(hvNode) + "\t"; // “to” bus number
 		mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
