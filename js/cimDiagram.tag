@@ -731,6 +731,31 @@
 	     }
 	     if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0) {
 		 let tooltip = self.createTooltip(measurements, svPFs, svVs);
+
+		 // test for switched colouring
+		 psrSelection.filter(function(d) {
+		     return self.model.schema.isA("Switch", d);
+		 }).selectAll("path")
+			     .attr("fill", function(d) {
+				 let value = "0"; // default is OPEN
+				 // check the status of this switch
+				 let measurement = self.model.getTargets(
+				     [d],
+				     "PowerSystemResource.Measurements")[0];
+				 if (typeof(measurement) !== "undefined") {
+				     let valueObject = self.model.getTargets(
+					 [measurement],
+					 "Discrete.DiscreteValues")[0];
+				     if (typeof(valueObject) !== "undefined") {
+					 value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
+				     }
+				 }
+				 if (value === "0") {
+				     return "white";
+				 } else {
+				     return "black";
+				 }
+			     });
 		 
 		 $(this).popover({title: "<b>Element Status Info</b>",
 				  content: tooltip,
@@ -788,6 +813,16 @@
 		     if(typeof(self.model.getAttribute(valueObject, "cim:AnalogValue.value")) !== "undefined") {
 			 value = self.model.getAttribute(valueObject, "cim:AnalogValue.value").textContent;
 			 value = parseFloat(value).toFixed(2);
+		     }
+		 } else {
+		     valueObject = self.model.getTargets(
+			 [measurement],
+			 "Discrete.DiscreteValues")[0];
+		     if (typeof(valueObject) !== "undefined") {
+			 if(typeof(self.model.getAttribute(valueObject, "cim:DiscreteValue.value")) !== "undefined") {
+			     value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
+			     value = parseInt(value);
+			 }
 		     }
 		 }
 		 let measUUID = measurement.attributes.getNamedItem("rdf:ID").value;
