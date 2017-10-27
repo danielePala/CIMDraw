@@ -1,5 +1,5 @@
 /*
- Topology processor use interface.
+ Topology processor user interface.
 
  Copyright 2017 Daniele Pala <daniele.pala@rse-web.it>
 
