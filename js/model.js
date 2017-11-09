@@ -177,11 +177,11 @@ function cimModel() {
         empty.children[0].appendChild(modelDesc);
         let modelDescID = modelDesc.setAttribute("rdf:about", "urn:uuid:" + generateUUID().substring(1));
         // set the profile link TODO: use setAttribute()
-	nss.forEach(function(ns) {
+        nss.forEach(function(ns) {
             let attribute = modelDesc.ownerDocument.createElementNS(modelNS, "md:Model.profile");
             attribute.innerHTML = ns;
             modelDesc.appendChild(attribute);
-	});
+        });
         // set model dependency
         deps.forEach(function(dep) {
             let depModelDesc = [].filter.call(
@@ -520,10 +520,10 @@ function cimModel() {
                 model.setLink(linkToChange.s, linkToChange.l, linkToChange.t);
             });
             all = data.all.children[0].cloneNode(true).children;
-	    let eqNames = [eqcNS];
-	    if (mode === "NODE_BREAKER") {
-		eqNames.push(eqoNS);
-	    }
+            let eqNames = [eqcNS];
+            if (mode === "NODE_BREAKER") {
+                eqNames.push(eqoNS);
+            }
             // create EQ file
             let eqDoc = profile("EQ", eqNames, all, []);
             // create DL file
@@ -842,8 +842,8 @@ function cimModel() {
         },
 
         // Get a specific attribute of a given object. If the attribute
-	// is not found the function returns undefined. The attribute
-	// name must be namespace qualified (e.g. "cim:ACDCTerminal.connected").
+        // is not found the function returns undefined. The attribute
+        // name must be namespace qualified (e.g. "cim:ACDCTerminal.connected").
         getAttribute(object, attrName) {
             if (typeof(object) === "undefined") {
                 return "undefined";
@@ -853,17 +853,17 @@ function cimModel() {
         },
 
         // Set a specific attribute of a given object. If it doesen't exists,
-	// it is created. The attribute name must be namespace qualified 
-	// (e.g. "cim:ACDCTerminal.connected").
+        // it is created. The attribute name must be namespace qualified 
+        // (e.g. "cim:ACDCTerminal.connected").
         setAttribute(object, attrName, value) {
             let attribute = model.getAttribute(object, attrName);
             if (typeof(attribute) !== "undefined") {
                 attribute.innerHTML = value;
             } else {
-		let ns = cimNS;
-		if (attrName.startsWith("entsoe:")) {
-		    ns = entsoeNS;
-		}
+                let ns = cimNS;
+                if (attrName.startsWith("entsoe:")) {
+                    ns = entsoeNS;
+                }
                 attribute = object.ownerDocument.createElementNS(ns, attrName);
                 attribute.innerHTML = value;
                 object.appendChild(attribute);
@@ -888,12 +888,12 @@ function cimModel() {
         },
 
         // Create an object of a given type.
-	// An optional second argument may contain an object with
-	// with specific creation options: an "uuid" field
-	// can be passed in order to force the use of a specific UUID,
-	// a "windNum" option can be passed in order to specify the
-	// number of windings of a transformer (ignored for other
-	// objects), which defaults to 2.
+        // An optional second argument may contain an object with
+        // with specific creation options: an "uuid" field
+        // can be passed in order to force the use of a specific UUID,
+        // a "windNum" option can be passed in order to specify the
+        // number of windings of a transformer (ignored for other
+        // objects), which defaults to 2.
         createObject(type, options) {
             let newElement = model.cimObject(type, options);
             model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
@@ -902,16 +902,16 @@ function cimModel() {
                 model.trigger("createObject", newElement);
                 return newElement;
             }
-	    // see if we have the "windNum" option
-	    let windNum = 2;
-	    if (typeof(options) !== "undefined") {
-		if (typeof(options.windNum) !== "undefined") {
-		    windNum = options.windNum;
-		}
-	    }
+            // see if we have the "windNum" option
+            let windNum = 2;
+            if (typeof(options) !== "undefined") {
+                if (typeof(options.windNum) !== "undefined") {
+                    windNum = options.windNum;
+                }
+            }
             let term1 = createTerminal(newElement);
             let term2 = null;
-	    let term3 = null;
+            let term3 = null;
             // create second terminal if needed
             if (type === "cim:ACLineSegment" ||
                 type === "cim:Breaker" ||
@@ -922,12 +922,12 @@ function cimModel() {
                 type === "cim:PowerTransformer") {
                 term2 = createTerminal(newElement);
             }
-	    // create third terminal if needed
-	    if (type === "cim:PowerTransformer") {
-		if (windNum === 3) {
-		    term3 = createTerminal(newElement);
-		}
-	    }
+            // create third terminal if needed
+            if (type === "cim:PowerTransformer") {
+                if (windNum === 3) {
+                    term3 = createTerminal(newElement);
+                }
+            }
             if (type === "cim:BusbarSection") {
                 let nodesType = "ConnectivityNode";
                 if (mode === "BUS_BRANCH") {
@@ -945,12 +945,12 @@ function cimModel() {
                 addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w2);
                 addLink(w1, "cim:TransformerEnd.Terminal", term1);
                 addLink(w2, "cim:TransformerEnd.Terminal", term2);
-		if (windNum === 3) {
-		    let w3 = model.cimObject("cim:PowerTransformerEnd");
-		    model.setAttribute(w3, "cim:IdentifiedObject.name", "winding3");
-		    addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w3);
-		    addLink(w3, "cim:TransformerEnd.Terminal", term3);
-		}
+                if (windNum === 3) {
+                    let w3 = model.cimObject("cim:PowerTransformerEnd");
+                    model.setAttribute(w3, "cim:IdentifiedObject.name", "winding3");
+                    addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w3);
+                    addLink(w3, "cim:TransformerEnd.Terminal", term3);
+                }
             }
             model.trigger("createObject", newElement);
             return newElement;
@@ -1222,10 +1222,10 @@ function cimModel() {
 
         // TODO: this should probably be private.
         cimObject(name, options) {
-	    let uuid = undefined;
-	    if (typeof(options) !== "undefined") {
-		uuid = options.uuid;
-	    }
+            let uuid = undefined;
+            if (typeof(options) !== "undefined") {
+                uuid = options.uuid;
+            }
             let document = data.all;
             let obj = document.createElementNS(cimNS, name);
             document.children[0].appendChild(obj);

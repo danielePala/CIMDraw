@@ -22,161 +22,161 @@
 <cimDraw>
     <style>
      .center-block {
-	 width: 600px;
-	 text-align: center;
+         width: 600px;
+         text-align: center;
      }
      
      .diagramTools {
-	 margin-bottom: 20px;
+         margin-bottom: 20px;
      }
      
      .app-container {
-	 display: flex;
-	 flex-flow: row nowrap;
+         display: flex;
+         flex-flow: row nowrap;
      }     
     </style>
     
     <nav class="navbar navbar-default">
-	<div class="container-fluid">
-	    <div class="navbar-header">
-		<a class="navbar-brand" href="">CIMDraw</a>
-	    </div>
-	    <div class="collapse navbar-collapse">
-		<p class="navbar-text" id="cim-filename"></p>
-		<select id="cim-diagrams" class="selectpicker navbar-left navbar-form"
-			onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
-		    <option disabled="disabled">Select a diagram</option>
-		</select>
-		<ul class="nav navbar-nav" id="cim-home-container">
-		    <li class="dropdown">
-			<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-			    File <span class="caret"></span>
-			</a>
-			<ul class="dropdown-menu">
-			    <li><a href="">Open</a></li>
-			    <li><a id="cim-save" download="file.xml">Save as RDF/XML...</a></li>
-			    <li><a id="cgmes-save">Save as CGMES...</a></li>
-			    <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
-			    <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
-			    <li><a id="matpower-export" download="file.m">Export to Matpower (EXPERIMENTAL)...</a></li>
-			</ul>
-		    </li>
-		</ul>
-		<cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
-		<p class="navbar-text navbar-right" id="cim-mode">Mode: Operational</p>
-	    </div>
-	</div>
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="">CIMDraw</a>
+            </div>
+            <div class="collapse navbar-collapse">
+                <p class="navbar-text" id="cim-filename"></p>
+                <select id="cim-diagrams" class="selectpicker navbar-left navbar-form"
+                        onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
+                    <option disabled="disabled">Select a diagram</option>
+                </select>
+                <ul class="nav navbar-nav" id="cim-home-container">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            File <span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="">Open</a></li>
+                            <li><a id="cim-save" download="file.xml">Save as RDF/XML...</a></li>
+                            <li><a id="cgmes-save">Save as CGMES...</a></li>
+                            <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
+                            <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
+                            <li><a id="matpower-export" download="file.m">Export to Matpower (EXPERIMENTAL)...</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
+                <p class="navbar-text navbar-right" id="cim-mode">Mode: Operational</p>
+            </div>
+        </div>
     </nav>
     
     <div class="container-fluid">
-	<div class="row center-block" id="cim-local-file-component">
-	    <div class="row center-block" id="cim-select-file">
-		<div class="col-md-12">
-		    <label class="control-label">Select File</label>
-		</div>
-	    </div>
+        <div class="row center-block" id="cim-local-file-component">
+            <div class="row center-block" id="cim-select-file">
+                <div class="col-md-12">
+                    <label class="control-label">Select File</label>
+                </div>
+            </div>
 
-	    <!-- File input plugin -->
-	    <div class="row center-block">
-		<div class="col-md-12" id="cim-file-input-container">
-		    <form enctype="multipart/form-data" method="POST">
-			<input id="cim-file-input" name="cim-file" type="file" class="file" data-show-preview="false" data-show-upload="false">
-		    </form>
-		</div>
-	    </div>
-	    
-	    <div class="row center-block">
-		<div class="col-md-12" id="cim-load-container">
-		    <a class="btn btn-primary btn-lg" role="button" id="cim-load">Load</a>
-		</div>
-	    </div>
-	    <div class="row center-block">
-		<div class="col-md-12">
-		    <label class="control-label">or</label>
-		</div>
-	    </div>
-	    <div class="row center-block">
-		<div class="col-md-12" id="cim-create-new-container">
-		    <a class="btn btn-primary btn-lg" role="button" id="cim-create-new">Create new</a>
-		</div>
-	    </div>
-	    
-	</div>
-	
-	<div class="row diagramTools">
-	    <div class="col-md-4"></div>	
-	    <div class="col-md-4"></div>
-	</div>
+            <!-- File input plugin -->
+            <div class="row center-block">
+                <div class="col-md-12" id="cim-file-input-container">
+                    <form enctype="multipart/form-data" method="POST">
+                        <input id="cim-file-input" name="cim-file" type="file" class="file" data-show-preview="false" data-show-upload="false">
+                    </form>
+                </div>
+            </div>
+            
+            <div class="row center-block">
+                <div class="col-md-12" id="cim-load-container">
+                    <a class="btn btn-primary btn-lg" role="button" id="cim-load">Load</a>
+                </div>
+            </div>
+            <div class="row center-block">
+                <div class="col-md-12">
+                    <label class="control-label">or</label>
+                </div>
+            </div>
+            <div class="row center-block">
+                <div class="col-md-12" id="cim-create-new-container">
+                    <a class="btn btn-primary btn-lg" role="button" id="cim-create-new">Create new</a>
+                </div>
+            </div>
+            
+        </div>
+        
+        <div class="row diagramTools">
+            <div class="col-md-4"></div>        
+            <div class="col-md-4"></div>
+        </div>
 
-	<div class="row">
-	    <div class="app-container col-md-12" id="app-container">
-		<cimTree model={cimModel}></cimTree>
-		<cimDiagram model={cimModel}></cimDiagram>
-	    </div>
-	</div>
+        <div class="row">
+            <div class="app-container col-md-12" id="app-container">
+                <cimTree model={cimModel}></cimTree>
+                <cimDiagram model={cimModel}></cimDiagram>
+            </div>
+        </div>
 
 
-	<!-- Modal for loading a specific diagram -->
-	<div class="modal fade" id="newDiagramModal" tabindex="-1" role="dialog" aria-labelledby="newDiagramModalLabel">
-	    <div class="modal-dialog" role="document">
-		<div class="modal-content">
-		    <div class="modal-header">
-			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-			<h4 class="modal-title" id="newDiagramModalLabel">Enter a name for the new diagram</h4>
-		    </div>
-		    <div class="modal-body">
-			<form>
-			    <input type="text" class="form-control" id="newDiagramName" placeholder="untitled">
-			</form> 
-		    </div>
-		    <div class="modal-footer">
-			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-			<button type="button" class="btn btn-primary" id="newDiagramBtn">Create</button>
-		    </div>
-		</div>
-	    </div>
-	</div>
+        <!-- Modal for loading a specific diagram -->
+        <div class="modal fade" id="newDiagramModal" tabindex="-1" role="dialog" aria-labelledby="newDiagramModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="newDiagramModalLabel">Enter a name for the new diagram</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <input type="text" class="form-control" id="newDiagramName" placeholder="untitled">
+                        </form> 
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="newDiagramBtn">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-	<!-- Modal for loading diagram list -->
-	<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingDiagramModalLabel" data-backdrop="static">
-	    <div class="modal-dialog" role="document">
-		<div class="modal-content">
-		    <div class="modal-body">
-			<p id="loadingDiagramMsg">loading diagram...</p>
-		    </div>
-		</div>
-	    </div>
-	</div>
+        <!-- Modal for loading diagram list -->
+        <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingDiagramModalLabel" data-backdrop="static">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <p id="loadingDiagramMsg">loading diagram...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-	<!-- Modal for selecting the modeling type: bus-branch vs node-breaker -->
-	<div class="modal fade" id="cimModeModal" tabindex="-1" role="dialog" aria-labelledby="cimModeModalLabel">
-	    <div class="modal-dialog" role="document">
-		<div class="modal-content">
-		    <div class="modal-header">
-			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-			<h4 class="modal-title" id="cimModeModalLabel">Choose diagram type</h4>
-		    </div>
-		    <div class="modal-body">
-			<div class="row center-block">
-			    <div class="col-md-12">	    
-				<div class="btn-group" data-toggle="buttons">
-				    <label class="btn btn-primary active">
-					<input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
-				    </label>
-				    <label class="btn btn-primary">
-					<input type="radio" name="options" id="planning" autocomplete="off"> Planning
-				    </label>
-				</div>
-			    </div>
-			</div>
-		    </div>
+        <!-- Modal for selecting the modeling type: bus-branch vs node-breaker -->
+        <div class="modal fade" id="cimModeModal" tabindex="-1" role="dialog" aria-labelledby="cimModeModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="cimModeModalLabel">Choose diagram type</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row center-block">
+                            <div class="col-md-12">         
+                                <div class="btn-group" data-toggle="buttons">
+                                    <label class="btn btn-primary active">
+                                        <input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
+                                    </label>
+                                    <label class="btn btn-primary">
+                                        <input type="radio" name="options" id="planning" autocomplete="off"> Planning
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-		    <div class="modal-footer">
-			<button type="button" class="btn btn-primary" id="cim-create-new-modal">Create</button>
-		    </div>
-		</div>
-	    </div>
-	</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="cim-create-new-modal">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
    
     </div>
@@ -188,232 +188,232 @@
      let diagramsToLoad = 2;
 
      self.cimModel.on("setMode", function(mode) {
-	 if (mode === "NODE_BREAKER") {
-	     $("#cim-mode").text("Mode: Operational");
-	 } else {
-	     $("#cim-mode").text("Mode: Planning");
-	 }
+         if (mode === "NODE_BREAKER") {
+             $("#cim-mode").text("Mode: Operational");
+         } else {
+             $("#cim-mode").text("Mode: Planning");
+         }
      });
      
      self.on("loaded", function() {
-	 diagramsToLoad = diagramsToLoad - 1;
-	 if (diagramsToLoad === 0) {
-	     $("#loadingModal").modal("hide");
-	     $("#loadingDiagramMsg").text("loading diagram...");
-	     diagramsToLoad = 2;
-	 }
+         diagramsToLoad = diagramsToLoad - 1;
+         if (diagramsToLoad === 0) {
+             $("#loadingModal").modal("hide");
+             $("#loadingDiagramMsg").text("loading diagram...");
+             diagramsToLoad = 2;
+         }
      });
      
      self.on("mount", function() {
-	 route.stop(); // clear all the old router callbacks
-	 let cimFile = {};
-	 let cimFileReader = {};
-	 $(".selectpicker").selectpicker({container: "body"});
+         route.stop(); // clear all the old router callbacks
+         let cimFile = {};
+         let cimFileReader = {};
+         $(".selectpicker").selectpicker({container: "body"});
 
-	 $("#operational").change(function() {
-	     self.cimModel.setMode("NODE_BREAKER");
-	 });
+         $("#operational").change(function() {
+             self.cimModel.setMode("NODE_BREAKER");
+         });
 
-	 $("#planning").change(function() {
-	     self.cimModel.setMode("BUS_BRANCH");
-	 });
-	 
-	 $("#cim-create-new-container").on("click", function() {
-	     cimFile = {name: "new1"};
-	     cimFileReader = null;
-	     $("#cimModeModal").modal("show");
-	     //route("/" + cimFile.name + "/diagrams");
-	 });
+         $("#planning").change(function() {
+             self.cimModel.setMode("BUS_BRANCH");
+         });
+         
+         $("#cim-create-new-container").on("click", function() {
+             cimFile = {name: "new1"};
+             cimFileReader = null;
+             $("#cimModeModal").modal("show");
+             //route("/" + cimFile.name + "/diagrams");
+         });
 
-	 $("#cim-create-new-modal").on("click", function() {
-	     route("/" + cimFile.name + "/diagrams");
-	 });
-	 
-	 // This is the initial route ("the home page").
-	 route(function(name) {
-	     // things to show
-	     $("#cim-local-file-component").show();
-	     // things to hide
-	     $("#app-container").hide();
-	     $("#cim-load-container").hide();
-	     $("#cim-home-container").hide();
-	     $(".selectpicker").selectpicker("hide");
-	     $("#cim-mode").hide();
-	     // main logic
-	     $("#cim-file-input").fileinput("reset");
-	     $("#cim-file-input").fileinput("enable");
-	     d3.select("#cim-diagrams").selectAll("option").remove();
-	     d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
-	     d3.select("#cim-filename").html("");    
-	     $(".selectpicker").selectpicker("refresh");
-	     // initialize the fileinput component
-	     $("#cim-file-input").fileinput();
-	     // what to do when the user loads a file
-	     $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {	    
-		 cimFile = file;
-		 cimFileReader = reader;
-		 $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
-		 $("#cim-load-container").show();
-	     });
-	     // sometimes we must hide the 'load file' button
-	     $('#cim-file-input').on('fileclear', function(event) {
-	         $("#cim-load-container").hide();
-	     });
-	 });
+         $("#cim-create-new-modal").on("click", function() {
+             route("/" + cimFile.name + "/diagrams");
+         });
+         
+         // This is the initial route ("the home page").
+         route(function(name) {
+             // things to show
+             $("#cim-local-file-component").show();
+             // things to hide
+             $("#app-container").hide();
+             $("#cim-load-container").hide();
+             $("#cim-home-container").hide();
+             $(".selectpicker").selectpicker("hide");
+             $("#cim-mode").hide();
+             // main logic
+             $("#cim-file-input").fileinput("reset");
+             $("#cim-file-input").fileinput("enable");
+             d3.select("#cim-diagrams").selectAll("option").remove();
+             d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
+             d3.select("#cim-filename").html("");    
+             $(".selectpicker").selectpicker("refresh");
+             // initialize the fileinput component
+             $("#cim-file-input").fileinput();
+             // what to do when the user loads a file
+             $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {        
+                 cimFile = file;
+                 cimFileReader = reader;
+                 $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
+                 $("#cim-load-container").show();
+             });
+             // sometimes we must hide the 'load file' button
+             $('#cim-file-input').on('fileclear', function(event) {
+                 $("#cim-load-container").hide();
+             });
+         });
 
-	 // here we choose a diagram to display
-	 route('/*/diagrams', function() {
-	     // things to show
-	     $("#cim-home-container").show();
-	     $(".selectpicker").selectpicker("show");
-	     $("#cim-mode").show();
-	     // things to hide
-	     $("#cim-local-file-component").hide();
-	     $("#app-container").hide();
-	     $("#cim-export").parent().addClass("disabled");
-	     $("#cimModeModal").modal("hide");
-	     // main logic
-	     $("#loadingDiagramMsg").text("loading CIM network...");
-	     $("#loadingModal").off("shown.bs.modal");
-	     $("#loadingModal").modal("show");
-	     $("#loadingModal").on("shown.bs.modal", function(e) {	 
-		 if (typeof(cimFile.name) !== "undefined") {
-		     d3.select("#cim-filename").html(cimFile.name);
-		     self.cimModel.load(cimFile, cimFileReader, function() {
-			 loadDiagramList(cimFile.name);
-			 $("#loadingModal").modal("hide");
-			 if (cimFile.name !== "new1") {
-			     selectMode();
-			 }
-		     }); 
-		 } else {
-		     let hashComponents = window.location.hash.substring(1).split("/");
-		     let file = hashComponents[0];
-		     self.cimModel.loadRemote("/" + file, function() {
-			 loadDiagramList(file);
-			 $("#loadingModal").modal("hide");
-			 selectMode();
-		     });
-		 }
+         // here we choose a diagram to display
+         route('/*/diagrams', function() {
+             // things to show
+             $("#cim-home-container").show();
+             $(".selectpicker").selectpicker("show");
+             $("#cim-mode").show();
+             // things to hide
+             $("#cim-local-file-component").hide();
+             $("#app-container").hide();
+             $("#cim-export").parent().addClass("disabled");
+             $("#cimModeModal").modal("hide");
+             // main logic
+             $("#loadingDiagramMsg").text("loading CIM network...");
+             $("#loadingModal").off("shown.bs.modal");
+             $("#loadingModal").modal("show");
+             $("#loadingModal").on("shown.bs.modal", function(e) {       
+                 if (typeof(cimFile.name) !== "undefined") {
+                     d3.select("#cim-filename").html(cimFile.name);
+                     self.cimModel.load(cimFile, cimFileReader, function() {
+                         loadDiagramList(cimFile.name);
+                         $("#loadingModal").modal("hide");
+                         if (cimFile.name !== "new1") {
+                             selectMode();
+                         }
+                     }); 
+                 } else {
+                     let hashComponents = window.location.hash.substring(1).split("/");
+                     let file = hashComponents[0];
+                     self.cimModel.loadRemote("/" + file, function() {
+                         loadDiagramList(file);
+                         $("#loadingModal").modal("hide");
+                         selectMode();
+                     });
+                 }
 
-		 function selectMode() {
-		     let nodes = self.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
-		     let cns = nodes["cim:ConnectivityNode"];
-		     let tns = nodes["cim:TopologicalNode"];
-		     if (cns.length > 0 || tns.length === 0) {
-			 self.cimModel.setMode("NODE_BREAKER");
-		     } else {
-			 self.cimModel.setMode("BUS_BRANCH");
-		     }
-		 };
-	     });
-	     self.trigger("diagrams");
-	 });
+                 function selectMode() {
+                     let nodes = self.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
+                     let cns = nodes["cim:ConnectivityNode"];
+                     let tns = nodes["cim:TopologicalNode"];
+                     if (cns.length > 0 || tns.length === 0) {
+                         self.cimModel.setMode("NODE_BREAKER");
+                     } else {
+                         self.cimModel.setMode("BUS_BRANCH");
+                     }
+                 };
+             });
+             self.trigger("diagrams");
+         });
 
-	 // here we show a certain diagram
-	 route('/*/diagrams/*', function(file, name) {	
-	     if (self.cimModel.activeDiagramName === decodeURI(name)) {
-		 self.trigger("showDiagram", file, name);
-		 $("#app-container").show();
-		 return; // nothing to do;
-	     }
-	     $("#cim-local-file-component").hide();
-	     $("#loadingDiagramMsg").text("loading diagram...");
-	     $("#loadingModal").off("shown.bs.modal");
-	     $("#loadingModal").modal("show");
-	     $("#loadingModal").on("shown.bs.modal", function(e) {
-		 loadDiagram(file, name);
-	     });
-	 });
+         // here we show a certain diagram
+         route('/*/diagrams/*', function(file, name) {  
+             if (self.cimModel.activeDiagramName === decodeURI(name)) {
+                 self.trigger("showDiagram", file, name);
+                 $("#app-container").show();
+                 return; // nothing to do;
+             }
+             $("#cim-local-file-component").hide();
+             $("#loadingDiagramMsg").text("loading diagram...");
+             $("#loadingModal").off("shown.bs.modal");
+             $("#loadingModal").modal("show");
+             $("#loadingModal").on("shown.bs.modal", function(e) {
+                 loadDiagram(file, name);
+             });
+         });
 
-	 // creates a new model if it doesn't exist, and shows a diagram.
-	 function loadDiagram(file, name, element) {
-	     self.cimModel.loadRemote("/" + file, showDiagram);
-	     function showDiagram(error) {
-		 if (error !== null) {
-		     route("/");
-		     return;
-		 }
-		 self.cimModel.selectDiagram(decodeURI(name));
-		 loadDiagramList(decodeURI(file));
-		 $(".selectpicker").selectpicker("val", decodeURI("#" + file + "/diagrams/" + name));
-		 self.trigger("showDiagram", file, name, element);
-		 $("#app-container").show();
+         // creates a new model if it doesn't exist, and shows a diagram.
+         function loadDiagram(file, name, element) {
+             self.cimModel.loadRemote("/" + file, showDiagram);
+             function showDiagram(error) {
+                 if (error !== null) {
+                     route("/");
+                     return;
+                 }
+                 self.cimModel.selectDiagram(decodeURI(name));
+                 loadDiagramList(decodeURI(file));
+                 $(".selectpicker").selectpicker("val", decodeURI("#" + file + "/diagrams/" + name));
+                 self.trigger("showDiagram", file, name, element);
+                 $("#app-container").show();
 
-		 // allow exporting a copy of the diagram 
-		 $("#cim-export").on("click", function() {
-		     let out = self.cimModel.export();
-		     let blob = new Blob([out], {type : "text/xml"});
-		     let objectURL = URL.createObjectURL(blob);
-		     $("#cim-export").attr("href", objectURL);
-		 });
-		 $("#cim-export").parent().removeClass("disabled");
-	     };
-	 };
+                 // allow exporting a copy of the diagram 
+                 $("#cim-export").on("click", function() {
+                     let out = self.cimModel.export();
+                     let blob = new Blob([out], {type : "text/xml"});
+                     let objectURL = URL.createObjectURL(blob);
+                     $("#cim-export").attr("href", objectURL);
+                 });
+                 $("#cim-export").parent().removeClass("disabled");
+             };
+         };
 
-	 function loadDiagramList(filename) {
-	     $("#cim-save").off("click");
-	     // allow saving a copy of the file as plain XML
-	     $("#cim-save").on("click", function() {
-		 let out = self.cimModel.save();
-		 let blob = new Blob([out], {type : "text/xml"});
-		 let objectURL = URL.createObjectURL(blob);
-		 $("#cim-save").attr("href", objectURL);
-	     });
-	     $("#cgmes-save").off("click");
-	     // allow saving a copy of the file as CGMES
-	     $("#cgmes-save").on("click", cgmesSave);
-	     function cgmesSave() {
-		 let out = self.cimModel.saveAsCGMES();
-		 out.then(function(content) {
-		     let objectURL = URL.createObjectURL(content);
-		     $("#cgmes-download").attr("href", objectURL);
-		     document.getElementById("cgmes-download").click();
-		 });
-	     };
-	     $("#matpower-export").off("click");
-	     // allow saving a copy of the file as plain XML
-	     $("#matpower-export").on("click", function() {
-		 let out = exportToMatpower(self.cimModel);
-		 let blob = new Blob([out], {type : "text/plain"});
-		 let objectURL = URL.createObjectURL(blob);
-		 $("#matpower-export").attr("href", objectURL);
-	     });
-	     
-	     // load diagram list
-	     $(".selectpicker").selectpicker({container: "body"});
-	     d3.select("#cim-diagrams").selectAll("option").remove();
-	     d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
-	     $(".selectpicker").selectpicker("refresh");
-	     d3.select("#cim-diagrams").append("option")
-	       .attr("value", "#" + filename + "/createNew") 
-	       .text("Generate a new diagram");
-	     let diagrams = self.cimModel.getDiagramList();
-	     for (let i in diagrams) {
-		 d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/"+diagrams[i]).text(diagrams[i]);
-	     }
-	     $(".selectpicker").selectpicker("refresh");
-	 };
-	 
-	 route("/*/diagrams/*/*", function(file, name, element) {
-	     $("#cim-local-file-component").hide();
-	     loadDiagram(file, name, element);
-	 });
+         function loadDiagramList(filename) {
+             $("#cim-save").off("click");
+             // allow saving a copy of the file as plain XML
+             $("#cim-save").on("click", function() {
+                 let out = self.cimModel.save();
+                 let blob = new Blob([out], {type : "text/xml"});
+                 let objectURL = URL.createObjectURL(blob);
+                 $("#cim-save").attr("href", objectURL);
+             });
+             $("#cgmes-save").off("click");
+             // allow saving a copy of the file as CGMES
+             $("#cgmes-save").on("click", cgmesSave);
+             function cgmesSave() {
+                 let out = self.cimModel.saveAsCGMES();
+                 out.then(function(content) {
+                     let objectURL = URL.createObjectURL(content);
+                     $("#cgmes-download").attr("href", objectURL);
+                     document.getElementById("cgmes-download").click();
+                 });
+             };
+             $("#matpower-export").off("click");
+             // allow saving a copy of the file as plain XML
+             $("#matpower-export").on("click", function() {
+                 let out = exportToMatpower(self.cimModel);
+                 let blob = new Blob([out], {type : "text/plain"});
+                 let objectURL = URL.createObjectURL(blob);
+                 $("#matpower-export").attr("href", objectURL);
+             });
+             
+             // load diagram list
+             $(".selectpicker").selectpicker({container: "body"});
+             d3.select("#cim-diagrams").selectAll("option").remove();
+             d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
+             $(".selectpicker").selectpicker("refresh");
+             d3.select("#cim-diagrams").append("option")
+               .attr("value", "#" + filename + "/createNew") 
+               .text("Generate a new diagram");
+             let diagrams = self.cimModel.getDiagramList();
+             for (let i in diagrams) {
+                 d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/"+diagrams[i]).text(diagrams[i]);
+             }
+             $(".selectpicker").selectpicker("refresh");
+         };
+         
+         route("/*/diagrams/*/*", function(file, name, element) {
+             $("#cim-local-file-component").hide();
+             loadDiagram(file, name, element);
+         });
 
-	 route("/*/createNew", function(file) {
-	     $("#newDiagramModal").modal("show");
-	     d3.select("#newDiagramBtn").on("click", function() {
-		 let diagramName = d3.select("#newDiagramName").node().value;
-		 let hashComponents = window.location.hash.substring(1).split("/");
-		 let basePath = hashComponents[0] + "/diagrams/";
-		 let fullPath = basePath + diagramName;
-		 $('#newDiagramModal').modal("hide");
-		 route(fullPath);
-	     });
-	 });
+         route("/*/createNew", function(file) {
+             $("#newDiagramModal").modal("show");
+             d3.select("#newDiagramBtn").on("click", function() {
+                 let diagramName = d3.select("#newDiagramName").node().value;
+                 let hashComponents = window.location.hash.substring(1).split("/");
+                 let basePath = hashComponents[0] + "/diagrams/";
+                 let fullPath = basePath + diagramName;
+                 $('#newDiagramModal').modal("hide");
+                 route(fullPath);
+             });
+         });
 
-	 // start router
-	 route.start(true);
+         // start router
+         route.start(true);
      });
     </script>
 </cimDraw>
