@@ -1055,7 +1055,7 @@
              selected.push(elm);
              self.updateSelected();
          }
-         let newObject = opts.model.createObject("cim:OperationalLimitSet");;
+         let newObject = opts.model.createObject("cim:OperationalLimitSet");
          if (d.nodeName === "cim:Terminal") {
              let psr = opts.model.getTargets(
                  [d],
