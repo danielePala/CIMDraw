@@ -55,6 +55,8 @@ function cimModel() {
     // CIM data for the current file.
     // 'all' contains all the CIM Objects, in a single document.
     let data = {all: null};
+    let dataMap = new Map();
+    let linksMap = new Map();
     // The current mode of operation: NODE_BREAKER or BUS_BRANCH.
     let mode = "NODE_BREAKER";
 
@@ -210,14 +212,14 @@ function cimModel() {
             if (object.attributes.getNamedItem("rdf:ID") === null) {
                 continue;
             }
-            model.dataMap.set("#" + object.attributes.getNamedItem("rdf:ID").value, object);
+            dataMap.set("#" + object.attributes.getNamedItem("rdf:ID").value, object);
             if (typeof(object.attributes) !== "undefined") {
                 let links = model.getLinks(object);
                 for (let link of links) {
                     let key = link.localName + link.attributes[0].value;
-                    let val = model.linksMap.get(key);
+                    let val = linksMap.get(key);
                     if (typeof(val) === "undefined") {
-                        model.linksMap.set(key, [object]);
+                        linksMap.set(key, [object]);
                     } else {
                         val.push(object);
                     }
@@ -229,7 +231,7 @@ function cimModel() {
             let object = allObjects[i];
             let about = object.attributes.getNamedItem("rdf:about");
             if (about !== null) {
-                let target = model.dataMap.get(about.value);
+                let target = dataMap.get(about.value);
                 if (typeof(target) === "undefined") {
                     continue;
                 }
@@ -241,9 +243,9 @@ function cimModel() {
                     target.appendChild(link.cloneNode(true));
                     // update links map
                     let key = link.localName + link.attributes[0].value;
-                    let val = model.linksMap.get(key);
+                    let val = linksMap.get(key);
                     if (typeof(val) === "undefined") {
-                        model.linksMap.set(key, [target]);
+                        linksMap.set(key, [target]);
                     } else {
                         val.push(target);
                     }
@@ -283,7 +285,7 @@ function cimModel() {
             objID.nodeValue = generateUUID();
         }
         obj.setAttributeNode(objID);
-        model.dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
+        dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
         return obj;
     };
 
@@ -312,9 +314,9 @@ function cimModel() {
         link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;
         
         let key = link.localName + link.attributes[0].value;
-        let val = model.linksMap.get(key);
+        let val = linksMap.get(key);
         if (typeof(val) === "undefined") {
-            model.linksMap.set(key, [source]);
+            linksMap.set(key, [source]);
         } else {
             val.push(source);
         }
@@ -333,7 +335,7 @@ function cimModel() {
             let srcUUID = source.attributes.getNamedItem("rdf:ID").value;
             let links = model.getLink(source, "cim:" + linkName);
             for (let link of links) {
-                let target = model.dataMap.get(
+                let target = dataMap.get(
                     link.attributes.getNamedItem("rdf:resource").value);
                 if (typeof(target) !== "undefined") {
                     let dstUUID = target.attributes.getNamedItem("rdf:ID").value;
@@ -345,7 +347,7 @@ function cimModel() {
                 }
             }
             // handle inverse relation
-            let targets = model.linksMap.get(invLinkName + "#" + srcUUID);
+            let targets = linksMap.get(invLinkName + "#" + srcUUID);
             if (typeof(targets) === "undefined") {
                 continue;
             }
@@ -450,8 +452,6 @@ function cimModel() {
     let model = {
         // The name of the CIM file which is actually loaded.
         fileName: null,
-        dataMap: new Map(),
-        linksMap: new Map(),
         // The name of the CIM diagram which is actually loaded.
         activeDiagramName: "none",
         schema: new cimSchema(),
@@ -852,7 +852,7 @@ function cimModel() {
 
         // Get an object given its UUID.
         getObject(uuid) {
-            return model.dataMap.get("#" + uuid);
+            return dataMap.get("#" + uuid);
         },
 
         // Get all the attributes of a given object which are actually set.
@@ -994,11 +994,11 @@ function cimModel() {
                 objsToDelete = getNode(object);
             }
             
-            for (let [linkAndTarget, sources] of model.linksMap) {
+            for (let [linkAndTarget, sources] of linksMap) {
                 let linkName = "cim:" + linkAndTarget.split("#")[0];
                 // delete links of 'object'
                 if (sources.indexOf(object) > -1) {
-                    let target = model.dataMap.get("#" + linkAndTarget.split("#")[1]);
+                    let target = dataMap.get("#" + linkAndTarget.split("#")[1]);
                     // target may be undefined, if it is defined in an external file
                     // (like a boundary set file for example)
                     if (typeof(target) !== "undefined") {
@@ -1026,7 +1026,7 @@ function cimModel() {
                 model.deleteObject(objToDelete);
             }
             // update the 'dataMap' map
-            model.dataMap.delete("#" + objUUID);
+            dataMap.delete("#" + objUUID);
             // delete the object
             object.remove();
 
@@ -1304,10 +1304,10 @@ function cimModel() {
                     let targetUUID = linkEntry.attributes.getNamedItem("rdf:resource").value;
                     if (targetUUID === "#" + targetInt.attributes.getNamedItem("rdf:ID").value) {
                         let linksMapKey = linkEntry.localName + targetUUID;
-                        let linksMapValue = model.linksMap.get(linksMapKey);
+                        let linksMapValue = linksMap.get(linksMapKey);
                         linkEntry.remove();
                         if (linksMapValue.length === 1) {
-                            model.linksMap.delete(linksMapKey);
+                            linksMap.delete(linksMapKey);
                         } else {
                             linksMapValue.splice(linksMapValue.indexOf(sourceInt), 1);
                         }
