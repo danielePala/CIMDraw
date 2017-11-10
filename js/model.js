@@ -266,10 +266,31 @@ function cimModel() {
         return ret;
     };
 
+    // Create a given CIM object
+    // This is a 'private' function (not visible in the model object).
+    function cimObject(name, options) {
+        let uuid = undefined;
+        if (typeof(options) !== "undefined") {
+            uuid = options.uuid;
+        }
+        let document = data.all;
+        let obj = document.createElementNS(cimNS, name);
+        document.children[0].appendChild(obj);
+        let objID = document.createAttribute("rdf:ID");
+        if (typeof(uuid) !== "undefined") {
+            objID.nodeValue = uuid;
+        } else {
+            objID.nodeValue = generateUUID();
+        }
+        obj.setAttributeNode(objID);
+        model.dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
+        return obj;
+    };
+
     // Add a terminal to a given object.
     // This is a 'private' function (not visible in the model object).
     function createTerminal(object) {
-        let term = model.cimObject("cim:Terminal");
+        let term = cimObject("cim:Terminal");
         addLink(term, "cim:Terminal.ConductingEquipment", object);
         return term;
     };
@@ -895,7 +916,7 @@ function cimModel() {
         // number of windings of a transformer (ignored for other
         // objects), which defaults to 2.
         createObject(type, options) {
-            let newElement = model.cimObject(type, options);
+            let newElement = cimObject(type, options);
             model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
             if (model.schema.isA("ConductingEquipment", newElement) === false) {
                 // if not a conducting equipment, we are done
@@ -933,12 +954,12 @@ function cimModel() {
                 if (mode === "BUS_BRANCH") {
                     nodesType = "TopologicalNode";
                 }
-                let node = model.cimObject("cim:" + nodesType);
+                let node = cimObject("cim:" + nodesType);
                 addLink(term1, "cim:Terminal." + nodesType, node);
             }
             if (type === "cim:PowerTransformer") {
-                let w1 = model.cimObject("cim:PowerTransformerEnd");
-                let w2 = model.cimObject("cim:PowerTransformerEnd");
+                let w1 = cimObject("cim:PowerTransformerEnd");
+                let w2 = cimObject("cim:PowerTransformerEnd");
                 model.setAttribute(w1, "cim:IdentifiedObject.name", "winding1");
                 model.setAttribute(w2, "cim:IdentifiedObject.name", "winding2");
                 addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w1);
@@ -946,7 +967,7 @@ function cimModel() {
                 addLink(w1, "cim:TransformerEnd.Terminal", term1);
                 addLink(w2, "cim:TransformerEnd.Terminal", term2);
                 if (windNum === 3) {
-                    let w3 = model.cimObject("cim:PowerTransformerEnd");
+                    let w3 = cimObject("cim:PowerTransformerEnd");
                     model.setAttribute(w3, "cim:IdentifiedObject.name", "winding3");
                     addLink(newElement, "cim:PowerTransformer.PowerTransformerEnd", w3);
                     addLink(w3, "cim:TransformerEnd.Terminal", term3);
@@ -1170,9 +1191,9 @@ function cimModel() {
         // Add an object to the active diagram.
         addToActiveDiagram(object, lineData) {
             // create a diagram object and a diagram object point
-            let dobj = model.cimObject("cim:DiagramObject");
+            let dobj = cimObject("cim:DiagramObject");
             for (let linePoint of lineData) {
-                let point = model.cimObject("cim:DiagramObjectPoint");
+                let point = cimObject("cim:DiagramObjectPoint");
                 model.setAttribute(point, "cim:DiagramObjectPoint.xPosition", linePoint.x + object.x);
                 model.setAttribute(point, "cim:DiagramObjectPoint.yPosition", linePoint.y + object.y);
                 model.setAttribute(point, "cim:DiagramObjectPoint.sequenceNumber", linePoint.seq);
@@ -1218,26 +1239,6 @@ function cimModel() {
             } else {
                 model.addToActiveDiagram(object, object.lineData);
             }
-        },
-
-        // TODO: this should probably be private.
-        cimObject(name, options) {
-            let uuid = undefined;
-            if (typeof(options) !== "undefined") {
-                uuid = options.uuid;
-            }
-            let document = data.all;
-            let obj = document.createElementNS(cimNS, name);
-            document.children[0].appendChild(obj);
-            let objID = document.createAttribute("rdf:ID");
-            if (typeof(uuid) !== "undefined") {
-                objID.nodeValue = uuid;
-            } else {
-                objID.nodeValue = generateUUID();
-            }
-            obj.setAttributeNode(objID);
-            model.dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
-            return obj;
         },
         
         // Get all the links of a given object which are actually set.
@@ -1364,7 +1365,7 @@ function cimModel() {
             }
             // see if we must generate a new diagram
             if (typeof(model.activeDiagram) === "undefined") {
-                model.activeDiagram = model.cimObject("cim:Diagram");
+                model.activeDiagram = cimObject("cim:Diagram");
                 model.setAttribute(model.activeDiagram, "cim:IdentifiedObject.name", diagramName);
                 model.activeDiagramName = diagramName;
                 model.trigger("createdDiagram");

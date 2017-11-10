@@ -222,7 +222,6 @@
              cimFile = {name: "new1"};
              cimFileReader = null;
              $("#cimModeModal").modal("show");
-             //route("/" + cimFile.name + "/diagrams");
          });
 
          $("#cim-create-new-modal").on("click", function() {

@@ -713,7 +713,7 @@
                        if (termToChange.rotation > 0) {
                            term1XY = self.parent.rotateTerm(termToChange);
                        }
-                       cn = opts.model.cimObject("cim:" + NODE_CLASS);
+                       cn = opts.model.createObject("cim:" + NODE_CLASS);
                        opts.model.setAttribute(cn, "cim:IdentifiedObject.name", "new1");
                        cn.x = (term1XY.x + termXY.x)/2;
                        cn.y = (term1XY.y + termXY.y)/2;
