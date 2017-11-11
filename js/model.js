@@ -520,6 +520,9 @@ function cimModel() {
 
         // Serialize the current CIM file in CGMES format.
         saveAsCGMES() {
+            if (data.all === null) {
+                return Promise.reject("error: no CIM file loaded.");
+            }
             let oSerializer = new XMLSerializer();
             let zip = new JSZip();
             let all = null;

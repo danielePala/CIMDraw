@@ -368,6 +368,8 @@
                      let objectURL = URL.createObjectURL(content);
                      $("#cgmes-download").attr("href", objectURL);
                      document.getElementById("cgmes-download").click();
+                 }).catch(function(reason) {
+                     console.log(reason);
                  });
              };
              $("#matpower-export").off("click");
