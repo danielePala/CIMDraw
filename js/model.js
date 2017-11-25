@@ -916,7 +916,7 @@ function cimModel() {
 
         // Create an object of a given type.
         // An optional second argument may contain an object with
-        // with specific creation options: an "uuid" field
+        // specific creation options: an "uuid" field
         // can be passed in order to force the use of a specific UUID,
         // a "windNum" option can be passed in order to specify the
         // number of windings of a transformer (ignored for other
