@@ -512,6 +512,9 @@ function cimModel() {
 
         // Serialize the current CIM file as a plain RDF/XML file.
         save() {
+            if (data.all === null) {
+                throw new Error("error: no CIM file loaded.");
+            }
             let oSerializer = new XMLSerializer();
             let sXML = "";
             sXML = oSerializer.serializeToString(data.all);

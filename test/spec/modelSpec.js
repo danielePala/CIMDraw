@@ -17,12 +17,32 @@ describe("CIM model", function() {
 	expect(typeof(out)).toBe("string");
     });
 
+    // Test the save() function with empty model (should throw exception)
+    it("should throw an exception if saving an empty model (RDF/XML)", function() {
+	let emptyModel = cimModel();
+	expect(emptyModel.save).toThrow(new Error("error: no CIM file loaded."));
+    });
+
     // test the saveAsCGMES() function
     it("should be able to create and save a new empty file (ENTSO-E)", function() {
 	let out = model.saveAsCGMES();
 	expect(typeof(out)).toBe("object");
     });
 
+    // Test the saveAsCGMES() function with empty model (should return rejected promise)
+    it("should throw an exception if saving an empty model (CGMES)", function(done) {
+	let emptyModel = cimModel();
+        let result = emptyModel.saveAsCGMES();
+        result.then(function() {
+            // Promise is resolved
+            done(new Error('Promise should not be resolved'));
+        }, function(reason) {
+            // Promise is rejected
+            expect(reason).toBe("error: no CIM file loaded.");
+            done(); // Success
+        });
+    });
+    
     it("should be able to export the current diagram (with no diagram selected)", function() {
 	let out = model.export();
 	expect(typeof(out)).toBe("string");
