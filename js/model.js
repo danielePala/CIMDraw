@@ -920,7 +920,10 @@ function cimModel() {
         // can be passed in order to force the use of a specific UUID,
         // a "windNum" option can be passed in order to specify the
         // number of windings of a transformer (ignored for other
-        // objects), which defaults to 2.
+        // objects), which defaults to 2, a "node" option can be passed
+        // when creating a BusbarSection in order to attach it to a
+        // specific node (otherwise, a new node will be automatically
+        // created and connected to the busbar).
         createObject(type, options) {
             let newElement = cimObject(type, options);
             model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
@@ -929,11 +932,15 @@ function cimModel() {
                 model.trigger("createObject", newElement);
                 return newElement;
             }
-            // see if we have the "windNum" option
+            // see if we have the "windNum" or "node" option
             let windNum = 2;
+            let node = null;
             if (typeof(options) !== "undefined") {
                 if (typeof(options.windNum) !== "undefined") {
                     windNum = options.windNum;
+                }
+                if (typeof(options.node) !== "undefined") {
+                    node = options.node;
                 }
             }
             let term1 = createTerminal(newElement);
@@ -960,7 +967,9 @@ function cimModel() {
                 if (mode === "BUS_BRANCH") {
                     nodesType = "TopologicalNode";
                 }
-                let node = cimObject("cim:" + nodesType);
+                if (node === null) {
+                    node = cimObject("cim:" + nodesType);
+                }
                 addLink(term1, "cim:Terminal." + nodesType, node);
             }
             if (type === "cim:PowerTransformer") {
