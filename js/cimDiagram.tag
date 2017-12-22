@@ -171,7 +171,7 @@
                  }
                  let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
                  let psrSelection = d3.select("g#" + psrUUID);
-                 self.createMeasurements(psrSelection);
+                 self.createStatusInfo(psrSelection);
                  break;
              case "cim:SvPowerFlow.p":
              case "cim:SvPowerFlow.q":
@@ -184,11 +184,12 @@
                          "Terminal.ConductingEquipment")[0];
                      let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
                      let psrSelection = d3.select("g#" + psrUUID);
-                     self.createMeasurements(psrSelection);
+                     self.createStatusInfo(psrSelection);
                  }
                  break;
          }
-         if (object.nodeName === "cim:Analog" || object.nodeName === "cim:Discrete") {
+         if (object.nodeName === "cim:Analog" ||
+             object.nodeName === "cim:Discrete") {
              let psr = self.model.getTargets(
                  [object],
                  "Measurement.PowerSystemResource")[0];
@@ -199,7 +200,28 @@
                  }       
                  let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
                  let psrSelection = d3.select("g#" + psrUUID);
-                 self.createMeasurements(psrSelection);
+                 self.createStatusInfo(psrSelection);
+             }
+         }
+         if (object.nodeName === "cim:OperationalLimitSet") {
+             let psr = self.model.getTargets(
+                     [object],
+                     "OperationalLimitSet.Equipment");
+             // limit sets may also be associated to terminals
+             let terms = self.model.getTargets(
+                 [object],
+                 "OperationalLimitSet.Terminal");
+             psr = psr.concat(self.model.getTargets(
+                 terms,
+                 "Terminal.ConductingEquipment"))[0];
+             if (typeof(psr) !== "undefined") {
+                 // handle busbars
+                 if (psr.nodeName === "cim:BusbarSection") {
+                     psr = self.model.getNode(psr);
+                 }       
+                 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let psrSelection = d3.select("g#" + psrUUID);
+                 self.createStatusInfo(psrSelection);
              }
          }
      });
@@ -217,7 +239,7 @@
                  }       
                  let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
                  let psrSelection = d3.select("g#" + psrUUID);
-                 self.createMeasurements(psrSelection);
+                 self.createStatusInfo(psrSelection);
              }
          }
      });
@@ -364,7 +386,7 @@
      self.model.on("addLink", function(source, linkName, target) {
          switch (linkName) {
              case "cim:" + TERM_NODE:
-             case "cim:" + NODE_TERM:
+             case "cim:" + NODE_TERM: {
                  let cn = undefined;
                  let term = undefined;
                  if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:" + NODE_CLASS) {
@@ -393,8 +415,9 @@
                  }
                  self.forceTick();
                  break;
+             }
              case "cim:Terminal.SvPowerFlow":
-             case "cim:SvPowerFlow.Terminal":
+             case "cim:SvPowerFlow.Terminal": {
                  // power flow results
                  let terminal = target;
                  if (source.nodeName === "cim:Terminal") {
@@ -406,26 +429,28 @@
                          "Terminal.ConductingEquipment")[0];
                      let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
                      let psrSelection = d3.select("g#" + psrUUID);
-                     self.createMeasurements(psrSelection);
+                     self.createStatusInfo(psrSelection);
                  }
                  break;
+             }
              case "cim:Measurement.Terminal":
-             case "cim:ACDCTerminal.Measurements":
-                 let measTerminal = target;
+             case "cim:ACDCTerminal.Measurements": {
+                 let terminal = target;
                  if (source.nodeName === "cim:Terminal") {
-                     measTerminal = source;
+                     terminal = source;
                  }
-                 let measPsr = self.model.getTargets(
-                     [measTerminal],
+                 let psr = self.model.getTargets(
+                     [terminal],
                      "Terminal.ConductingEquipment")[0];
-                 let measPsrUUID = measPsr.attributes.getNamedItem("rdf:ID").value;
+                 let measPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
                  let measPsrSelection = d3.select("g#" + measPsrUUID);
-                 self.createMeasurements(measPsrSelection);
+                 self.createStatusInfo(measPsrSelection);
                  break;
+             }
              case "cim:Measurement.PowerSystemResource":
-             case "cim.PowerSystemResource.Measurements":
+             case "cim:PowerSystemResource.Measurements": {
                  let psr = target;
-                 if (linkName === "cim.PowerSystemResource.Measurements") {
+                 if (linkName === "cim:PowerSystemResource.Measurements") {
                      psr = source;
                  }
                  if (typeof(psr) !== "undefined") {
@@ -435,9 +460,41 @@
                      }   
                      let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
                      let psrSelection = d3.select("g#" + psrUUID);
-                     self.createMeasurements(psrSelection);
+                     self.createStatusInfo(psrSelection);
                  }
                  break;
+             }
+             case "cim:OperationalLimitSet.Terminal":
+             case "cim:ACDCTerminal.OperationalLimitSet": {
+                 let terminal = target;
+                 if (source.nodeName === "cim:Terminal") {
+                     terminal = source;
+                 }
+                 let psr = self.model.getTargets(
+                     [terminal],
+                     "Terminal.ConductingEquipment")[0];
+                 let limPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let limPsrSelection = d3.select("g#" + limPsrUUID);
+                 self.createStatusInfo(limPsrSelection);
+                 break;
+             }
+             case "cim:OperationalLimitSet.Equipment":
+             case "cim:Equipment.OperationalLimitSet": {
+                 let psr = target;
+                 if (linkName === "cim:Equipment.OperationalLimitSet") {
+                     psr = source;
+                 }
+                 if (typeof(psr) !== "undefined") {
+                     // handle busbars
+                     if (psr.nodeName === "cim:BusbarSection") {
+                         psr = self.model.getNode(psr);
+                     }   
+                     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let psrSelection = d3.select("g#" + psrUUID);
+                     self.createStatusInfo(psrSelection);
+                 }
+                 break;
+             }
          }
      });
 
@@ -445,9 +502,9 @@
      self.model.on("removeLink", function(source, linkName, target) {
          switch (linkName) {
              case "cim:Measurement.PowerSystemResource":
-             case "cim.PowerSystemResource.Measurements":
+             case "cim:PowerSystemResource.Measurements": {
                  let psr = target;
-                 if (linkName === "cim.PowerSystemResource.Measurements") {
+                 if (linkName === "cim:PowerSystemResource.Measurements") {
                      psr = source;
                  }
                  if (typeof(psr) !== "undefined") {
@@ -457,11 +514,12 @@
                      }   
                      let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
                      let psrSelection = d3.select("g#" + psrUUID);
-                     self.createMeasurements(psrSelection);
+                     self.createStatusInfo(psrSelection);
                  }
                  break;
+             }
              case "cim:" + TERM_NODE:
-             case "cim:" + NODE_TERM:
+             case "cim:" + NODE_TERM: {
                  let cn = undefined;
                  let term = undefined;
                  if (target.nodeName === "cim:Terminal" && source.nodeName === "cim:" + NODE_CLASS) {
@@ -482,6 +540,38 @@
                    })
                    .remove();
                  break;
+             }
+             case "cim:OperationalLimitSet.Terminal":
+             case "cim:ACDCTerminal.OperationalLimitSet": {
+                 let terminal = target;
+                 if (source.nodeName === "cim:Terminal") {
+                     terminal = source;
+                 }
+                 let psr = self.model.getTargets(
+                     [terminal],
+                     "Terminal.ConductingEquipment")[0];
+                 let limPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let limPsrSelection = d3.select("g#" + limPsrUUID);
+                 self.createStatusInfo(limPsrSelection);
+                 break;
+             }
+             case "cim:OperationalLimitSet.Equipment":
+             case "cim:Equipment.OperationalLimitSet": {
+                 let psr = target;
+                 if (linkName === "cim:Equipment.OperationalLimitSet") {
+                     psr = source;
+                 }
+                 if (typeof(psr) !== "undefined") {
+                     // handle busbars
+                     if (psr.nodeName === "cim:BusbarSection") {
+                         psr = self.model.getNode(psr);
+                     }   
+                     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let psrSelection = d3.select("g#" + psrUUID);
+                     self.createStatusInfo(psrSelection);
+                 }
+                 break;
+             }
          }
      });
      
@@ -591,68 +681,68 @@
          yield "[" + Date.now() + "] DIAGRAM: drawn nonlinear shunt compensators";
          // connectivity nodes
          let cnEnter = self.drawNodes(allNodes);
-         self.createMeasurements(cnEnter);
+         self.createStatusInfo(cnEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn connectivity nodes";
 
          // ac line terminals
          let termSelection = self.createTerminals(aclineEnter);
-         self.createMeasurements(aclineEnter);
+         self.createStatusInfo(aclineEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn acline terminals";
          // breaker terminals
          self.createTerminals(breakerEnter);
-         self.createMeasurements(breakerEnter);
+         self.createStatusInfo(breakerEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn breaker terminals";
          // disconnector terminals
          self.createTerminals(discEnter);
-         self.createMeasurements(discEnter);
+         self.createStatusInfo(discEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn disconnector terminals";
          // load break switch terminals
          self.createTerminals(lbsEnter);
-         self.createMeasurements(lbsEnter);
+         self.createStatusInfo(lbsEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn load break switch terminals";
          // jumper terminals
          self.createTerminals(jumpsEnter);
-         self.createMeasurements(jumpsEnter);
+         self.createStatusInfo(jumpsEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn jumper terminals";
          // junction terminals
          self.createTerminals(junctsEnter);
-         self.createMeasurements(junctsEnter);
+         self.createStatusInfo(junctsEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn junction terminals";
          // energy source terminals
          termSelection = self.createTerminals(ensrcEnter);
-         self.createMeasurements(ensrcEnter);
+         self.createStatusInfo(ensrcEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn energy source terminals";
          // synchronous machine terminals
          termSelection = self.createTerminals(syncEnter);
-         self.createMeasurements(syncEnter);
+         self.createStatusInfo(syncEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machine terminals";
          // asynchronous machine terminals
          termSelection = self.createTerminals(asyncEnter);
-         self.createMeasurements(asyncEnter);
+         self.createStatusInfo(asyncEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn asynchronous machine terminals";
          // energy consumer terminals
          termSelection = self.createTerminals(enconsEnter);
-         self.createMeasurements(enconsEnter);
+         self.createStatusInfo(enconsEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn energy consumer terminals";
          // conform load terminals
          termSelection = self.createTerminals(confEnter);
-         self.createMeasurements(confEnter);
+         self.createStatusInfo(confEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn conform load terminals";
          // non conform load terminals
          termSelection = self.createTerminals(nonconfEnter);
-         self.createMeasurements(nonconfEnter);
+         self.createStatusInfo(nonconfEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn non conform load terminals";
          // power transformer terminals
          termSelection = self.createTerminals(trafoEnter);
-         self.createMeasurements(trafoEnter);
+         self.createStatusInfo(trafoEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn power transformer terminals";
          // linear shunt compensator terminals
          termSelection = self.createTerminals(lshuntEnter);
-         self.createMeasurements(lshuntEnter);
+         self.createStatusInfo(lshuntEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn linear shunt compensator terminals";
          // nonlinear shunt compensator terminals
          termSelection = self.createTerminals(nlshuntEnter);
-         self.createMeasurements(nlshuntEnter);
+         self.createStatusInfo(nlshuntEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn nonlinear shunt compensator terminals";
          
          d3.select("svg").on("mouseover", function() {
@@ -700,63 +790,78 @@
          self.trigger("createEdges", edgesEnter);
      }
 
-     // Create measurements associated with a selection of terminals or power system resources.
+     // Create element status info (measurements, state variables, operational
+     // limits) associated with a selection of terminals or power system resources.
+     // This is visualized as a popover.
      // TODO: junctions
-     createMeasurements(psrSelection) {
+     createStatusInfo(psrSelection) {
          psrSelection.attr("data-toggle", "popover");    
          psrSelection.each(function(d) {
              let measurements = [];
              let svPFs = [];
+             let limitSets = [];
+             // get the voltage state variables for this equipment
              let svVs = self.model.getTargets([d], "TopologicalNode.SvVoltage");
              let terminals = self.model.getTerminals([d]);
-             // get the measurements for this equipment
+             // get the measurements and limit sets for this equipment
              if (d.nodeName === "cim:" + NODE_CLASS) {           
                  let busbar = self.model.getBusbar(d);
                  if (busbar === null) {
                      return;
                  }
+                 terminals = self.model.getTerminals([busbar]);
                  measurements = self.model.getTargets(
                      [busbar],
                      "PowerSystemResource.Measurements");
+                 limitSets = self.model.getTargets(
+                     [busbar],
+                     "Equipment.OperationalLimitSet");
              } else {
                  measurements = self.model.getTargets(
                      [d],
                      "PowerSystemResource.Measurements");
+                 limitSets = self.model.getTargets(
+                     [d],
+                     "Equipment.OperationalLimitSet");
              }
+             // limit sets may also be associated to terminals
+             limitSets = limitSets.concat(self.model.getTargets(
+                 terminals,
+                 "ACDCTerminal.OperationalLimitSet"));
+             // get the PF state variables for this equipment
              for (let terminal of terminals) {
                  let actTermSvPFs = self.model.getTargets(
                      [terminal],
                      "Terminal.SvPowerFlow");
                  svPFs = svPFs.concat(actTermSvPFs);
              }
-             if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0) {
-                 let tooltip = self.createTooltip(measurements, svPFs, svVs);
-
-                 // test for switched colouring
-                 psrSelection.filter(function(d) {
+             if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0 || limitSets.length > 0) {
+                 let tooltip = self.createTooltip(measurements, svPFs, svVs, limitSets);
+                 // change fill color of switches based on their status
+                 let path = psrSelection.filter(function(d) {
                      return self.model.schema.isA("Switch", d);
-                 }).selectAll("path")
-                             .attr("fill", function(d) {
-                                 let value = "0"; // default is OPEN
-                                 // check the status of this switch
-                                 let measurement = self.model.getTargets(
-                                     [d],
-                                     "PowerSystemResource.Measurements")[0];
-                                 if (typeof(measurement) !== "undefined") {
-                                     let valueObject = self.model.getTargets(
-                                         [measurement],
-                                         "Discrete.DiscreteValues")[0];
-                                     if (typeof(valueObject) !== "undefined") {
-                                         value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
-                                     }
-                                 }
-                                 if (value === "0") {
-                                     return "white";
-                                 } else {
-                                     return "black";
-                                 }
-                             });
-                 
+                 }).selectAll("path");
+                 path.attr("fill", function(d) {
+                     let value = "0"; // default is OPEN
+                     // check the status of this switch
+                     let measurement = self.model.getTargets(
+                         [d],
+                         "PowerSystemResource.Measurements")[0];
+                     if (typeof(measurement) !== "undefined") {
+                         let valueObject = self.model.getTargets(
+                             [measurement],
+                             "Discrete.DiscreteValues")[0];
+                         if (typeof(valueObject) !== "undefined") {
+                             value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
+                         }
+                     }
+                     if (value === "0") {
+                         return "white";
+                     } else {
+                         return "black";
+                     }
+                 });
+                 // create the actual popover
                  $(this).popover({title: "<b>Element Status Info</b>",
                                   content: tooltip,
                                   container: "body",
@@ -774,7 +879,8 @@
          })
      }
 
-     createTooltip(measurements, svPFs, svVs) {
+     // create the actual tooltip content for element status info
+     createTooltip(measurements, svPFs, svVs, limitSets) {
          let tooltip = "";
          if (measurements.length > 0) {
              tooltip = tooltip + "<b>Measurements</b><br><br>";
@@ -785,7 +891,6 @@
                  let unitMultiplier = "";
                  let unitSymbol = "no unit";
                  let typeAttr = self.model.getAttribute(measurement, "cim:IdentifiedObject.name");
-                 //self.model.getAttribute(measurement, "cim:Measurement.measurementType");
                  let phasesAttr = self.model.getEnum(measurement, "cim:Measurement.phases");
                  let unitMultiplierAttr = self.model.getEnum(measurement, "cim:Measurement.unitMultiplier");
                  let unitSymbolAttr = self.model.getEnum(measurement, "cim:Measurement.unitSymbol");
@@ -829,7 +934,7 @@
                  let hashComponents = window.location.hash.split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                  let targetPath = basePath + "/" + measUUID;
-                 actLine = actLine + "<a href=" + targetPath + ">"+type+"</a>";
+                 actLine = actLine + "<a href=" + targetPath + ">" + type + "</a>";
                  actLine = actLine + " (phase: " + phases + ")";
                  actLine = actLine + ": ";
                  actLine = actLine + value;
@@ -845,7 +950,7 @@
 
          // power flow results
          if (svPFs.length > 0) {
-             if (measurements.length > 0) {
+             if (tooltip !== "") {
                  tooltip = tooltip + "<br>";
              }
              tooltip = tooltip + "<b>Power flow results (Power)</b><br><br>";
@@ -866,7 +971,7 @@
          }
 
          if (svVs.length > 0) {
-             if (measurements.length > 0 || svPFs.length > 0 ) {
+             if (tooltip !== "") {
                  tooltip = tooltip + "<br>";
              }
              tooltip = tooltip + "<b>Power flow results (Voltage)</b><br><br>";
@@ -882,6 +987,26 @@
                  actLine = actLine + "<br>";
                  actLine = actLine + "Voltage angle: " + parseFloat(ang).toFixed(2) + " [deg]";
                  actLine = actLine + "<br>";
+                 tooltip = tooltip + actLine;
+             }
+         }
+
+         if (limitSets.length > 0) {
+             if (tooltip !== "") {
+                 tooltip = tooltip + "<br>";
+             }
+             tooltip = tooltip + "<b>Operational limit sets</b><br><br>";
+             for (let limitSet of limitSets) {
+                 let type = "unnamed";
+                 let typeAttr = self.model.getAttribute(limitSet, "cim:IdentifiedObject.name");
+                 if (typeof(typeAttr) !== "undefined") {
+                     type = typeAttr.textContent;
+                 }
+                 let uuid = limitSet.attributes.getNamedItem("rdf:ID").value;
+                 let hashComponents = window.location.hash.split("/");
+                 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+                 let targetPath = basePath + "/" + uuid;
+                 let actLine = "<a href=" + targetPath + ">" + type + "</a><br>";
                  tooltip = tooltip + actLine;
              }
          }
