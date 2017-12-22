@@ -116,14 +116,14 @@
      
      this.model = opts.model;   
      let self = this;
-     let menu = [
+     let menu = d3.contextMenu([
          {
              title: 'Delete',
              action: function(elm, d, i) {
                  opts.model.deleteObject(d);
              }
          }
-     ];
+     ]);
      
      self.on("mount", function() {
          $("form").submit(function(event) {
@@ -782,7 +782,7 @@
      // delete menu for non graphic objects
      createDeleteMenu(selection) {
          let btnSel = selection.selectAll(function() { return this.parentNode.childNodes; }).filter("a");
-         btnSel.on("contextmenu", d3.contextMenu(menu));
+         btnSel.on("contextmenu", menu);
      }
 
      elements(cimNetwork, name, printName, data) {
