@@ -459,7 +459,7 @@
          }
 
          // get all equipments
-         let allEquipments = getObjects([
+         let eqs = getObjects([
              "cim:BusbarSection",
              "cim:PowerTransformer",
              "cim:ACLineSegment",
@@ -520,10 +520,10 @@
          }
          let noDiagObjs = self.model.getObjects(["cim:BaseVoltage", "cim:TapChangerControl", "cim:RegulatingControl"])
          let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"];
-         let allInjections = allEquipments["cim:EnergySource"].concat(allEquipments["cim:EquivalentInjection"]);
-         let allRotatingMachines = allEquipments["cim:SynchronousMachine"].concat(allEquipments["cim:AsynchronousMachine"]);
-         let allEnergyConsumers = allEquipments["cim:EnergyConsumer"].concat(allEquipments["cim:ConformLoad"]).concat(allEquipments["cim:NonConformLoad"]);
-         let allCompensators = allEquipments["cim:LinearShuntCompensator"].concat(allEquipments["cim:nonlinearShuntCompensator"]);
+         let allInjections = eqs["cim:EnergySource"].concat(eqs["cim:EquivalentInjection"]);
+         let allRotatingMachines = eqs["cim:SynchronousMachine"].concat(eqs["cim:AsynchronousMachine"]);
+         let allEnergyConsumers = eqs["cim:EnergyConsumer"].concat(eqs["cim:ConformLoad"]).concat(eqs["cim:NonConformLoad"]);
+         let allCompensators = eqs["cim:LinearShuntCompensator"].concat(eqs["cim:nonlinearShuntCompensator"]);
          // ====================================================================
          // ========================= "Measurements" ===========================
          // ====================================================================
@@ -539,33 +539,33 @@
          // ====================================================================
          // =========================== "Components" ===========================
          // ====================================================================
-         self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", allEquipments["cim:ACLineSegment"]);
-         self.elements(cimNetwork, "Breaker", "Breakers", allEquipments["cim:Breaker"]);
-         self.elements(cimNetwork, "Disconnector", "Disconnectors", allEquipments["cim:Disconnector"]);
-         self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allEquipments["cim:LoadBreakSwitch"]);
-         self.elements(cimNetwork, "Jumper", "Jumpers", allEquipments["cim:Jumper"]);
-         self.elements(cimNetwork, "Junction", "Junctions", allEquipments["cim:Junction"]);
+         self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", eqs["cim:ACLineSegment"]);
+         self.elements(cimNetwork, "Breaker", "Breakers", eqs["cim:Breaker"]);
+         self.elements(cimNetwork, "Disconnector", "Disconnectors", eqs["cim:Disconnector"]);
+         self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", eqs["cim:LoadBreakSwitch"]);
+         self.elements(cimNetwork, "Jumper", "Jumpers", eqs["cim:Jumper"]);
+         self.elements(cimNetwork, "Junction", "Junctions", eqs["cim:Junction"]);
          // Generic and external injections
          let allEquivalents = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", allInjections);
-         self.elements(allEquivalents, "EnergySource", "Energy Sources", allEquipments["cim:EnergySource"]);
-         self.elements(allEquivalents, "EquivalentInjection", "Equivalent Injections", allEquipments["cim:EquivalentInjection"]);
+         self.elements(allEquivalents, "EnergySource", "Energy Sources", eqs["cim:EnergySource"]);
+         self.elements(allEquivalents, "EquivalentInjection", "Equivalent Injections", eqs["cim:EquivalentInjection"]);
          // Rotating machines
          let allRotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "Rotating Machines", allRotatingMachines);
-         self.elements(allRotMac, "SynchronousMachine", "Synchronous Machines", allEquipments["cim:SynchronousMachine"]);
-         self.elements(allRotMac, "AsynchronousMachine", "Asynchronous Machines", allEquipments["cim:AsynchronousMachine"]);
+         self.elements(allRotMac, "SynchronousMachine", "Synchronous Machines", eqs["cim:SynchronousMachine"]);
+         self.elements(allRotMac, "AsynchronousMachine", "Asynchronous Machines", eqs["cim:AsynchronousMachine"]);
          // Loads
          let allLoads = self.createTopContainer(cimNetwork, "Load", "Loads", allEnergyConsumers);
-         self.elements(allLoads, "EnergyConsumer", "Energy Consumers", allEquipments["cim:EnergyConsumer"]);
-         self.elements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
-         self.elements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
+         self.elements(allLoads, "EnergyConsumer", "Energy Consumers", eqs["cim:EnergyConsumer"]);
+         self.elements(allLoads, "ConformLoad", "Conform Loads", eqs["cim:ConformLoad"]);
+         self.elements(allLoads, "NonConformLoad", "Non Conform Loads", eqs["cim:NonConformLoad"]);
          // Compensators
          let allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", allCompensators);
-         self.elements(allComps, "LinearShuntCompensator", "Linear", allEquipments["cim:LinearShuntCompensator"]);
-         self.elements(allComps, "NonlinearShuntCompensator", "Nonlinear", allEquipments["cim:NonlinearShuntCompensator"]);
+         self.elements(allComps, "LinearShuntCompensator", "Linear", eqs["cim:LinearShuntCompensator"]);
+         self.elements(allComps, "NonlinearShuntCompensator", "Nonlinear", eqs["cim:NonlinearShuntCompensator"]);
          // Busbars
          self.elements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
          // Transformers
-         self.powerTransformers(cimNetwork, allEquipments["cim:PowerTransformer"]);
+         self.powerTransformers(cimNetwork, eqs["cim:PowerTransformer"]);
          // ====================================================================
          // =========================== "Containers" ===========================
          // ====================================================================
