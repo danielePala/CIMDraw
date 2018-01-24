@@ -469,6 +469,7 @@
              "cim:Jumper",
              "cim:Junction",
              "cim:EnergySource",
+             "cim:EquivalentInjection",
              "cim:SynchronousMachine",
              "cim:AsynchronousMachine",
              "cim:EnergyConsumer",
@@ -518,68 +519,74 @@
              allLimitSets = getObjects(["cim:OperationalLimitSet"]);
          }
          let noDiagObjs = self.model.getObjects(["cim:BaseVoltage", "cim:TapChangerControl", "cim:RegulatingControl"])
-         let allBaseVoltages = noDiagObjs["cim:BaseVoltage"];
-         let allTapChangerControls = noDiagObjs["cim:TapChangerControl"];
-         let allRegulatingControls = noDiagObjs["cim:RegulatingControl"];
          let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"];
-         let allPowerTransformers = allEquipments["cim:PowerTransformer"]; 
-         let allACLines = allEquipments["cim:ACLineSegment"]; 
-         let allBreakers = allEquipments["cim:Breaker"]; 
-         let allDisconnectors = allEquipments["cim:Disconnector"]; 
-         let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
-         let allJumpers = allEquipments["cim:Jumper"]; 
-         let allJunctions = allEquipments["cim:Junction"]; 
-         let allEnergySources = allEquipments["cim:EnergySource"];
-         let allRotatingMachines = allEquipments["cim:SynchronousMachine"]
-             .concat(allEquipments["cim:AsynchronousMachine"]);
-         let allEnergyConsumers = allEquipments["cim:EnergyConsumer"] 
-                                      .concat(allEquipments["cim:ConformLoad"])
-                                      .concat(allEquipments["cim:NonConformLoad"]);
-         let allCompensators = allEquipments["cim:LinearShuntCompensator"]
-     .concat(allEquipments["cim:nonlinearShuntCompensator"]);
-         let allSubstations = allContainers["cim:Substation"];
-         yield "[" + Date.now() + "] TREE: extracted substations";
-         let allLines = allContainers["cim:Line"];
-         yield "[" + Date.now() + "] TREE: extracted lines";
+         let allInjections = allEquipments["cim:EnergySource"].concat(allEquipments["cim:EquivalentInjection"]);
+         let allRotatingMachines = allEquipments["cim:SynchronousMachine"].concat(allEquipments["cim:AsynchronousMachine"]);
+         let allEnergyConsumers = allEquipments["cim:EnergyConsumer"].concat(allEquipments["cim:ConformLoad"]).concat(allEquipments["cim:NonConformLoad"]);
+         let allCompensators = allEquipments["cim:LinearShuntCompensator"].concat(allEquipments["cim:nonlinearShuntCompensator"]);
+         // ====================================================================
+         // ========================= "Measurements" ===========================
+         // ====================================================================
          let analogEnter = self.elements(cimMeasurements, "Analog", "Analogs", allMeasurements["cim:Analog"]);
          self.createDeleteMenu(analogEnter);
          let discEnter = self.elements(cimMeasurements, "Discrete", "Discretes", allMeasurements["cim:Discrete"]);
          self.createDeleteMenu(discEnter);
-         self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", allACLines);
-         let bvEnter = self.elements(cimBases, "BaseVoltage", "Base Voltages", allBaseVoltages);
+         // ====================================================================
+         // ============================= "Bases" ==============================
+         // ====================================================================
+         let bvEnter = self.elements(cimBases, "BaseVoltage", "Base Voltages", noDiagObjs["cim:BaseVoltage"]);
          self.createDeleteMenu(bvEnter);
-         self.elements(cimNetwork, "Breaker", "Breakers", allBreakers);
-         self.elements(cimNetwork, "Disconnector", "Disconnectors", allDisconnectors);
-         self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allLoadBreakSwitches);
-         self.elements(cimNetwork, "Jumper", "Jumpers", allJumpers);
-         self.elements(cimNetwork, "Junction", "Junctions", allJunctions);
-         let allEquivalents = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", allEnergySources);
+         // ====================================================================
+         // =========================== "Components" ===========================
+         // ====================================================================
+         self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", allEquipments["cim:ACLineSegment"]);
+         self.elements(cimNetwork, "Breaker", "Breakers", allEquipments["cim:Breaker"]);
+         self.elements(cimNetwork, "Disconnector", "Disconnectors", allEquipments["cim:Disconnector"]);
+         self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", allEquipments["cim:LoadBreakSwitch"]);
+         self.elements(cimNetwork, "Jumper", "Jumpers", allEquipments["cim:Jumper"]);
+         self.elements(cimNetwork, "Junction", "Junctions", allEquipments["cim:Junction"]);
+         // Generic and external injections
+         let allEquivalents = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", allInjections);
          self.elements(allEquivalents, "EnergySource", "Energy Sources", allEquipments["cim:EnergySource"]);
+         self.elements(allEquivalents, "EquivalentInjection", "Equivalent Injections", allEquipments["cim:EquivalentInjection"]);
+         // Rotating machines
          let allRotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "Rotating Machines", allRotatingMachines);
          self.elements(allRotMac, "SynchronousMachine", "Synchronous Machines", allEquipments["cim:SynchronousMachine"]);
          self.elements(allRotMac, "AsynchronousMachine", "Asynchronous Machines", allEquipments["cim:AsynchronousMachine"]);
+         // Loads
          let allLoads = self.createTopContainer(cimNetwork, "Load", "Loads", allEnergyConsumers);
          self.elements(allLoads, "EnergyConsumer", "Energy Consumers", allEquipments["cim:EnergyConsumer"]);
          self.elements(allLoads, "ConformLoad", "Conform Loads", allEquipments["cim:ConformLoad"]);
          self.elements(allLoads, "NonConformLoad", "Non Conform Loads", allEquipments["cim:NonConformLoad"]);
+         // Compensators
          let allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", allCompensators);
          self.elements(allComps, "LinearShuntCompensator", "Linear", allEquipments["cim:LinearShuntCompensator"]);
          self.elements(allComps, "NonlinearShuntCompensator", "Nonlinear", allEquipments["cim:NonlinearShuntCompensator"]);
+         // Busbars
          self.elements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
-
+         // Transformers
+         self.powerTransformers(cimNetwork, allEquipments["cim:PowerTransformer"]);
+         // ====================================================================
+         // =========================== "Containers" ===========================
+         // ====================================================================
          self.geoRegions(cimContainers, allGeoRegions);
-         self.substations(cimContainers, allSubstations);
-         self.powerTransformers(cimNetwork, allPowerTransformers);
-         let lineEnter = self.elements(cimContainers, "Line", "Lines", allLines);
+         self.substations(cimContainers, allContainers["cim:Substation"]);
+         let lineEnter = self.elements(cimContainers, "Line", "Lines", allContainers["cim:Line"]);
          self.createDeleteMenu(lineEnter);
          let allGenUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", allGeneratingUnits["cim:GeneratingUnit"].concat(allGeneratingUnits["cim:ThermalGeneratingUnit"]));
          self.elements(allGenUnits, "GeneratingUnit", "General Units", allGeneratingUnits["cim:GeneratingUnit"]);
          self.elements(allGenUnits, "ThermalGeneratingUnit", "Thermal Units", allGeneratingUnits["cim:ThermalGeneratingUnit"]);
+         // ====================================================================
+         // ===================== "Curves and Regulations" =====================
+         // ====================================================================
          self.elements(cimCurvesAndRegs, "LoadResponseCharacteristic", "Load Response Characteristics", allLoadResponses["cim:LoadResponseCharacteristic"]);
-         let tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", allTapChangerControls);
+         let tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", noDiagObjs["cim:TapChangerControl"]);
          self.createDeleteMenu(tccEnter);
-         let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", allRegulatingControls);
+         let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", noDiagObjs["cim:RegulatingControl"]);
          self.createDeleteMenu(rcEnter);
+         // ====================================================================
+         // ======================= "Operational Limits" =======================
+         // ====================================================================
          self.limitSets(cimLimits, allLimitSets["cim:OperationalLimitSet"]);
          
          // add buttons
