@@ -1850,9 +1850,8 @@
              return [0, 0];
          }
          
-         // TODO: pathNode.pathSegList is deprecated in Chrome 48, we use a polyfill
          let pathLength = pathNode.getTotalLength(),
-             precision = pathLength / pathNode.pathSegList.numberOfItems * .125,
+             precision = 8,
              best,
              bestLength,
              bestDistance = Infinity;
@@ -1880,8 +1879,8 @@
          }
 
          // binary search for precise estimate
-         precision *= .5;
-         while (precision > .5) {
+         precision /= 2;
+         while (precision > 0.5) {
              let beforeLength = bestLength - precision;
              if (beforeLength >= 0) {
                  let before = pathNode.getPointAtLength(beforeLength);
@@ -1911,7 +1910,7 @@
                      continue;
                  }
              }
-             precision *= .5;        
+             precision /= 2;        
          }
 
          best = [best.x, best.y];
