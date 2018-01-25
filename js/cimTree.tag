@@ -355,6 +355,14 @@
          }).attr("disabled", null);
          sourceNode.selectAll("#cimTarget").attr("id", null);
          removeBtn.attr("disabled", null);
+         // in bus-branch mode, we need to update base voltage
+         // of topological node if the associated busbar is
+         // updated.
+         if (self.model.getMode() === "BUS_BRANCH") {
+             if (source.nodeName === "cim:BusbarSection" && linkName === "cim:ConductingEquipment.BaseVoltage") {
+                 self.model.setLink(self.model.getNode(source), "cim:TopologicalNode.BaseVoltage", target);
+             }
+         }
      });
 
      // listen to 'removeLink' event from model
