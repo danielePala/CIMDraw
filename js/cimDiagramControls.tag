@@ -808,6 +808,7 @@
 
      // draw multi-segment objects
      enableAddMulti(e) {
+         self.disableAll();
          // handle escape key
          d3.select("body").on("keyup.addMulti", function() {
              if (d3.event.keyCode === 27) { // "Escape"
@@ -817,7 +818,6 @@
          });
          let type = e.target.parentNode.id;
          let text = e.target.textContent;
-         self.disableAll();
          d3.select(self.root).selectAll("label").classed("active", false);
          $("input").prop('checked', false);
          $("#addElement").text(text);
