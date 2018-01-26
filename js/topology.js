@@ -114,7 +114,11 @@ function topologyProcessor(model) {
                 // this is just the union of the terminals of all the connectivity nodes
                 terms.forEach(function(term) {
                     model.setLink(term, "cim:Terminal.TopologicalNode", tobj);
-                    model.setAttribute(term, "cim:ACDCTerminal.connected", "true");
+                    // if the user hasn't defined if the terminal is connected,
+                    // we assume that the answer is 'yes'.
+                    if (typeof(model.getAttribute(term, "cim:ACDCTerminal.connected")) === "undefined") {
+                        model.setAttribute(term, "cim:ACDCTerminal.connected", "true");
+                    }
                 });
                 ret.push(tobj);
             });

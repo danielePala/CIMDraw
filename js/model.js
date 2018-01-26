@@ -294,6 +294,8 @@ function cimModel() {
     function createTerminal(object) {
         let term = cimObject("cim:Terminal");
         addLink(term, "cim:Terminal.ConductingEquipment", object);
+        // The "connected" attribute is mandatory (in SSH).
+        model.setAttribute(term, "cim:ACDCTerminal.connected", "true");
         return term;
     };
 
