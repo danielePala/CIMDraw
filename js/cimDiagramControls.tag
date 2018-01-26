@@ -937,10 +937,10 @@
              } 
          }
          hG.select("line.highlight")
-                                        .attr("x1", x1)
-                                        .attr("y1", y1)
-                                        .attr("x2", x2)
-                                        .attr("y2", y2);
+           .attr("x1", x1)
+           .attr("y1", y1)
+           .attr("x2", x2)
+           .attr("y2", y2);
          
          if (arguments.length === 3) {
                  hG.attr("transform", "rotate(" + rotation.val + "," + rotation.x + "," + rotation.y + ")");
