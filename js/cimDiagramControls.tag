@@ -54,32 +54,32 @@
                         </button>
                         <ul class="dropdown-menu" id="cimElementList">
                             <li class="dropdown-header">Busses</li>
-                            <li id="cim:BusbarSection" onclick={enableAddMulti}><a>Node</a></li>
+                            <li id="BusbarSection" onclick={enableAddMulti}><a>Node</a></li>
                             <li class="dropdown-header">Branches</li>
-                            <li id="cim:ACLineSegment" onclick={enableAddMulti}><a>AC Line Segment</a></li>
+                            <li id="ACLineSegment" onclick={enableAddMulti}><a>AC Line Segment</a></li>
                             <li class="dropdown-header">Switches</li>
-                            <li id="cim:Breaker" onclick={enableAdd}><a>Breaker</a></li>
-                            <li id="cim:Disconnector" onclick={enableAdd}><a>Disconnector</a></li>
-                            <li id="cim:LoadBreakSwitch" onclick={enableAdd}><a>Load Break Switch</a></li>
-                            <li id="cim:Jumper" onclick={enableAdd}><a>Jumper</a></li>
+                            <li id="Breaker" onclick={enableAdd}><a>Breaker</a></li>
+                            <li id="Disconnector" onclick={enableAdd}><a>Disconnector</a></li>
+                            <li id="LoadBreakSwitch" onclick={enableAdd}><a>Load Break Switch</a></li>
+                            <li id="Jumper" onclick={enableAdd}><a>Jumper</a></li>
                             <!-- junctions are still not implemented properly for now
                             <!--<li class="dropdown-header">Connectors</li>-->
                             <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
                             <li class="dropdown-header">Equivalents</li>
-                            <li id="cim:EnergySource" onclick={enableAdd}><a>Energy Source</a></li>
+                            <li id="EnergySource" onclick={enableAdd}><a>Energy Source</a></li>
                             <li class="dropdown-header">Rotating Machines</li>
-                            <li id="cim:SynchronousMachine" onclick={enableAdd}><a>Synchronous Machine</a></li>
-                            <li id="cim:AsynchronousMachine" onclick={enableAdd}><a>Asynchronous Machine</a></li>
+                            <li id="SynchronousMachine" onclick={enableAdd}><a>Synchronous Machine</a></li>
+                            <li id="AsynchronousMachine" onclick={enableAdd}><a>Asynchronous Machine</a></li>
                             <li class="dropdown-header">Loads</li>
-                            <li id="cim:EnergyConsumer" onclick={enableAdd}><a>Energy Consumer</a></li>
-                            <li id="cim:ConformLoad" onclick={enableAdd}><a>Conform Load</a></li>
-                            <li id="cim:NonConformLoad" onclick={enableAdd}><a>Non Conform Load</a></li>
+                            <li id="EnergyConsumer" onclick={enableAdd}><a>Energy Consumer</a></li>
+                            <li id="ConformLoad" onclick={enableAdd}><a>Conform Load</a></li>
+                            <li id="NonConformLoad" onclick={enableAdd}><a>Non Conform Load</a></li>
                             <li class="dropdown-header">Compensators</li>
-                            <li id="cim:LinearShuntCompensator" onclick={enableAdd}><a>Linear</a></li>
-                            <li id="cim:NonlinearShuntCompensator" onclick={enableAdd}><a>Nonlinear</a></li>
+                            <li id="LinearShuntCompensator" onclick={enableAdd}><a>Linear</a></li>
+                            <li id="NonlinearShuntCompensator" onclick={enableAdd}><a>Nonlinear</a></li>
                             <li class="dropdown-header">Transformers</li>
-                            <li id="cim:PowerTransformer" onclick={enableAdd}><a>Two-winding Transformer</a></li>
-                            <li id="cim:PowerTransformer" onclick={enableAdd}><a>Three-winding Transformer</a></li>
+                            <li id="PowerTransformer" onclick={enableAdd}><a>Two-winding Transformer</a></li>
+                            <li id="PowerTransformer" onclick={enableAdd}><a>Three-winding Transformer</a></li>
                         </ul>
                     </div>
                     
@@ -98,8 +98,9 @@
      let selected = [];
      let menu = [
          {
-             title: 'Rotate',
-             action: function(elm, d, i) {
+             title: "Rotate",
+             action: function(d, i) {
+                 let elm = this;
                  if (selected.indexOf(elm) === -1) {
                      self.deselectAll();
                      selected.push(elm);
@@ -119,70 +120,112 @@
              }
          },
          {
-             title: 'Delete',
-             action: function(elm, d, i) {
-                 self.deleteObject(elm)
+             title: "Delete",
+             action: function(d, i) {
+                 self.deleteObject(this)
              }
          },
          {
-             title: 'Delete from current diagram',
-             action: function(elm, d, i) {
-                 if (selected.indexOf(elm) === -1) {
-                     self.deselectAll();
-                     selected.push(elm);
-                 }
-                 quadtree.removeAll(selected); // update quadtree
-                 $(selected).filter('[data-toggle="popover"]').popover("destroy");
-                 let selection = d3.selectAll(selected);
-                 let terminals = opts.model.getTerminals(selection.data());
-                 d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
-                     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
-                 }).remove();
-                 selection.remove();
-                 // delete from model
-                 for (let datum of selection.data()) {
-                     opts.model.deleteFromDiagram(datum);
-                 }
+             title: "Delete from current diagram",
+             action: function(d, i) {
+                 self.deleteFromDiagram(this);
              }
          },
          {
-             title: 'Add new operational limit set',
-             action: function(elm, d, i) {
-                 self.addNewLimitSet(elm, d, i);
+             title: "Add new operational limit set",
+             action: function(d, i) {
+                 self.addNewLimitSet(this, d, i);
              }
-         }
+         }   
      ];
+     // menu for multi-segment objects
+     let multiMenu = menu.concat(
+         [{
+             title: "Add points",
+             action: function(d, i) {
+                 let oldStatus = self.status;
+                 let elm = this;
+                 self.disableAll();
+                 self.deselectAll();
+                 selected.push(elm);
+                 self.addDrawing(d, function() {
+                     let svg = d3.select("svg");
+                     let path = svg.selectAll("svg > path");
+                     let circle = svg.selectAll("svg > circle");
+                     d3.event.preventDefault();
+                     self.addNewPoint(d);
+                     self.deleteFromDiagram(elm);
+                     opts.model.addToActiveDiagram(d, d.lineData);
+                     svg.on("mousemove", null);
+                     path.attr("d", null);
+                     circle.attr("transform", "translate(0, 0)");
+                     d3.select("svg > path").datum(null);
+                     // disable ourselves
+                     svg.on("contextmenu.add", null);
+                     svg.on("click.add", null);
+                     // enable old status
+                     switch (oldStatus) {
+                         case "DRAG": {
+                             self.enableDrag();
+                             break;
+                         }
+                         case "FORCE": {
+                             self.enableForce();
+                             break;
+                         }
+                         case "CONNECT": {
+                             self.enableConnect();
+                             break;
+                         }
+                         default: {
+                             let type = oldStatus.substring("ADD".length);
+                             if (type.startsWith("Multi")) {
+                                 type = type.substring("Multi".length);
+                                 self.enableAddMulti(type);
+                             } else {
+                                 self.enableAdd(type);
+                             }
+                             break;
+                         } 
+                     }
+                 });
+                 d3.select("svg").on("click.add", clicked);
+                 function clicked() {
+                     self.addNewPoint(d);
+                 };
+             }
+         }]);
      let terminalsMenu = [
          {
-             title: 'Add new operational limit set',
-             action: function(elm, d, i) {
-                 self.addNewLimitSet(elm, d, i);
+             title: "Add new operational limit set",
+             action: function(d, i) {
+                 self.addNewLimitSet(this, d, i);
              }
          },
          {
-             title: 'Add regulating control',
-             action: function(elm, d, i) {
-                 self.addRegulatingControl(elm, d, i);
+             title: "Add regulating control",
+             action: function(d, i) {
+                 self.addRegulatingControl(this, d, i);
              }
          },
          {
-             title: 'Add tap changer control',
-             action: function(elm, d, i) {
-                 self.addTCControl(elm, d, i);
+             title: "Add tap changer control",
+             action: function(d, i) {
+                 self.addTCControl(this, d, i);
              }
          }
      ];
      let trafoTermsMenu = terminalsMenu.concat(
          [{
-             title: 'Add ratio tap changer',
-             action: function(elm, d, i) {
-                 self.addTC(elm, d, i);
+             title: "Add ratio tap changer",
+             action: function(d, i) {
+                 self.addTC(this, d, i);
              }
          }]);
      let edgesMenu = [
          {
-             title: 'Delete',
-             action: function(elm, d, i) {
+             title: "Delete",
+             action: function(d, i) {
                  let cn = d.source;
                  if (opts.model.getBusbar(cn) === null) {
                      let cnTerms = opts.model.getTargets(
@@ -335,16 +378,16 @@
              menu.push(
                  {
                      title: 'Add new measurement',
-                     action: function(elm, d, i) {
-                         self.addNewMeasurement(elm, d, i);
+                     action: function(d, i) {
+                         self.addNewMeasurement(this, d, i);
                      }
                  }
              );
              terminalsMenu.push(
                  {
                      title: 'Add new measurement',
-                     action: function(elm, d, i) {
-                         self.addNewMeasurement(elm, d, i);
+                     action: function(d, i) {
+                         self.addNewMeasurement(this, d, i);
                      }
                  }
              );
@@ -376,8 +419,6 @@
                // trap the ctrl key being pressed
                if (d3.event.ctrlKey) {
                    self.disableDrag();
-                   // delete any brush
-                   d3.select("svg").select("g.brush").call(d3.brush().move, null);
                    self.disableZoom();
                    self.disableForce();
                    self.enableZoom();
@@ -386,7 +427,7 @@
            .on("keyup", function() {
                self.disableZoom();
                switch(self.status) {
-                   case"DRAG":
+                   case "DRAG":
                        if (d3.event.keyCode === 17) { // "Control"
                            self.enableDrag();
                        }
@@ -614,7 +655,11 @@
 
      disableDrag() {
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").on(".drag", null);
-         d3.select("svg").select("g.brush").on(".brush", null); 
+         d3.select("svg").select("g.brush").on(".brush", null);
+         if (self.status === "DRAG") {
+             // delete any brush
+             d3.select("svg").select("g.brush").call(d3.brush().move, null);
+         }
      }
 
      enableForce() {
@@ -788,8 +833,15 @@
 
      // draw single-segment objects
      enableAdd(e) {
-         let type = e.target.parentNode.id;
-         let text = e.target.textContent;
+         let type = "";
+         let text = "";
+         if (typeof(e) === "object") {
+             type = e.target.parentNode.id;
+             text = e.target.textContent;
+         } else {
+             type = e;
+             text = d3.select("#" + type + " > a").text();
+         }
          let options = undefined;
          if (text === "Three-winding Transformer") {
              options = {windNum: 3};
@@ -801,13 +853,15 @@
          self.status = "ADD" + type;
          d3.select("svg").on("click.add", clicked);
          function clicked() {
-             let newObject = opts.model.createObject(type, options);
+             let newObject = opts.model.createObject("cim:" + type, options);
              self.parent.addToDiagram(newObject);
          }
      }
 
      // draw multi-segment objects
      enableAddMulti(e) {
+         let type = "";
+         let text = "";
          self.disableAll();
          // handle escape key
          d3.select("body").on("keyup.addMulti", function() {
@@ -816,60 +870,22 @@
                  self.enableAddMulti(e);
              }
          });
-         let type = e.target.parentNode.id;
-         let text = e.target.textContent;
+         if (typeof(e) === "object") {
+             type = e.target.parentNode.id;
+             text = e.target.textContent;
+         } else {
+             type = e;
+             text = d3.select("#" + type + " > a").text();
+         }
          d3.select(self.root).selectAll("label").classed("active", false);
          $("input").prop('checked', false);
          $("#addElement").text(text);
-         self.status = "ADD" + type;
+         self.status = "ADDMulti" + type;
          d3.select("svg").on("click.add", clicked);
          let newObject = undefined;
          function clicked() {
-             let line = d3.line()
-                          .x(function(d) { return d.x; })
-                          .y(function(d) { return d.y; });
-             
-             let svg = d3.select("svg");
-             let path = svg.selectAll("svg > path");
-             let circle = svg.selectAll("svg > circle");
-             function mousemoved() {
-                 let m = d3.mouse(this);
-                 let transform = d3.zoomTransform(d3.select("svg").node());
-                 circle.attr("transform", function () {
-                     let mousex = m[0] + 10;
-                     let mousey = m[1] + 10;
-                     return "translate(" + mousex + "," + mousey +")";
-                 });
-                 path.data([newObject]);
-                 path.attr("d", function() {
-                     let lineData = [];
-                     for (let linePoint of newObject.lineData) {
-                         lineData.push({x: ((linePoint.x+newObject.x)*transform.k) + transform.x,
-                                        y: ((linePoint.y+newObject.y)*transform.k) + transform.y});
-                     }
-                     lineData.push({x: m[0], y: m[1]});
-                     return line(lineData);
-                 });
-                 // highlight when aligned
-                 let last = newObject.lineData[newObject.lineData.length - 1];
-                 let newx = Math.round((m[0] - transform.x) / transform.k) - newObject.x;
-                 let newy = Math.round((m[1] - transform.y) / transform.k) - newObject.y;
-                 let hG = d3.select("svg").select("g.diagram-highlight");
-                 if (newx === last.x) {
-                     self.highlight("x", m[0]);
-                 } else {
-                     if (newy === last.y) {
-                         self.highlight("y", m[1]);
-                     } else {
-                         self.highlight(null);
-                     }
-                 }
-             }
-             
-             if (self.status === "ADD" + type) {
-                 d3.select("svg").on("contextmenu.add", finish);
-                 svg.on("mousemove", mousemoved);
-                 newObject = opts.model.createObject(type);
+             if (self.status === "ADDMulti" + type) {
+                 newObject = opts.model.createObject("cim:" + type);
                  let m = d3.mouse(d3.select("svg").node());
                  let transform = d3.zoomTransform(d3.select("svg").node());
                  let xoffset = transform.x;
@@ -880,38 +896,85 @@
                  newObject.y = Math.round((m[1] - yoffset) / svgZoom);
                  newObject.py = newObject.y;
                  newObject.lineData = [{x: 0, y: 0, seq: 1}];
-                 self.status = "ADDdrawing"
+                 self.addDrawing(newObject, function() {
+                     let svg = d3.select("svg");
+                     let path = svg.selectAll("svg > path");
+                     let circle = svg.selectAll("svg > circle");
+                     d3.event.preventDefault();
+                     self.addNewPoint(newObject);
+                     opts.model.addToActiveDiagram(newObject, newObject.lineData);
+                     self.status = "ADDMulti" + type;
+                     svg.on("mousemove", null);
+                     path.attr("d", null);
+                     circle.attr("transform", "translate(0, 0)");
+                     d3.select("svg > path").datum(null);
+                     // disable ourselves
+                     svg.on("contextmenu.add", null);
+                 });
              } else {
-                 addNewPoint(newObject);
+                 self.addNewPoint(newObject);
              }
          };
-         
-         function finish() {
-             d3.event.preventDefault();
-             addNewPoint(newObject);
-             opts.model.addToActiveDiagram(newObject, newObject.lineData);
-             self.status = "ADD" + type;
-             d3.select("svg").on("mousemove", null);
-             d3.select("svg").selectAll("svg > path").attr("d", null);
-             d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
-             d3.select("svg > path").datum(null);
-             // disable ourselves
-             d3.select("svg").on("contextmenu.add", null);
-         };
+     }
 
-         function addNewPoint(newObject) {
-             let m = d3.mouse(d3.select("svg").node());
-             let transform = d3.zoomTransform(d3.select("svg").node());
-             let xoffset = transform.x;
-             let yoffset = transform.y;
-             let svgZoom = transform.k;
-             let newx = Math.round((m[0] - xoffset) / svgZoom) - newObject.x;
-             let newy = Math.round((m[1] - yoffset) / svgZoom) - newObject.y;
-             let newSeq = newObject.lineData.length + 1;                 
-             newObject.lineData.push({x: newx, y: newy, seq: newSeq});
-             // remove highlight
-             self.highlight(null);
+     addDrawing(newObject, finish) {
+         self.status = "ADDdrawing";
+         let svg = d3.select("svg");
+         let path = svg.selectAll("svg > path");
+         let circle = svg.selectAll("svg > circle");
+         svg.on("contextmenu.add", finish);
+         svg.on("mousemove", mousemoved);
+         
+         function mousemoved() {
+             let line = d3.line()
+                          .x(function(d) { return d.x; })
+                          .y(function(d) { return d.y; });
+             let m = d3.mouse(this);
+             let transform = d3.zoomTransform(svg.node());
+             circle.attr("transform", function () {
+                 let mousex = m[0] + 10;
+                 let mousey = m[1] + 10;
+                 return "translate(" + mousex + "," + mousey +")";
+             });
+             path.data([newObject]);
+             path.attr("d", function() {
+                 let lineData = [];
+                 for (let linePoint of newObject.lineData) {
+                     lineData.push({x: ((linePoint.x+newObject.x)*transform.k) + transform.x,
+                                    y: ((linePoint.y+newObject.y)*transform.k) + transform.y});
+                 }
+                 lineData.push({x: m[0], y: m[1]});
+                 return line(lineData);
+             });
+             // highlight when aligned
+             let last = newObject.lineData[newObject.lineData.length - 1];
+             let newx = Math.round((m[0] - transform.x) / transform.k) - newObject.x;
+             let newy = Math.round((m[1] - transform.y) / transform.k) - newObject.y;
+             let hG = svg.select("g.diagram-highlight");
+             if (newx === last.x) {
+                 self.highlight("x", m[0]);
+             } else {
+                 if (newy === last.y) {
+                     self.highlight("y", m[1]);
+                 } else {
+                     self.highlight(null);
+                 }
+             }
          };
+     }
+
+     addNewPoint(newObject) {
+         let m = d3.mouse(d3.select("svg").node());
+         let transform = d3.zoomTransform(d3.select("svg").node());
+         let xoffset = transform.x;
+         let yoffset = transform.y;
+         let svgZoom = transform.k;
+         let newx = Math.round((m[0] - xoffset) / svgZoom) - newObject.x;
+         let newy = Math.round((m[1] - yoffset) / svgZoom) - newObject.y;
+         let newSeq = newObject.lineData.length + 1;                 
+         newObject.lineData.push({x: newx, y: newy, seq: newSeq});
+         // remove highlight
+         self.highlight(null);
      }
 
      highlight(direction, val, rotation) {
@@ -1105,7 +1168,11 @@
      }
      
      addContextMenu(selection) {
-         selection.on("contextmenu", d3.contextMenu(menu));
+         selection.filter("g:not(.ACLineSegment)")
+                  .filter("g:not(." + NODE_CLASS + ")")
+                  .on("contextmenu", d3.contextMenu(menu));
+         selection.filter("g.ACLineSegment,g." + NODE_CLASS)
+                  .on("contextmenu", d3.contextMenu(multiMenu));
          // setup context menu for terminals
          let terminals = selection.filter("g:not(.PowerTransformer)").selectAll("g.Terminal");
          terminals.on("contextmenu", function(d, i, nodes) {
@@ -1135,6 +1202,25 @@
          // delete from model
          for (let datum of selection.data()) {
              opts.model.deleteObject(datum);
+         }
+     }
+
+     deleteFromDiagram(elm) {
+         if (selected.indexOf(elm) === -1) {
+             self.deselectAll();
+             selected.push(elm);
+         }
+         quadtree.removeAll(selected); // update quadtree
+         $(selected).filter('[data-toggle="popover"]').popover("destroy");
+         let selection = d3.selectAll(selected);
+         let terminals = opts.model.getTerminals(selection.data());
+         d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+             return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
+         }).remove();
+         selection.remove();
+         // delete from model
+         for (let datum of selection.data()) {
+             opts.model.deleteFromDiagram(datum);
          }
      }
     </script>
