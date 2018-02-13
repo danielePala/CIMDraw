@@ -195,6 +195,15 @@
                  };
              }
          }]);
+     // menu for a point of a multi-segment object
+     let resizeMenu = [
+         {
+             title: "Delete point",
+             action: function(d, i) {
+                 console.log(d);
+             }
+         }
+     ];
      let terminalsMenu = [
          {
              title: "Add new operational limit set",
@@ -650,7 +659,8 @@
                self.hover(this);
            })
            .selectAll("g.resize")
-           .call(resizeDrag);
+           .call(resizeDrag)
+           .on("contextmenu", d3.contextMenu(resizeMenu));
      }
 
      disableDrag() {
@@ -1171,8 +1181,11 @@
          selection.filter("g:not(.ACLineSegment)")
                   .filter("g:not(." + NODE_CLASS + ")")
                   .on("contextmenu", d3.contextMenu(menu));
-         selection.filter("g.ACLineSegment,g." + NODE_CLASS)
-                  .on("contextmenu", d3.contextMenu(multiMenu));
+         let multis = selection.filter("g.ACLineSegment,g." + NODE_CLASS);
+         multis.selectAll("path").on("contextmenu", function(d, i, nodes) {
+             d3.contextMenu(multiMenu).bind(this.parentNode)(d, i, nodes);
+             d3.event.stopPropagation();
+         });
          // setup context menu for terminals
          let terminals = selection.filter("g:not(.PowerTransformer)").selectAll("g.Terminal");
          terminals.on("contextmenu", function(d, i, nodes) {

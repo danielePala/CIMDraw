@@ -1193,6 +1193,19 @@ function cimModel() {
         deleteFromDiagram(object) {
             let objUUID = object.attributes.getNamedItem("rdf:ID").value;
             let dobjs = model.getDiagramObjects([object]);
+            let nodeName = "ConnectivityNode";
+            if (mode === "BUS_BRANCH") {
+                nodeName = "TopologicalNode";
+            }
+            if (object.localName === "BusbarSection") {
+                let node = model.getNode(object);
+                dobjs = dobjs.concat(model.getDiagramObjects([node]));
+            }
+            if (object.localName === nodeName) {
+                let busbar = model.getBusbar(object);
+                dobjs = dobjs.concat(model.getDiagramObjects([busbar]));
+            }
+
             let points = model.getTargets(
                 dobjs,
                 "DiagramObject.DiagramObjectPoints");
