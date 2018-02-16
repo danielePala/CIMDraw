@@ -200,7 +200,14 @@
          {
              title: "Delete point",
              action: function(d, i) {
-                 console.log(d);
+                 d[0].lineData = d[0].lineData.filter(el => el.seq !== d[1]);
+                 for (let p of d[0].lineData) {
+                     if (p.seq > d[1]) {
+                         p.seq = p.seq - 1;
+                     }
+                 }
+                 self.deleteFromDiagram(this.parentNode);
+                 opts.model.addToActiveDiagram(d[0], d[0].lineData);
              }
          }
      ];
@@ -660,6 +667,11 @@
            })
            .selectAll("g.resize")
            .call(resizeDrag)
+           .filter(function(d) {
+               // if we have more than two points,
+               // allow the delete operation
+               return d[0].lineData.length > 2;
+           })
            .on("contextmenu", d3.contextMenu(resizeMenu));
      }
 
