@@ -499,12 +499,12 @@ function cimModel() {
         loadRemote(fileName, callback) {
             if (model.fileName !== decodeURI(fileName).substring(1)) {
                 model.fileName = decodeURI(fileName).substring(1);
-                d3.xml(fileName, function(error, data) {
+                d3.xml(fileName, function(error, xml_data) {
                     if (error !== null) {
                         callback(error);
                         return;
                     }
-                    data.all = data;
+                    data.all = xml_data;
                     buildModel(callback);
                 });
             } else {
