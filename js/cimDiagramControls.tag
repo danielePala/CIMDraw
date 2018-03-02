@@ -264,45 +264,63 @@
      let resizeDrag = d3.drag().on("drag", function(d) {
          // hide popovers
          $(selected).filter('[data-toggle="popover"]').popover("hide");
-         let p = d[0].lineData.filter(el => el.seq === d[1])[0];
-         let ev = self.parent.rotate({x: d3.event.x, y: d3.event.y}, d[0].rotation);
-         if (p.seq !== 1) {
-             p.x = d3.event.x;
-             p.y = d3.event.y;
-         } else {
-             d[0].x = d[0].x + ev.x;
-             d[0].y = d[0].y + ev.y;
-             for (let point of d[0].lineData) {
-                 if (point.seq === 1) {
-                     continue;
-                 }
-                 point.x = point.x - d3.event.x;
-                 point.y = point.y - d3.event.y;
-             }
-         }
+         movePoint(d, d3.event);
+         let xaligned = false;
+         let yaligned = false;
+         let movex = d3.event.x;
+         let movey = d3.event.y;
          // check alignment with nearby points
          for (let point of d[0].lineData) {
              if (point.seq === d[1]) {
                  continue;
              }
              let transform = d3.zoomTransform(d3.select("svg").node());
-             if (d3.event.x === point.x) {
+             let deltax = d3.event.x - point.x;
+             let deltay = d3.event.y - point.y;
+             if (Math.abs(deltax) < 10) {
+                 movex = point.x;
+                 movePoint(d, {x: movex, y: movey});
                  let m = ((point.x + d[0].x) * transform.k) + transform.x;
                  let mr = (d[0].y * transform.k) + transform.y;
                  self.highlight("x", m, {val: d[0].rotation, x: m, y: mr});
-                 break;
-             } else {
-                 if (d3.event.y === point.y) {
-                     let m = ((point.y + d[0].y) * transform.k) + transform.y;
-                     let mr = (d[0].x * transform.k) + transform.x;
-                     self.highlight("y", m, {val: d[0].rotation, x: mr, y: m});
-                     break;
-                 } else {
-                     self.highlight(null);
-                 }
-             }   
+                 xaligned = true;
+             }
+             if (Math.abs(deltay) < 10) {
+                 movey = point.y;
+                 movePoint(d, {x: movex, y: movey});
+                 let m = ((point.y + d[0].y) * transform.k) + transform.y;
+                 let mr = (d[0].x * transform.k) + transform.x;
+                 self.highlight("y", m, {val: d[0].rotation, x: mr, y: m});
+                 yaligned = true;
+             }  
          }
+         if (xaligned === false) {
+             self.highlight("x", null);
+         }
+         if (yaligned === false) {
+             self.highlight("y", null);
+         }
+
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
+
+         function movePoint(d, delta) {
+             let p = d[0].lineData.filter(el => el.seq === d[1])[0];
+             let ev = self.parent.rotate({x: delta.x, y: delta.y}, d[0].rotation);
+             if (p.seq !== 1) {
+                 p.x = delta.x;
+                 p.y = delta.y;
+             } else {
+                 d[0].x = d[0].x + ev.x;
+                 d[0].y = d[0].y + ev.y;
+                 for (let point of d[0].lineData) {
+                     if (point.seq === 1) {
+                         continue;
+                     }
+                     point.x = point.x - delta.x;
+                     point.y = point.y - delta.y;
+                 }
+             }
+         };
      }).on("start", function(d) {
          quadtree.removeAll(selected); // update quadtree
      }).on("end", function(d) {
@@ -953,46 +971,68 @@
                           .y(function(d) { return d.y; });
              let m = d3.mouse(this);
              let transform = d3.zoomTransform(svg.node());
-             circle.attr("transform", function () {
-                 let mousex = m[0] + 10;
-                 let mousey = m[1] + 10;
-                 return "translate(" + mousex + "," + mousey +")";
-             });
-             path.data([newObject]);
-             path.attr("d", function() {
-                 let lineData = [];
-                 for (let linePoint of newObject.lineData) {
-                     lineData.push({x: ((linePoint.x+newObject.x)*transform.k) + transform.x,
-                                    y: ((linePoint.y+newObject.y)*transform.k) + transform.y});
-                 }
-                 lineData.push({x: m[0], y: m[1]});
-                 return line(lineData);
-             });
-             // highlight when aligned
-             let last = newObject.lineData[newObject.lineData.length - 1];
-             let newx = Math.round((m[0] - transform.x) / transform.k) - newObject.x;
-             let newy = Math.round((m[1] - transform.y) / transform.k) - newObject.y;
+             movePoint({x: m[0], y: m[1]});
+             // highlight when aligned\
+             let xaligned = false;
+             let yaligned = false;
+             let newx = ((m[0] - transform.x) / transform.k) - newObject.x;
+             let newy = ((m[1] - transform.y) / transform.k) - newObject.y;
+             let movex = m[0];
+             let movey = m[1];
              let hG = svg.select("g.diagram-highlight");
-             if (newx === last.x) {
-                 self.highlight("x", m[0]);
-             } else {
-                 if (newy === last.y) {
-                     self.highlight("y", m[1]);
-                 } else {
-                     self.highlight(null);
+             for (let point of newObject.lineData) {
+                 let deltax = newx - point.x;
+                 let deltay = newy - point.y;
+                 if (Math.abs(deltax) < 10) {
+                     movex = ((point.x + newObject.x) * transform.k) + transform.x;
+                     movePoint({x: movex, y: movey});
+                     self.highlight("x", movex);
+                     xaligned = true;
                  }
+                 if (Math.abs(deltay) < 10) {
+                     movey = ((point.y + newObject.y) * transform.k) + transform.y;
+                     movePoint({x: movex, y: movey});
+                     self.highlight("y", movey);
+                     yaligned = true;
+                 } 
              }
+             if (xaligned === false) {
+                 self.highlight("x", null);
+             }
+             if (yaligned === false) {
+                 self.highlight("y", null);
+             }
+
+             function movePoint(p) {
+                 circle.attr("transform", function () {
+                     let mousex = p.x + 10;
+                     let mousey = p.y + 10;
+                     return "translate(" + mousex + "," + mousey +")";
+                 });
+                 path.attr("d", function() {
+                     let lineData = [];
+                     for (let linePoint of newObject.lineData) {
+                         lineData.push({x: ((linePoint.x+newObject.x)*transform.k) + transform.x,
+                                        y: ((linePoint.y+newObject.y)*transform.k) + transform.y});
+                     }
+                     lineData.push({x: p.x, y: p.y});
+                     return line(lineData);
+                 });
+                 path.datum({x: p.x, y: p.y});
+             };
          };
      }
 
      addNewPoint(newObject) {
-         let m = d3.mouse(d3.select("svg").node());
-         let transform = d3.zoomTransform(d3.select("svg").node());
+         let svg = d3.select("svg");
+         let path = svg.selectAll("svg > path");
+         let point = path.datum();
+         let transform = d3.zoomTransform(svg.node());
          let xoffset = transform.x;
          let yoffset = transform.y;
          let svgZoom = transform.k;
-         let newx = Math.round((m[0] - xoffset) / svgZoom) - newObject.x;
-         let newy = Math.round((m[1] - yoffset) / svgZoom) - newObject.y;
+         let newx = Math.round((point.x - xoffset) / svgZoom) - newObject.x;
+         let newy = Math.round((point.y - yoffset) / svgZoom) - newObject.y;
          let newSeq = newObject.lineData.length + 1;                 
          newObject.lineData.push({x: newx, y: newy, seq: newSeq});
          // remove highlight
@@ -1013,19 +1053,36 @@
              y1 = size * (-1);
              x2 = val;
              y2 = size;
+             hG.select("line.highlight-x")
+               .attr("x1", x1)
+               .attr("y1", y1)
+               .attr("x2", x2)
+               .attr("y2", y2);
          } else {
              if (direction === "y") {
                  x1 = size * (-1);
                  y1 = val;
                  x2 = size;
                  y2 = val;
-             } 
+                 hG.select("line.highlight-y")
+                   .attr("x1", x1)
+                   .attr("y1", y1)
+                   .attr("x2", x2)
+                   .attr("y2", y2);
+             } else {
+                 hG.select("line.highlight-x")
+                   .attr("x1", x1)
+                   .attr("y1", y1)
+                   .attr("x2", x2)
+                   .attr("y2", y2);
+                 hG.select("line.highlight-y")
+                   .attr("x1", x1)
+                   .attr("y1", y1)
+                   .attr("x2", x2)
+                   .attr("y2", y2);
+             }
          }
-         hG.select("line.highlight")
-           .attr("x1", x1)
-           .attr("y1", y1)
-           .attr("x2", x2)
-           .attr("y2", y2);
+         
          
          if (arguments.length === 3) {
                  hG.attr("transform", "rotate(" + rotation.val + "," + rotation.x + "," + rotation.y + ")");

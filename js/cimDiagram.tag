@@ -40,7 +40,7 @@
          height: 800px;
      }
  
-     line.highlight {
+     line.highlight-x, line.highlight-y {
          stroke: red;
          stroke-width: 1;
      }
@@ -59,7 +59,8 @@
             <g class="brush"></g>
             <g class="diagram-grid"></g>
             <g class="diagram-highlight">
-                <line class="highlight"></line>
+                <line class="highlight-x"></line>
+                <line class="highlight-y"></line>
             </g>
             <g class="diagram">
                 <g class="edges"></g>
