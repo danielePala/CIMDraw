@@ -264,41 +264,54 @@
      let resizeDrag = d3.drag().on("drag", function(d) {
          // hide popovers
          $(selected).filter('[data-toggle="popover"]').popover("hide");
-         movePoint(d, d3.event);
          let xaligned = false;
          let yaligned = false;
          let movex = d3.event.x;
          let movey = d3.event.y;
+         let transform = d3.zoomTransform(d3.select("svg").node());
+         let absx = movex + d[0].x;
+         let absy = movey + d[0].y;
+         let nearNodes = self.search(quadtree, absx - (250/transform.k), absy - (250/transform.k), absx + (250/transform.k), absy + (250/transform.k));
+         let near = d3.selectAll(nearNodes).data();
+         near.push(d[0]);
          // check alignment with nearby points
-         for (let point of d[0].lineData) {
-             if (point.seq === d[1]) {
-                 continue;
+         for (let datum of near) {
+             ploop: for (let point of datum.lineData) {
+                 if (datum === d[0] && point.seq === d[1]) {
+                     continue ploop;
+                 }
+                 let absxP = point.x + datum.x;
+                 let absyP = point.y + datum.y;
+                 let deltax = absx - absxP;
+                 let deltay = absy - absyP;
+                 if (Math.abs(deltax) < 10) {
+                     absx = absxP;
+                     movex = absx - d[0].x;
+                     let m = ((absxP) * transform.k) + transform.x;
+                     let mr = (d[0].y * transform.k) + transform.y;
+                     self.highlight("x", m, {val: d[0].rotation, x: m, y: mr});
+                     xaligned = true;
+                 }
+                 if (Math.abs(deltay) < 10) {
+                     absy = absyP;
+                     movey = absy - d[0].y;
+                     let m = ((absyP) * transform.k) + transform.y;
+                     let mr = (d[0].x * transform.k) + transform.x;
+                     self.highlight("y", m, {val: d[0].rotation, x: mr, y: m});
+                     yaligned = true;
+                 }
              }
-             let transform = d3.zoomTransform(d3.select("svg").node());
-             let deltax = d3.event.x - point.x;
-             let deltay = d3.event.y - point.y;
-             if (Math.abs(deltax) < 10) {
-                 movex = point.x;
-                 movePoint(d, {x: movex, y: movey});
-                 let m = ((point.x + d[0].x) * transform.k) + transform.x;
-                 let mr = (d[0].y * transform.k) + transform.y;
-                 self.highlight("x", m, {val: d[0].rotation, x: m, y: mr});
-                 xaligned = true;
-             }
-             if (Math.abs(deltay) < 10) {
-                 movey = point.y;
-                 movePoint(d, {x: movex, y: movey});
-                 let m = ((point.y + d[0].y) * transform.k) + transform.y;
-                 let mr = (d[0].x * transform.k) + transform.x;
-                 self.highlight("y", m, {val: d[0].rotation, x: mr, y: m});
-                 yaligned = true;
-             }  
          }
          if (xaligned === false) {
              self.highlight("x", null);
          }
          if (yaligned === false) {
              self.highlight("y", null);
+         }
+         if (xaligned === false && yaligned === false) {
+             movePoint(d, d3.event);
+         } else {
+             movePoint(d, {x: movex, y: movey});
          }
 
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
@@ -657,25 +670,28 @@
              let tx = transform.x;
              let ty = transform.y;
              let tZoom = transform.k;        
-             search(quadtree, (extent[0][0] - tx)/tZoom, (extent[0][1] - ty)/tZoom, (extent[1][0] - tx)/tZoom, (extent[1][1] - ty)/tZoom);
+             selected = self.search(quadtree, (extent[0][0] - tx)/tZoom, (extent[0][1] - ty)/tZoom, (extent[1][0] - tx)/tZoom, (extent[1][1] - ty)/tZoom);
              self.updateSelected();
-             // Find the nodes within the specified rectangle.
-             function search(quadtree, x0, y0, x3, y3) {
-                 quadtree.visit(function(node, x1, y1, x2, y2) {
-                     if (!node.length) {
-                         do {
-                             var d = node.data;
-                             let dx = d3.select(d).data()[0].x;
-                             let dy = d3.select(d).data()[0].y;
-                             if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
-                                 selected.push(d);
-                             }
-                         } while (node = node.next);
-                     }
-                     return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
-                 });
-             }
          };
+     }
+
+     // Find the nodes within the specified rectangle.
+     search(quadtree, x0, y0, x3, y3) {
+         let neighbours = [];
+         quadtree.visit(function(node, x1, y1, x2, y2) {
+             if (!node.length) {
+                 do {
+                     let d = node.data;
+                     let dx = d3.select(d).datum().x;
+                     let dy = d3.select(d).datum().y;
+                     if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
+                         neighbours.push(d);
+                     }
+                 } while (node = node.next);
+             }
+             return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
+         });
+         return neighbours;
      }
 
      updateSelected() {
