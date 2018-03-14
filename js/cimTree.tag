@@ -119,7 +119,7 @@
      let menu = d3.contextMenu([
          {
              title: 'Delete',
-             action: function(elm, d, i) {
+             action: function(d, i) {
                  opts.model.deleteObject(d);
              }
          }
