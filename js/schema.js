@@ -72,30 +72,30 @@ function cimSchema() {
         buildSchema(callback) { 
             // let's read schema files, if necessary
             if (schemaData["EQ"] === null) {            
-                d3.xml(rdfsEQ, function(error, schemaDataEQ) {
+                d3.xml(rdfsEQ).then(function(schemaDataEQ) {
                     schemaData["EQ"] = schemaDataEQ;
                     populateInvLinkMap(schemaData["EQ"]);
-                    d3.xml(rdfsDL, function(schemaDataDL) {
-                        schemaData["DL"] = schemaDataDL;
-                        populateInvLinkMap(schemaData["DL"]);
-                        d3.xml(rdfsSV, function(schemaDataSV) {
-                            schemaData["SV"] = schemaDataSV;
-                            populateInvLinkMap(schemaData["SV"]);
-                            d3.xml(rdfsTP, function(schemaDataTP) {
-                                schemaData["TP"] = schemaDataTP;
-                                populateInvLinkMap(schemaData["TP"]);
-                                d3.xml(rdfsSSH, function(schemaDataSSH) {
-                                    schemaData["SSH"] = schemaDataSSH;
-                                    populateInvLinkMap(schemaData["SSH"]);
-                                    d3.xml(rdfsGL, function(schemaDataGL) {
-                                        schemaData["GL"] = schemaDataGL;
-                                        populateInvLinkMap(schemaData["GL"]);
-                                        callback(null);
-                                    });
-                                });
-                            });
-                        });
-                    });
+                    return d3.xml(rdfsDL);
+                }).then(function(schemaDataDL) {
+                    schemaData["DL"] = schemaDataDL;
+                    populateInvLinkMap(schemaData["DL"]);
+                    return d3.xml(rdfsSV);
+                }).then(function(schemaDataSV) {
+                    schemaData["SV"] = schemaDataSV;
+                    populateInvLinkMap(schemaData["SV"]);
+                    return d3.xml(rdfsTP);
+                }).then(function(schemaDataTP) {
+                    schemaData["TP"] = schemaDataTP;
+                    populateInvLinkMap(schemaData["TP"]);
+                    return d3.xml(rdfsSSH);
+                }).then(function(schemaDataSSH) {
+                    schemaData["SSH"] = schemaDataSSH;
+                    populateInvLinkMap(schemaData["SSH"]);
+                    return d3.xml(rdfsGL);
+                }).then(function(schemaDataGL) {
+                    schemaData["GL"] = schemaDataGL;
+                    populateInvLinkMap(schemaData["GL"]);
+                    callback(null);
                 });
             } else {
                 callback(null);
