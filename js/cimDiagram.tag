@@ -566,10 +566,12 @@
                      // handle busbars
                      if (psr.nodeName === "cim:BusbarSection") {
                          psr = self.model.getNode(psr);
-                     }   
-                     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                     let psrSelection = d3.select("g#" + psrUUID);
-                     self.createStatusInfo(psrSelection);
+                     }
+                     if (psr !== null) {
+                         let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                         let psrSelection = d3.select("g#" + psrUUID);
+                         self.createStatusInfo(psrSelection);
+                     }
                  }
                  break;
              }
