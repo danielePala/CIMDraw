@@ -940,35 +940,37 @@
          d3.select("svg").on("click.add", clicked);
          let newObject = undefined;
          function clicked() {
-             if (self.status === "ADDMulti" + type) {
-                 newObject = opts.model.createObject("cim:" + type);
-                 let m = d3.mouse(d3.select("svg").node());
-                 let transform = d3.zoomTransform(d3.select("svg").node());
-                 let xoffset = transform.x;
-                 let yoffset = transform.y;
-                 let svgZoom = transform.k;
-                 newObject.x = Math.round((m[0] - xoffset) / svgZoom);
-                 newObject.px = newObject.x;
-                 newObject.y = Math.round((m[1] - yoffset) / svgZoom);
-                 newObject.py = newObject.y;
-                 newObject.lineData = [{x: 0, y: 0, seq: 1}];
-                 self.addDrawing(newObject, function() {
-                     let svg = d3.select("svg");
-                     let path = svg.selectAll("svg > path");
-                     let circle = svg.selectAll("svg > circle");
-                     d3.event.preventDefault();
+             if (d3.event.ctrlKey === false) {
+                 if (self.status === "ADDMulti" + type) {
+                     newObject = opts.model.createObject("cim:" + type);
+                     let m = d3.mouse(d3.select("svg").node());
+                     let transform = d3.zoomTransform(d3.select("svg").node());
+                     let xoffset = transform.x;
+                     let yoffset = transform.y;
+                     let svgZoom = transform.k;
+                     newObject.x = Math.round((m[0] - xoffset) / svgZoom);
+                     newObject.px = newObject.x;
+                     newObject.y = Math.round((m[1] - yoffset) / svgZoom);
+                     newObject.py = newObject.y;
+                     newObject.lineData = [{x: 0, y: 0, seq: 1}];
+                     self.addDrawing(newObject, function() {
+                         let svg = d3.select("svg");
+                         let path = svg.selectAll("svg > path");
+                         let circle = svg.selectAll("svg > circle");
+                         d3.event.preventDefault();
+                         self.addNewPoint(newObject);
+                         opts.model.addToActiveDiagram(newObject, newObject.lineData);
+                         self.status = "ADDMulti" + type;
+                         svg.on("mousemove", null);
+                         path.attr("d", null);
+                         circle.attr("transform", "translate(0, 0)");
+                         d3.select("svg > path").datum(null);
+                         // disable ourselves
+                         svg.on("contextmenu.add", null);
+                     });
+                 } else {
                      self.addNewPoint(newObject);
-                     opts.model.addToActiveDiagram(newObject, newObject.lineData);
-                     self.status = "ADDMulti" + type;
-                     svg.on("mousemove", null);
-                     path.attr("d", null);
-                     circle.attr("transform", "translate(0, 0)");
-                     d3.select("svg > path").datum(null);
-                     // disable ourselves
-                     svg.on("contextmenu.add", null);
-                 });
-             } else {
-                 self.addNewPoint(newObject);
+                 }
              }
          };
      }
@@ -988,25 +990,28 @@
              let m = d3.mouse(this);
              let transform = d3.zoomTransform(svg.node());
              movePoint({x: m[0], y: m[1]});
-             // highlight when aligned\
+             // highlight when aligned
              let xaligned = false;
              let yaligned = false;
-             let newx = ((m[0] - transform.x) / transform.k) - newObject.x;
-             let newy = ((m[1] - transform.y) / transform.k) - newObject.y;
+             let newx = ((m[0] - transform.x) / transform.k);
+             let newy = ((m[1] - transform.y) / transform.k);
              let movex = m[0];
              let movey = m[1];
              let hG = svg.select("g.diagram-highlight");
+             let datum = newObject; // TODO: loop over nearby objects
              for (let point of newObject.lineData) {
-                 let deltax = newx - point.x;
-                 let deltay = newy - point.y;
+                 let absxP = point.x + datum.x;
+                 let absyP = point.y + datum.y;
+                 let deltax = newx - absxP;
+                 let deltay = newy - absyP;
                  if (Math.abs(deltax) < 10) {
-                     movex = ((point.x + newObject.x) * transform.k) + transform.x;
+                     movex = (absxP * transform.k) + transform.x;
                      movePoint({x: movex, y: movey});
                      self.highlight("x", movex);
                      xaligned = true;
                  }
                  if (Math.abs(deltay) < 10) {
-                     movey = ((point.y + newObject.y) * transform.k) + transform.y;
+                     movey = (absyP * transform.k) + transform.y;
                      movePoint({x: movex, y: movey});
                      self.highlight("y", movey);
                      yaligned = true;
