@@ -909,8 +909,10 @@
          self.status = "ADD" + type;
          d3.select("svg").on("click.add", clicked);
          function clicked() {
-             let newObject = opts.model.createObject("cim:" + type, options);
-             self.parent.addToDiagram(newObject);
+             if (d3.event.ctrlKey === false) {
+                 let newObject = opts.model.createObject("cim:" + type, options);
+                 self.parent.addToDiagram(newObject);
+             }
          }
      }
 
