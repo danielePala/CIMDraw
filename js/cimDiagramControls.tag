@@ -430,6 +430,14 @@
                      }
                  }
              );
+             multiMenu.push(
+                 {
+                     title: 'Add new measurement',
+                     action: function(d, i) {
+                         self.addNewMeasurement(this, d, i);
+                     }
+                 }
+             );
              terminalsMenu.push(
                  {
                      title: 'Add new measurement',
