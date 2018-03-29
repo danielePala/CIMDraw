@@ -1049,7 +1049,7 @@
                      lineData.push({x: p.x, y: p.y});
                      return line(lineData);
                  });
-                 path.datum({x: p.x, y: p.y});
+                 path.datum({obj: newObject, x: p.x, y: p.y});
              };
          };
      }
@@ -1133,9 +1133,11 @@
          // delete from model
          let datum = d3.select("svg > path").datum();
          if (typeof(datum) !== "undefined") {
-             opts.model.deleteObject(datum);
+             opts.model.deleteObject(datum.obj);
          }
          d3.select("svg > path").datum(null);
+         self.highlight("x", null);
+         self.highlight("y", null);
      }
 
      hover(hoverD) {
