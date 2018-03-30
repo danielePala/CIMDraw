@@ -118,6 +118,9 @@
          let xAxis = d3.axisBottom(xScale);
          d3.select("svg").append("g").attr("id", "yAxisG").call(yAxis);
          d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
+         d3.select("svg").on("click", function(d) {
+             //$('[data-toggle="popover"]').popover("hide");
+         });
          // draw grid
          self.drawGrid(1.0);
      });
