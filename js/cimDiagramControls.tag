@@ -577,6 +577,8 @@
                      dd.px = dd.x;
                      dd.y = dd.y + deltay;
                      dd.py = dd.y;
+                     let point = {x: dd.x, y: dd.y};
+                     self.checkAlignment(dd, 1, point, movePoint);
                      opts.model.updateActiveDiagram(dd, dd.lineData);
                  }
                  for (let c of cnsToMove) {
@@ -594,6 +596,13 @@
                      c.cn.y = (t1XY.y + t2XY.y)/2;
                      opts.model.updateActiveDiagram(c.cn, c.cn.lineData);
                  }
+
+                 function movePoint(d, seq, delta) {
+                     let p = d.lineData[0];
+                     let ev = self.parent.rotate({x: delta.x, y: delta.y}, d.rotation);
+                     d.x = d.x + ev.x;
+                     d.y = d.y + ev.y;
+                 };
              })
              .on("end", function(d) {
                  quadtree.addAll(selected); // update quadtree
@@ -603,6 +612,8 @@
                      return d3.selectAll(selected).data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
                  });
                  links.select("path").attr("stroke", "black").attr("stroke-width", "1");
+                 self.highlight("x", null);
+                 self.highlight("y", null);
              });
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
          d3.select("svg").select("g.brush").call(
