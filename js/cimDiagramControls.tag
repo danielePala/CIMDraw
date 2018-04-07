@@ -265,7 +265,8 @@
          // hide popovers
          $(selected).filter('[data-toggle="popover"]').popover("hide");
          let point = {x: d3.event.x + d[0].x, y: d3.event.y + d[0].y};
-         self.checkAlignment(d[0], d[1], point, movePoint);
+         let aligned = self.checkAlignment(d[0], d[1], point);
+         movePoint(d[0], d[1], aligned);
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
 
          function movePoint(d, seq, delta) {
@@ -577,8 +578,11 @@
                      dd.px = dd.x;
                      dd.y = dd.y + deltay;
                      dd.py = dd.y;
-                     let point = {x: dd.x, y: dd.y};
-                     self.checkAlignment(dd, 1, point, movePoint);
+                     for (let lineDatum of dd.lineData) {
+                         let point = {x: lineDatum.x + dd.x, y: lineDatum.y + dd.y};
+                         let aligned = self.checkAlignment(dd, lineDatum.seq, point);
+                         movePoint(dd, lineDatum.seq, aligned);
+                     }
                      opts.model.updateActiveDiagram(dd, dd.lineData);
                  }
                  for (let c of cnsToMove) {
@@ -653,10 +657,13 @@
              if (!node.length) {
                  do {
                      let d = node.data;
-                     let dx = d3.select(d).datum().x;
-                     let dy = d3.select(d).datum().y;
-                     if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
-                         neighbours.push(d);
+                     let datum = d3.select(d).datum();
+                     for (let lineDatum of datum.lineData) {
+                         let dx = datum.x + lineDatum.x;
+                         let dy = datum.y + lineDatum.y;
+                         if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
+                             neighbours.push(d);
+                         }
                      }
                  } while (node = node.next);
              }
@@ -891,6 +898,9 @@
      enableAddMulti(e) {
          let type = "";
          let text = "";
+         let svg = d3.select("svg");
+         let path = svg.selectAll("svg > path");
+         let circle = svg.selectAll("svg > circle");
          self.disableAll();
          // handle escape key
          d3.select("body").on("keyup.addMulti", function() {
@@ -928,9 +938,6 @@
                      newObject.lineData = [{x: 0, y: 0, seq: 1}];
                      newObject.rotation = 0;
                      self.addDrawing(newObject, function() {
-                         let svg = d3.select("svg");
-                         let path = svg.selectAll("svg > path");
-                         let circle = svg.selectAll("svg > circle");
                          d3.event.preventDefault();
                          self.addNewPoint(newObject);
                          opts.model.addToActiveDiagram(newObject, newObject.lineData);
@@ -952,38 +959,40 @@
      addDrawing(newObject, finish) {
          self.status = "ADDdrawing";
          let svg = d3.select("svg");
-         let path = svg.selectAll("svg > path");
-         let circle = svg.selectAll("svg > circle");
          svg.on("contextmenu.add", finish);
          svg.on("mousemove", mousemoved);
          
          function mousemoved() {
-             let line = d3.line()
-                          .x(function(d) { return d.x; })
-                          .y(function(d) { return d.y; });
              let m = d3.mouse(this);
              let transform = d3.zoomTransform(svg.node());
              // highlight when aligned
              let point = {x: ((m[0] - transform.x) / transform.k), y: ((m[1] - transform.y) / transform.k)};
-             self.checkAlignment(newObject, null, point, movePoint);
-
-             function movePoint(d, seq, delta) {
-                 circle.attr("transform", function () {
-                     let mousex = ((d.x + delta.x)*transform.k) + transform.x + 10;
-                     let mousey = ((d.y + delta.y)*transform.k) + transform.y + 10;
-                     return "translate(" + mousex + "," + mousey +")";
-                 });
-                 path.attr("d", function() {
-                     let lineData = [];
-                     for (let linePoint of d.lineData) {
-                         lineData.push({x: ((linePoint.x+d.x)*transform.k) + transform.x,
-                                        y: ((linePoint.y+d.y)*transform.k) + transform.y});
-                     }
-                     lineData.push({x: ((d.x + delta.x)*transform.k) + transform.x, y: ((d.y + delta.y)*transform.k) + transform.y});
-                     return line(lineData);
-                 });
-                 path.datum({obj: newObject, x: d.x + delta.x, y: d.y + delta.y});
-             };
+             let aligned = self.checkAlignment(newObject, null, point);
+             movePoint(newObject, null, aligned);
+         };
+         
+         function movePoint(d, seq, delta) {
+             let transform = d3.zoomTransform(svg.node());
+             let path = svg.selectAll("svg > path");
+             let circle = svg.selectAll("svg > circle");
+             let line = d3.line()
+                          .x(function(d) { return d.x; })
+                          .y(function(d) { return d.y; });
+             circle.attr("transform", function () {
+                 let mousex = ((d.x + delta.x)*transform.k) + transform.x + 10;
+                 let mousey = ((d.y + delta.y)*transform.k) + transform.y + 10;
+                 return "translate(" + mousex + "," + mousey +")";
+             });
+             path.attr("d", function() {
+                 let lineData = [];
+                 for (let linePoint of d.lineData) {
+                     lineData.push({x: ((linePoint.x+d.x)*transform.k) + transform.x,
+                                    y: ((linePoint.y+d.y)*transform.k) + transform.y});
+                 }
+                 lineData.push({x: ((d.x + delta.x)*transform.k) + transform.x, y: ((d.y + delta.y)*transform.k) + transform.y});
+                 return line(lineData);
+             });
+             path.datum({obj: newObject, x: d.x + delta.x, y: d.y + delta.y});
          };
      }
 
@@ -999,7 +1008,10 @@
          self.highlight(null);
      }
 
-     checkAlignment(d, seq, point, movePoint) {
+     // Check alignment of a given object d and its neighbours with a point.
+     // If seq is non null it is assumed that the point is lying on the
+     // object d itself at sequence seq.
+     checkAlignment(d, seq, point) {
          let transform = d3.zoomTransform(d3.select("svg").node());
          let xaligned = false;
          let yaligned = false;
@@ -1044,7 +1056,7 @@
          if (yaligned === false) {
              self.highlight("y", null);
          }
-         movePoint(d, seq, {x: movex, y: movey});
+         return {x: movex, y: movey};
      }
 
      highlight(direction, val, rotation) {
