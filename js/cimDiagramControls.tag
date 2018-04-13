@@ -264,8 +264,8 @@
      let resizeDrag = d3.drag().on("drag", function(d) {
          // hide popovers
          $(selected).filter('[data-toggle="popover"]').popover("hide");
-         let point = {x: d3.event.x + d[0].x, y: d3.event.y + d[0].y};
-         let aligned = self.checkAlignment(d[0], d[1], point);
+         let lineDatum = {x: d3.event.x, y: d3.event.y, seq: d[1]};
+         let aligned = self.align(d[0], lineDatum);
          movePoint(d[0], d[1], aligned);
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
 
@@ -579,8 +579,7 @@
                      dd.y = dd.y + deltay;
                      dd.py = dd.y;
                      for (let lineDatum of dd.lineData) {
-                         let point = {x: lineDatum.x + dd.x, y: lineDatum.y + dd.y};
-                         let aligned = self.checkAlignment(dd, lineDatum.seq, point);
+                         let aligned = self.align(dd, lineDatum);
                          movePoint(dd, lineDatum.seq, aligned);
                      }
                      opts.model.updateActiveDiagram(dd, dd.lineData);
@@ -966,8 +965,14 @@
              let m = d3.mouse(this);
              let transform = d3.zoomTransform(svg.node());
              // highlight when aligned
-             let point = {x: ((m[0] - transform.x) / transform.k), y: ((m[1] - transform.y) / transform.k)};
-             let aligned = self.checkAlignment(newObject, null, point);
+             let absx = ((m[0] - transform.x) / transform.k);
+             let absy = ((m[1] - transform.y) / transform.k);
+             let lineDatum = {
+                 x: absx - newObject.x,
+                 y: absy - newObject.y,
+                 seq: null
+             };
+             let aligned = self.align(newObject, lineDatum);
              movePoint(newObject, null, aligned);
          };
          
@@ -1008,10 +1013,12 @@
          self.highlight(null);
      }
 
-     // Check alignment of a given object d and its neighbours with a point.
-     // If seq is non null it is assumed that the point is lying on the
-     // object d itself at sequence seq.
-     checkAlignment(d, seq, point) {
+     // Check alignment of a given object d and its neighbours with one of its points.
+     // If lineDatum.seq is null it is assumed that the point is a new one.
+     // Returns the aligned lineDatum coordinates.
+     align(d, lineDatum) {
+         let point = {x: d.x + lineDatum.x, y: d.y + lineDatum.y};
+         let seq = lineDatum.seq;
          let transform = d3.zoomTransform(d3.select("svg").node());
          let xaligned = false;
          let yaligned = false;
@@ -1019,7 +1026,11 @@
          let absy = point.y;
          let movex = absx - d.x;
          let movey = absy - d.y;
-         let nearNodes = self.search(quadtree, absx - (250/transform.k), absy - (250/transform.k), absx + (250/transform.k), absy + (250/transform.k));
+         let x1 = absx - (250/transform.k);
+         let y1 = absy - (250/transform.k);
+         let x2 = absx + (250/transform.k);
+         let y2 = absy + (250/transform.k);
+         let nearNodes = self.search(quadtree, x1, y1, x2, y2);
          let near = d3.selectAll(nearNodes).data();
          near.push(d);
          // check alignment with nearby points
