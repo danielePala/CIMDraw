@@ -1410,6 +1410,14 @@ function cimModel() {
                 mode = newMode;
             }
             model.trigger("setMode", mode);
+        },
+
+        // Reset the model to its initial state.
+        clear() {
+            let parser = new DOMParser();
+            data.all = parser.parseFromString(emptyFile, "application/xml");
+            dataMap = new Map();
+            linksMap = new Map();
         }
     };
     riot.observable(model);

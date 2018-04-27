@@ -265,7 +265,7 @@
          // hide popovers
          $(selected).filter('[data-toggle="popover"]').popover("hide");
          let lineDatum = {x: d3.event.x, y: d3.event.y, seq: d[1]};
-         let aligned = self.align(d[0], lineDatum);
+         let aligned = self.align(d[0], lineDatum, true);
          movePoint(d[0], d[1], aligned);
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
 
@@ -572,6 +572,7 @@
                  $(selected).filter('[data-toggle="popover"]').popover("hide");
                  let deltax = d3.event.x - d.x;
                  let deltay = d3.event.y - d.y;
+                 let delta = {x: 0.0, y: 0.0};
                  for (let selNode of selected) {
                      let dd = d3.select(selNode).data()[0];
                      dd.x = dd.x + deltax;
@@ -579,11 +580,21 @@
                      dd.y = dd.y + deltay;
                      dd.py = dd.y;
                      for (let lineDatum of dd.lineData) {
-                         let aligned = self.align(dd, lineDatum);
-                         movePoint(dd, lineDatum.seq, aligned);
+                         let aligned = self.align(dd, lineDatum, false);
+                         delta = {x: aligned.x - lineDatum.x, y: aligned.y - lineDatum.y};
+                         if (delta.x !== 0.0 || delta.y !== 0.0) {
+                             break;
+                         }
                      }
                      opts.model.updateActiveDiagram(dd, dd.lineData);
                  }
+                 for (let selNode of selected) {
+                     let dd = d3.select(selNode).data()[0];
+                     movePoint(dd, null, delta);
+                     console.log(selected, delta);
+                     opts.model.updateActiveDiagram(dd, dd.lineData);
+                 }
+
                  for (let c of cnsToMove) {
                      // handle rotation of terminals
                      let t1XY = {x: c.cnTerms[0].x, y: c.cnTerms[0].y};
@@ -601,10 +612,11 @@
                  }
 
                  function movePoint(d, seq, delta) {
-                     let p = d.lineData[0];
                      let ev = self.parent.rotate({x: delta.x, y: delta.y}, d.rotation);
                      d.x = d.x + ev.x;
                      d.y = d.y + ev.y;
+                     d.px = d.x;
+                     d.py = d.y;
                  };
              })
              .on("end", function(d) {
@@ -662,6 +674,7 @@
                          let dy = datum.y + lineDatum.y;
                          if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
                              neighbours.push(d);
+                             break;
                          }
                      }
                  } while (node = node.next);
@@ -972,7 +985,7 @@
                  y: absy - newObject.y,
                  seq: null
              };
-             let aligned = self.align(newObject, lineDatum);
+             let aligned = self.align(newObject, lineDatum, true);
              movePoint(newObject, null, aligned);
          };
          
@@ -1013,10 +1026,11 @@
          self.highlight(null);
      }
 
-     // Check alignment of a given object d and its neighbours with one of its points.
+     // Check alignment of a point of a given object d with its neighbours.
+     // If withItself is true it also checks alignment with itself.
      // If lineDatum.seq is null it is assumed that the point is a new one.
      // Returns the aligned lineDatum coordinates.
-     align(d, lineDatum) {
+     align(d, lineDatum, withItself) {
          let point = {x: d.x + lineDatum.x, y: d.y + lineDatum.y};
          let seq = lineDatum.seq;
          let transform = d3.zoomTransform(d3.select("svg").node());
@@ -1032,7 +1046,9 @@
          let y2 = absy + (250/transform.k);
          let nearNodes = self.search(quadtree, x1, y1, x2, y2);
          let near = d3.selectAll(nearNodes).data();
-         near.push(d);
+         if (withItself === true) {
+             near.push(d);
+         }
          // check alignment with nearby points
          for (let datum of near) {
              ploop: for (let point of datum.lineData) {
