@@ -579,6 +579,9 @@
                      dd.px = dd.x;
                      dd.y = dd.y + deltay;
                      dd.py = dd.y;
+                     if (delta.x !== 0.0 || delta.y !== 0.0) {
+                         continue;
+                     }
                      for (let lineDatum of dd.lineData) {
                          let aligned = self.align(dd, lineDatum, false);
                          delta = {x: aligned.x - lineDatum.x, y: aligned.y - lineDatum.y};
@@ -586,12 +589,10 @@
                              break;
                          }
                      }
-                     opts.model.updateActiveDiagram(dd, dd.lineData);
                  }
                  for (let selNode of selected) {
                      let dd = d3.select(selNode).data()[0];
                      movePoint(dd, null, delta);
-                     console.log(selected, delta);
                      opts.model.updateActiveDiagram(dd, dd.lineData);
                  }
 
