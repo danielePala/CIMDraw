@@ -272,6 +272,11 @@
              $("#cim-export").parent().addClass("disabled");
              $("#cimModeModal").modal("hide");
              // main logic
+             if (cimFile.name === d3.select("#cim-filename").html()) {
+                 // nothing to do in this case, just refresh the diagram list
+                 loadDiagramList(cimFile.name);
+                 return;
+             }
              $("#loadingDiagramMsg").text("loading CIM network...");
              $("#loadingModal").off("shown.bs.modal");
              $("#loadingModal").modal("show");
@@ -314,7 +319,8 @@
              if (self.cimModel.activeDiagramName === decodeURI(name)) {
                  self.trigger("showDiagram", file, name);
                  $("#app-container").show();
-                 return; // nothing to do;
+                 $(".selectpicker").selectpicker("val", decodeURI("#" + file + "/diagrams/" + name));
+                 return; // nothing more to do;
              }
              $("#cim-local-file-component").hide();
              $("#loadingDiagramMsg").text("loading diagram...");
@@ -402,6 +408,7 @@
          });
 
          route("/*/createNew", function(file) {
+             window.history.back();
              $("#newDiagramModal").modal("show");
              d3.select("#newDiagramBtn").on("click", function() {
                  let diagramName = d3.select("#newDiagramName").node().value;
