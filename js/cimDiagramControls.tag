@@ -271,19 +271,19 @@
 
          function movePoint(d, seq, delta) {
              let p = d.lineData.filter(el => el.seq === seq)[0];
-             let ev = self.parent.rotate({x: delta.x, y: delta.y}, d.rotation);
+             let ev = self.parent.rotate({x: delta.x, y: delta.y}, d.rotation * (-1));
              if (p.seq !== 1) {
                  p.x = delta.x;
                  p.y = delta.y;
              } else {
-                 d.x = d.x + ev.x;
-                 d.y = d.y + ev.y;
+                 d.x = d.x + delta.x;
+                 d.y = d.y + delta.y;
                  for (let point of d.lineData) {
                      if (point.seq === 1) {
                          continue;
                      }
-                     point.x = point.x - delta.x;
-                     point.y = point.y - delta.y;
+                     point.x = point.x - ev.x;
+                     point.y = point.y - ev.y;
                  }
              }
          };
@@ -586,6 +586,9 @@
                          let aligned = self.align(dd, lineDatum, false);
                          delta = {x: aligned.x - lineDatum.x, y: aligned.y - lineDatum.y};
                          if (delta.x !== 0.0 || delta.y !== 0.0) {
+                             if (lineDatum.seq > 1) {
+                                 delta = self.parent.rotate(delta, dd.rotation);
+                             }
                              break;
                          }
                      }
@@ -613,9 +616,8 @@
                  }
 
                  function movePoint(d, seq, delta) {
-                     let ev = self.parent.rotate({x: delta.x, y: delta.y}, d.rotation);
-                     d.x = d.x + ev.x;
-                     d.y = d.y + ev.y;
+                     d.x = d.x + delta.x;
+                     d.y = d.y + delta.y;
                      d.px = d.x;
                      d.py = d.y;
                  };
@@ -1032,15 +1034,16 @@
      // If lineDatum.seq is null it is assumed that the point is a new one.
      // Returns the aligned lineDatum coordinates.
      align(d, lineDatum, withItself) {
-         let point = {x: d.x + lineDatum.x, y: d.y + lineDatum.y};
-         let seq = lineDatum.seq;
          let transform = d3.zoomTransform(d3.select("svg").node());
          let xaligned = false;
          let yaligned = false;
-         let absx = point.x;
-         let absy = point.y;
-         let movex = absx - d.x;
-         let movey = absy - d.y;
+         // the object can be rotated
+         let lineDatumR = self.parent.rotate(lineDatum, d.rotation);
+         let absx = d.x + lineDatumR.x;
+         let absy = d.y + lineDatumR.y;
+         let movex = lineDatumR.x;
+         let movey = lineDatumR.y;
+         // search nearby points in a rectangle centered on the object
          let x1 = absx - (250/transform.k);
          let y1 = absy - (250/transform.k);
          let x2 = absx + (250/transform.k);
@@ -1052,28 +1055,28 @@
          }
          // check alignment with nearby points
          for (let datum of near) {
-             ploop: for (let point of datum.lineData) {
-                 if (datum === d && point.seq === seq) {
+             ploop: for (let p of datum.lineData) {
+                 if (datum === d && p.seq === lineDatum.seq) {
                      continue ploop;
                  }
-                 let absxP = point.x + datum.x;
-                 let absyP = point.y + datum.y;
+                 // the object can be rotated
+                 let pr = self.parent.rotate(p, datum.rotation);
+                 let absxP = pr.x + datum.x;
+                 let absyP = pr.y + datum.y;
                  let deltax = absx - absxP;
                  let deltay = absy - absyP;
                  if (Math.abs(deltax) < 10) {
                      absx = absxP;
                      movex = absx - d.x;
-                     let m = ((absxP) * transform.k) + transform.x;
-                     let mr = (d.y * transform.k) + transform.y;
-                     self.highlight("x", m, {val: d.rotation, x: m, y: mr});
+                     let rotx = ((absxP) * transform.k) + transform.x;
+                     self.highlight("x", rotx);
                      xaligned = true;
                  }
                  if (Math.abs(deltay) < 10) {
                      absy = absyP;
                      movey = absy - d.y;
-                     let m = ((absyP) * transform.k) + transform.y;
-                     let mr = (d.x * transform.k) + transform.x;
-                     self.highlight("y", m, {val: d.rotation, x: mr, y: m});
+                     let roty = ((absyP) * transform.k) + transform.y;
+                     self.highlight("y", roty);
                      yaligned = true;
                  }
              }
@@ -1084,7 +1087,14 @@
          if (yaligned === false) {
              self.highlight("y", null);
          }
-         return {x: movex, y: movey};
+         // we must return the un-rotated aligned coordinates, except if
+         // this is the first point.
+         let rotated = {x: movex, y: movey};
+         let unrotated = self.parent.rotate(rotated, d.rotation * (-1));
+         if (lineDatum.seq === 1) {
+             return rotated;
+         }
+         return unrotated;
      }
 
      highlight(direction, val, rotation) {
