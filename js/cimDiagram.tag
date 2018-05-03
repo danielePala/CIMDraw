@@ -801,7 +801,31 @@
      // This is visualized as a popover.
      // TODO: junctions
      createStatusInfo(psrSelection) {
-         psrSelection.attr("data-toggle", "popover");    
+         psrSelection.attr("data-toggle", "popover");
+         // change fill color of switches based on their status
+         let path = psrSelection.filter(function(d) {
+             return self.model.schema.isA("Switch", d);
+         }).selectAll("path");
+         path.attr("fill", function(d) {
+             let value = "0"; // default is OPEN
+             // check the status of this switch
+             let measurement = self.model.getTargets(
+                 [d],
+                 "PowerSystemResource.Measurements")[0];
+             if (typeof(measurement) !== "undefined") {
+                 let valueObject = self.model.getTargets(
+                     [measurement],
+                     "Discrete.DiscreteValues")[0];
+                 if (typeof(valueObject) !== "undefined") {
+                     value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
+                 }
+             }
+             if (value === "0") {
+                 return "white";
+             } else {
+                 return "black";
+             }
+         });
          psrSelection.each(function(d) {
              let measurements = [];
              let svPFs = [];
@@ -843,30 +867,6 @@
              }
              if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0 || limitSets.length > 0) {
                  let tooltip = self.createTooltip(measurements, svPFs, svVs, limitSets);
-                 // change fill color of switches based on their status
-                 let path = psrSelection.filter(function(d) {
-                     return self.model.schema.isA("Switch", d);
-                 }).selectAll("path");
-                 path.attr("fill", function(d) {
-                     let value = "0"; // default is OPEN
-                     // check the status of this switch
-                     let measurement = self.model.getTargets(
-                         [d],
-                         "PowerSystemResource.Measurements")[0];
-                     if (typeof(measurement) !== "undefined") {
-                         let valueObject = self.model.getTargets(
-                             [measurement],
-                             "Discrete.DiscreteValues")[0];
-                         if (typeof(valueObject) !== "undefined") {
-                             value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
-                         }
-                     }
-                     if (value === "0") {
-                         return "white";
-                     } else {
-                         return "black";
-                     }
-                 });
                  // create the actual popover
                  $(this).popover({title: "<b>Element Status Info</b>",
                                   content: tooltip,
