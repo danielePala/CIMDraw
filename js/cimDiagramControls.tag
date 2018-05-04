@@ -452,6 +452,10 @@
                        }
                        break;
                }
+               // handle escape key
+               if (d3.event.keyCode === 27) { // "Escape"
+                   d3.contextMenu("close");
+               }
            });
      });
 
