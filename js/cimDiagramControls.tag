@@ -97,6 +97,12 @@
      let quadtree = d3.quadtree();
      let selected = [];
      let menu = [
+         /*{
+             title: "Copy",
+             action: function(d, i) {
+                 console.log(d3.selectAll(selected).data());
+             }
+         },*/
          {
              title: "Rotate",
              action: function(d, i) {
@@ -528,6 +534,7 @@
          let drag = d3
              .drag()
              .on("start", function(d) {
+                 d3.contextMenu("close");
                  // reset the current path
                  let hashComponents = window.location.hash.substring(1).split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
@@ -642,6 +649,8 @@
                    let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                    route(basePath + "/");
                    self.deselectAll();
+                   $('[data-toggle="popover"]').popover("hide");
+                   d3.contextMenu("close");
                })
                .on("end", selectInsideBrush)
          );
