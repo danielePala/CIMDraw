@@ -1,3 +1,24 @@
+/*
+ This file handles the export of CIM files to Matpower.
+
+ Copyright 2017, 2018 Daniele Pala <pala.daniele@gmail.com>
+
+ This file is part of CIMDraw.
+
+ CIMDraw is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ CIMDraw is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with CIMDraw. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 function exportToMatpower(model) {
     let mpcFile = "function mpc = cim\n";
     // some fixed values

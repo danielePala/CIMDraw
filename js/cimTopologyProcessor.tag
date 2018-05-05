@@ -1,7 +1,7 @@
 /*
  Topology processor user interface.
 
- Copyright 2017 Daniele Pala <daniele.pala@rse-web.it>
+ Copyright 2017, 2018 Daniele Pala <pala.daniele@gmail.com>
 
  This file is part of CIMDraw.
 
