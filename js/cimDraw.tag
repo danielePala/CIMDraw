@@ -239,8 +239,6 @@
              $(".selectpicker").selectpicker("hide");
              $("#cim-mode").hide();
              // main logic
-             $("#cim-file-input").fileinput("reset");
-             $("#cim-file-input").fileinput("enable");
              d3.select("#cim-diagrams").selectAll("option").remove();
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
              d3.select("#cim-filename").html("");    
