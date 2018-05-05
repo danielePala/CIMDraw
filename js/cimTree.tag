@@ -152,8 +152,8 @@
      // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
          // reset search form
-         $("#cim-search-key").val("");
-         $("#cimTreeSearchBtn").click();
+         $(".tree > #cim-search-form").find("#cim-search-key").val("");
+         $(".tree > #cim-search-form").find("#cimTreeSearchBtn").click();
          if (decodeURI(name) !== self.diagramName) {
              d3.drag().on("drag.end", null);
              self.render(name);
