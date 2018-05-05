@@ -22,7 +22,7 @@
 <cimDraw>
     <style>
      .center-block {
-         width: 600px;
+         width: 600px; /* remove for BS 4 */
          text-align: center;
      }
      
@@ -69,10 +69,11 @@
     </nav>
     
     <div class="container-fluid">
-        <div class="row center-block" id="cim-local-file-component">
-            <div class="col-md-12">
+        <div class="row center-block justify-content-center" id="cim-local-file-component">
+            <div class="col-md-12"> <!-- change to col-md-4 for BS 4 -->
                 <div class="row center-block" id="cim-select-file">
                     <div class="col-md-12">
+                        <br><br>
                         <label class="control-label">Select File</label>
                     </div>
                 </div>
@@ -98,7 +99,7 @@
                 </div>
                 <div class="row center-block">
                     <div class="col-md-12" id="cim-create-new-container">
-                        <a class="btn btn-primary btn-lg" role="button" id="cim-create-new">Create new</a>
+                        <a class="btn btn-primary btn-lg" role="button" id="cim-create-new" href="#">Create new</a>
                     </div>
                 </div>
             </div>
