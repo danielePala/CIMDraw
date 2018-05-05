@@ -70,37 +70,38 @@
     
     <div class="container-fluid">
         <div class="row center-block" id="cim-local-file-component">
-            <div class="row center-block" id="cim-select-file">
-                <div class="col-md-12">
-                    <label class="control-label">Select File</label>
+            <div class="col-md-12">
+                <div class="row center-block" id="cim-select-file">
+                    <div class="col-md-12">
+                        <label class="control-label">Select File</label>
+                    </div>
                 </div>
-            </div>
 
-            <!-- File input plugin -->
-            <div class="row center-block">
-                <div class="col-md-12" id="cim-file-input-container">
-                    <form enctype="multipart/form-data" method="POST">
-                        <input id="cim-file-input" name="cim-file" type="file" class="file" data-show-preview="false" data-show-upload="false">
-                    </form>
+                <!-- File input plugin -->
+                <div class="row center-block">
+                    <div class="col-md-12" id="cim-file-input-container">
+                        <form enctype="multipart/form-data" method="POST">
+                            <input id="cim-file-input" name="cim-file" type="file" class="file" data-show-preview="false" data-show-upload="false">
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="row center-block">
+                    <div class="col-md-12" id="cim-load-container">
+                        <a class="btn btn-primary btn-lg" role="button" id="cim-load">Load</a>
+                    </div>
+                </div>
+                <div class="row center-block">
+                    <div class="col-md-12">
+                        <label class="control-label">or</label>
+                    </div>
+                </div>
+                <div class="row center-block">
+                    <div class="col-md-12" id="cim-create-new-container">
+                        <a class="btn btn-primary btn-lg" role="button" id="cim-create-new">Create new</a>
+                    </div>
                 </div>
             </div>
-            
-            <div class="row center-block">
-                <div class="col-md-12" id="cim-load-container">
-                    <a class="btn btn-primary btn-lg" role="button" id="cim-load">Load</a>
-                </div>
-            </div>
-            <div class="row center-block">
-                <div class="col-md-12">
-                    <label class="control-label">or</label>
-                </div>
-            </div>
-            <div class="row center-block">
-                <div class="col-md-12" id="cim-create-new-container">
-                    <a class="btn btn-primary btn-lg" role="button" id="cim-create-new">Create new</a>
-                </div>
-            </div>
-            
         </div>
         
         <div class="row diagramTools">
