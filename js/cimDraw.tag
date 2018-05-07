@@ -89,6 +89,7 @@
                 
                 <div class="row center-block">
                     <div class="col-md-12" id="cim-load-container">
+                        <br>
                         <a class="btn btn-primary btn-lg" role="button" id="cim-load">Load</a>
                     </div>
                 </div>

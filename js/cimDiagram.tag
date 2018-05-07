@@ -1819,6 +1819,19 @@
                  }
              }
          }
+         // handle measurements
+         if (hoverD.nodeName === "cim:Analog"
+          || hoverD.nodeName === "cim:Discrete") {
+             hoverD = self.model.getTargets(
+                 [hoverD],
+                 "Measurement.PowerSystemResource")[0];
+             if (typeof(hoverD) !== "undefined") {
+                 // handle busbars
+                 if (hoverD.nodeName === "cim:BusbarSection") {
+                     hoverD = self.model.getNode(hoverD);
+                 }
+             }
+         }
          
          if (typeof(hoverD.x) === "undefined" || typeof(hoverD.y) === "undefined") {
              return;
