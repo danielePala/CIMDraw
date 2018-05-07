@@ -99,7 +99,7 @@
                 </div>
                 <div class="row center-block">
                     <div class="col-md-12" id="cim-create-new-container">
-                        <a class="btn btn-primary btn-lg" role="button" id="cim-create-new" href="#">Create new</a>
+                        <a class="btn btn-primary btn-lg" role="button" id="cim-create-new">Create new</a>
                     </div>
                 </div>
             </div>
