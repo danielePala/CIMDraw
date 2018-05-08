@@ -1163,7 +1163,6 @@
      }
 
      disableAdd() {
-         console.log("disable add");
          $("#addElement").text("Insert element");
          d3.select("body").on("keyup.addMulti", null);
          d3.select("svg").on("click.add", null);
