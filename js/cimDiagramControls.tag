@@ -1163,6 +1163,7 @@
      }
 
      disableAdd() {
+         console.log("disable add");
          $("#addElement").text("Insert element");
          d3.select("body").on("keyup.addMulti", null);
          d3.select("svg").on("click.add", null);
@@ -1173,7 +1174,15 @@
          // delete from model
          let datum = d3.select("svg > path").datum();
          if (typeof(datum) !== "undefined") {
-             opts.model.deleteObject(datum.obj);
+             // if the object is new, we delete it
+             // if we are adding new points to an existing object
+             // we just delete the new points
+             let dobjs = opts.model.getDiagramObjects([datum.obj]);
+             if (dobjs.length === 0) {
+                 opts.model.deleteObject(datum.obj);
+             } else {
+                 self.parent.calcLineData(datum.obj);
+             }
          }
          d3.select("svg > path").datum(null);
          self.highlight("x", null);
