@@ -1201,7 +1201,9 @@ function cimModel() {
             }
             if (object.localName === nodeName) {
                 let busbar = model.getBusbar(object);
-                dobjs = dobjs.concat(model.getDiagramObjects([busbar]));
+                if (busbar !== null) {
+                    dobjs = dobjs.concat(model.getDiagramObjects([busbar]));
+                }
             }
 
             let points = model.getTargets(
