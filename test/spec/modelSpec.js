@@ -116,6 +116,35 @@ describe("CIM model", function() {
 
     });
 
+    it("should be able to delete objects in diagram", function() {
+	model.selectDiagram("test");
+	let lineData = [{x: 0, y: 0, seq:1}];
+        // breaker
+	let brk1 = model.createObject("cim:Breaker");
+	model.addToActiveDiagram(brk1, lineData);
+        let objects = model.getGraphicObjects(["cim:Breaker"]);
+	expect(objects["cim:Breaker"].length).toBe(1);
+        model.deleteFromDiagram(brk1);
+        objects = model.getGraphicObjects(["cim:Breaker"]);
+        expect(objects["cim:Breaker"].length).toBe(0);
+        // busbar
+        let busbar1 = model.createObject("cim:BusbarSection");
+	model.addToActiveDiagram(busbar1, lineData);
+        objects = model.getGraphicObjects(["cim:BusbarSection"]);
+	expect(objects["cim:BusbarSection"].length).toBe(1);
+        model.deleteFromDiagram(busbar1);
+        objects = model.getGraphicObjects(["cim:BusbarSection"]);
+        expect(objects["cim:BusbarSection"].length).toBe(0);
+	// connectivity node
+	let cn = model.createObject("cim:ConnectivityNode");
+	model.addToActiveDiagram(cn, lineData);
+        objects = model.getGraphicObjects(["cim:ConnectivityNode"]);
+	expect(objects["cim:ConnectivityNode"].length).toBe(1);
+        model.deleteFromDiagram(cn);
+        objects = model.getGraphicObjects(["cim:ConnectivityNode"]);
+        expect(objects["cim:ConnectivityNode"].length).toBe(0);
+    });
+    
     it("should be able to locate schema description of objects", function() {
 	let brk1 = model.schema.getSchemaObject("Breaker");
 	let dobj1 = model.schema.getSchemaObject("DiagramObject");

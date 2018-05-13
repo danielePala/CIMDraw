@@ -206,6 +206,13 @@
          {
              title: "Delete point",
              action: function(d, i) {
+                 // applies to only one element
+                 let target = d3.selectAll(selected).data().filter(el => el === d[0])[0];
+                 selected = selected.filter(el => d3.select(el).datum() !== d[0]);
+                 self.deselectAll();
+                 selected.push(target);
+                 self.updateSelected();
+
                  d[0].lineData = d[0].lineData.filter(el => el.seq !== d[1]);
                  for (let p of d[0].lineData) {
                      if (p.seq > d[1]) {
