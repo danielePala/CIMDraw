@@ -133,20 +133,25 @@
          // setup search button
          $("#cimTreeSearchBtn").on("click", function() {
              searchKey = document.getElementById("cim-search-key").value;
-             // TODO: using find is wrong in some cases (e.g. transformers) 
              if (searchKey === "") {
                  $("ul").each(function() {
                      let toShow = $(this).find("li.CIM-object>a");
+                     let subObjects = $(this).find("li.CIM-subobject>a");
+                     let children = $(this).children("li.CIM-subobject")
+                     let count = toShow.length - subObjects.length + children.length;
                      toShow.parent().show();
-                     $(this).parent().find(">span").html(toShow.length);
+                     $(this).parent().find(">span").html(count);
                  });
              } else {
                  $("ul").each(function() {
                      let toShow = $(this).find("li.CIM-object>a:contains(" + searchKey + ")");
+                     let subObjects = $(this).find("li.CIM-subobject>a:contains(" + searchKey + ")");
+                     let children = $(this).children("li.CIM-subobject").children("a:contains(" + searchKey + ")");
                      let toHide = $(this).find("li.CIM-object>a:not(:contains(" + searchKey + "))");
+                     let count = toShow.length - subObjects.length + children.length;
                      toShow.parent().show();
                      toHide.parent().hide();
-                     $(this).parent().find(">span").html(toShow.length);
+                     $(this).parent().find(">span").html(count);
                  });
              }
          });
@@ -710,7 +715,7 @@
                  d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
                  "Transformer Windings",
                  trafoEnds);
-             console.log(trafoEndsEnter.nodes());
+             $(trafoEndsEnter.nodes()).parent().addClass("CIM-subobject");
              // tap changer(s)
              trafoEndsEnter.each(function(d, i) {
                  let tcs = self.model.getTargets([d], "TransformerEnd.RatioTapChanger");
@@ -726,6 +731,7 @@
              trafo.attributes.getNamedItem("rdf:ID").value + "RatioTapChanger",
              "Ratio Tap Changer",
              tcs);
+         $(tcEnter.nodes()).parent().addClass("CIM-subobject");
          self.createDeleteMenu(tcEnter);
      }
 
