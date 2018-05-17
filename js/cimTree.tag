@@ -124,6 +124,7 @@
              }
          }
      ]);
+     let searchKey = "";
      
      self.on("mount", function() {
          $("form").submit(function(event) {
@@ -131,14 +132,23 @@
          });
          // setup search button
          $("#cimTreeSearchBtn").on("click", function() {
-             let searchKey = document.getElementById("cim-search-key").value;
-             $("ul").each(function() {
-                 let toShow = $(this).find("li.CIM-object>a:contains(" + searchKey + ")");
-                 let toHide = $(this).find("li.CIM-object>a:not(:contains(" + searchKey + "))");
-                 toShow.parent().show();
-                 toHide.parent().hide();
-                 $(this).parent().find(">span").html(toShow.length);
-             });
+             searchKey = document.getElementById("cim-search-key").value;
+             // TODO: using find is wrong in some cases (e.g. transformers) 
+             if (searchKey === "") {
+                 $("ul").each(function() {
+                     let toShow = $(this).find("li.CIM-object>a");
+                     toShow.parent().show();
+                     $(this).parent().find(">span").html(toShow.length);
+                 });
+             } else {
+                 $("ul").each(function() {
+                     let toShow = $(this).find("li.CIM-object>a:contains(" + searchKey + ")");
+                     let toHide = $(this).find("li.CIM-object>a:not(:contains(" + searchKey + "))");
+                     toShow.parent().show();
+                     toHide.parent().hide();
+                     $(this).parent().find(">span").html(toShow.length);
+                 });
+             }
          });
 
          $("#showAllObjects").change(function() {
@@ -152,8 +162,10 @@
      // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
          // reset search form
-         $(".tree > #cim-search-form").find("#cim-search-key").val("");
-         $(".tree > #cim-search-form").find("#cimTreeSearchBtn").click();
+         if (searchKey !== "") {
+             $(".tree > #cim-search-form").find("#cim-search-key").val("");
+             $(".tree > #cim-search-form").find("#cimTreeSearchBtn").click();
+         }
          if (decodeURI(name) !== self.diagramName) {
              d3.drag().on("drag.end", null);
              self.render(name);
@@ -698,6 +710,7 @@
                  d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
                  "Transformer Windings",
                  trafoEnds);
+             console.log(trafoEndsEnter.nodes());
              // tap changer(s)
              trafoEndsEnter.each(function(d, i) {
                  let tcs = self.model.getTargets([d], "TransformerEnd.RatioTapChanger");
