@@ -138,6 +138,17 @@
              }
          },
          {
+             title: "Show element info",
+             action: function(d, i) {
+                 let elm = this;
+                 if (selected.indexOf(elm) === -1) {
+                     selected.push(elm);
+                     self.updateSelected();
+                 }
+                 $(selected).filter('[data-toggle="popover"]').popover("show");
+             }
+         },
+         {
              title: "Add new operational limit set",
              action: function(d, i) {
                  self.addNewLimitSet(this, d, i);

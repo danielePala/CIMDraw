@@ -1263,8 +1263,14 @@
      }
 
      moveTo(uuid) {
+         if (typeof(uuid) === "undefined") {
+             return;
+         }
          let target = null, targetChild = null;
          let hoverD = self.model.getObject(uuid);
+         if (typeof(hoverD) === "undefined") {
+             return;
+         }
          // handle nodes
          if (hoverD.nodeName === "cim:ConnectivityNode" || hoverD.nodeName === "cim:TopologicalNode") {
              let equipments = self.model.getEquipments(hoverD);
