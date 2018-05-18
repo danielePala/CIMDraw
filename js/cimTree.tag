@@ -848,7 +848,12 @@
                 })
                 .enter()
                 .append("li")
-                .attr("class", name + " CIM-object");
+                .attr("class", name + " CIM-object").on("click", function() {
+                    if (d3.event.target === this) {
+                        // reset any element highlight
+                        d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+                    }
+                });
          let cimModel = this.model;
          elementTopContainer
              .append("a")
