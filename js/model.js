@@ -261,7 +261,7 @@ function cimModel() {
     function getAllObjects() {
         let ret = [];
         for (let i of Object.keys(data)) {
-            if (typeof(data[i]) !== "undefined") {
+            if (typeof(data[i]) !== "undefined" && data[i] !== null) {
                 ret = ret.concat([...data[i].children[0].children]);
             }
         }
