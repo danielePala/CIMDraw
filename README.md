@@ -55,8 +55,8 @@ By default, the 'select' control is selected for the diagram, which allows you t
 
 The 'Insert element' controls allows you to add elements to the diagram.
 You can right-click on an element in the diagram in order to rotate, delete 
-or add measurements to it. Measurements are shown by clicking on the
-element.
+or add measurements to it. Measurements and other status information are shown by right-clicking on the
+element and selecting the "Show element info" option.
 
 ![measurement](doc/05_measurement.png)
 
