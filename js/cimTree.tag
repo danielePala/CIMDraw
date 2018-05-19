@@ -835,6 +835,12 @@
              elementsTopContainer.append("span")
                                  .attr("class", "badge")
                                  .html(0);
+             elementsTopContainer.on("click", function() {
+                 if (d3.event.target === this) {
+                     // reset any element highlight
+                     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+                 }
+             });
              elements = elementsTopContainer
                 .append("ul")
                 .attr("id", name + "sList")
