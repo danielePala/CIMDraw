@@ -568,7 +568,6 @@
                      selected.push(this);
                      self.updateSelected();
                  }
-                 $(selected).filter('[data-toggle="popover"]').popover("toggle");
                  quadtree.removeAll(selected); // update quadtree
                  // handle movement of cn, for the special case when
                  // the cn connects only two elements and there is no
