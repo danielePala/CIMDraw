@@ -769,6 +769,12 @@
                 .append("ul")
                 .attr("id", name + "sList")
                 .attr("class", "collapse");
+             elementsTopContainer.on("click", function() {
+                 if (d3.event.target === this) {
+                     // reset any element highlight
+                     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+                 }
+             });
          } 
          return elements;
      }
