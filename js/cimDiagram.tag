@@ -1619,6 +1619,23 @@
                  }
              }
          }
+
+         // highlight the terminals on mouseover, since they are quite small
+         termSelection.on("mouseover", function(d) {
+             if (d3.select(this).selectAll("circle.selection-circle").size() === 0) {
+                 d3.select(this).append("circle")
+                   .attr("cx", this.getBBox().x + TERMINAL_RADIUS)
+                   .attr("cy", this.getBBox().y + TERMINAL_RADIUS)
+                   .attr("r", 10)
+                   .attr("stroke-width", 0)
+                   .attr("fill", "steelblue")
+                   .attr("fill-opacity", "0.7")
+                   .attr("class", "selection-circle").on("mouseout", function(d) {
+                       d3.select(this).remove();
+                   });
+             }
+             
+         });
          
          return termSelection;
      }
