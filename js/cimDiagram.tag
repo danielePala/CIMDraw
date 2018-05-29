@@ -70,8 +70,8 @@
     <script>
      "use strict";
      // Switch-related defs
-     const SWITCH_HEIGHT = 10; // height of switch elements
-     const SWITCH_WIDTH = 10; // width of switch elements
+     const SWITCH_HEIGHT = 15; // height of switch elements
+     const SWITCH_WIDTH = 15; // width of switch elements
      // generator-related defs
      const GEN_HEIGHT = 50;  // height of generator elements
      // load-related defs
@@ -1621,20 +1621,23 @@
          }
 
          // highlight the terminals on mouseover, since they are quite small
+         termSelection.each(function() {
+             let term = d3.select(this).select("circle");
+             d3.select(this).append("circle")
+               .attr("cx", term.attr("cx"))
+               .attr("cy", term.attr("cy"))
+               .attr("r", 6)
+               .attr("stroke-width", 0)
+               .attr("fill", "steelblue")
+               .attr("fill-opacity", "0.0")
+               .attr("class", "big-circle").on("mouseout", function(d) {
+                   d3.select(this).attr("fill-opacity", "0.0");
+               });
+         });
          termSelection.on("mouseover", function(d) {
-             if (d3.select(this).selectAll("circle.selection-circle").size() === 0) {
-                 d3.select(this).append("circle")
-                   .attr("cx", this.getBBox().x + TERMINAL_RADIUS)
-                   .attr("cy", this.getBBox().y + TERMINAL_RADIUS)
-                   .attr("r", 10)
-                   .attr("stroke-width", 0)
-                   .attr("fill", "steelblue")
-                   .attr("fill-opacity", "0.7")
-                   .attr("class", "selection-circle").on("mouseout", function(d) {
-                       d3.select(this).remove();
-                   });
+             if (d3.select(this).select("circle.selection-circle").size() === 0) {
+                 d3.select(this).select("circle.big-circle").attr("fill-opacity", "0.7");
              }
-             
          });
          
          return termSelection;

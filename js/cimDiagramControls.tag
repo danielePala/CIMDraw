@@ -1245,13 +1245,15 @@
          d3.select(hoverD)
            .filter("g.Terminal")
            .each(function (d) {
+               //$(this.parentNode).filter('[data-toggle="popover"]').popover("show");
+               let term = d3.select(this).select("circle");
                d3.select(this).append("circle")
-                 .attr("cx", this.getBBox().x + 2)
-                 .attr("cy", this.getBBox().y + 2)
-                 .attr("r", this.getBBox().width)
+                 .attr("cx", term.attr("cx"))
+                 .attr("cy", term.attr("cy"))
+                 .attr("r", 8)
                  .attr("stroke-width", 0)
-                 .attr("fill", "lightblue")
-                 .attr("fill-opacity", "0.4")
+                 .attr("fill", "red")
+                 .attr("fill-opacity", "0.7")
                  .attr("class", "selection-circle");
            });
      }
