@@ -1,9 +1,16 @@
 module.exports = function(config) {
     config.set({
         basePath: '',
-        frameworks: ['jasmine'],
+        frameworks: ['jasmine', 'riot'],
+        plugins: [
+            'karma-jasmine',
+            'karma-coverage',
+            'karma-firefox-launcher',
+            'karma-riot'
+        ],
         files: [
             'js/*.js',
+            'js/*.tag',
             'js/riot/*.js',
             'js/D3/*.js',
             'js/JSZip/*.js',
@@ -14,6 +21,7 @@ module.exports = function(config) {
         singleRun: true,
         reporters: ['progress', 'coverage'],
         preprocessors: {
+            'js/*.tag': ['riot', 'coverage'],
             'js/*.js': ['coverage']
         },
         proxies: {
