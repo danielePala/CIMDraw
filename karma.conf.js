@@ -10,9 +10,14 @@ module.exports = function(config) {
         ],
         files: [
             'js/*.js',
-            'js/*.tag',
             'js/riot/*.js',
+            'js/*.tag',
             'js/D3/*.js',
+            'js/d3-context-menu/*.js',
+            'js/jquery/*js',
+            'js/bootstrap/*.js',
+            'js/bootstrap-fileinput/*.js',
+            'js/bootstrap-select/*.js',
             'js/JSZip/*.js',
             { pattern: 'rdf-schema/*.rdf', watched: true, served: true, included: false },
             'spec/*.js'
