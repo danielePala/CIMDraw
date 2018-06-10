@@ -1095,14 +1095,14 @@
                  let absyP = pr.y + datum.y;
                  let deltax = absx - absxP;
                  let deltay = absy - absyP;
-                 if (Math.abs(deltax) < 10) {
+                 if (Math.abs(deltax) < 5) {
                      absx = absxP;
                      movex = absx - d.x;
                      let rotx = ((absxP) * transform.k) + transform.x;
                      self.highlight("x", rotx);
                      xaligned = true;
                  }
-                 if (Math.abs(deltay) < 10) {
+                 if (Math.abs(deltay) < 5) {
                      absy = absyP;
                      movey = absy - d.y;
                      let roty = ((absyP) * transform.k) + transform.y;
