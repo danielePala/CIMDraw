@@ -241,6 +241,7 @@
              $("#cim-home-container").hide();
              $(".selectpicker").selectpicker("hide");
              $("#cim-mode").hide();
+             $("#cim-topology-processor").hide();
              // main logic
              d3.select("#cim-diagrams").selectAll("option").remove();
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
@@ -280,8 +281,7 @@
              }
              $("#loadingDiagramMsg").text("loading CIM network...");
              $("#loadingModal").off("shown.bs.modal");
-             $("#loadingModal").modal("show");
-             $("#loadingModal").on("shown.bs.modal", function(e) {       
+             $("#loadingModal").on("shown.bs.modal", function(e) {
                  if (typeof(cimFile.name) !== "undefined") {
                      d3.select("#cim-filename").html(cimFile.name);
                      self.cimModel.load(cimFile, cimFileReader, function() {
@@ -292,13 +292,9 @@
                          }
                      }); 
                  } else {
-                     let hashComponents = window.location.hash.substring(1).split("/");
-                     let file = hashComponents[0];
-                     self.cimModel.loadRemote("/" + file, function() {
-                         loadDiagramList(file);
-                         $("#loadingModal").modal("hide");
-                         selectMode();
-                     });
+                     $("#loadingModal").modal("hide");
+                     route("/");
+                     return;
                  }
 
                  function selectMode() {
@@ -312,11 +308,16 @@
                      }
                  };
              });
+             $("#loadingModal").modal("show");
              self.trigger("diagrams");
          });
 
          // here we show a certain diagram
-         route('/*/diagrams/*', function(file, name) {  
+         route('/*/diagrams/*', function(file, name) {
+             if (typeof(cimFile.name) === "undefined") {
+                 route("/");
+                 return;
+             }
              if (self.cimModel.activeDiagramName === decodeURI(name)) {
                  self.trigger("showDiagram", file, name);
                  $("#app-container").show();
