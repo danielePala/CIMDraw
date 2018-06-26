@@ -86,6 +86,9 @@ function cimModel() {
                     parsed.children[0].children, function(el) {
                         return el.nodeName === "md:FullModel";
                     })[0];
+                if (typeof(fullModel) === "undefined") {
+                    return Promise.reject("error: invalid CGMES file.");
+                }
                 let profile = model.getAttribute(fullModel, "md:Model.profile");
                 if (profile.textContent.includes("Equipment")) {
                     eqdata = parsed;
@@ -163,11 +166,17 @@ function cimModel() {
         };
 
         return function parseZip(zip) {
+            let promises = [];
             zipFilesTotal = Object.keys(zip.files).length;
             zip.forEach(function (relativePath, zipEntry) {
-                zipEntry.async("string")
-                    .then(success);     
+                let promise = zipEntry.async("string")
+                    .then(success)
+                    .catch(function(e) {
+                        return Promise.reject(e);
+                    });
+                promises.push(promise);
             });
+            return Promise.all(promises);
         };
     };
     
@@ -464,13 +473,14 @@ function cimModel() {
         // zipped file contains many XML files, one for each profile
         // (EQ, DL, TP etc).
         load(file, reader, callback) {
+            let result = Promise.resolve();
             // should we create a new empty file?
             if (reader === null) {
                 let parser = new DOMParser();
                 data.all = parser.parseFromString(emptyFile, "application/xml");
                 model.fileName = file.name;
                 buildModel(callback);
-                return;
+                return result;
             }
             // see if this file is already loaded
             if (model.fileName !== file.name) {
@@ -483,7 +493,12 @@ function cimModel() {
                 model.fileName = file.name;
                 if (file.name.endsWith(".zip")) {
                     // zip file loading (ENTSO-E).
-                    JSZip.loadAsync(file).then(parseZip(callback));
+                    result = JSZip.loadAsync(file)
+                        .then(parseZip(callback))
+                        .catch(function(e) {
+                            model.clear();
+                            return Promise.reject(e);
+                        });
                 } else {
                     // plain RDF/XML file loading
                     reader.readAsText(file);
@@ -491,6 +506,7 @@ function cimModel() {
             } else {
                 callback(null);
             }
+            return result;
         },
 
         // Load a CIM file from a remote location. After loading the file, the
@@ -1416,8 +1432,8 @@ function cimModel() {
 
         // Reset the model to its initial state.
         clear() {
-            let parser = new DOMParser();
-            data.all = parser.parseFromString(emptyFile, "application/xml");
+            data.all = null;
+            model.fileName = null;
             dataMap = new Map();
             linksMap = new Map();
         }

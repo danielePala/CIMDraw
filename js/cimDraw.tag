@@ -147,6 +147,9 @@
                     <div class="modal-body">
                         <p id="loadingDiagramMsg">loading diagram...</p>
                     </div>
+                    <div class="modal-footer" id="cim-loading-modal-error-container">
+                        <button type="button" class="btn btn-primary" id="cim-loading-modal-error">Ok</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -227,6 +230,11 @@
              $("#cimModeModal").modal("show");
          });
 
+         $("#cim-loading-modal-error").on("click", function() {
+             $("#loadingModal").modal("hide");
+             route("/");
+         });
+         
          $("#cim-create-new-modal").on("click", function() {
              route("/" + cimFile.name + "/diagrams");
          });
@@ -242,6 +250,7 @@
              $(".selectpicker").selectpicker("hide");
              $("#cim-mode").hide();
              $("#cim-topology-processor").hide();
+             $("#cim-loading-modal-error-container").hide();
              // main logic
              d3.select("#cim-diagrams").selectAll("option").remove();
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
@@ -249,6 +258,7 @@
              $(".selectpicker").selectpicker("refresh");
              // initialize the fileinput component
              $("#cim-file-input").fileinput();
+             $("#cim-file-input").fileinput("clear");
              // what to do when the user loads a file
              $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {        
                  cimFile = file;
@@ -290,7 +300,10 @@
                          if (cimFile.name !== "new1") {
                              selectMode();
                          }
-                     }); 
+                     }).catch(function(e) {
+                         $("#loadingDiagramMsg").append("<br>" + e);
+                         $("#cim-loading-modal-error-container").show();
+                     });
                  } else {
                      $("#loadingModal").modal("hide");
                      route("/");

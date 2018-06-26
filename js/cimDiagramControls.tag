@@ -96,13 +96,32 @@
      let TERM_NODE = "Terminal.ConnectivityNode";
      let quadtree = d3.quadtree();
      let selected = [];
+     let copied = [];
      let menu = [
-         /*{
+         {
              title: "Copy",
              action: function(d, i) {
-                 console.log(d3.selectAll(selected).data());
+                 let elm = this;
+                 if (selected.indexOf(elm) === -1) {
+                     selected.push(elm);
+                     self.updateSelected();
+                 }
+                 // handle busbars
+                 let copiedWithCN = d3.selectAll(selected).data();
+                 for (let cimObj of copiedWithCN) {
+                     if (cimObj.nodeName === "cim:ConnectivityNode") {
+                         let busbar = opts.model.getBusbar(cimObj);
+                         if (busbar !== null) {
+                             busbar.x = cimObj.x;
+                             busbar.y = cimObj.y;
+                             copied.push(busbar);
+                         }
+                     } else {
+                         copied.push(cimObj);
+                     }
+                 }
              }
-         },*/
+         },
          {
              title: "Rotate",
              action: function(d, i) {
@@ -282,6 +301,45 @@
              }
          }
      ];
+     let diagramMenu = [
+         {
+             title: "Paste",
+             action: function(d, i) {
+                 if (copied.length < 1) {
+                     return;
+                 }
+                 let m = d3.mouse(d3.select("svg").node());
+                 let transform = d3.zoomTransform(d3.select("svg").node());
+                 let xoffset = transform.x;
+                 let yoffset = transform.y;
+                 let svgZoom = transform.k;
+                 let deltax = m[0] - copied[0].x;
+                 let deltay = m[1] - copied[0].y;
+                 let lineData = null
+                 for (let datum of copied) {
+                     let newObject = opts.model.createObject(datum.nodeName);
+                     for (let attribute of opts.model.getAttributes(datum)) {
+                         let attrName = attribute.nodeName;
+                         let attrVal = attribute.textContent;
+                         opts.model.setAttribute(newObject, attrName, attrVal);
+                     }
+                     newObject.x = datum.x + deltax;
+                     newObject.y = datum.y + deltay;
+                     if (newObject.nodeName === "cim:BusbarSection") {
+                         let cn = opts.model.getNode(datum);
+                         if (cn === null) {
+                             return;
+                         }
+                         lineData = cn.lineData;
+                     } else {
+                         lineData = datum.lineData;
+                     }
+                     opts.model.addToActiveDiagram(newObject, lineData);
+                 }
+                 copied = [];
+             }
+         }
+     ];
      // move one point of the multi-segment. "lineData" coordinates
      // are relative to d.x and d.y, and the first point is always (0,0).
      // Therefore, we must handle the translation of the first point in a different way.
@@ -434,6 +492,7 @@
          }).addAll(points.nodes());
          // setup context menu
          self.addContextMenu(points);
+         d3.select("svg").on("contextmenu.general", d3.contextMenu(diagramMenu));
          edges.on("contextmenu", d3.contextMenu(edgesMenu));
          // enable drag by default
          self.disableForce();
@@ -947,6 +1006,7 @@
          let path = svg.selectAll("svg > path");
          let circle = svg.selectAll("svg > circle");
          self.disableAll();
+         d3.select("svg").on("contextmenu.general", null);
          // handle escape key
          d3.select("body").on("keyup.addMulti", function() {
              if (d3.event.keyCode === 27) { // "Escape"
@@ -1184,6 +1244,7 @@
          d3.select("body").on("keyup.addMulti", null);
          d3.select("svg").on("click.add", null);
          d3.select("svg").on("contextmenu.add", null);
+         d3.select("svg").on("contextmenu.general", d3.contextMenu(diagramMenu));
          d3.select("svg").on("mousemove", null);
          d3.select("svg > path").attr("d", null);
          d3.select("svg > circle").attr("transform", "translate(0, 0)");
