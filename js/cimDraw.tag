@@ -294,7 +294,7 @@
              $("#loadingModal").on("shown.bs.modal", function(e) {
                  if (typeof(cimFile.name) !== "undefined") {
                      d3.select("#cim-filename").html(cimFile.name);
-                     self.cimModel.load(cimFile, cimFileReader, function() {
+                     self.cimModel.load(cimFile, cimFileReader).then(function() {
                          loadDiagramList(cimFile.name);
                          $("#loadingModal").modal("hide");
                          if (cimFile.name !== "new1") {
@@ -348,12 +348,13 @@
 
          // creates a new model if it doesn't exist, and shows a diagram.
          function loadDiagram(file, name, element) {
-             self.cimModel.loadRemote("/" + file, showDiagram);
-             function showDiagram(error) {
-                 if (error !== null) {
-                     route("/");
-                     return;
-                 }
+             self.cimModel.loadRemote("/" + file).then(function() {
+                 showDiagram();
+             }).catch(function(e) {
+                 $("#loadingDiagramMsg").append("<br>" + e);
+                 $("#cim-loading-modal-error-container").show();
+             });
+             function showDiagram() {
                  self.cimModel.selectDiagram(decodeURI(name));
                  loadDiagramList(decodeURI(file));
                  $(".selectpicker").selectpicker("val", decodeURI("#" + file + "/diagrams/" + name));

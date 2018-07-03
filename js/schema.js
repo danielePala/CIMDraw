@@ -68,11 +68,12 @@ function cimSchema() {
         // Used for faster lookup.
         schemaInvLinksMap: new Map(),
         
-        // Build initial schema data structures and call a user callback.
-        buildSchema(callback) { 
+        // Build initial schema data structures. Returns a promise which resolves
+        // successfully if all the schema files are loaded correctly.
+        buildSchema() { 
             // let's read schema files, if necessary
             if (schemaData["EQ"] === null) {            
-                d3.xml(rdfsEQ).then(function(schemaDataEQ) {
+                return d3.xml(rdfsEQ).then(function(schemaDataEQ) {
                     schemaData["EQ"] = schemaDataEQ;
                     populateInvLinkMap(schemaData["EQ"]);
                     return d3.xml(rdfsDL);
@@ -95,10 +96,11 @@ function cimSchema() {
                 }).then(function(schemaDataGL) {
                     schemaData["GL"] = schemaDataGL;
                     populateInvLinkMap(schemaData["GL"]);
-                    callback(null);
+                }).catch(function(e) {
+                    return Promise.reject(e);
                 });
             } else {
-                callback(null);
+                return Promise.resolve();
             }
 
             function populateInvLinkMap(schemaData) {

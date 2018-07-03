@@ -161,11 +161,11 @@ function cimModel() {
                 }
 
                 data.all = all;
-                buildModel(callback);
+                return buildModel();
             }
         };
 
-        return function parseZip(zip) {
+        return function(zip) {
             let promises = [];
             zipFilesTotal = Object.keys(zip.files).length;
             zip.forEach(function (relativePath, zipEntry) {
@@ -207,9 +207,10 @@ function cimModel() {
     };
 
     
-    // Build initial model data structures and call a user callback.
+    // Build initial model data structures. Returns a promise which resolves
+    // after successful initialization.
     // This is a 'private' function (not visible in the model object).
-    function buildModel(callback) {     
+    function buildModel() {     
         // build a map (UUID)->(object) and a map
         // (link name, target UUID)->(source objects)
         let allObjects = getAllObjects();
@@ -262,7 +263,7 @@ function cimModel() {
                 object.remove();
             }
         }
-        model.schema.buildSchema(callback);
+        return model.schema.buildSchema();
     };
 
     // Get all objects (doesn't filter by diagram).
@@ -467,20 +468,19 @@ function cimModel() {
         activeDiagramName: "none",
         schema: new cimSchema(),
         // Loads a CIM file from the local filesystem. If reader is null, then
-        // it creates a new empty file. After loading the file, the passed
-        // callback is called. The input file can be a plain RDF/XML file
+        // it creates a new empty file. Returns a promise which resolves after
+        // loading the file. The input file can be a plain RDF/XML file
         // or a zipped file, conforming to ENTSO-E format (i.e. the
         // zipped file contains many XML files, one for each profile
         // (EQ, DL, TP etc).
-        load(file, reader, callback) {
+        load(file, reader) {
             let result = Promise.resolve();
             // should we create a new empty file?
             if (reader === null) {
                 let parser = new DOMParser();
                 data.all = parser.parseFromString(emptyFile, "application/xml");
                 model.fileName = file.name;
-                buildModel(callback);
-                return result;
+                return buildModel();
             }
             // see if this file is already loaded
             if (model.fileName !== file.name) {
@@ -488,13 +488,13 @@ function cimModel() {
                     let parser = new DOMParser();
                     let cimXML = reader.result;
                     data.all = parser.parseFromString(cimXML, "application/xml");
-                    buildModel(callback);
+                    return buildModel();
                 }
                 model.fileName = file.name;
                 if (file.name.endsWith(".zip")) {
                     // zip file loading (ENTSO-E).
                     result = JSZip.loadAsync(file)
-                        .then(parseZip(callback))
+                        .then(parseZip())
                         .catch(function(e) {
                             model.clear();
                             return Promise.reject(e);
@@ -503,27 +503,26 @@ function cimModel() {
                     // plain RDF/XML file loading
                     reader.readAsText(file);
                 }
-            } else {
-                callback(null);
-            }
+            } 
             return result;
         },
 
-        // Load a CIM file from a remote location. After loading the file, the
-        // passed callback is called. The input file must be a plain
+        // Load a CIM file from a remote location. Returns a promise which
+        // resolves after loading the file. The input file must be a plain
         // RDF/XML file.
-        loadRemote(fileName, callback) {
+        loadRemote(fileName) {
+            let result = Promise.resolve();
             if (model.fileName !== decodeURI(fileName).substring(1)) {
                 model.fileName = decodeURI(fileName).substring(1);
-                d3.xml(fileName).then(function(xml_data) {
+                result = d3.xml(fileName).then(function(xml_data) {
                     data.all = xml_data;
-                    buildModel(callback);
-                }).catch(function(error) {
-                    callback(error);
+                    return buildModel();
+                }).catch(function(e) {
+                    model.clear();
+                    return Promise.reject(e);
                 });
-            } else {
-                callback(null);
-            }
+            } 
+            return result;
         },
 
         // Serialize the current CIM file as a plain RDF/XML file.
