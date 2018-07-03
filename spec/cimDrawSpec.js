@@ -4,7 +4,7 @@ describe("CIM draw spec", function() {
     beforeEach(function(done) {
         testModel = cimModel();
         let cimFile = {name: "new1"}; // new file
-        testModel.load(cimFile, null, function() {
+        testModel.load(cimFile, null).then(function() {
             // nothing to do
             done();
         });

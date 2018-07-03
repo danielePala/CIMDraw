@@ -5,7 +5,7 @@ describe("CIM model", function() {
     beforeEach(function(done) {
 	model = cimModel();	
 	let cimFile = {name: "new1"}; // new file
-	model.load(cimFile, null, function() {
+	model.load(cimFile, null).then(function() {
 	    // nothing to do
 	    done();
 	});
