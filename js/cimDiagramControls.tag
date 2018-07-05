@@ -184,6 +184,8 @@
                  self.disableAll();
                  self.deselectAll();
                  selected.push(elm);
+                 // disable general context menu
+                 d3.select("svg").on("contextmenu.general", null);
                  self.addDrawing(d, function() {
                      let svg = d3.select("svg");
                      let path = svg.selectAll("svg > path");
@@ -224,6 +226,8 @@
                              break;
                          } 
                      }
+                     // enable general context menu
+                     d3.select("svg").on("contextmenu.general", d3.contextMenu(diagramMenu));
                  });
                  d3.select("svg").on("click.add", clicked);
                  function clicked() {
