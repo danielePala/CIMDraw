@@ -484,12 +484,6 @@ function cimModel() {
             }
             // see if this file is already loaded
             if (model.fileName !== file.name) {
-                reader.onload = function(e) {
-                    let parser = new DOMParser();
-                    let cimXML = reader.result;
-                    data.all = parser.parseFromString(cimXML, "application/xml");
-                    return buildModel();
-                }
                 model.fileName = file.name;
                 if (file.name.endsWith(".zip")) {
                     // zip file loading (ENTSO-E).
@@ -500,8 +494,31 @@ function cimModel() {
                             return Promise.reject(e);
                         });
                 } else {
-                    // plain RDF/XML file loading
-                    reader.readAsText(file);
+                    // plain RDF/XML file loading with promise wrapper
+                    const readUploadedFileAsText = (inputFile) => {
+                        const reader1 = new FileReader();
+
+                        return new Promise((resolve, reject) => {
+                            reader1.onerror = () => {
+                                reader1.abort();
+                                reject(new DOMException("Problem parsing input file."));
+                            };
+
+                            reader1.onload = () => {
+                                let parser = new DOMParser();
+                                let cimXML = reader1.result;
+                                data.all = parser.parseFromString(cimXML, "application/xml");
+                                buildModel().then(function() {
+                                    resolve(reader1.result);
+                                }).catch(function(e) {
+                                    model.clear();
+                                    return reject(e);
+                                });
+                            };
+                            reader1.readAsText(inputFile);
+                        });
+                    }
+                    return readUploadedFileAsText(file);
                 }
             } 
             return result;
