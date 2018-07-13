@@ -1721,6 +1721,22 @@
              }
          } else {
              lineData.push({x:0, y:0, seq:1});
+             // special case: if this is a node with a busbar associated, we draw it as
+             // a two-dimensional object
+             if (d.nodeName === "cim:" + NODE_CLASS) {
+                 let terminals = self.model.getTargets(
+                     [d],
+                     NODE_TERM);
+                 // let's try to get some equipment
+                 let equipments = self.model.getTargets(
+                     terminals,
+                     "Terminal.ConductingEquipment");
+                 let busbar = equipments.filter(
+                     el => el.nodeName === "cim:BusbarSection")[0];
+                 if (typeof(busbar) !== "undefined") {
+                     lineData.push({x:150, y:0, seq:2});
+                 }
+             }
              d.x = xcalc;
              d.y = ycalc;
              self.model.addToActiveDiagram(d, lineData);
@@ -1795,10 +1811,9 @@
                  let end = lineData[lineData.length-1];
                  return ((lineData[0].y + end.y)/2) + 15;
              }).text(function(d) {
-                 let equipments = self.model.getEquipments(d);
                  // let's try to get a busbar section
-                 let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-                 if (typeof(busbarSection) !== "undefined") {    
+                 let busbarSection = self.model.getBusbar(d);
+                 if (busbarSection !== null) {    
                      let name = self.model.getAttribute(busbarSection, "cim:IdentifiedObject.name");
                      if (typeof(name) !== "undefined") {
                          return name.innerHTML;
