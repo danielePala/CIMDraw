@@ -1293,10 +1293,9 @@
          }
          // handle nodes
          if (hoverD.nodeName === "cim:ConnectivityNode" || hoverD.nodeName === "cim:TopologicalNode") {
-             let equipments = self.model.getEquipments(hoverD);
              // let's try to get a busbar section
-             let busbarSection = equipments.filter(el => el.localName === "BusbarSection")[0];
-             if (typeof(busbarSection) === "undefined") {
+             let busbarSection = self.model.getBusbar(hoverD);
+             if (busbarSection === null) {
                  return;
              }
              uuid = busbarSection.attributes.getNamedItem("rdf:ID").value;
