@@ -1261,6 +1261,10 @@ function cimModel() {
                 model.setAttribute(point, "cim:DiagramObjectPoint.sequenceNumber", linePoint.seq);
                 addLink(point, "cim:DiagramObjectPoint.DiagramObject", dobj);
             }
+            // the object might have a rotation
+            if (typeof(object.rotation) !== "undefined") {
+                model.setAttribute(dobj, "cim:DiagramObject.rotation", object.rotation);
+            }
             addLink(dobj, "cim:DiagramObject.IdentifiedObject", object);
             addLink(dobj, "cim:DiagramObject.Diagram", model.activeDiagram);
             model.trigger("addToActiveDiagram", object);

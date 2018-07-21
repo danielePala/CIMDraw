@@ -609,7 +609,7 @@
 
      /**
         Enable dragging of objects.
-     */
+      */
      enableDrag() {
          let cnsToMove = [];
          self.disableDrag();
@@ -1082,8 +1082,10 @@
                  y: absy - newObject.y,
                  seq: null
              };
-             let aligned = self.align(newObject, lineDatum, true);
-             movePoint(newObject, null, aligned);
+             let unrotated = self.parent.rotate(lineDatum, newObject.rotation * (-1));
+             let aligned = self.align(newObject, unrotated, true);
+             let rotated = self.parent.rotate(aligned, newObject.rotation);
+             movePoint(newObject, null, rotated);
          };
          
          function movePoint(d, seq, delta) {
@@ -1101,8 +1103,9 @@
              path.attr("d", function() {
                  let lineData = [];
                  for (let linePoint of d.lineData) {
-                     lineData.push({x: ((linePoint.x+d.x)*transform.k) + transform.x,
-                                    y: ((linePoint.y+d.y)*transform.k) + transform.y});
+                     let rotated = self.parent.rotate(linePoint, newObject.rotation);
+                     lineData.push({x: ((rotated.x+d.x)*transform.k) + transform.x,
+                                    y: ((rotated.y+d.y)*transform.k) + transform.y});
                  }
                  lineData.push({x: ((d.x + delta.x)*transform.k) + transform.x, y: ((d.y + delta.y)*transform.k) + transform.y});
                  return line(lineData);
@@ -1117,8 +1120,9 @@
          let point = path.datum();
          let newx = point.x - newObject.x;
          let newy = point.y - newObject.y;
-         let newSeq = newObject.lineData.length + 1;                 
-         newObject.lineData.push({x: newx, y: newy, seq: newSeq});
+         let newSeq = newObject.lineData.length + 1;
+         let rot = self.parent.rotate({x: newx, y: newy}, newObject.rotation * (-1));
+         newObject.lineData.push({x: rot.x, y: rot.y, seq: newSeq});
          // remove highlight
          self.highlight(null);
      }
@@ -1237,7 +1241,7 @@
          
          
          if (arguments.length === 3) {
-                 hG.attr("transform", "rotate(" + rotation.val + "," + rotation.x + "," + rotation.y + ")");
+             hG.attr("transform", "rotate(" + rotation.val + "," + rotation.x + "," + rotation.y + ")");
          } else {
              hG.attr("transform", null);
          }
@@ -1332,7 +1336,7 @@
          }
          let newObject = null;
          if (opts.model.schema.isA("Switch", d) === true) {
-                 newObject = opts.model.createObject("cim:Discrete");
+             newObject = opts.model.createObject("cim:Discrete");
          } else {
              newObject = opts.model.createObject("cim:Analog");
          }
