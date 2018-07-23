@@ -643,7 +643,7 @@ function cimModel() {
                     // handle rdf:about
                     let isAbout = model.schema.isDescription(datum, profile);
                     let isConcrete = model.schema.isConcrete(datum, profile);
-                    if (isAbout === true) {
+                    if (isAbout === true && datum.attributes.getNamedItem("rdf:ID") !== null) {
                         // we must use rdf:about
                         let idVal = datum.attributes.getNamedItem("rdf:ID").value; 
                         datum.removeAttribute("rdf:ID");
