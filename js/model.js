@@ -905,7 +905,7 @@ function cimModel() {
         // name must be namespace qualified (e.g. "cim:ACDCTerminal.connected").
         getAttribute(object, attrName) {
             if (typeof(object) === "undefined") {
-                return "undefined";
+                return undefined;
             }
             let attributes = model.getAttributes(object);
             return attributes.filter(el => el.nodeName === attrName)[0];
