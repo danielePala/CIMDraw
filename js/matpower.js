@@ -73,15 +73,6 @@ function exportToMatpower(model) {
         gs = gs * baseV * baseV;
         bs = bs * baseV * baseV;
         if (gens.length > 0 || shunts.length > 0) {
-            if (gens.length > 0) {
-                let terminals = tp.getTerminals(gens[0]); 
-                let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
-                let regCtrl = model.getTargets([gens[0]],"RegulatingCondEq.RegulatingControl")[0];
-                if (typeof(regCtrl) !== "undefined") {
-                    let vTarget = getAttrDefault(regCtrl, "cim:RegulatingControl.targetValue", baseV); 
-                    vm = parseFloat(vTarget) / parseFloat(baseV);
-                }
-            }
             if (shunts.length > 0) {
                 let terminals = tp.getTerminals(shunts[0]); 
                 let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
@@ -134,6 +125,7 @@ function exportToMatpower(model) {
         let terminals = tp.getTerminals(machine); 
         let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
         let genUnit = model.getTargets([machine], "RotatingMachine.GeneratingUnit")[0];
+        let regCtrl = model.getTargets([machine],"RegulatingCondEq.RegulatingControl")[0];
         nodes.forEach(function(node) {
             let busNum = busNums.get(node);
             let p = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.p", "0")) * (-1.0);
@@ -141,6 +133,12 @@ function exportToMatpower(model) {
             let qmax = getAttrDefault(machine, "cim:SynchronousMachine.maxQ", "0");
             let qmin = getAttrDefault(machine, "cim:SynchronousMachine.minQ", "0");
             let vg = 1.0;
+            if (typeof(regCtrl) !== "undefined") {
+                let baseVobj = model.getTargets([node], "TopologicalNode.BaseVoltage")[0];
+                let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
+                let vTarget = getAttrDefault(regCtrl, "cim:RegulatingControl.targetValue", baseV);
+                vg = parseFloat(vTarget) / parseFloat(baseV);
+            }
             let mbase = getAttrDefault(machine, "cim:SynchronousMachine.ratedS", baseMVA);
             let pmax = getAttrDefault(genUnit, "cim:GeneratingUnit.maxOperatingP", "0");
             let pmin = getAttrDefault(genUnit, "cim:GeneratingUnit.minOperatingP", "0");
