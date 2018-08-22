@@ -56,6 +56,7 @@ function exportToMatpower(model) {
         let gens = eqs.filter(el => model.schema.isA("SynchronousMachine", el) === true);
         let pd = 0.0;
         let qd = 0.0;
+        let vm = 1.0;
         loads.forEach(function(load) {
             pd = pd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.p", "0.0"));
             qd = qd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.q", "0.0"));
@@ -69,7 +70,27 @@ function exportToMatpower(model) {
             gs = gs + (gSection * numSections);
             bs = bs + (bSection * numSections);
         });
+        gs = gs * baseV * baseV;
+        bs = bs * baseV * baseV;
         if (gens.length > 0 || shunts.length > 0) {
+            if (gens.length > 0) {
+                let terminals = tp.getTerminals(gens[0]); 
+                let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
+                let regCtrl = model.getTargets([gens[0]],"RegulatingCondEq.RegulatingControl")[0];
+                if (typeof(regCtrl) !== "undefined") {
+                    let vTarget = getAttrDefault(regCtrl, "cim:RegulatingControl.targetValue", baseV); 
+                    vm = parseFloat(vTarget) / parseFloat(baseV);
+                }
+            }
+            if (shunts.length > 0) {
+                let terminals = tp.getTerminals(shunts[0]); 
+                let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
+                let regCtrl = model.getTargets([shunts[0]],"RegulatingCondEq.RegulatingControl")[0];
+                if (typeof(regCtrl) !== "undefined") {
+                    let vTarget = getAttrDefault(regCtrl, "cim:RegulatingControl.targetValue", baseV); 
+                    vm = parseFloat(vTarget) / parseFloat(baseV);
+                }
+            }
             type = 2;
         }
         let slack = gens.filter(function(gen) {
@@ -87,7 +108,7 @@ function exportToMatpower(model) {
         mpcFile = mpcFile + gs + "\t";       // Gs
         mpcFile = mpcFile + bs + "\t";       // Bs
         mpcFile = mpcFile + 1 + "\t";        // area
-        mpcFile = mpcFile + 1 + "\t";        // Vm 
+        mpcFile = mpcFile + vm + "\t";        // Vm 
         mpcFile = mpcFile + 0 + "\t";        // Va
         mpcFile = mpcFile + baseV + "\t";    // baseKV
         mpcFile = mpcFile + 1 + "\t";        // zone
@@ -113,7 +134,6 @@ function exportToMatpower(model) {
         let terminals = tp.getTerminals(machine); 
         let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
         let genUnit = model.getTargets([machine], "RotatingMachine.GeneratingUnit")[0];
-        let regCtrl = model.getTargets([machine],"RegulatingCondEq.RegulatingControl")[0];
         nodes.forEach(function(node) {
             let busNum = busNums.get(node);
             let p = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.p", "0")) * (-1.0);
@@ -121,12 +141,6 @@ function exportToMatpower(model) {
             let qmax = getAttrDefault(machine, "cim:SynchronousMachine.maxQ", "0");
             let qmin = getAttrDefault(machine, "cim:SynchronousMachine.minQ", "0");
             let vg = 1.0;
-            if (typeof(regCtrl) !== "undefined") {
-                let baseVobj = model.getTargets([node], "TopologicalNode.BaseVoltage")[0];
-                let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
-                let vTarget = getAttrDefault(regCtrl, "cim:RegulatingControl.targetValue", baseV); 
-                vg = parseFloat(vTarget) / parseFloat(baseV);
-            }
             let mbase = getAttrDefault(machine, "cim:SynchronousMachine.ratedS", baseMVA);
             let pmax = getAttrDefault(genUnit, "cim:GeneratingUnit.maxOperatingP", "0");
             let pmin = getAttrDefault(genUnit, "cim:GeneratingUnit.minOperatingP", "0");
@@ -184,9 +198,9 @@ function exportToMatpower(model) {
             mpcFile = mpcFile + rpu + "\t";                   // resistance (p.u.)
             mpcFile = mpcFile + xpu + "\t";                   // reactance (p.u.)
             mpcFile = mpcFile + bpu + "\t";                   // total line charging susceptance (p.u.)
-            mpcFile = mpcFile + 1000 + "\t";                  // MVA rating A (long term rating)
-            mpcFile = mpcFile + 1000 + "\t";                  // MVA rating B (short term rating)
-            mpcFile = mpcFile + 1000 + "\t";                  // MVA rating C (emergency rating)
+            mpcFile = mpcFile + 0 + "\t";                     // MVA rating A (long term rating)
+            mpcFile = mpcFile + 0 + "\t";                     // MVA rating B (short term rating)
+            mpcFile = mpcFile + 0 + "\t";                     // MVA rating C (emergency rating)
             mpcFile = mpcFile + 0 + "\t";                     // transformer off nominal turns ratio
             mpcFile = mpcFile + 0 + "\t";                     // transformer phase shift angle (degrees)
             mpcFile = mpcFile + 1 + "\t";                     // initial branch status, 1 = in-service, 0 = out-of-service
@@ -248,16 +262,17 @@ function exportToMatpower(model) {
                 // (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
                 // while the sign depends on the position of the tap changer (primary vs secondary winding).
                 let tc = model.getTargets([hvEnd], "TransformerEnd.RatioTapChanger");
-                let corr = 1.0;
+                let corr = -1.0;
                 if (tc.length === 0) {
                     tc = model.getTargets([lvEnd], "TransformerEnd.RatioTapChanger");
-                    corr = -1.0;
+                    corr = 1.0;
                 }
                 if (tc.length > 0) {
                     let nStep = getAttrDefault(tc[0], "cim:TapChanger.neutralStep", "0");
                     let step = getAttrDefault(tc[0], "cim:TapChanger.step", nStep);
                     let stepVol = getAttrDefault(tc[0], "cim:RatioTapChanger.stepVoltageIncrement", "0");
                     corr = corr * (parseFloat(step) - parseFloat(nStep)) * parseFloat(stepVol);
+                    corr = corr/100;
                 } else {
                     corr = 0.0;
                 }
@@ -270,9 +285,9 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
                 mpcFile = mpcFile + xpu + "\t";                 // reactance (p.u.)
                 mpcFile = mpcFile + bpu + "\t";                 // total line charging susceptance (p.u.)
-                mpcFile = mpcFile + 1000 + "\t";                // MVA rating A (long term rating)
-                mpcFile = mpcFile + 1000 + "\t";                // MVA rating B (short term rating)
-                mpcFile = mpcFile + 1000 + "\t";                // MVA rating C (emergency rating)
+                mpcFile = mpcFile + 0 + "\t";                   // MVA rating A (long term rating)
+                mpcFile = mpcFile + 0 + "\t";                   // MVA rating B (short term rating)
+                mpcFile = mpcFile + 0 + "\t";                   // MVA rating C (emergency rating)
                 mpcFile = mpcFile + ratio + "\t";               // transformer off nominal turns ratio
                 mpcFile = mpcFile + shift + "\t";               // transformer phase shift angle (degrees)
                 mpcFile = mpcFile + 1 + "\t";                   // initial branch status, 1 = in-service, 0 = out-of-service
