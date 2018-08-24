@@ -188,9 +188,9 @@ function exportToMatpower(model) {
             let r = getAttrDefault(acline, "cim:ACLineSegment.r", "0");
             let x = getAttrDefault(acline, "cim:ACLineSegment.x", "0");
             let b = getAttrDefault(acline, "cim:ACLineSegment.bch", "0"); 
-            let rpu = parseFloat(r) / baseZ; 
-            let xpu = parseFloat(x) / baseZ;
-            let bpu = parseFloat(b) * baseZ;
+            let rpu = (parseFloat(r) / baseZ); 
+            let xpu = (parseFloat(x) / baseZ);
+            let bpu = (parseFloat(b) * baseZ);
             mpcFile = mpcFile + busNums.get(nodes[0]) + "\t"; // “from” bus number
             mpcFile = mpcFile + busNums.get(nodes[1]) + "\t"; // “to” bus number
             mpcFile = mpcFile + rpu + "\t";                   // resistance (p.u.)
@@ -249,9 +249,9 @@ function exportToMatpower(model) {
                 let baseVobj = model.getTargets([hvNode], "TopologicalNode.BaseVoltage")[0];
                 let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
                 let baseZ = (parseFloat(baseV) * parseFloat(baseV)) / parseFloat(baseMVA);
-                let rpu = parseFloat(r) / baseZ;
-                let xpu = parseFloat(x) / baseZ;
-                let bpu = parseFloat(b) * baseZ;
+                let rpu = (parseFloat(r) / baseZ);
+                let xpu = (parseFloat(x) / baseZ);
+                let bpu = (parseFloat(b) * baseZ);
                 // get also the lv nominal voltage
                 let lvVobj = model.getTargets([lvNode], "TopologicalNode.BaseVoltage")[0];
                 let lvV = getAttrDefault(lvVobj, "cim:BaseVoltage.nominalVoltage", "0");
@@ -260,10 +260,10 @@ function exportToMatpower(model) {
                 // (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
                 // while the sign depends on the position of the tap changer (primary vs secondary winding).
                 let tc = model.getTargets([hvEnd], "TransformerEnd.RatioTapChanger");
-                let corr = -1.0;
+                let corr = 1.0;
                 if (tc.length === 0) {
                     tc = model.getTargets([lvEnd], "TransformerEnd.RatioTapChanger");
-                    corr = 1.0;
+                    corr = -1.0;
                 }
                 if (tc.length > 0) {
                     let nStep = getAttrDefault(tc[0], "cim:TapChanger.neutralStep", "0");
@@ -278,8 +278,8 @@ function exportToMatpower(model) {
                 let hvClock = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
                 let lvClock = getAttrDefault(lvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
                 let shift = 30.0 * (parseFloat(hvClock) + parseFloat(lvClock)); 
-                mpcFile = mpcFile + busNums.get(lvNode) + "\t"; // “from” bus number
-                mpcFile = mpcFile + busNums.get(hvNode) + "\t"; // “to” bus number
+                mpcFile = mpcFile + busNums.get(hvNode) + "\t"; // “from” bus number
+                mpcFile = mpcFile + busNums.get(lvNode) + "\t"; // “to” bus number
                 mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
                 mpcFile = mpcFile + xpu + "\t";                 // reactance (p.u.)
                 mpcFile = mpcFile + bpu + "\t";                 // total line charging susceptance (p.u.)
