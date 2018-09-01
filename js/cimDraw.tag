@@ -314,6 +314,9 @@
                      let nodes = self.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
                      let cns = nodes["cim:ConnectivityNode"];
                      let tns = nodes["cim:TopologicalNode"];
+                     cns = cns.filter(function(el) {
+                         return self.cimModel.isBoundary(el) === false;
+                     });
                      if (cns.length > 0 || tns.length === 0) {
                          self.cimModel.setMode("NODE_BREAKER");
                      } else {

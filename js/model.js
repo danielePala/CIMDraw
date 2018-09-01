@@ -45,7 +45,7 @@ function cimModel() {
     const tpNS = "http://entsoe.eu/CIM/Topology/4/1";
     // The Steady State Hypothesis namespace
     const sshNS = "http://entsoe.eu/CIM/SteadyStateHypothesis/1/1";
-    // The Geographical Location schema
+    // The Geographical Location namespace
     const glNS = "http://entsoe.eu/CIM/GeographicalLocation/2/1";
     // An empty CIM file, used when creating a new file.
     const emptyFile = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
@@ -60,27 +60,31 @@ function cimModel() {
     // The current mode of operation: NODE_BREAKER or BUS_BRANCH.
     let mode = "NODE_BREAKER";
 
-    // Parse and load an ENTSO-E CIM file.
-    // The given callback is called after having loaded the model.
+    // Parse and load an ENTSO-E CIM file. Returns a promise which resolves
+    // after successful initialization.
     // This is a 'private' function (not visible in the model object).
-    function parseZip(callback, zip) {
+    function parseZip() {
         let parser = new DOMParser();
         let zipFilesProcessed = 0;
         let zipFilesTotal = 0;
-        let eqdata = null;
-        let dldata = null;
-        let svdata = null;
-        let tpdata = null;
-        let sshdata = null;
-        let gldata = null;
+        let eqdata = [];
+        let dldata = [];
+        let svdata = [];
+        let tpdata = [];
+        let sshdata = [];
+        let gldata = [];
+        let eqbdata = null;
+        let tpbdata = null;
         function success(content) {
             zipFilesProcessed = zipFilesProcessed + 1;
-            if (eqdata === null ||
-                dldata === null ||
-                svdata === null ||
-                tpdata === null ||
-                sshdata === null ||
-                gldata === null) {
+            if (eqdata.length === 0 ||
+                dldata.length === 0 ||
+                svdata.length === 0 ||
+                tpdata.length === 0 ||
+                sshdata.length === 0 ||
+                gldata.length === 0 ||
+                eqbdata === null ||
+                tpbdata === null) {
                 let parsed = parser.parseFromString(content, "application/xml");
                 let fullModel = [].filter.call(
                     parsed.children[0].children, function(el) {
@@ -91,68 +95,94 @@ function cimModel() {
                 }
                 let profile = model.getAttribute(fullModel, "md:Model.profile");
                 if (profile.textContent.includes("Equipment")) {
-                    eqdata = parsed;
+                    if (profile.textContent.includes("Boundary") === false) {
+                        eqdata.push(parsed);
+                    } else {
+                        eqbdata = parsed;
+                    }
                 }
                 if (profile.textContent.includes("DiagramLayout")) {
-                    dldata = parsed;
+                    dldata.push(parsed);
                 }
                 if (profile.textContent.includes("StateVariables")) {
-                    svdata = parsed;
+                    svdata.push(parsed);
                 }
                 if (profile.textContent.includes("Topology")) {
-                    tpdata = parsed;
+                    if (profile.textContent.includes("Boundary") === false) {
+                        tpdata.push(parsed);
+                    } else {
+                        tpbdata = parsed;
+                    }
                 }
                 if (profile.textContent.includes("SteadyStateHypothesis")) {
-                    sshdata = parsed;
+                    sshdata.push(parsed);
                 }
                 if (profile.textContent.includes("GeographicalLocation")) {
-                    gldata = parsed;
+                    gldata.push(parsed);
                 }               
             }
             // at the end we need to have at least the EQ file
-            if (eqdata !== null &&
+            if (eqdata.length > 0 &&
                 zipFilesProcessed === zipFilesTotal) {
                 let all = parser.parseFromString(emptyFile, "application/xml");
-                for (let datum of eqdata.children[0].children) {
-                    if (datum.nodeName === "md:FullModel") {
-                        continue;
-                    }
-                    all.children[0].appendChild(datum.cloneNode(true));
-                }
-                if (dldata !== null) {
-                    for (let datum of dldata.children[0].children) {
+                for (let eqfile of eqdata) {
+                    for (let datum of eqfile.children[0].children) {
                         if (datum.nodeName === "md:FullModel") {
                             continue;
                         }
                         all.children[0].appendChild(datum.cloneNode(true));
                     }
                 }
-                if (svdata !== null) {
-                    for (let datum of svdata.children[0].children) {
+                for (let dlfile of dldata) {
+                    for (let datum of dlfile.children[0].children) {
                         if (datum.nodeName === "md:FullModel") {
                             continue;
                         }
                         all.children[0].appendChild(datum.cloneNode(true));
                     }
                 }
-                if (tpdata !== null) {
-                    for (let datum of tpdata.children[0].children) {
+                for (let svfile of svdata) {
+                    for (let datum of svfile.children[0].children) {
                         if (datum.nodeName === "md:FullModel") {
                             continue;
                         }
                         all.children[0].appendChild(datum.cloneNode(true));
                     }
                 }
-                if (sshdata !== null) {
-                    for (let datum of sshdata.children[0].children) {
+                for (let tpfile of tpdata) {
+                    for (let datum of tpfile.children[0].children) {
                         if (datum.nodeName === "md:FullModel") {
                             continue;
                         }
                         all.children[0].appendChild(datum.cloneNode(true));
                     }
                 }
-                if (gldata !== null) {
-                    for (let datum of gldata.children[0].children) {
+                for (let sshfile of sshdata) {
+                    for (let datum of sshfile.children[0].children) {
+                        if (datum.nodeName === "md:FullModel") {
+                            continue;
+                        }
+                        all.children[0].appendChild(datum.cloneNode(true));
+                    }
+                }
+                for (let glfile of gldata) {
+                    for (let datum of glfile.children[0].children) {
+                        if (datum.nodeName === "md:FullModel") {
+                            continue;
+                        }
+                        all.children[0].appendChild(datum.cloneNode(true));
+                    }
+                }
+                if (eqbdata !== null) {
+                    for (let datum of eqbdata.children[0].children) {
+                        if (datum.nodeName === "md:FullModel") {
+                            continue;
+                        }
+                        all.children[0].appendChild(datum.cloneNode(true));
+                    }
+                }
+                if (tpbdata !== null) {
+                    for (let datum of tpbdata.children[0].children) {
                         if (datum.nodeName === "md:FullModel") {
                             continue;
                         }
@@ -895,6 +925,12 @@ function cimModel() {
 
         // Get all the attributes of a given object which are actually set.
         getAttributes(object) {
+            if (typeof(object) === "undefined") {
+                return undefined;
+            }
+            if (object === null) {
+                return undefined;
+            }
             return [].filter.call(object.children, function(el) {
                 return el.attributes.length === 0;
             });
@@ -905,6 +941,9 @@ function cimModel() {
         // name must be namespace qualified (e.g. "cim:ACDCTerminal.connected").
         getAttribute(object, attrName) {
             if (typeof(object) === "undefined") {
+                return undefined;
+            }
+            if (object === null) {
                 return undefined;
             }
             let attributes = model.getAttributes(object);
@@ -1437,6 +1476,17 @@ function cimModel() {
                 model.trigger("createdDiagram");
             }
             model.trigger("changedDiagram");
+        },
+
+        isBoundary(connectivityNode) {
+            let ret = false;
+            let boundary = model.getAttribute(connectivityNode, "entsoe:ConnectivityNode.boundaryPoint");
+            if (typeof(boundary) !== "undefined") {
+                if (boundary.textContent === "true") {
+                    ret = true;
+                }
+            }
+            return ret;
         },
 
         getMode() {
