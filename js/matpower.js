@@ -225,6 +225,7 @@ function exportToMatpower(model) {
         //    PowerTransformerEnd impedance values cannot
         //    be used. Instead use the TransformerMeshImpedance or split
         //    the transformer into multiple PowerTransformers.
+        let trafoUUID = trafo.attributes.getNamedItem("rdf:ID").value;
         let trafoEnds = model.getTargets([trafo], "PowerTransformer.PowerTransformerEnd");
         // process the two Terminal PowerTransformers
         if (trafoEnds.length === 2) {
@@ -291,6 +292,131 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + 1 + "\t";                   // initial branch status, 1 = in-service, 0 = out-of-service
                 mpcFile = mpcFile + "-360" + "\t";              // minimum angle difference
                 mpcFile = mpcFile + "360" + ";\t";              // maximum angle difference
+                mpcFile = mpcFile + "%Two-winding transformer (" + trafoUUID + ")";
+                mpcFile = mpcFile + "\n";           
+            }
+        }
+        // process the three Terminal PowerTransformers
+        if (trafoEnds.length === 3) {
+            let w1 = trafoEnds[0];
+            let w2 = trafoEnds[1];
+            let w3 = trafoEnds[2];
+            let r1 = getAttrDefault(w1, "cim:PowerTransformerEnd.r", "0");
+            let r2 = getAttrDefault(w2, "cim:PowerTransformerEnd.r", "0");
+            let r3 = getAttrDefault(w3, "cim:PowerTransformerEnd.r", "0");
+            let x1 = getAttrDefault(w1, "cim:PowerTransformerEnd.x", "0");
+            let x2 = getAttrDefault(w2, "cim:PowerTransformerEnd.x", "0");
+            let x3 = getAttrDefault(w3, "cim:PowerTransformerEnd.x", "0");
+            let b1 = getAttrDefault(w1, "cim:PowerTransformerEnd.b", "0");
+            let b2 = getAttrDefault(w2, "cim:PowerTransformerEnd.b", "0");
+            let b3 = getAttrDefault(w3, "cim:PowerTransformerEnd.b", "0");
+            // TODO: add g
+            let term1 = tp.getTerminals(w1);
+            let term2 = tp.getTerminals(w2);
+            let term3 = tp.getTerminals(w3); 
+            let node1 = model.getTargets(term1, "Terminal.TopologicalNode")[0];
+            let node2 = model.getTargets(term2, "Terminal.TopologicalNode")[0];
+            let node3 = model.getTargets(term3, "Terminal.TopologicalNode")[0];
+            if (term1.length === 1 && term2.length === 1 && term3.length === 1) {
+                // calculate base impedances: z_base = (v_base)^2/s_base
+                let baseVobj1 = model.getTargets([node1], "TopologicalNode.BaseVoltage")[0];
+                let baseVobj2 = model.getTargets([node2], "TopologicalNode.BaseVoltage")[0];
+                let baseVobj3 = model.getTargets([node3], "TopologicalNode.BaseVoltage")[0];
+                let baseV1 = getAttrDefault(baseVobj1, "cim:BaseVoltage.nominalVoltage", "0");
+                let baseV2 = getAttrDefault(baseVobj2, "cim:BaseVoltage.nominalVoltage", "0");
+                let baseV3 = getAttrDefault(baseVobj3, "cim:BaseVoltage.nominalVoltage", "0");
+                let baseZ1 = (parseFloat(baseV1) * parseFloat(baseV1)) / parseFloat(baseMVA);
+                let baseZ2 = (parseFloat(baseV2) * parseFloat(baseV2)) / parseFloat(baseMVA);
+                let baseZ3 = (parseFloat(baseV3) * parseFloat(baseV3)) / parseFloat(baseMVA);
+                let r1pu = (parseFloat(r1) / baseZ1);
+                let r2pu = (parseFloat(r2) / baseZ2);
+                let r3pu = (parseFloat(r3) / baseZ3);
+                let x1pu = (parseFloat(x1) / baseZ1);
+                let x2pu = (parseFloat(x2) / baseZ2);
+                let x3pu = (parseFloat(x3) / baseZ3);
+                let b1pu = (parseFloat(b1) * baseZ1);
+                let b2pu = (parseFloat(b2) * baseZ2);
+                let b3pu = (parseFloat(b3) * baseZ3);
+                // Let's do a star-delta conversion in order to avoid creating a node for the star point
+                let z1pu = math.complex(r1pu, x1pu);
+                let z2pu = math.complex(r2pu, x2pu);
+                let z3pu = math.complex(r3pu, x3pu);
+                let numerator = math.add(math.add(math.multiply(z1pu, z2pu), math.multiply(z2pu, z3pu)), math.multiply(z3pu, z1pu));
+                let z12pu = math.multiply(numerator, z3pu.inverse());
+                let z23pu = math.multiply(numerator, z1pu.inverse());
+                let z31pu = math.multiply(numerator, z2pu.inverse());
+                // calculate nominal trafo ratio
+                // must be calculated (in percent) as:
+                // (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
+                // while the sign depends on the position of the tap changer (primary vs secondary winding).
+                /*let tc = model.getTargets([hvEnd], "TransformerEnd.RatioTapChanger");
+                let corr = 1.0;
+                if (tc.length === 0) {
+                    tc = model.getTargets([lvEnd], "TransformerEnd.RatioTapChanger");
+                    corr = -1.0;
+                }
+                if (tc.length > 0) {
+                    let nStep = getAttrDefault(tc[0], "cim:TapChanger.neutralStep", "0");
+                    let step = getAttrDefault(tc[0], "cim:TapChanger.step", nStep);
+                    let stepVol = getAttrDefault(tc[0], "cim:RatioTapChanger.stepVoltageIncrement", "0");
+                    corr = corr * (parseFloat(step) - parseFloat(nStep)) * parseFloat(stepVol);
+                    corr = corr/100;
+                } else {
+                    corr = 0.0;
+                }
+                let ratio = 1.0 + corr;
+                let hvClock = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
+                let lvClock = getAttrDefault(lvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
+                let shift = 30.0 * (parseFloat(hvClock) + parseFloat(lvClock)); */
+                
+                // We need to create 3 transformers, one for each side of the delta equivalent
+                // branch 1-2
+                mpcFile = mpcFile + busNums.get(node1) + "\t"; // “from” bus number
+                mpcFile = mpcFile + busNums.get(node2) + "\t"; // “to” bus number
+                mpcFile = mpcFile + math.re(z12pu) + "\t";     // resistance (p.u.)
+                mpcFile = mpcFile + math.im(z12pu) + "\t";     // reactance (p.u.)
+                mpcFile = mpcFile + b1pu + "\t";               // total line charging susceptance (p.u.)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
+                mpcFile = mpcFile + 1/*ratio*/ + "\t";         // transformer off nominal turns ratio
+                mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
+                mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
+                mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference
+                mpcFile = mpcFile + "360" + ";\t";             // maximum angle difference
+                mpcFile = mpcFile + "%Three-winding transformer branch 1-2 (" + trafoUUID + ")";
+                mpcFile = mpcFile + "\n";
+                // branch 2-3
+                mpcFile = mpcFile + busNums.get(node2) + "\t"; // “from” bus number
+                mpcFile = mpcFile + busNums.get(node3) + "\t"; // “to” bus number
+                mpcFile = mpcFile + math.re(z23pu) + "\t";     // resistance (p.u.)
+                mpcFile = mpcFile + math.im(z23pu) + "\t";     // reactance (p.u.)
+                mpcFile = mpcFile + b2pu + "\t";               // total line charging susceptance (p.u.)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
+                mpcFile = mpcFile + 1/*ratio*/ + "\t";         // transformer off nominal turns ratio
+                mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
+                mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
+                mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference
+                mpcFile = mpcFile + "360" + ";\t";             // maximum angle difference
+                mpcFile = mpcFile + "%Three-winding transformer branch 2-3 (" + trafoUUID + ")";
+                mpcFile = mpcFile + "\n";
+                // branch 3-1
+                mpcFile = mpcFile + busNums.get(node3) + "\t"; // “from” bus number
+                mpcFile = mpcFile + busNums.get(node1) + "\t"; // “to” bus number
+                mpcFile = mpcFile + math.re(z31pu) + "\t";     // resistance (p.u.)
+                mpcFile = mpcFile + math.im(z31pu) + "\t";     // reactance (p.u.)
+                mpcFile = mpcFile + b3pu + "\t";               // total line charging susceptance (p.u.)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
+                mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
+                mpcFile = mpcFile + 1/*ratio*/ + "\t";         // transformer off nominal turns ratio
+                mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
+                mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
+                mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference
+                mpcFile = mpcFile + "360" + ";\t";             // maximum angle difference
+                mpcFile = mpcFile + "%Three-winding transformer branch 3-1 (" + trafoUUID + ")";
                 mpcFile = mpcFile + "\n";           
             }
         }

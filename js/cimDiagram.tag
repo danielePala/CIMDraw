@@ -305,6 +305,9 @@
              case "cim:NonConformLoad":
                  selection = self.drawNonConformLoads([object]);
                  break;
+             case "cim:EquivalentInjection":
+                 selection = self.drawEquivalentInjections([object]);
+                 break;
              case "cim:LinearShuntCompensator":
                  selection = self.drawLinearCompensators([object]);
                  break;
@@ -615,6 +618,7 @@
               "cim:EnergyConsumer",
               "cim:ConformLoad",
               "cim:NonConformLoad",
+              "cim:EquivalentInjection",
               "cim:PowerTransformer",
               "cim:BusbarSection",
               "cim:LinearShuntCompensator",
@@ -631,6 +635,7 @@
          let allEnergyConsumers = allEquipments["cim:EnergyConsumer"];
          let allConformLoads = allEquipments["cim:ConformLoad"];
          let allNonConformLoads = allEquipments["cim:NonConformLoad"];
+         let allEquivalentInjections = allEquipments["cim:EquivalentInjection"];
          let allPowerTransformers = allEquipments["cim:PowerTransformer"];
          let allBusbarSections = allEquipments["cim:BusbarSection"];
          let allLinearShuntCompensators = allEquipments["cim:LinearShuntCompensator"];
@@ -673,6 +678,9 @@
          // non conform loads
          let nonconfEnter = self.drawNonConformLoads(allNonConformLoads);
          yield "[" + Date.now() + "] DIAGRAM: drawn non conform loads";
+         // equivalent injections
+         let eqInjEnter = self.drawEquivalentInjections(allEquivalentInjections);
+         yield "[" + Date.now() + "] DIAGRAM: drawn equivalent injections";
          // power transformers
          let trafoEnter = self.drawPowerTransformers(allPowerTransformers);
          yield "[" + Date.now() + "] DIAGRAM: drawn power transformers";
@@ -735,6 +743,10 @@
          termSelection = self.createTerminals(nonconfEnter);
          self.createStatusInfo(nonconfEnter);
          yield "[" + Date.now() + "] DIAGRAM: drawn non conform load terminals";
+         // equivalent injection terminals
+         termSelection = self.createTerminals(eqInjEnter);
+         self.createStatusInfo(eqInjEnter);
+         yield "[" + Date.now() + "] DIAGRAM: drawn equivalent injection terminals";
          // power transformer terminals
          termSelection = self.createTerminals(trafoEnter);
          self.createStatusInfo(trafoEnter);
@@ -1215,6 +1227,11 @@
          return self.drawLoads(allNonConformLoads, "NonConformLoad");
      }
 
+     // Draw all EquivalentInjections
+     drawEquivalentInjections(allEquivalentInjections) {
+         return self.drawLoads(allEquivalentInjections, "EquivalentInjection");
+     }
+
      // Draw all LinearShuntCompensators
      drawLinearCompensators(allLinearShuntCompensators) {
          return self.drawCompensators(allLinearShuntCompensators, "LinearShuntCompensator");
@@ -1459,6 +1476,7 @@
              case "cim:EnergyConsumer":
              case "cim:ConformLoad":
              case "cim:NonConformLoad":
+             case "cim:EquivalentInjection":
                  term1_cy = ((LOAD_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
                  break;
              case "cim:PowerTransformer":
