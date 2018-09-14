@@ -1245,6 +1245,14 @@
      // Draw all generators
      drawGenerators(allGens, type) {
          let genEnter = self.createSelection(type, allGens)[1];
+         let label = "~";
+         let labelSize = 64;
+         let labelPos = (GEN_HEIGHT/2)-4;
+         if (type === "AsynchronousMachine") {
+             label = "M";
+             labelSize = 32;
+             labelPos = (GEN_HEIGHT/4);
+         }
          
          genEnter.append("circle")
                  .attr("r", GEN_HEIGHT/2)
@@ -1268,10 +1276,10 @@
                  });
          genEnter.append("text")
                  .style("text-anchor", "middle")
-                 .attr("font-size", 64)
+                 .attr("font-size", labelSize)
                  .attr("x", 0)
-                 .attr("y", (GEN_HEIGHT/2)-4)
-                 .text("~");
+                 .attr("y", labelPos)
+                 .text(label);
          return genEnter;
      }
 
