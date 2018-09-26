@@ -54,12 +54,17 @@ function exportToMatpower(model) {
         let loads = eqs.filter(el => model.schema.isA("EnergyConsumer", el) === true);
         let shunts = eqs.filter(el => model.schema.isA("ShuntCompensator", el) === true);
         let gens = eqs.filter(el => model.schema.isA("SynchronousMachine", el) === true);
+        let motors = eqs.filter(el => model.schema.isA("AsynchronousMachine", el) === true);
         let pd = 0.0;
         let qd = 0.0;
         let vm = 1.0;
         loads.forEach(function(load) {
             pd = pd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.p", "0.0"));
             qd = qd + parseFloat(getAttrDefault(load, "cim:EnergyConsumer.q", "0.0"));
+        });
+        motors.forEach(function(motor) {
+            pd = pd + parseFloat(getAttrDefault(motor, "cim:RotatingMachine.p", "0"));
+            qd = qd + parseFloat(getAttrDefault(motor, "cim:RotatingMachine.q", "0"));
         });
         let gs = 0.0;
         let bs = 0.0;
@@ -72,18 +77,27 @@ function exportToMatpower(model) {
         });
         gs = gs * baseV * baseV;
         bs = bs * baseV * baseV;
+        // If the node has generators or shunts with an associated regulating control,
+        // then the node is of type PV. Otherwise it will be PQ.
         if (gens.length > 0 || shunts.length > 0) {
             if (shunts.length > 0) {
                 let terminals = tp.getTerminals(shunts[0]); 
                 let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
                 let regCtrl = model.getTargets([shunts[0]],"RegulatingCondEq.RegulatingControl")[0];
                 if (typeof(regCtrl) !== "undefined") {
+                    type = 2;
                     let vTarget = getAttrDefault(regCtrl, "cim:RegulatingControl.targetValue", baseV); 
                     vm = parseFloat(vTarget) / parseFloat(baseV);
                 }
             }
-            type = 2;
+            if (gens.length > 0) {
+                let regCtrl = model.getTargets([gens[0]],"RegulatingCondEq.RegulatingControl")[0];
+                if (typeof(regCtrl) !== "undefined") {
+                    type = 2;
+                }
+            }
         }
+        // The slack node is the one with reference priority greater than zero.
         let slack = gens.filter(function(gen) {
             let refPrio = parseInt(getAttrDefault(gen, "cim:SynchronousMachine.referencePriority", "0"));
             return refPrio > 0;
@@ -230,57 +244,64 @@ function exportToMatpower(model) {
         // process the two Terminal PowerTransformers
         if (trafoEnds.length === 2) {
             // find the high voltage PowerTransformerEnd
-            let hvEnd = trafoEnds[0];
-            let lvEnd = trafoEnds[1];
-            let r = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.r", "0");
-            let x = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.x", "0");
+            let w1 = trafoEnds[0];
+            let w2 = trafoEnds[1];
+            let r = getAttrDefault(w1, "cim:PowerTransformerEnd.r", "0");
+            let x = getAttrDefault(w1, "cim:PowerTransformerEnd.x", "0");
             if (r === "0" && x === "0") {
-                lvEnd = trafoEnds[0];
-                hvEnd = trafoEnds[1];
-                r = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.r", "0");
-                x = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.x", "0");
+                w2 = trafoEnds[0];
+                w1 = trafoEnds[1];
+                r = getAttrDefault(w1, "cim:PowerTransformerEnd.r", "0");
+                x = getAttrDefault(w1, "cim:PowerTransformerEnd.x", "0");
             }
-            let b = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.b", "0");
-            let hvTerm = tp.getTerminals(hvEnd); 
-            let hvNode = model.getTargets(hvTerm, "Terminal.TopologicalNode")[0];
-            let lvTerm = tp.getTerminals(lvEnd); 
-            let lvNode = model.getTargets(lvTerm, "Terminal.TopologicalNode")[0];
-            if (hvTerm.length === 1 && lvTerm.length === 1) {
+            let b = getAttrDefault(w1, "cim:PowerTransformerEnd.b", "0");
+            let w1Term = tp.getTerminals(w1); 
+            let w1Node = model.getTargets(w1Term, "Terminal.TopologicalNode")[0];
+            let w2Term = tp.getTerminals(w2); 
+            let w2Node = model.getTargets(w2Term, "Terminal.TopologicalNode")[0];
+            if (w1Term.length === 1 && w2Term.length === 1) {
                 // calculate base impedance: z_base = (v_base)^2/s_base
-                let baseVobj = model.getTargets([hvNode], "TopologicalNode.BaseVoltage")[0];
-                let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
-                let baseZ = (parseFloat(baseV) * parseFloat(baseV)) / parseFloat(baseMVA);
+                let baseVobj1 = model.getTargets([w1Node], "TopologicalNode.BaseVoltage")[0];
+                let baseV1 = getAttrDefault(baseVobj1, "cim:BaseVoltage.nominalVoltage", "0");
+                // get also the lv nominal voltage
+                let baseVobj2 = model.getTargets([w2Node], "TopologicalNode.BaseVoltage")[0];
+                let baseV2 = getAttrDefault(baseVobj2, "cim:BaseVoltage.nominalVoltage", "0");
+                // get the rated voltage of the windings (can be different from the base voltages)
+                let w1RefV = getAttrDefault(w1, "cim:PowerTransformerEnd.ratedU", baseV1);  
+                let w2RefV = getAttrDefault(w2, "cim:PowerTransformerEnd.ratedU", baseV2);
+                // calculate pu values
+                let baseZ = (parseFloat(baseV1) * parseFloat(baseV1)) / parseFloat(baseMVA);
                 let rpu = (parseFloat(r) / baseZ);
                 let xpu = (parseFloat(x) / baseZ);
                 let bpu = (parseFloat(b) * baseZ);
-                // get also the lv nominal voltage
-                let lvVobj = model.getTargets([lvNode], "TopologicalNode.BaseVoltage")[0];
-                let lvV = getAttrDefault(lvVobj, "cim:BaseVoltage.nominalVoltage", "0");
                 // calculate nominal trafo ratio
                 // must be calculated (in percent) as:
                 // (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
-                // while the sign depends on the position of the tap changer (primary vs secondary winding).
-                let tc = model.getTargets([hvEnd], "TransformerEnd.RatioTapChanger");
-                let corr = 1.0;
+                // we may use the inverse depending on the position of the tap changer (primary vs secondary winding).
+                let tc = model.getTargets([w1], "TransformerEnd.RatioTapChanger");
+                let ratio = (parseFloat(baseV2)*parseFloat(w1RefV))/(parseFloat(baseV1)*parseFloat(w2RefV));
+                let w2Side = false;
                 if (tc.length === 0) {
-                    tc = model.getTargets([lvEnd], "TransformerEnd.RatioTapChanger");
-                    corr = -1.0;
+                    tc = model.getTargets([w2], "TransformerEnd.RatioTapChanger");
+                    w2Side = true;
                 }
                 if (tc.length > 0) {
                     let nStep = getAttrDefault(tc[0], "cim:TapChanger.neutralStep", "0");
                     let step = getAttrDefault(tc[0], "cim:TapChanger.step", nStep);
                     let stepVol = getAttrDefault(tc[0], "cim:RatioTapChanger.stepVoltageIncrement", "0");
-                    corr = corr * (parseFloat(step) - parseFloat(nStep)) * parseFloat(stepVol);
+                    let corr = (parseFloat(step) - parseFloat(nStep)) * parseFloat(stepVol);
                     corr = corr/100;
-                } else {
-                    corr = 0.0;
-                }
-                let ratio = 1.0 + corr;
-                let hvClock = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
-                let lvClock = getAttrDefault(lvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
-                let shift = 30.0 * (parseFloat(hvClock) + parseFloat(lvClock)); 
-                mpcFile = mpcFile + busNums.get(hvNode) + "\t"; // “from” bus number
-                mpcFile = mpcFile + busNums.get(lvNode) + "\t"; // “to” bus number
+                    corr = 1.0 + corr;
+                    if (w2Side === true) {
+                        corr = 1/corr;
+                    }
+                    ratio = ratio * corr;
+                } 
+                let w1Clock = getAttrDefault(w1, "cim:PowerTransformerEnd.phaseAngleClock", "0");
+                let w2Clock = getAttrDefault(w2, "cim:PowerTransformerEnd.phaseAngleClock", "0");
+                let shift = 30.0 * (parseFloat(w1Clock) + parseFloat(w2Clock)); 
+                mpcFile = mpcFile + busNums.get(w1Node) + "\t"; // “from” bus number
+                mpcFile = mpcFile + busNums.get(w2Node) + "\t"; // “to” bus number
                 mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
                 mpcFile = mpcFile + xpu + "\t";                 // reactance (p.u.)
                 mpcFile = mpcFile + bpu + "\t";                 // total line charging susceptance (p.u.)
@@ -325,6 +346,11 @@ function exportToMatpower(model) {
                 let baseV1 = getAttrDefault(baseVobj1, "cim:BaseVoltage.nominalVoltage", "0");
                 let baseV2 = getAttrDefault(baseVobj2, "cim:BaseVoltage.nominalVoltage", "0");
                 let baseV3 = getAttrDefault(baseVobj3, "cim:BaseVoltage.nominalVoltage", "0");
+                // get the rated voltage of the windings (can be different from the base voltages)
+                let w1RefV = getAttrDefault(w1, "cim:PowerTransformerEnd.ratedU", baseV1);  
+                let w2RefV = getAttrDefault(w2, "cim:PowerTransformerEnd.ratedU", baseV2);
+                let w3RefV = getAttrDefault(w3, "cim:PowerTransformerEnd.ratedU", baseV3);
+                // calculate pu values
                 let baseZ1 = (parseFloat(baseV1) * parseFloat(baseV1)) / parseFloat(baseMVA);
                 let baseZ2 = (parseFloat(baseV2) * parseFloat(baseV2)) / parseFloat(baseMVA);
                 let baseZ3 = (parseFloat(baseV3) * parseFloat(baseV3)) / parseFloat(baseMVA);
@@ -345,6 +371,10 @@ function exportToMatpower(model) {
                 let z12pu = math.multiply(numerator, z3pu.inverse());
                 let z23pu = math.multiply(numerator, z1pu.inverse());
                 let z31pu = math.multiply(numerator, z2pu.inverse());
+                // calculate nominal trafo ratios
+                let ratio12 = (parseFloat(baseV2)*parseFloat(w1RefV))/(parseFloat(baseV1)*parseFloat(w2RefV));
+                let ratio23 = (parseFloat(baseV3)*parseFloat(w2RefV))/(parseFloat(baseV2)*parseFloat(w3RefV));
+                let ratio31 = (parseFloat(baseV1)*parseFloat(w3RefV))/(parseFloat(baseV3)*parseFloat(w1RefV));
                 // calculate nominal trafo ratio
                 // must be calculated (in percent) as:
                 // (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
@@ -379,7 +409,7 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
-                mpcFile = mpcFile + 1/*ratio*/ + "\t";         // transformer off nominal turns ratio
+                mpcFile = mpcFile + ratio12 + "\t";            // transformer off nominal turns ratio
                 mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
                 mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
                 mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference
@@ -395,7 +425,7 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
-                mpcFile = mpcFile + 1/*ratio*/ + "\t";         // transformer off nominal turns ratio
+                mpcFile = mpcFile + ratio23 + "\t";            // transformer off nominal turns ratio
                 mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
                 mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
                 mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference
@@ -411,7 +441,7 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
-                mpcFile = mpcFile + 1/*ratio*/ + "\t";         // transformer off nominal turns ratio
+                mpcFile = mpcFile + ratio31 + "\t";            // transformer off nominal turns ratio
                 mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
                 mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
                 mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference

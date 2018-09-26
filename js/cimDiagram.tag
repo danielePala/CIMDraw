@@ -554,9 +554,11 @@
                  let psr = self.model.getTargets(
                      [terminal],
                      "Terminal.ConductingEquipment")[0];
-                 let limPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                 let limPsrSelection = d3.select("g#" + limPsrUUID);
-                 self.createStatusInfo(limPsrSelection);
+                 if (typeof(psr) !== "undefined") {
+                     let limPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let limPsrSelection = d3.select("g#" + limPsrUUID);
+                     self.createStatusInfo(limPsrSelection);
+                 }
                  break;
              }
              case "cim:OperationalLimitSet.Equipment":
