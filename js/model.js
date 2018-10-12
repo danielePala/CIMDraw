@@ -77,129 +77,137 @@ function cimModel() {
         let tpbdata = null;
         function success(content) {
             zipFilesProcessed = zipFilesProcessed + 1;
-            if (eqdata.length === 0 ||
-                dldata.length === 0 ||
-                svdata.length === 0 ||
-                tpdata.length === 0 ||
-                sshdata.length === 0 ||
-                gldata.length === 0 ||
-                eqbdata === null ||
-                tpbdata === null) {
-                let parsed = parser.parseFromString(content, "application/xml");
-                let fullModel = [].filter.call(
-                    parsed.children[0].children, function(el) {
-                        return el.nodeName === "md:FullModel";
-                    })[0];
-                if (typeof(fullModel) === "undefined") {
-                    return Promise.reject("error: invalid CGMES file.");
-                }
-                let profile = model.getAttribute(fullModel, "md:Model.profile");
-                if (profile.textContent.includes("Equipment")) {
-                    if (profile.textContent.includes("Boundary") === false) {
-                        eqdata.push(parsed);
-                    } else {
-                        eqbdata = parsed;
+            let result = readUploadedFileAsText(content).then(function(parsedXML) {
+                if (eqdata.length === 0 ||
+                    dldata.length === 0 ||
+                    svdata.length === 0 ||
+                    tpdata.length === 0 ||
+                    sshdata.length === 0 ||
+                    gldata.length === 0 ||
+                    eqbdata === null ||
+                    tpbdata === null) {
+                    
+                    let fullModel = [].filter.call(
+                        parsedXML.children[0].children, function(el) {
+                            return el.nodeName === "md:FullModel";
+                        })[0];
+                    if (typeof(fullModel) === "undefined") {
+                        return Promise.reject("error: invalid CGMES file.");
                     }
-                }
-                if (profile.textContent.includes("DiagramLayout")) {
-                    dldata.push(parsed);
-                }
-                if (profile.textContent.includes("StateVariables")) {
-                    svdata.push(parsed);
-                }
-                if (profile.textContent.includes("Topology")) {
-                    if (profile.textContent.includes("Boundary") === false) {
-                        tpdata.push(parsed);
-                    } else {
-                        tpbdata = parsed;
-                    }
-                }
-                if (profile.textContent.includes("SteadyStateHypothesis")) {
-                    sshdata.push(parsed);
-                }
-                if (profile.textContent.includes("GeographicalLocation")) {
-                    gldata.push(parsed);
-                }               
-            }
-            // at the end we need to have at least the EQ file
-            if (eqdata.length > 0 &&
-                zipFilesProcessed === zipFilesTotal) {
-                let all = parser.parseFromString(emptyFile, "application/xml");
-                for (let eqfile of eqdata) {
-                    for (let datum of eqfile.children[0].children) {
-                        if (datum.nodeName === "md:FullModel") {
-                            continue;
+                    let profile = model.getAttribute(fullModel, "md:Model.profile");
+                    if (profile.textContent.includes("Equipment")) {
+                        if (profile.textContent.includes("Boundary") === false) {
+                            eqdata.push(parsedXML);
+                        } else {
+                            eqbdata = parsedXML;
                         }
-                        all.children[0].appendChild(datum.cloneNode(true));
                     }
-                }
-                for (let dlfile of dldata) {
-                    for (let datum of dlfile.children[0].children) {
-                        if (datum.nodeName === "md:FullModel") {
-                            continue;
+                    if (profile.textContent.includes("DiagramLayout")) {
+                        dldata.push(parsedXML);
+                    }
+                    if (profile.textContent.includes("StateVariables")) {
+                        svdata.push(parsedXML);
+                    }
+                    if (profile.textContent.includes("Topology")) {
+                        if (profile.textContent.includes("Boundary") === false) {
+                            tpdata.push(parsedXML);
+                        } else {
+                            tpbdata = parsedXML;
                         }
-                        all.children[0].appendChild(datum.cloneNode(true));
                     }
+                    if (profile.textContent.includes("SteadyStateHypothesis")) {
+                        sshdata.push(parsedXML);
+                    }
+                    if (profile.textContent.includes("GeographicalLocation")) {
+                        gldata.push(parsedXML);
+                    }               
                 }
-                for (let svfile of svdata) {
-                    for (let datum of svfile.children[0].children) {
-                        if (datum.nodeName === "md:FullModel") {
-                            continue;
+                // at the end we need to have at least the EQ file
+                if (eqdata.length > 0 &&
+                    zipFilesProcessed === zipFilesTotal) {
+                    let all = parser.parseFromString(emptyFile, "application/xml");
+                    for (let eqfile of eqdata) {
+                        for (let datum of eqfile.children[0].children) {
+                            if (datum.nodeName === "md:FullModel") {
+                                continue;
+                            }
+                            all.children[0].appendChild(datum.cloneNode(true));
                         }
-                        all.children[0].appendChild(datum.cloneNode(true));
                     }
-                }
-                for (let tpfile of tpdata) {
-                    for (let datum of tpfile.children[0].children) {
-                        if (datum.nodeName === "md:FullModel") {
-                            continue;
+                    for (let dlfile of dldata) {
+                        for (let datum of dlfile.children[0].children) {
+                            if (datum.nodeName === "md:FullModel") {
+                                continue;
+                            }
+                            all.children[0].appendChild(datum.cloneNode(true));
                         }
-                        all.children[0].appendChild(datum.cloneNode(true));
                     }
-                }
-                for (let sshfile of sshdata) {
-                    for (let datum of sshfile.children[0].children) {
-                        if (datum.nodeName === "md:FullModel") {
-                            continue;
+                    for (let svfile of svdata) {
+                        for (let datum of svfile.children[0].children) {
+                            if (datum.nodeName === "md:FullModel") {
+                                continue;
+                            }
+                            all.children[0].appendChild(datum.cloneNode(true));
                         }
-                        all.children[0].appendChild(datum.cloneNode(true));
                     }
-                }
-                for (let glfile of gldata) {
-                    for (let datum of glfile.children[0].children) {
-                        if (datum.nodeName === "md:FullModel") {
-                            continue;
+                    for (let tpfile of tpdata) {
+                        for (let datum of tpfile.children[0].children) {
+                            if (datum.nodeName === "md:FullModel") {
+                                continue;
+                            }
+                            all.children[0].appendChild(datum.cloneNode(true));
                         }
-                        all.children[0].appendChild(datum.cloneNode(true));
                     }
-                }
-                if (eqbdata !== null) {
-                    for (let datum of eqbdata.children[0].children) {
-                        if (datum.nodeName === "md:FullModel") {
-                            continue;
+                    for (let sshfile of sshdata) {
+                        for (let datum of sshfile.children[0].children) {
+                            if (datum.nodeName === "md:FullModel") {
+                                continue;
+                            }
+                            all.children[0].appendChild(datum.cloneNode(true));
                         }
-                        all.children[0].appendChild(datum.cloneNode(true));
                     }
-                }
-                if (tpbdata !== null) {
-                    for (let datum of tpbdata.children[0].children) {
-                        if (datum.nodeName === "md:FullModel") {
-                            continue;
+                    for (let glfile of gldata) {
+                        for (let datum of glfile.children[0].children) {
+                            if (datum.nodeName === "md:FullModel") {
+                                continue;
+                            }
+                            all.children[0].appendChild(datum.cloneNode(true));
                         }
-                        all.children[0].appendChild(datum.cloneNode(true));
                     }
-                }
+                    if (eqbdata !== null) {
+                        for (let datum of eqbdata.children[0].children) {
+                            if (datum.nodeName === "md:FullModel") {
+                                continue;
+                            }
+                            all.children[0].appendChild(datum.cloneNode(true));
+                        }
+                    }
+                    if (tpbdata !== null) {
+                        for (let datum of tpbdata.children[0].children) {
+                            if (datum.nodeName === "md:FullModel") {
+                                continue;
+                            }
+                            all.children[0].appendChild(datum.cloneNode(true));
+                        }
+                    }
 
-                data.all = all;
-                return buildModel();
-            }
+                    data.all = all;
+                    return buildModel();
+                } else {
+                    return Promise.resolve();
+                }
+            }).catch(function(e) {
+                model.clear();
+                return Promise.reject(e);
+            });
+            return result;
         };
 
         return function(zip) {
             let promises = [];
             zipFilesTotal = Object.keys(zip.files).length;
             zip.forEach(function (relativePath, zipEntry) {
-                let promise = zipEntry.async("string")
+                let promise = zipEntry.async("blob")
                     .then(success)
                     .catch(function(e) {
                         return Promise.reject(e);
@@ -209,7 +217,35 @@ function cimModel() {
             return Promise.all(promises);
         };
     };
-    
+
+    // plain RDF/XML file loading with promise wrapper. This
+    // function uses the FileReader API but wrapped in a promise-based
+    // pattern. Copied with minor modifications from StackOverflow.
+    // This is a 'private' function (not visible in the model object).
+    function readUploadedFileAsText(inputFile) {
+        const reader = new FileReader();
+
+        return new Promise(function(resolve, reject) {
+            reader.onerror = function() {
+                reader.abort();
+                reject(new DOMException("Problem parsing input file."));
+            };
+
+            reader.onload = function() {
+                let parser = new DOMParser();
+                let cimXML = reader.result;
+                let parsedXML = parser.parseFromString(cimXML, "application/xml");
+                // TODO: the parsing may also fail
+                resolve(parsedXML);
+            };
+            reader.readAsText(inputFile);
+        });
+    };
+
+    // Create a new RDF/XML document according to CGMES rules.
+    // In particular, the CGMES namespaces are given in the 'nss' parameter
+    // and possible dependencies may be specified in the 'deps' parameter.
+    // This is a 'private' function (not visible in the model object).
     function cgmesDocument(nss, deps) {
         let parser = new DOMParser();
         let empty = parser.parseFromString(emptyFile, "application/xml");
@@ -524,31 +560,14 @@ function cimModel() {
                             return Promise.reject(e);
                         });
                 } else {
-                    // plain RDF/XML file loading with promise wrapper
-                    const readUploadedFileAsText = (inputFile) => {
-                        const reader1 = new FileReader();
-
-                        return new Promise((resolve, reject) => {
-                            reader1.onerror = () => {
-                                reader1.abort();
-                                reject(new DOMException("Problem parsing input file."));
-                            };
-
-                            reader1.onload = () => {
-                                let parser = new DOMParser();
-                                let cimXML = reader1.result;
-                                data.all = parser.parseFromString(cimXML, "application/xml");
-                                buildModel().then(function() {
-                                    resolve(reader1.result);
-                                }).catch(function(e) {
-                                    model.clear();
-                                    return reject(e);
-                                });
-                            };
-                            reader1.readAsText(inputFile);
-                        });
-                    }
-                    return readUploadedFileAsText(file);
+                    let result = readUploadedFileAsText(file).then(function(parsedXML) {
+                        data.all = parsedXML;
+                        return buildModel();
+                    }).catch(function(e) {
+                        model.clear();
+                        return Promise.reject(e);
+                    });
+                    return result;
                 }
             } 
             return result;
