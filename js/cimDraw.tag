@@ -22,7 +22,6 @@
 <cimDraw>
     <style>
      .center-block {
-         width: 600px; /* remove for BS 4 */
          text-align: center;
      }
      
@@ -69,17 +68,17 @@
     </nav>
     
     <div class="container-fluid">
-        <div class="row center-block justify-content-center" id="cim-local-file-component">
-            <div class="col-md-12"> <!-- change to col-md-4 for BS 4 -->
-                <div class="row center-block" id="cim-select-file">
-                    <div class="col-md-12">
+        <div class="row justify-content-center" id="cim-local-file-component">
+            <div class="col-md-4"> 
+                <div class="row justify-content-center" id="cim-select-file">
+                    <div class="col-md-auto">
                         <br><br>
                         <label class="control-label">Select File</label>
                     </div>
                 </div>
 
                 <!-- File input plugin -->
-                <div class="row center-block">
+                <div class="row justify-content-center">
                     <div class="col-md-12" id="cim-file-input-container">
                         <form enctype="multipart/form-data" method="POST">
                             <input id="cim-file-input" name="cim-file" type="file" class="file" data-show-preview="false" data-show-upload="false">
@@ -87,20 +86,20 @@
                     </div>
                 </div>
                 
-                <div class="row center-block">
-                    <div class="col-md-12" id="cim-load-container">
+                <div class="row justify-content-center">
+                    <div class="col-md-auto" id="cim-load-container">
                         <br>
                         <a class="btn btn-primary btn-lg" role="button" id="cim-load">Load</a>
                     </div>
                 </div>
-                <div class="row center-block">
-                    <div class="col-md-12">
+                <div class="row justify-content-center">
+                    <div class="col-md-auto">
                         <label class="control-label">or</label>
                     </div>
                 </div>
-                <div class="row center-block">
-                    <div class="col-md-12" id="cim-create-new-container">
-                        <a class="btn btn-primary btn-lg" role="button" id="cim-create-new">Create new</a>
+                <div class="row justify-content-center">
+                    <div class="col-md-auto" id="cim-create-new-container">
+                        <a class="btn btn-primary btn-lg" role="button" id="cim-create-new" href="">Create new</a>
                     </div>
                 </div>
             </div>
@@ -124,8 +123,9 @@
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
+                        <h5 class="modal-title" id="newDiagramModalLabel">Enter a name for the new diagram</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="newDiagramModalLabel">Enter a name for the new diagram</h4>
+                        
                     </div>
                     <div class="modal-body">
                         <form>
@@ -159,13 +159,13 @@
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
+                        <h5 class="modal-title" id="cimModeModalLabel">Choose diagram type</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="cimModeModalLabel">Choose diagram type</h4>
                     </div>
                     <div class="modal-body">
-                        <div class="row center-block">
-                            <div class="col-md-12">         
-                                <div class="btn-group" data-toggle="buttons">
+                        <div class="row justify-content-center">
+                            <div class="col-md-auto">         
+                                <div class="btn-group btn-group-toggle" data-toggle="buttons">
                                     <label class="btn btn-primary active">
                                         <input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
                                     </label>
@@ -257,7 +257,7 @@
              d3.select("#cim-filename").html("");    
              $(".selectpicker").selectpicker("refresh");
              // initialize the fileinput component
-             $("#cim-file-input").fileinput();
+             $("#cim-file-input").fileinput({theme: "fa"});
              $("#cim-file-input").fileinput("clear");
              // what to do when the user loads a file
              $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {        
