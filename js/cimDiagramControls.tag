@@ -20,69 +20,57 @@
 */
 
 <cimDiagramControls>
-    <style>
-     #cim-diagram-controls { 
-         display: none;
-     }
-
-     #cim-diagram-elements { 
-         display: none; 
-     }
-
-    </style>
-
     <div class="container-fluid">
-        <div class="row center-block">
-            <div class="col-md-12">
+        <div class="row justify-content-center">
+            <div class="col-md-auto">
                 <div class="btn-toolbar" role="toolbar">
-                    <div class="btn-group" role="group" data-toggle="buttons" id="cim-diagram-controls">
-                        <label class="btn btn-default active" id="selectLabel">
-                            <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked="checked">select</input>
+                    <div class="btn-group btn-group-toggle invisible" data-toggle="buttons" id="cim-diagram-controls">
+                        <label class="btn btn-secondary active" id="selectLabel">
+                            <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked="checked">select
                         </label>
-                        <label class="btn btn-default" id="forceLabel">
-                            <input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)</input>
+                        <label class="btn btn-secondary" id="forceLabel">
+                            <input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)
                         </label>
-                        <label class="btn btn-default" id="connectLabel">
-                            <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections</input>
+                        <label class="btn btn-secondary" id="connectLabel">
+                            <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections
                         </label>
-                    </div>
 
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <span id="addElement">Insert element</span>
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" id="cimElementList">
-                            <li class="dropdown-header">Busses</li>
-                            <li id="BusbarSection" onclick={enableAddMulti}><a>Node</a></li>
-                            <li class="dropdown-header">Branches</li>
-                            <li id="ACLineSegment" onclick={enableAddMulti}><a>AC Line Segment</a></li>
-                            <li class="dropdown-header">Switches</li>
-                            <li id="Breaker" onclick={enableAdd}><a>Breaker</a></li>
-                            <li id="Disconnector" onclick={enableAdd}><a>Disconnector</a></li>
-                            <li id="LoadBreakSwitch" onclick={enableAdd}><a>Load Break Switch</a></li>
-                            <li id="Jumper" onclick={enableAdd}><a>Jumper</a></li>
-                            <!-- junctions are still not implemented properly for now
-                            <!--<li class="dropdown-header">Connectors</li>-->
-                            <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
-                            <li class="dropdown-header">Equivalents</li>
-                            <li id="EnergySource" onclick={enableAdd}><a>Energy Source</a></li>
-                            <li class="dropdown-header">Rotating Machines</li>
-                            <li id="SynchronousMachine" onclick={enableAdd}><a>Synchronous Machine</a></li>
-                            <li id="AsynchronousMachine" onclick={enableAdd}><a>Asynchronous Machine</a></li>
-                            <li class="dropdown-header">Loads</li>
-                            <li id="EnergyConsumer" onclick={enableAdd}><a>Energy Consumer</a></li>
-                            <li id="ConformLoad" onclick={enableAdd}><a>Conform Load</a></li>
-                            <li id="NonConformLoad" onclick={enableAdd}><a>Non Conform Load</a></li>
-                            <li class="dropdown-header">Compensators</li>
-                            <li id="LinearShuntCompensator" onclick={enableAdd}><a>Linear</a></li>
-                            <li id="NonlinearShuntCompensator" onclick={enableAdd}><a>Nonlinear</a></li>
-                            <li class="dropdown-header">Transformers</li>
-                            <li id="PowerTransformer" onclick={enableAdd}><a>Two-winding Transformer</a></li>
-                            <li id="PowerTransformer" onclick={enableAdd}><a>Three-winding Transformer</a></li>
-                        </ul>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span id="addElement">Insert element</span>
+                                <span class="caret"></span>
+                            </button>
+                            <div class="dropdown-menu" id="cimElementList">
+                                <h6 class="dropdown-header">Busses</h6>
+                                <a class="dropdown-item" id="BusbarSection" onclick={enableAddMulti}>Node</a>
+                                <h6 class="dropdown-header">Branches</h6>
+                                <a class="dropdown-item" id="ACLineSegment" onclick={enableAddMulti}>AC Line Segment</a>
+                                <h6 class="dropdown-header">Switches</h6>
+                                <a class="dropdown-item" id="Breaker" onclick={enableAdd}>Breaker</a>
+                                <a class="dropdown-item" id="Disconnector" onclick={enableAdd}>Disconnector</a>
+                                <a class="dropdown-item" id="LoadBreakSwitch" onclick={enableAdd}>Load Break Switch</a>
+                                <a class="dropdown-item" id="Jumper" onclick={enableAdd}>Jumper</a>
+                                <!-- junctions are still not implemented properly for now
+                                     <!--<li class="dropdown-header">Connectors</li>-->
+                                <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
+                                <h6 class="dropdown-header">Equivalents</h6>
+                                <a class="dropdown-item" id="EnergySource" onclick={enableAdd}>Energy Source</a>
+                                <h6 class="dropdown-header">Rotating Machines</h6>
+                                <a class="dropdown-item" id="SynchronousMachine" onclick={enableAdd}>Synchronous Machine</a>
+                                <a class="dropdown-item" id="AsynchronousMachine" onclick={enableAdd}>Asynchronous Machine</a>
+                                <h6 class="dropdown-header">Loads</h6>
+                                <a class="dropdown-item" id="EnergyConsumer" onclick={enableAdd}>Energy Consumer</a>
+                                <a class="dropdown-item" id="ConformLoad" onclick={enableAdd}>Conform Load</a>
+                                <a class="dropdown-item" id="NonConformLoad" onclick={enableAdd}>Non Conform Load</a>
+                                <h6 class="dropdown-header">Compensators</h6>
+                                <a class="dropdown-item" id="LinearShuntCompensator" onclick={enableAdd}>Linear</a>
+                                <a class="dropdown-item" id="NonlinearShuntCompensator" onclick={enableAdd}>Nonlinear</a>
+                                <h6 class="dropdown-header">Transformers</h6>
+                                <a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Two-winding Transformer</a>
+                                <a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Three-winding Transformer</a>
+                            </div>
+                        </div>
                     </div>
-                    
                 </div>
             </div>
         </div>
@@ -296,7 +284,7 @@
                          NODE_TERM);
                      if (cnTerms.length === 2) {
                          let cnUUID = d.source.attributes.getNamedItem("rdf:ID").value
-                         let cnElem = d3.select("svg").selectAll("g#"+cnUUID).node();
+                         let cnElem = d3.select("svg").selectAll("g#cimdiagram-"+cnUUID).node();
                          self.deleteObject(cnElem);
                          return;
                      }
@@ -421,7 +409,7 @@
                              equipment = cn;
                          }
                      }
-                     diagramElem = d3.select("svg").select("#" + equipment.attributes.getNamedItem("rdf:ID").value).node();
+                     diagramElem = d3.select("svg").select("#cimdiagram-" + equipment.attributes.getNamedItem("rdf:ID").value).node();
                      if (diagramElem !== null) {
                          selected.push(diagramElem);
                      }
@@ -433,7 +421,7 @@
                      [cimObject],
                      "Measurement.Terminal");
                  for (let terminal of terminals) {
-                     diagramElem = d3.select("svg").select("#" + terminal.attributes.getNamedItem("rdf:ID").value).node();
+                     diagramElem = d3.select("svg").select("#cimdiagram-" + terminal.attributes.getNamedItem("rdf:ID").value).node();
                      if (diagramElem !== null) {
                          selected.push(diagramElem);
                      }
@@ -442,7 +430,7 @@
              case "cim:BusbarSection":
                  cn = opts.model.getNode(cimObject);
                  cnUUID = cn.attributes.getNamedItem("rdf:ID").value;
-                 diagramElem = d3.select("svg").selectAll("g#" + cnUUID).node();
+                 diagramElem = d3.select("svg").selectAll("g#cimdiagram-" + cnUUID).node();
                  selected = [diagramElem];
                  break;
              default:
@@ -503,8 +491,7 @@
          self.disableZoom();
          self.disableConnect();
          self.enableDrag();
-         $("#cim-diagram-controls").show();
-         $("#cim-diagram-elements").show();
+         $("#cim-diagram-controls").removeClass("invisible");
          // modality for drag+zoom
          d3.select("body")
            .on("keydown", function() {
@@ -614,7 +601,7 @@
          let cnsToMove = [];
          self.disableDrag();
          d3.select(self.root).selectAll("label:not(#selectLabel)").classed("active", false);
-         $("#select").click();
+         //$("#select").click();
          self.status = "DRAG";
          let drag = d3
              .drag()
@@ -813,7 +800,7 @@
                           .on("tick", updateModel)
                           .force("charge", d3.forceCollide(5));
          d3.select(self.root).selectAll("label:not(#forceLabel)").classed("active", false);
-         $("#force").click();
+         //$("#force").click();
          self.status = "FORCE";
          self.d3force.restart();
 
@@ -868,7 +855,7 @@
              }
          });
          d3.select(self.root).selectAll("label:not(#connectLabel)").classed("active", false);
-         $("#connect").click();
+         //$("#connect").click();
          self.status = "CONNECT";
 
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
@@ -978,11 +965,11 @@
          let type = "";
          let text = "";
          if (typeof(e) === "object") {
-             type = e.target.parentNode.id;
+             type = e.target.id;
              text = e.target.textContent;
          } else {
              type = e;
-             text = d3.select("#" + type + " > a").text();
+             text = d3.select("#" + type).text();
          }
          let options = undefined;
          if (text === "Three-winding Transformer") {
@@ -1019,11 +1006,11 @@
              }
          });
          if (typeof(e) === "object") {
-             type = e.target.parentNode.id;
+             type = e.target.id;
              text = e.target.textContent;
          } else {
              type = e;
-             text = d3.select("#" + type + " > a").text();
+             text = d3.select("#" + type).text();
          }
          d3.select(self.root).selectAll("label").classed("active", false);
          $("input").prop('checked', false);

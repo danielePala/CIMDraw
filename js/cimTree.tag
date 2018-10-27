@@ -60,11 +60,15 @@
      #cim-search-form {
          align-self: center;
      }
+
+     .list-group-item > div {
+         width: 100%;
+     }
     </style>
 
     <div class="app-tree" id="app-tree">
         <div class="tree">
-            <div class="btn-group" data-toggle="buttons" id="tree-controls">
+            <div class="btn-group-toggle" data-toggle="buttons" id="tree-controls">
                 <label class="btn btn-primary">
                     <input type="checkbox" autocomplete="off" id="showAllObjects"> Show all objects
                 </label>
@@ -81,30 +85,30 @@
             </form>
             <!-- Nav tabs -->
             <ul class="nav nav-tabs" role="tablist">
-                <li role="presentation" class="active"><a href="#components" aria-controls="components" role="tab" data-toggle="tab" id="componentsTab">Components</a></li>
-                <li role="presentation"><a href="#containers" aria-controls="containers" role="tab" data-toggle="tab" id="containersTab">Containers</a></li>
-                <li role="presentation"><a href="#measurements" aria-controls="measurements" role="tab" data-toggle="tab" id="measurementsTab">Measurements</a></li>
-                <li role="presentation"><a href="#bases" aria-controls="bases" role="tab" data-toggle="tab" id="basesTab">Bases</a></li>
-                <li role="presentation"><a href="#curvesAndRegs" aria-controls="curvesAndRegs" role="tab" data-toggle="tab" id="curvesAndRegsTab">Curves and Regulations</a></li>
-                <li role="presentation"><a href="#limits" aria-controls="limits" role="tab" data-toggle="tab" id="limitsTab">Operational Limits</a></li>
+                <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#components" id="componentsTab">Components</a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#containers" id="containersTab">Containers</a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#measurements" id="measurementsTab">Measurements</a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#bases" id="basesTab">Bases</a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#curvesAndRegs" id="curvesAndRegsTab">Curves and Regulations</a></li>
+                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#limits" id="limitsTab">Operational Limits</a></li>
             </ul>
             <div class="tab-content">
-                <div role="tabpanel" class="tab-pane active" id="components">
+                <div role="tabpanel" class="tab-pane fade show active" id="components">
                     <ul class="list-group" id="CIMComponents"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane" id="containers">
+                <div role="tabpanel" class="tab-pane fade" id="containers">
                     <ul class="list-group" id="CIMContainers"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane" id="measurements">
+                <div role="tabpanel" class="tab-pane fade" id="measurements">
                     <ul class="list-group" id="CIMMeasurements"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane" id="bases">
+                <div role="tabpanel" class="tab-pane fade" id="bases">
                     <ul class="list-group" id="CIMBases"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane" id="curvesAndRegs">
+                <div role="tabpanel" class="tab-pane fade" id="curvesAndRegs">
                     <ul class="list-group" id="CIMCurvesAndRegs"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane" id="limits">
+                <div role="tabpanel" class="tab-pane fade" id="limits">
                     <ul class="list-group" id="CIMLimits"></ul>
                 </div>
             </div>
@@ -140,7 +144,7 @@
                      let children = $(this).children("li.CIM-subobject")
                      let count = toShow.length - subObjects.length + children.length;
                      toShow.parent().show();
-                     $(this).parent().find(">span").html(count);
+                     $(this).parent().find(">h4>span").html(count);
                  });
              } else {
                  $("ul").each(function() {
@@ -151,7 +155,7 @@
                      let count = toShow.length - subObjects.length + children.length;
                      toShow.parent().show();
                      toHide.parent().hide();
-                     $(this).parent().find(">span").html(count);
+                     $(this).parent().find(">h4>span").html(count);
                  });
              }
          });
@@ -755,17 +759,19 @@
          if (elementsTopContainer.empty()) {
              elementsTopContainer = cimNetwork
                 .append("li")
-                .attr("class", name + "s" + " list-group-item cim-parent-container");
-             elementsTopContainer.append("a")
+                .attr("class", name + "s" + " list-group-item d-flex justify-content-between cim-parent-container");
+             let listContainer = elementsTopContainer.append("div");
+             listContainer.append("a")
                                  .attr("class", "btn btn-primary btn-xs")
                                  .attr("role", "button")
                                  .attr("data-toggle", "collapse")
                                  .attr("href", "#" + name + "sList")
                                  .html(printName);
-             elementsTopContainer.append("span")
-                                 .attr("class", "badge")
+             elementsTopContainer.append("h4")
+                                 .append("span")
+                                 .attr("class", "badge badge-primary badge-pill")
                                  .html(0);
-             elements = elementsTopContainer
+             elements = listContainer
                 .append("ul")
                 .attr("id", name + "sList")
                 .attr("class", "collapse");
@@ -831,15 +837,17 @@
          if (elementsTopContainer.empty() === true) {
              elementsTopContainer = cimNetwork
                 .append("li")
-                .attr("class", name + "s" + " list-group-item");
-             elementsTopContainer.append("a")
-                                 .attr("class", "btn btn-primary btn-xs")
-                                 .attr("role", "button")
-                                 .attr("data-toggle", "collapse")
-                                 .attr("href", "#" + name + "sList")
-                                 .html(printName);
-             elementsTopContainer.append("span")
-                                 .attr("class", "badge")
+                .attr("class", name + "s" + " list-group-item d-flex justify-content-between");
+             let listContainer = elementsTopContainer.append("div");
+             listContainer.append("a")
+                          .attr("class", "btn btn-primary btn-xs")
+                          .attr("role", "button")
+                          .attr("data-toggle", "collapse")
+                          .attr("href", "#" + name + "sList")
+                          .html(printName);
+             elementsTopContainer.append("h4")
+                                 .append("span")
+                                 .attr("class", "badge badge-primary badge-pill")
                                  .html(0);
              elementsTopContainer.on("click", function() {
                  if (d3.event.target === this) {
@@ -848,9 +856,10 @@
                  }
              });
              elements = elementsTopContainer
-                .append("ul")
-                .attr("id", name + "sList")
-                .attr("class", "collapse");
+                 .select("div")
+                 .append("ul")
+                 .attr("id", name + "sList")
+                 .attr("class", "collapse");
          } 
 
          let elementTopContainer = elements
@@ -930,13 +939,13 @@
              })
              .attr("class", "collapse");
          // update element count
-         let elementCount = parseInt(elementsTopContainer.select("span").html());
+         let elementCount = parseInt(elementsTopContainer.select("h4 > span").html());
          elementCount = elementCount + elementEnter.size();
-         elementsTopContainer.select("span").html(elementCount);
+         elementsTopContainer.select("h4 > span").html(elementCount);
          // update also the top containers (if any)
          let tcNode = elementsTopContainer.node(); 
          $(tcNode).parents("li.cim-parent-container")
-                  .find(">span")
+                  .find(">h4>span")
                   .each(function() {
                       let elementCount = parseInt($(this).html());
                       elementCount = elementCount + elementEnter.size();
@@ -1321,7 +1330,7 @@
              $(cimObjectContainer)
                  .parents("li.list-group-item")
                  .first()
-                 .find(">span")
+                 .find(">h4>span")
                  .each(function() {
                      let elementCount = parseInt($(this).html());
                      elementCount = elementCount - 1;
@@ -1329,7 +1338,7 @@
                  });
              $(cimObjectContainer)
                  .parents("li.cim-parent-container")
-                 .find(">span")
+                 .find(">h4>span")
                  .each(function() {
                      let elementCount = parseInt($(this).html());
                      elementCount = elementCount - 1;

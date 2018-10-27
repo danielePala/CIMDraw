@@ -156,7 +156,7 @@
                      uuid = cn.attributes.getNamedItem("rdf:ID").value;
                  }
                  let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
-                 let target = types.select("#" + uuid);
+                 let target = types.select("#cimdiagram-" + uuid);
                  target.select("text").html(value);
                  break;
              case "cim:AnalogValue.value":
@@ -171,7 +171,7 @@
                      psr = self.model.getNode(psr);
                  }
                  let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                 let psrSelection = d3.select("g#" + psrUUID);
+                 let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
                  break;
              case "cim:SvPowerFlow.p":
@@ -184,7 +184,7 @@
                          [svTerminal],
                          "Terminal.ConductingEquipment")[0];
                      let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                     let psrSelection = d3.select("g#" + psrUUID);
+                     let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
                  break;
@@ -200,7 +200,7 @@
                      psr = self.model.getNode(psr);
                  }       
                  let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                 let psrSelection = d3.select("g#" + psrUUID);
+                 let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
              }
          }
@@ -221,7 +221,7 @@
                      psr = self.model.getNode(psr);
                  }       
                  let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                 let psrSelection = d3.select("g#" + psrUUID);
+                 let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
              }
          }
@@ -239,7 +239,7 @@
                      psr = self.model.getNode(psr);
                  }       
                  let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                 let psrSelection = d3.select("g#" + psrUUID);
+                 let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
              }
          }
@@ -261,7 +261,7 @@
          let type = object.localName;
          let uuid = object.attributes.getNamedItem("rdf:ID").value;
          let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
-         let target = types.select("#" + uuid);
+         let target = types.select("#cimdiagram-" + uuid);
          self.forceTick(target); 
      });
      
@@ -432,7 +432,7 @@
                          [terminal],
                          "Terminal.ConductingEquipment")[0];
                      let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                     let psrSelection = d3.select("g#" + psrUUID);
+                     let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
                  break;
@@ -447,7 +447,7 @@
                      [terminal],
                      "Terminal.ConductingEquipment")[0];
                  let measPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                 let measPsrSelection = d3.select("g#" + measPsrUUID);
+                 let measPsrSelection = d3.select("g#cimdiagram-" + measPsrUUID);
                  self.createStatusInfo(measPsrSelection);
                  break;
              }
@@ -463,7 +463,7 @@
                          psr = self.model.getNode(psr);
                      }   
                      let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                     let psrSelection = d3.select("g#" + psrUUID);
+                     let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
                  break;
@@ -478,7 +478,7 @@
                      [terminal],
                      "Terminal.ConductingEquipment")[0];
                  let limPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                 let limPsrSelection = d3.select("g#" + limPsrUUID);
+                 let limPsrSelection = d3.select("g#cimdiagram-" + limPsrUUID);
                  self.createStatusInfo(limPsrSelection);
                  break;
              }
@@ -494,7 +494,7 @@
                          psr = self.model.getNode(psr);
                      }   
                      let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
-                     let psrSelection = d3.select("g#" + psrUUID);
+                     let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
                  break;
@@ -879,15 +879,16 @@
              if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0 || limitSets.length > 0) {
                  let tooltip = self.createTooltip(measurements, svPFs, svVs, limitSets);
                  // create the actual popover
+                 console.log($(this));
                  $(this).popover({title: "<b>Element Status Info</b>",
                                   content: tooltip,
                                   container: "body",
                                   html: true,
                                   trigger: "manual",
                                   delay: {"show": 200, "hide": 0},
-                                  placement: "auto right"
-                 }).data('bs.popover').tip().find('.popover-content').empty().append(tooltip);
-                 $(this).data('bs.popover').options.content = tooltip;
+                                  placement: "auto"
+                 });//.data('bs.popover').tip().find('.popover-content').empty().append(tooltip);
+                 //$(this).data('bs.popover').options.content = tooltip;
              } else {
                  // no measurements, destroy popover
                  d3.select(this).attr("data-toggle", null);
@@ -1054,7 +1055,7 @@
                                  .append("g")
                                  .attr("class", type)
                                  .attr("id", function(d) {
-                                     return d.attributes.getNamedItem("rdf:ID").value;
+                                     return "cimdiagram-" + d.attributes.getNamedItem("rdf:ID").value;
                                  });
          return [updateSel, enterSel]; 
      }
@@ -1582,7 +1583,7 @@
                  }
              })
              .attr("id", function(d) {
-                 return d.attributes.getNamedItem("rdf:ID").value;
+                 return "cimdiagram-" + d.attributes.getNamedItem("rdf:ID").value;
              })
              .attr("class", function(d) {
                  return d.localName;
@@ -1800,7 +1801,7 @@
                                .append("g")
                                .attr("class", NODE_CLASS)
                                .attr("id", function(d) {
-                                   return d.attributes.getNamedItem("rdf:ID").value;
+                                   return "cimdiagram-" + d.attributes.getNamedItem("rdf:ID").value;
                                });
          
          cnUpdate.select("path").attr("d", function(d) {
@@ -2029,10 +2030,9 @@
              selection.attr("transform", function (d) {
                  return "translate("+d.x+","+d.y+") rotate("+d.rotation+")";
              }).selectAll("g.Terminal")
-                      .attr("id", function(d, i) {
+                      .each(function(d, i) {
                           d.x = d3.select(this.parentNode).datum().x + parseInt(d3.select(this.firstChild).attr("cx"));
                           d.y = d3.select(this.parentNode).datum().y + parseInt(d3.select(this.firstChild).attr("cy"));
-                          return d.attributes.getNamedItem("rdf:ID").value;
                       });
              // if rotation is a multiple of 180, undo it (for readability)
              selection.selectAll("text.cim-object-text")

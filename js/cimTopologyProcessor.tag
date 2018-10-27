@@ -26,24 +26,24 @@
 
     <!-- Topology processor button -->
     <ul class="nav navbar-nav" id="cim-topology-processor">
-        <li class="dropdown">
-            <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 <span id="seText">Topology Processor</span>
                 <span class="caret"></span>
             </a>
-            <ul class="dropdown-menu">
-                <li id="runLabel" onclick={ run }><a>Run</a></li>
-            </ul>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" id="runLabel" onclick={ run }>Run</a>
+            </div>
         </li>
     </ul>
 
     <!-- modal for topology processor info -->
     <div class="modal fade" id="tpStatusModal" tabindex="-1" role="dialog" aria-labelledby="tpStatusModalLabel">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
+                    <h5 class="modal-title" id="seConfigModalLabel">Topology processor results</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="seConfigModalLabel">Topology processor results</h4>
                 </div>
                 <div class="modal-body">
                     <p id="tpMsg">Loading...</p>

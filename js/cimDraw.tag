@@ -32,37 +32,51 @@
      .app-container {
          display: flex;
          flex-flow: row nowrap;
-     }     
+     }
+
+     .navbar-light .navbar-text {
+         color: rgba(0,0,0,1);
+     }
+
+     .navbar-light .navbar-nav .nav-link {
+         color: rgba(0,0,0,1);
+     }
     </style>
     
-    <nav class="navbar navbar-expand-lg navbar-light bg-light navbar-default">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="">CIMDraw</a>
-            </div>
-            <div class="collapse navbar-collapse">
-                <p class="navbar-text" id="cim-filename"></p>
-                <select id="cim-diagrams" class="selectpicker navbar-left navbar-form"
-                        onchange="location = this.options[this.selectedIndex].value;" data-live-search="true">
-                    <option disabled="disabled">Select a diagram</option>
-                </select>
+            <a class="navbar-brand" href="">CIMDraw</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-between" id="navbarSupportedContent">
                 <ul class="nav navbar-nav" id="cim-home-container">
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <li class="nav-item">
+                        <span class="navbar-text" id="cim-filename"></span>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                             File <span class="caret"></span>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="">Open</a></li>
-                            <li><a id="cim-save" download="file.xml">Save as RDF/XML...</a></li>
-                            <li><a id="cgmes-save">Save as CGMES...</a></li>
-                            <li><a id="cgmes-download" download="file.zip" style="display: none;"></a></li>
-                            <li class="disabled"><a id="cim-export" download="diagram.xml">Export current diagram</a></li>
-                            <li><a id="matpower-export" download="file.m">Export to Matpower (EXPERIMENTAL)...</a></li>
-                        </ul>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="">Open</a>
+                            <a class="dropdown-item" id="cim-save" download="file.xml">Save as RDF/XML...</a>
+                            <a class="dropdown-item" id="cgmes-save">Save as CGMES...</a>
+                            <a class="dropdown-item" id="cgmes-download" download="file.zip" style="display: none;"></a>
+                            <a class="dropdown-item" id="cim-export" download="diagram.xml">Export current diagram</a>
+                            <a class="dropdown-item" id="matpower-export" download="file.m">Export to Matpower (EXPERIMENTAL)...</a>
+                        </div>
+                    </li>
+                    <li class="nav-item">
+                        <cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
+                    </li>
+                    <li class="nav-item">
+                        <select id="cim-diagrams" class="selectpicker"
+                                onchange="location = this.options[this.selectedIndex].value;" data-live-search="true" title="Select a diagram">
+                        </select>
                     </li>
                 </ul>
-                <cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
-                <p class="navbar-text navbar-right" id="cim-mode">Mode: Operational</p>
+                <span class="navbar-text" id="cim-mode">Mode: Operational</span>
             </div>
         </div>
     </nav>
@@ -214,7 +228,7 @@
          route.stop(); // clear all the old router callbacks
          let cimFile = {};
          let cimFileReader = {};
-         $(".selectpicker").selectpicker({container: "body"});
+         $(".selectpicker").selectpicker();
 
          $("#operational").change(function() {
              self.cimModel.setMode("NODE_BREAKER");
@@ -293,7 +307,7 @@
              $("#loadingModal").off("shown.bs.modal");
              $("#loadingModal").on("shown.bs.modal", function(e) {
                  if (typeof(cimFile.name) !== "undefined") {
-                     d3.select("#cim-filename").html(cimFile.name);
+                     d3.select("#cim-filename").html("[" + cimFile.name + "]&nbsp&nbsp");
                      self.cimModel.load(cimFile, cimFileReader).then(function() {
                          loadDiagramList(cimFile.name);
                          $("#loadingModal").modal("hide");
@@ -407,7 +421,7 @@
              });
              
              // load diagram list
-             $(".selectpicker").selectpicker({container: "body"});
+             $(".selectpicker").selectpicker();
              d3.select("#cim-diagrams").selectAll("option").remove();
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
              $(".selectpicker").selectpicker("refresh");
