@@ -434,7 +434,7 @@
                  selected = [diagramElem];
                  break;
              default:
-                 diagramElem = d3.select("svg").selectAll("g#"+element).node();
+                 diagramElem = d3.select("svg").selectAll("g#cimdiagram-"+element).node();
                  selected = [diagramElem];
          }
          self.updateSelected();
@@ -601,7 +601,6 @@
          let cnsToMove = [];
          self.disableDrag();
          d3.select(self.root).selectAll("label:not(#selectLabel)").classed("active", false);
-         //$("#select").click();
          self.status = "DRAG";
          let drag = d3
              .drag()

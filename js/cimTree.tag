@@ -32,20 +32,19 @@
 
      .cim-tree-attribute-name {
          text-align: left;
-         min-width: 170px;
+         min-width: 250px;
      }
 
      .cim-tree-attribute-uom {
-         width: 30px;
+         width: 70px;
      }
      
      .cim-tree-btn-group {
-         float: left;
-         width: 100%;
+         flex-grow: 1;
      }
 
      .cim-tree-dropdown-toggle {
-         width: 100%;
+         flex-grow: 1;
      }
 
      ul {
@@ -63,6 +62,10 @@
 
      .list-group-item > div {
          width: 100%;
+     }
+
+     .cim-tree-btn-group > .cimLinkBtn {
+         flex-grow: 1;
      }
     </style>
 
@@ -170,18 +173,16 @@
 
      // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
-         // reset search form
-         if (searchKey !== "") {
-             $(".tree > #cim-search-form").find("#cim-search-key").val("");
-             $(".tree > #cim-search-form").find("#cimTreeSearchBtn").click();
-         }
          if (decodeURI(name) !== self.diagramName) {
              d3.drag().on("drag.end", null);
              self.render(name);
          }
          if (typeof(element) !== "undefined") {
              self.moveTo(element);
-         } 
+         } else {
+             // reset any element highlight
+             d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+         }
      });
 
      // listen to 'addToActiveDiagram' event from model
@@ -365,7 +366,7 @@
          let removeBtn = sourceNode.selectAll("#cimRemoveBtn").filter(function(d) {
              return (d.attributes[0].value === "#" + linkName.split(":")[1]);
          });
-         let linkBtn = sourceNode.selectAll("#cimLinkBtn").filter(function(d) {
+         let linkBtn = sourceNode.selectAll(".cimLinkBtn").filter(function(d) {
              return (d.attributes[0].value === "#" + linkName.split(":")[1]);
          });
 
@@ -393,7 +394,7 @@
          let removeBtn = sourceNode.selectAll("#cimRemoveBtn").filter(function(d) {
              return (d.attributes[0].value === "#" + linkName.split(":")[1]);
          });
-         let linkBtn = sourceNode.selectAll("#cimLinkBtn").filter(function(d) {
+         let linkBtn = sourceNode.selectAll(".cimLinkBtn").filter(function(d) {
              return (d.attributes[0].value === "#" + linkName.split(":")[1]);
          });
          removeBtn.attr("disabled", "disabled");
@@ -1009,7 +1010,7 @@
                         return el.nodeName === "rdfs:comment"
                     })[0].textContent;
                 })
-                .append("div").attr("class", "input-group input-group-sm");
+                .append("div").attr("class", "input-group");
              return elementDiv;
          };
 
@@ -1050,13 +1051,13 @@
                         return comment[0].textContent;
                     }
                     return null;
-                }).append("div").attr("class", "input-group input-group-sm");
+                }).append("div").attr("class", "input-group");
              return elementLink;
          };
      }
 
      generateAttributes(elementDiv) {
-         elementDiv.append("span").attr("class", "input-group-addon cim-tree-attribute-name")
+         elementDiv.append("div").attr("class", "input-group-prepend").append("span").attr("class", "input-group-text cim-tree-attribute-name")
                    .html(function (d) {
                        let about = d.attributes.getNamedItem("rdf:about").value;
                        about = about.substring(about.indexOf("#")); // only the part after the "#"
@@ -1091,7 +1092,7 @@
                .attr("type", "number")
                .attr("step", "0.00001")
                .on("input", attrInput);
-         floats.append("span").attr("class", "input-group-addon cim-tree-attribute-uom")
+         floats.append("div").attr("class", "input-group-append").append("span").attr("class", "input-group-text cim-tree-attribute-uom")
                .html(function (d) {
                    let attrType = self.model.schema.getSchemaAttributeType(d);
                    if (attrType[2] === "none") {
@@ -1103,17 +1104,17 @@
          let elementBool = elementDiv.filter(function(d) {
              let attrType = self.model.schema.getSchemaAttributeType(d);
              return attrType[0] === "#Boolean";
-         }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
+         }).append("div").attr("class", "input-group-append cim-tree-btn-group");
          let elementBoolBtn = elementBool.append("button").attr("type", "button")
-                                         .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
+                                         .attr("class", "btn btn-outline-secondary dropdown-toggle cim-tree-dropdown-toggle")
                                          .attr("data-toggle", "dropdown")
                                          .attr("aria-haspopup", "true")
                                          .attr("aria-expanded", "false");
          elementBoolBtn.append("span").attr("class", "boolVal").each(setBoolValueFromModel);
          elementBoolBtn.append("span").attr("class", "caret");
-         let elementBoolList = elementBool.append("ul").attr("class", "dropdown-menu");
-         elementBoolList.append("li").on("click", setBoolAttr).append("a").text("true");
-         elementBoolList.append("li").on("click", setBoolAttr).append("a").text("false");
+         let elementBoolList = elementBool.append("div").attr("class", "dropdown-menu");
+         elementBoolList.append("a").attr("class", "dropdown-item").text("true").on("click", setBoolAttr);
+         elementBoolList.append("a").attr("class", "dropdown-item").text("false").on("click", setBoolAttr);
          // DateTime attributes (note: such input types are not supported by Firefox) 
          elementDiv.filter(function(d) {
              let attrType = self.model.schema.getSchemaAttributeType(d);
@@ -1196,7 +1197,7 @@
          // set a boolean attribute according to user input
          function setBoolAttr(d) {
              // change the element's text
-             let value = d3.select(this).selectAll("a").node().textContent;
+             let value = d3.select(this).node().textContent;
              $(this).parent().parent().find(">button>span.boolVal").text(value);
              let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
              let attrName = "cim:" + d.attributes[0].value.substring(1);
@@ -1228,14 +1229,13 @@
      }
 
      generateLinks(elementLink) {
-         elementLink.append("span").attr("class", "input-group-addon cim-tree-attribute-name")
+         elementLink.attr("class", "input-group-prepend").append("span").attr("class", "input-group-text cim-tree-attribute-name")
                     .html(function (d) {
                         return d.attributes[0].value.substring(1).split(".")[1]; 
                     });
-         let elementLinkBtn = elementLink.append("div").attr("class", "input-group-btn cim-tree-btn-group");
+         let elementLinkBtn = elementLink.append("div").attr("class", "btn-group cim-tree-btn-group");
          elementLinkBtn.append("button")
-                       .attr("class","btn btn-default btn-xs")
-                       .attr("id", "cimLinkBtn")
+                       .attr("class","btn btn-outline-secondary cimLinkBtn")
                        .attr("type", "submit")
                        .on("click", function (d) {
                            let targetUUID = "#" + d3.select(this).attr("cim-target"); 
@@ -1266,14 +1266,14 @@
                            return "unnamed";
                        });
          elementLinkBtn.append("button")
-                       .attr("class","btn btn-default btn-xs")
+                       .attr("class","btn btn-outline-secondary")
                        .attr("type", "submit")
                        .on("click", function (d) {
                            $(this).parent().attr("id", "cimTarget");
                        })
                        .html("change");
          elementLinkBtn.append("button")
-                       .attr("class","btn btn-default btn-xs")
+                       .attr("class","btn btn-outline-secondary")
                        .attr("type", "submit")
                        .attr("id", "cimRemoveBtn")
                        .on("click", function (d) {

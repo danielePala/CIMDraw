@@ -95,17 +95,17 @@
      // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
          if (decodeURI(name) !== self.diagramName) {
+             let mode = self.model.getMode();
+             if (mode === "BUS_BRANCH") {
+                 NODE_CLASS = "TopologicalNode";
+                 NODE_TERM = "TopologicalNode.Terminal";
+                 TERM_NODE = "Terminal.TopologicalNode";
+             }
              self.render(name);
          }
          if (typeof(element) !== "undefined") {
              self.moveTo(element);
              self.trigger("moveTo", element);
-         }
-         let mode = self.model.getMode();
-         if (mode === "BUS_BRANCH") {
-             NODE_CLASS = "TopologicalNode";
-             NODE_TERM = "TopologicalNode.Terminal";
-             TERM_NODE = "Terminal.TopologicalNode";
          }
      });
 
@@ -879,7 +879,6 @@
              if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0 || limitSets.length > 0) {
                  let tooltip = self.createTooltip(measurements, svPFs, svVs, limitSets);
                  // create the actual popover
-                 console.log($(this));
                  $(this).popover({title: "<b>Element Status Info</b>",
                                   content: tooltip,
                                   container: "body",

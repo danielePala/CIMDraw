@@ -72,7 +72,7 @@
                     </li>
                     <li class="nav-item">
                         <select id="cim-diagrams" class="selectpicker"
-                                onchange="location = this.options[this.selectedIndex].value;" data-live-search="true" title="Select a diagram">
+                                onchange="location = this.options[this.selectedIndex].value;" data-live-search="true" title="Select a diagram" data-style="btn-outline-secondary">
                         </select>
                     </li>
                 </ul>
@@ -433,11 +433,14 @@
                  d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/"+diagrams[i]).text(diagrams[i]);
              }
              $(".selectpicker").selectpicker("refresh");
+             if (diagrams.length === 0) {
+                 route(filename + "/createNew");
+             }
          };
          
          route("/*/diagrams/*/*", function(file, name, element) {
              $("#cim-local-file-component").hide();
-             loadDiagram(file, name, element);
+             self.trigger("showDiagram", file, name, element);
          });
 
          route("/*/createNew", function(file) {
