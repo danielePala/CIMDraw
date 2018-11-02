@@ -28,8 +28,8 @@
                         <label class="btn btn-secondary active" id="selectLabel">
                             <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked="checked">select
                         </label>
-                        <label class="btn btn-secondary" id="forceLabel">
-                            <input type="radio" id="force" name="tool" value="force" autocomplete="off">force (auto-layout)
+                        <label class="btn btn-secondary" id="panLabel">
+                            <input type="radio" id="pan" name="tool" value="pan" autocomplete="off">pan
                         </label>
                         <label class="btn btn-secondary" id="connectLabel">
                             <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections
@@ -85,6 +85,7 @@
      let quadtree = d3.quadtree();
      let selected = [];
      let copied = [];
+     // context menu for single-point objects
      let menu = [
          {
              title: "Copy",
@@ -162,7 +163,7 @@
              }
          }   
      ];
-     // menu for multi-segment objects
+     // context menu for multi-segment objects
      let multiMenu = menu.concat(
          [{
              title: "Add points",
@@ -195,8 +196,8 @@
                              self.enableDrag();
                              break;
                          }
-                         case "FORCE": {
-                             self.enableForce();
+                         case "ZOOM": {
+                             self.enableZoom();
                              break;
                          }
                          case "CONNECT": {
@@ -223,7 +224,7 @@
                  };
              }
          }]);
-     // menu for a point of a multi-segment object
+     // context menu for a point of a multi-segment object
      let resizeMenu = [
          {
              title: "Delete point",
@@ -246,6 +247,7 @@
              }
          }
      ];
+     // context menu for terminals
      let terminalsMenu = [
          {
              title: "Add new operational limit set",
@@ -266,6 +268,7 @@
              }
          }
      ];
+     // context menu for terminals of transformers 
      let trafoTermsMenu = terminalsMenu.concat(
          [{
              title: "Add ratio tap changer",
@@ -273,6 +276,7 @@
                  self.addTC(this, d, i);
              }
          }]);
+     // context menu for connections between objects
      let edgesMenu = [
          {
              title: "Delete",
@@ -293,6 +297,7 @@
              }
          }
      ];
+     // context menu for the main diagram area
      let diagramMenu = [
          {
              title: "Paste",
@@ -368,7 +373,8 @@
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
          quadtree.addAll(selected); // update quadtree
      });
-     
+
+     // Initialization function (executed when the tag is mounted)
      self.on("mount", function() {
          // setup diagram buttons
          $("#select").change(function() {
@@ -376,9 +382,9 @@
              self.enableDrag();
          });
          
-         $("#force").change(function() {
+         $("#pan").change(function() {
              self.disableAll();
-             self.enableForce();
+             self.enableZoom();
          });
 
          $("#connect").change(function() {
@@ -487,12 +493,12 @@
          d3.select("svg").on("contextmenu.general", d3.contextMenu(diagramMenu));
          edges.on("contextmenu", d3.contextMenu(edgesMenu));
          // enable drag by default
-         self.disableForce();
          self.disableZoom();
          self.disableConnect();
          self.enableDrag();
          $("#cim-diagram-controls").removeClass("invisible");
          // modality for drag+zoom
+         let oldStatus = self.status;         
          d3.select("body")
            .on("keydown", function() {
                if (typeof(d3.event) === "undefined") {
@@ -500,25 +506,26 @@
                }
                // trap the ctrl key being pressed
                if (d3.event.ctrlKey) {
+                   oldStatus = self.status;
                    self.disableDrag();
                    self.disableZoom();
-                   self.disableForce();
                    self.enableZoom();
                }
            })
            .on("keyup", function() {
-               self.disableZoom();
-               switch(self.status) {
-                   case "DRAG":
-                       if (d3.event.keyCode === 17) { // "Control"
+               if (d3.event.keyCode === 17) { // "Control"
+                   self.disableZoom();
+                   switch(oldStatus) {
+                       case "DRAG":
                            self.enableDrag();
-                       }
-                       break;
-                   case "FORCE":
-                       if (d3.event.keyCode === 17) { // "Control"
-                           self.enableForce();
-                       }
-                       break;
+                           break;
+                       case "ZOOM":
+                           self.enableZoom();
+                           break;
+                       default:
+                           self.status = oldStatus;
+                           break;
+                   }
                }
                // handle escape key
                if (d3.event.keyCode === 27) { // "Escape"
@@ -539,41 +546,6 @@
          }
      });
 
-     // Listen to 'transform' event from parent.
-     // Needed if zooming while connecting objects or drawing multi-lines.
-     self.parent.on("transform", function() {
-         let pathData = d3.select("svg > path").datum();
-         if (typeof(pathData) === "undefined") {
-             return;
-         }
-         let line = d3.line()
-                      .x(function(d) { return d.x; })
-                      .y(function(d) { return d.y; });
-         let path = d3.select("svg > path");
-         let transform = d3.zoomTransform(d3.select("svg").node());
-         let circleTr = d3.select("svg > circle").node().transform.baseVal.consolidate();
-         if (circleTr === null) {
-             return;
-         }
-         let circleMatrix = circleTr.matrix;
-         let cx = circleMatrix.e - 10;
-         let cy = circleMatrix.f - 10;
-         let lineData = [];
-         if (typeof(pathData.lineData) === "undefined") {
-             lineData.push({x: ((pathData.x)*transform.k) + transform.x,
-                            y: ((pathData.y)*transform.k) + transform.y});
-         } else {
-             for (let linePoint of pathData.lineData) {
-                 lineData.push({x: ((linePoint.x+pathData.x)*transform.k) + transform.x,
-                                y: ((linePoint.y+pathData.y)*transform.k) + transform.y});
-             }
-         }
-         lineData.push({x: cx, y: cy});
-         path.attr("d", function() {
-             return line(lineData);
-         });
-     });
-
      // listen to 'createEdges' event from parent
      self.parent.on("createEdges", function(edgesEnter) {
          edgesEnter.on("contextmenu", d3.contextMenu(edgesMenu));
@@ -582,7 +554,6 @@
      disableAll() {
          self.disableDrag();
          self.disableZoom();
-         self.disableForce();
          self.disableConnect();
          self.disableAdd();
      }
@@ -789,39 +760,12 @@
              d3.select("svg").select("g.brush").call(d3.brush().move, null);
          }
      }
-
-     enableForce() {
-         $('[data-toggle="popover"]').popover("hide");
-         let equipments = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
-         let terminals = equipments.selectAll("g.Terminal");
-         self.d3force = d3.forceSimulation(equipments.data().concat(terminals.data()))
-                          .force("link", d3.forceLink(d3.select("svg").selectAll("svg > g > g.edges > g").data()))
-                          .on("tick", updateModel)
-                          .force("charge", d3.forceCollide(5));
-         d3.select(self.root).selectAll("label:not(#forceLabel)").classed("active", false);
-         //$("#force").click();
-         self.status = "FORCE";
-         self.d3force.restart();
-
-         let elements = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
-         function updateModel() {
-             elements.each(function(d) {
-                 opts.model.updateActiveDiagram(d, d.lineData);
-             });
-         }
-     }
-
-     disableForce() {
-         if (typeof(self.d3force) !== "undefined") {
-             self.d3force.stop();
-         }
-     }
      
      enableZoom() {
-         $("#zoom").click();
+         self.status = "ZOOM";
          $('[data-toggle="popover"]').popover("hide");
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g")
-           .on("click", function (d) {
+           .on("click.zoom", function (d) {
                let hashComponents = window.location.hash.substring(1).split("/");
                let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
@@ -835,13 +779,45 @@
      }
 
      disableZoom() {
-         d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").on("click", null);
+         d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").on("click.zoom", null);
          d3.select("svg").on(".zoom", null);
      }
 
      zooming() {
          d3.select("svg").select("g.diagram").attr("transform", d3.event.transform);
-         self.parent.trigger("transform");
+         // Update path data.
+         // Needed if zooming while connecting objects or drawing multi-lines.
+         let pathData = d3.select("svg > path").datum();
+         if (typeof(pathData) === "undefined") {
+             return;
+         }
+         let line = d3.line()
+                      .x(function(d) { return d.x; })
+                      .y(function(d) { return d.y; });
+         let path = d3.select("svg > path");
+         let transform = d3.zoomTransform(d3.select("svg").node());
+         let circleTr = d3.select("svg > circle").node().transform.baseVal.consolidate();
+         if (circleTr === null) {
+             return;
+         }
+         let circleMatrix = circleTr.matrix;
+         let cx = circleMatrix.e - 10;
+         let cy = circleMatrix.f - 10;
+         let lineData = [];
+         let pathDatum = pathData.obj;
+         if (typeof(pathDatum.lineData) === "undefined") {
+             lineData.push({x: ((pathDatum.x)*transform.k) + transform.x,
+                            y: ((pathDatum.y)*transform.k) + transform.y});
+         } else {
+             for (let linePoint of pathDatum.lineData) {
+                 lineData.push({x: ((linePoint.x+pathDatum.x)*transform.k) + transform.x,
+                                y: ((linePoint.y+pathDatum.y)*transform.k) + transform.y});
+             }
+         }
+         lineData.push({x: cx, y: cy});
+         path.attr("d", function() {
+             return line(lineData);
+         });
      }
 
      enableConnect() {
@@ -854,7 +830,6 @@
              }
          });
          d3.select(self.root).selectAll("label:not(#connectLabel)").classed("active", false);
-         //$("#connect").click();
          self.status = "CONNECT";
 
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
@@ -872,6 +847,9 @@
                let path = d3.select("svg > path");
                let circle = d3.select("svg > circle");
                let termToChange = path.datum();
+               if (typeof(termToChange) !== "undefined") {
+                   termToChange = termToChange.obj;
+               }
                // directly connect terminals
                if (typeof(termToChange) !== "undefined") {
                    let cn = opts.model.getTargets(
@@ -898,24 +876,23 @@
                    opts.model.setLink(termToChange, schemaLinkName, cn);
                    opts.model.setLink(d, schemaLinkName, cn);
                    path.datum(null);
-                   return;
-               }
-
-               svg.on("mousemove", mousemoved);
-               path.data([d]);
-               function mousemoved() {
-                   let m = d3.mouse(this);
-                   let transform = d3.zoomTransform(d3.select("svg").node());
-                   circle.attr("transform", function () {
-                       let mousex = m[0] + 10;
-                       let mousey = m[1] + 10;
-                       return "translate(" + mousex + "," + mousey +")";
-                   });
-                   path.attr("d", function() {
-                       let newx = (termXY.x*transform.k) + transform.x;
-                       let newy = (termXY.y*transform.k) + transform.y;
-                       return line([{x: newx, y: newy}, {x: m[0], y: m[1]}]);
-                   });
+               } else {
+                   svg.on("mousemove", mousemoved);
+                   path.datum({obj: d});
+                   function mousemoved() {
+                       let m = d3.mouse(this);
+                       let transform = d3.zoomTransform(d3.select("svg").node());
+                       circle.attr("transform", function () {
+                           let mousex = m[0] + 10;
+                           let mousey = m[1] + 10;
+                           return "translate(" + mousex + "," + mousey +")";
+                       });
+                       path.attr("d", function() {
+                           let newx = (termXY.x*transform.k) + transform.x;
+                           let newy = (termXY.y*transform.k) + transform.y;
+                           return line([{x: newx, y: newy}, {x: m[0], y: m[1]}]);
+                       });
+                   };
                }
            });
          d3.select("svg").selectAll("svg > g.diagram > g." + NODE_CLASS + "s > g." + NODE_CLASS)
@@ -934,7 +911,7 @@
              if (typeof(termToChange) !== "undefined") {
                  d3.select("svg").on("mousemove", null);
                  // update the model
-                 opts.model.setLink(termToChange, "cim:" + TERM_NODE, cn);
+                 opts.model.setLink(termToChange.obj, "cim:" + TERM_NODE, cn);
                  d3.select("svg > path").datum(null);
              }
          };
@@ -1056,7 +1033,9 @@
          let svg = d3.select("svg");
          svg.on("contextmenu.add", finish);
          svg.on("mousemove", mousemoved);
-         
+
+         // Show a path corresponding to the mouse position,
+         // so that the user can see where to put the new point.
          function mousemoved() {
              let m = d3.mouse(this);
              let transform = d3.zoomTransform(svg.node());
@@ -1081,11 +1060,14 @@
              let line = d3.line()
                           .x(function(d) { return d.x; })
                           .y(function(d) { return d.y; });
+             // Draw a circe in correspondence to the mouse position.
              circle.attr("transform", function () {
                  let mousex = ((d.x + delta.x)*transform.k) + transform.x + 10;
                  let mousey = ((d.y + delta.y)*transform.k) + transform.y + 10;
                  return "translate(" + mousex + "," + mousey +")";
              });
+             // Update the path with the segment between the mouse position and
+             // the last point.
              path.attr("d", function() {
                  let lineData = [];
                  for (let linePoint of d.lineData) {
@@ -1093,9 +1075,13 @@
                      lineData.push({x: ((rotated.x+d.x)*transform.k) + transform.x,
                                     y: ((rotated.y+d.y)*transform.k) + transform.y});
                  }
-                 lineData.push({x: ((d.x + delta.x)*transform.k) + transform.x, y: ((d.y + delta.y)*transform.k) + transform.y});
+                 lineData.push({
+                     x: ((d.x + delta.x)*transform.k) + transform.x,
+                     y: ((d.y + delta.y)*transform.k) + transform.y
+                 });
                  return line(lineData);
              });
+             // Update the data associated to the path
              path.datum({obj: newObject, x: d.x + delta.x, y: d.y + delta.y});
          };
      }

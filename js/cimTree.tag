@@ -54,10 +54,12 @@
      #tree-controls {
          padding-bottom: 10px;
          align-self: center;
+         flex-shrink: 0;
      }
 
      #cim-search-form {
          align-self: center;
+         flex-shrink: 0;
      }
 
      .list-group-item > div {
@@ -66,6 +68,10 @@
 
      .cim-tree-btn-group > .cimLinkBtn {
          flex-grow: 1;
+     }
+
+     .tree > .nav-tabs {
+         flex-shrink: 0;
      }
     </style>
 
@@ -181,7 +187,7 @@
              self.moveTo(element);
          } else {
              // reset any element highlight
-             d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+             d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
          }
      });
 
@@ -329,7 +335,6 @@
                  self.limitSets(cimLimits, [object]);
                  break;
              default:
-                 console.log(object);
          }       
      }
 
@@ -763,7 +768,7 @@
                 .attr("class", name + "s" + " list-group-item d-flex justify-content-between cim-parent-container");
              let listContainer = elementsTopContainer.append("div");
              listContainer.append("a")
-                                 .attr("class", "btn btn-primary btn-xs")
+                                 .attr("class", "btn btn-primary btn-sm")
                                  .attr("role", "button")
                                  .attr("data-toggle", "collapse")
                                  .attr("href", "#" + name + "sList")
@@ -779,7 +784,7 @@
              elementsTopContainer.on("click", function() {
                  if (d3.event.target === this) {
                      // reset any element highlight
-                     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+                     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
                  }
              });
          } 
@@ -795,7 +800,7 @@
              addBtn = elements
                  .insert("li", ":first-child")
                  .append("button")
-                 .attr("class", "btn btn-default btn-xs cim-add-btn")
+                 .attr("class", "btn btn-default btn-sm cim-add-btn")
                  .attr("type", "submit");
              addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
              addBtn.on("click.add", function() {
@@ -815,7 +820,7 @@
              addBtn = elements
                  .insert("li", ":first-child")
                  .append("button")
-                 .attr("class", "btn btn-default btn-xs cim-add-btn")
+                 .attr("class", "btn btn-default btn-sm cim-add-btn")
                  .attr("type", "submit");
              addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
              addBtn.on("click.add", function() {
@@ -841,7 +846,7 @@
                 .attr("class", name + "s" + " list-group-item d-flex justify-content-between");
              let listContainer = elementsTopContainer.append("div");
              listContainer.append("a")
-                          .attr("class", "btn btn-primary btn-xs")
+                          .attr("class", "btn btn-primary btn-sm")
                           .attr("role", "button")
                           .attr("data-toggle", "collapse")
                           .attr("href", "#" + name + "sList")
@@ -853,7 +858,7 @@
              elementsTopContainer.on("click", function() {
                  if (d3.event.target === this) {
                      // reset any element highlight
-                     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+                     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
                  }
              });
              elements = elementsTopContainer
@@ -873,13 +878,13 @@
                 .attr("class", name + " CIM-object").on("click", function() {
                     if (d3.event.target === this) {
                         // reset any element highlight
-                        d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+                        d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
                     }
                 });
          let cimModel = this.model;
          elementTopContainer
              .append("a")
-             .attr("class", "btn btn-primary btn-xs")
+             .attr("class", "btn btn-primary btn-sm")
              .attr("role", "button")
              .attr("data-toggle", "collapse")
              .attr("href", function(d) {
@@ -1314,12 +1319,19 @@
              return;
          }
          target = targetChild.parentNode;
-         d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-xs");
+         d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
          // show the relevant tab
          let tabId = $(target).parents("div.tab-pane").first().attr("id") + "Tab";
+         if ($("#" + tabId).hasClass("active")) {
+             self.scrollTo("#" + uuid);
+         } else {
+             $("#" + tabId).on("shown.bs.tab", function(event) {
+                 self.scrollTo("#" + uuid);
+                 $(this).off("shown.bs.tab");
+             });
+         }
          $("#" + tabId).tab("show");
-         d3.select(target).select("a").attr("class", "btn btn-danger btn-xs");
-         self.scrollTo("#" + uuid);
+         d3.select(target).select("a").attr("class", "btn btn-danger btn-sm");
      }
      
      deleteObject(objectUUID) {
@@ -1350,8 +1362,8 @@
      }
 
      scrollTo(targetUUID) {
-         if ($(targetUUID).parents(".collapse:not(.in)").length !== 0) {
-             $(targetUUID).parents(".collapse:not(.in)").on("shown.bs.collapse", function(event) {
+         if ($(targetUUID).parents(".collapse:not(.show)").length !== 0) {
+             $(targetUUID).parents(".collapse:not(.show)").on("shown.bs.collapse", function(event) {
                  event.stopPropagation();
                  let elementEnter = d3.select(this.parentNode).filter(".CIM-object").select("ul");
                  if (elementEnter.selectAll("li.attribute").size() === 0) {
@@ -1363,7 +1375,7 @@
          } else {
              scrollToVisible(targetUUID);
          }
-         $(targetUUID).parents(".collapse:not(.in)").collapse("show");
+         $(targetUUID).parents(".collapse:not(.show)").collapse("show");
 
          function scrollToVisible(targetUUID) {
              $(".tree").scrollTop(
