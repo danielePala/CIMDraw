@@ -348,7 +348,7 @@
          }
 
          if (selection !== null) {
-             self.forceTick();
+             self.forceTick(selection);
              self.trigger("addToDiagram", selection);
          }
 
