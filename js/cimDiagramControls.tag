@@ -785,6 +785,7 @@
 
      zooming() {
          d3.select("svg").select("g.diagram").attr("transform", d3.event.transform);
+         self.parent.trigger("transform");
          // Update path data.
          // Needed if zooming while connecting objects or drawing multi-lines.
          let pathData = d3.select("svg > path").datum();
