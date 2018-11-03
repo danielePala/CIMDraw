@@ -417,7 +417,9 @@
                  } else {
                      edgeToChange.source = cn;
                  }
-                 self.forceTick();
+                 let cnUUID = cn.attributes.getNamedItem("rdf:ID").value;
+                 let selection = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID);
+                 self.forceTick(selection);
                  break;
              }
              case "cim:Terminal.SvPowerFlow":
