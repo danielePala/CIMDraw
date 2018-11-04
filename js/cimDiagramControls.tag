@@ -85,6 +85,8 @@
      let quadtree = d3.quadtree();
      let selected = [];
      let copied = [];
+     let xhighlight = false;
+     let yhighlight = false;
      // context menu for single-point objects
      let menu = [
          {
@@ -1148,6 +1150,7 @@
                      let rotx = ((absxP) * transform.k) + transform.x;
                      self.highlight("x", rotx);
                      xaligned = true;
+                     xhighlight = true;
                  }
                  if (Math.abs(deltay) < 5) {
                      absy = absyP;
@@ -1155,14 +1158,17 @@
                      let roty = ((absyP) * transform.k) + transform.y;
                      self.highlight("y", roty);
                      yaligned = true;
+                     yhighlight = true;
                  }
              }
          }
-         if (xaligned === false) {
+         if (xaligned === false && xhighlight === true) {
              self.highlight("x", null);
+             xhighlight = false;
          }
-         if (yaligned === false) {
+         if (yaligned === false && yhighlight === true) {
              self.highlight("y", null);
+             yhighlight = false;
          }
          // we must return the un-rotated aligned coordinates, except if
          // this is the first point.
