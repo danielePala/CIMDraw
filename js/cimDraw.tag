@@ -41,6 +41,10 @@
      .navbar-light .navbar-nav .nav-link {
          color: rgba(0,0,0,1);
      }
+
+     .cim-content-center {
+         text-align: center;
+     }
     </style>
     
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -80,7 +84,7 @@
     
     <div class="container-fluid">
         <div class="row justify-content-center" id="cim-local-file-component">
-            <div class="col-md-4"> 
+            <div class="col-md-4 cim-content-center"> 
                 <div class="row justify-content-center" id="cim-select-file">
                     <div class="col-md-auto">
                         <br><br>
