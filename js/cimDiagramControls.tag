@@ -301,6 +301,12 @@
      let diagramMenu = [
          {
              title: "Paste",
+             disabled: function(d, i) {
+                 if (copied.length < 1) {
+                     return true;
+                 }
+                 return false;
+             },
              action: function(d, i) {
                  if (copied.length < 1) {
                      return;
