@@ -47,7 +47,7 @@
      }
     </style>
     
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-expand navbar-light bg-light">
         <div class="container-fluid">
             <a class="navbar-brand" href="">CIMDraw</a>
             <div class="collapse navbar-collapse justify-content-between" id="navbarSupportedContent">
