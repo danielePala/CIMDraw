@@ -44,6 +44,7 @@
 
      .cim-content-center {
          text-align: center;
+         max-width: 700px;
      }
     </style>
     
@@ -84,7 +85,7 @@
     
     <div class="container-fluid">
         <div class="row justify-content-center" id="cim-local-file-component">
-            <div class="col-md-4 cim-content-center"> 
+            <div class="col-md-12 cim-content-center"> 
                 <div class="row justify-content-center" id="cim-select-file">
                     <div class="col-md-auto">
                         <br><br>
