@@ -32,7 +32,7 @@
 
      .cim-tree-attribute-name {
          text-align: left;
-         min-width: 250px;
+         min-width: 200px;
      }
 
      .cim-tree-attribute-uom {
@@ -1011,9 +1011,15 @@
                     }
                 })
                 .attr("title", function(d) {
-                    return [].filter.call(d.children, function(el) {
+                    let about = d.attributes.getNamedItem("rdf:about").value;
+                    let fullName = about.split(".")[1];
+                    let comment = [].filter.call(d.children, function(el) {
                         return el.nodeName === "rdfs:comment"
-                    })[0].textContent;
+                    });
+                    if (comment.length > 0) {
+                        return fullName + " - " + comment[0].textContent;
+                    }
+                    return fullName;
                 })
                 .append("div").attr("class", "input-group");
              return elementDiv;
@@ -1049,13 +1055,15 @@
                     }
                 })
                 .attr("title", function(d) {
+                    let about = d.attributes.getNamedItem("rdf:about").value;
+                    let fullName = about.split(".")[1];
                     let comment = [].filter.call(d.children, function(el) {
                         return el.nodeName === "rdfs:comment"
                     });
                     if (comment.length > 0) {
-                        return comment[0].textContent;
+                        return fullName + " - " + comment[0].textContent;
                     }
-                    return null;
+                    return fullName;
                 }).append("div").attr("class", "input-group");
              return elementLink;
          };
@@ -1065,8 +1073,11 @@
          elementDiv.append("div").attr("class", "input-group-prepend").append("span").attr("class", "input-group-text cim-tree-attribute-name")
                    .html(function (d) {
                        let about = d.attributes.getNamedItem("rdf:about").value;
-                       about = about.substring(about.indexOf("#")); // only the part after the "#"
-                       return about.split(".")[1]; 
+                       let fullName = about.split(".")[1];
+                       if (fullName.length > 20) {
+                           fullName = fullName.substring(0, 20) + "..." ;
+                       }
+                       return fullName; 
                    });
          // String attributes 
          elementDiv.filter(function(d) {
@@ -1236,7 +1247,12 @@
      generateLinks(elementLink) {
          elementLink.attr("class", "input-group-prepend").append("span").attr("class", "input-group-text cim-tree-attribute-name")
                     .html(function (d) {
-                        return d.attributes[0].value.substring(1).split(".")[1]; 
+                        let about = d.attributes.getNamedItem("rdf:about").value;
+                        let fullName = about.split(".")[1];
+                        if (fullName.length > 20) {
+                            fullName = fullName.substring(0, 20) + "..." ;
+                        }
+                        return fullName; 
                     });
          let elementLinkBtn = elementLink.append("div").attr("class", "btn-group cim-tree-btn-group");
          elementLinkBtn.append("button")
