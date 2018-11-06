@@ -1143,24 +1143,24 @@
          // Enum attributes
          let elementEnum = elementDiv.filter(function(d) {
              return self.model.schema.isEnum(d);
-         }).append("div").attr("class", "input-group-btn cim-tree-btn-group");
+         }).append("div").attr("class", "input-group-append cim-tree-btn-group");
          let elementEnumBtn = elementEnum.append("button").attr("type", "button")
-                                         .attr("class", "btn btn-default dropdown-toggle cim-tree-dropdown-toggle")
+                                         .attr("class", "btn btn-outline-secondary dropdown-toggle cim-tree-dropdown-toggle")
                                          .attr("data-toggle", "dropdown")
                                          .attr("aria-haspopup", "true")
                                          .attr("aria-expanded", "false");
          elementEnumBtn.append("span").attr("class", "enumVal").each(setEnumValueFromModel);
          elementEnumBtn.append("span").attr("class", "caret");
-         let elementEnumList = elementEnum.append("ul").attr("class", "dropdown-menu");
+         let elementEnumList = elementEnum.append("div").attr("class", "dropdown-menu");
          elementEnumList
-             .selectAll("li")
+             .selectAll("a")
              .data(function(d) {
                  return self.model.schema.getSchemaEnumValues(d);
              })
              .enter()
-             .append("li")
-             .on("click", setEnumAttr)
              .append("a")
+             .on("click", setEnumAttr)
+             .attr("class", "dropdown-item")
              .text(function(d) {
                  return d;
              });
