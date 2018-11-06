@@ -175,6 +175,14 @@
          $("#sshInput").change(function() {
              self.resetAttrs();
          });
+         // setup tabs: reset path upon clicking on another tab
+         $("a[data-toggle=\"tab\"]").on("click", function (e) {
+             let hashComponents = window.location.hash.substring(1).split("/");
+             if (hashComponents.length > 3) {
+                 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+                 route(basePath);
+             }
+         });
      });
 
      // listen to 'showDiagram' event from parent
