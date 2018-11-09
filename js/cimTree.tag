@@ -810,7 +810,7 @@
                  .append("button")
                  .attr("class", "btn btn-default btn-sm cim-add-btn")
                  .attr("type", "submit");
-             addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
+             addBtn.html("<span class=\"fas fa-plus\" aria-hidden=\"true\"></span> Add");
              addBtn.on("click.add", function() {
                  let newObject = self.model.createObject("cim:" + name);
                  self.model.addToActiveDiagram(newObject, []);
@@ -830,7 +830,7 @@
                  .append("button")
                  .attr("class", "btn btn-default btn-sm cim-add-btn")
                  .attr("type", "submit");
-             addBtn.html("<span class=\"glyphicon glyphicon-plus\" aria-hidden=\"true\"></span> Add");
+             addBtn.html("<span class=\"fas fa-plus\" aria-hidden=\"true\"></span> Add");
              addBtn.on("click.add", function() {
                  let newObject = self.model.createObject("cim:" + type);
                  self.model.setLink(newObject, link, parent);
