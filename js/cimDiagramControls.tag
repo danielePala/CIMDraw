@@ -453,6 +453,11 @@
          }
          self.updateSelected();
      });
+
+     // listen to 'deselect' event from parent
+     self.parent.on("deselect", function() {
+         self.deselectAll();
+     });
      
      // listen to 'render' event from parent
      self.parent.on("render", function() {
@@ -1299,7 +1304,6 @@
          d3.select(hoverD)
            .filter("g.Terminal")
            .each(function (d) {
-               //$(this.parentNode).filter('[data-toggle="popover"]').popover("show");
                let term = d3.select(this).select("circle");
                d3.select(this).append("circle")
                  .attr("cx", term.attr("cx"))

@@ -106,6 +106,8 @@
          if (typeof(element) !== "undefined") {
              self.moveTo(element);
              self.trigger("moveTo", element);
+         } else {
+             self.trigger("deselect");
          }
      });
 
