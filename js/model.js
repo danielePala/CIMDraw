@@ -65,8 +65,6 @@ function cimModel() {
     // This is a 'private' function (not visible in the model object).
     function parseZip() {
         let parser = new DOMParser();
-        let zipFilesProcessed = 0;
-        let zipFilesTotal = 0;
         let eqdata = [];
         let dldata = [];
         let svdata = [];
@@ -76,7 +74,6 @@ function cimModel() {
         let eqbdata = null;
         let tpbdata = null;
         function success(content) {
-            zipFilesProcessed = zipFilesProcessed + 1;
             let result = readUploadedFileAsText(content).then(function(parsedXML) {
                 if (eqdata.length === 0 ||
                     dldata.length === 0 ||
@@ -122,9 +119,24 @@ function cimModel() {
                         gldata.push(parsedXML);
                     }               
                 }
+                return Promise.resolve();
+            });
+            return result;
+        };
+
+        return function(zip) {
+            let promises = [];
+            zip.forEach(function (relativePath, zipEntry) {
+                let promise = zipEntry.async("blob")
+                    .then(success)
+                    .catch(function(e) {
+                        return Promise.reject(e);
+                    });
+                promises.push(promise);
+            });
+            let result = Promise.all(promises).then(function() {
                 // at the end we need to have at least the EQ file
-                if (eqdata.length > 0 &&
-                    zipFilesProcessed === zipFilesTotal) {
+                if (eqdata.length > 0) {
                     let all = parser.parseFromString(emptyFile, "application/xml");
                     for (let eqfile of eqdata) {
                         for (let datum of eqfile.children[0].children) {
@@ -194,10 +206,6 @@ function cimModel() {
                     data.all = all;
                     return buildModel();
                 } else {
-                    // if we still have files to process, return success
-                    if (zipFilesProcessed !== zipFilesTotal) {
-                        return Promise.resolve();
-                    }
                     // else, maybe this is a boundary file?
                     // In this case we load it, but only if we already have a
                     // valid model loaded.
@@ -220,20 +228,6 @@ function cimModel() {
             });
             return result;
         };
-
-        return function(zip) {
-            let promises = [];
-            zipFilesTotal = Object.keys(zip.files).length;
-            zip.forEach(function (relativePath, zipEntry) {
-                let promise = zipEntry.async("blob")
-                    .then(success)
-                    .catch(function(e) {
-                        return Promise.reject(e);
-                    });
-                promises.push(promise);
-            });
-            return Promise.all(promises);
-        };
     };
 
     // plain RDF/XML file loading with promise wrapper. This
@@ -254,7 +248,6 @@ function cimModel() {
                 let cimXML = reader.result;
                 let parsedXML = parser.parseFromString(cimXML, "application/xml");
                 if (parsedXML.children.length > 0) {
-                    console.log(parsedXML.firstChild);
                     if (parsedXML.children[0].nodeName === "parsererror") {
                         // parsing has failed
                         reject(new DOMException(parsedXML.children[0].firstChild.textContent));
