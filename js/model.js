@@ -240,7 +240,7 @@ function cimModel() {
         return new Promise(function(resolve, reject) {
             reader.onerror = function() {
                 reader.abort();
-                reject(new DOMException("Problem parsing input file."));
+                reject(new DOMException("problem parsing input file."));
             };
 
             reader.onload = function() {
@@ -248,9 +248,9 @@ function cimModel() {
                 let cimXML = reader.result;
                 let parsedXML = parser.parseFromString(cimXML, "application/xml");
                 if (parsedXML.children.length > 0) {
-                    if (parsedXML.children[0].nodeName === "parsererror") {
+                    if (parsedXML.children[0].nodeName !== "rdf:RDF") {
                         // parsing has failed
-                        reject(new DOMException(parsedXML.children[0].firstChild.textContent));
+                        reject(new DOMException("invalid input file."));
                     }
                 }
                 resolve(parsedXML);
