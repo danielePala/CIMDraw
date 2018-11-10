@@ -609,7 +609,7 @@
          self.model.selectDiagram(decodeURI(diagramName));
          self.diagramName = decodeURI(diagramName);
          let allNodes = self.model.getNodes();
-         yield "[" + Date.now() + "] DIAGRAM: extracted nodes";
+         yield "DIAGRAM: extracted nodes";
          
          let allEquipments = self.model.getGraphicObjects(
              ["cim:ACLineSegment",
@@ -646,125 +646,125 @@
          let allBusbarSections = allEquipments["cim:BusbarSection"];
          let allLinearShuntCompensators = allEquipments["cim:LinearShuntCompensator"];
          let allNonlinearShuntCompensators = allEquipments["cim:NonlinearShuntCompensator"];
-         yield "[" + Date.now() + "] DIAGRAM: extracted equipments";
+         yield "DIAGRAM: extracted equipments";
          
          // AC Lines
          let aclineEnter = self.drawACLines(allACLines)[1];
-         yield "[" + Date.now() + "] DIAGRAM: drawn acLines";
+         yield "DIAGRAM: drawn acLines";
          // breakers
          let breakerEnter = self.drawBreakers(allBreakers);
-         yield "[" + Date.now() + "] DIAGRAM: drawn breakers";
+         yield "DIAGRAM: drawn breakers";
          // disconnectors
          let discEnter = self.drawDisconnectors(allDisconnectors);
-         yield "[" + Date.now() + "] DIAGRAM: drawn disconnectors";
+         yield "DIAGRAM: drawn disconnectors";
          // load break switches
          let lbsEnter = self.drawLoadBreakSwitches(allLoadBreakSwitches);
-         yield "[" + Date.now() + "] DIAGRAM: drawn load break switches";
+         yield "DIAGRAM: drawn load break switches";
          // jumpers
          let jumpsEnter = self.drawJumpers(allJumpers);
-         yield "[" + Date.now() + "] DIAGRAM: drawn jumpers";
+         yield "DIAGRAM: drawn jumpers";
          // junctions
          let junctsEnter = self.drawJunctions(allJunctions);
-         yield "[" + Date.now() + "] DIAGRAM: drawn junctions";
+         yield "DIAGRAM: drawn junctions";
          // energy sources
          let ensrcEnter = self.drawEnergySources(allEnergySources);
-         yield "[" + Date.now() + "] DIAGRAM: drawn energy sources";
+         yield "DIAGRAM: drawn energy sources";
          // synchronous machines
          let syncEnter = self.drawSynchronousMachines(allSynchronousMachines);
-         yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machines";
+         yield "DIAGRAM: drawn synchronous machines";
          // asynchronous machines
          let asyncEnter = self.drawAsynchronousMachines(allAsynchronousMachines);
-         yield "[" + Date.now() + "] DIAGRAM: drawn asynchronous machines";      
+         yield "DIAGRAM: drawn asynchronous machines";      
          // energy consumers
          let enconsEnter = self.drawEnergyConsumers(allEnergyConsumers);
-         yield "[" + Date.now() + "] DIAGRAM: drawn energy consumers";
+         yield "DIAGRAM: drawn energy consumers";
          // conform loads
          let confEnter = self.drawConformLoads(allConformLoads);
-         yield "[" + Date.now() + "] DIAGRAM: drawn conform loads";
+         yield "DIAGRAM: drawn conform loads";
          // non conform loads
          let nonconfEnter = self.drawNonConformLoads(allNonConformLoads);
-         yield "[" + Date.now() + "] DIAGRAM: drawn non conform loads";
+         yield "DIAGRAM: drawn non conform loads";
          // equivalent injections
          let eqInjEnter = self.drawEquivalentInjections(allEquivalentInjections);
-         yield "[" + Date.now() + "] DIAGRAM: drawn equivalent injections";
+         yield "DIAGRAM: drawn equivalent injections";
          // power transformers
          let trafoEnter = self.drawPowerTransformers(allPowerTransformers);
-         yield "[" + Date.now() + "] DIAGRAM: drawn power transformers";
+         yield "DIAGRAM: drawn power transformers";
          // linear shunt compensators
          let lshuntEnter = self.drawLinearCompensators(allLinearShuntCompensators);
-         yield "[" + Date.now() + "] DIAGRAM: drawn linear shunt compensators";
+         yield "DIAGRAM: drawn linear shunt compensators";
          // nonlinear shunt compensators
          let nlshuntEnter = self.drawNonlinearCompensators(allNonlinearShuntCompensators);
-         yield "[" + Date.now() + "] DIAGRAM: drawn nonlinear shunt compensators";
+         yield "DIAGRAM: drawn nonlinear shunt compensators";
          // connectivity nodes
          let cnEnter = self.drawNodes(allNodes);
          self.createStatusInfo(cnEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn connectivity nodes";
+         yield "DIAGRAM: drawn connectivity nodes";
 
          // ac line terminals
          let termSelection = self.createTerminals(aclineEnter);
          self.createStatusInfo(aclineEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn acline terminals";
+         yield "DIAGRAM: drawn acline terminals";
          // breaker terminals
          self.createTerminals(breakerEnter);
          self.createStatusInfo(breakerEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn breaker terminals";
+         yield "DIAGRAM: drawn breaker terminals";
          // disconnector terminals
          self.createTerminals(discEnter);
          self.createStatusInfo(discEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn disconnector terminals";
+         yield "DIAGRAM: drawn disconnector terminals";
          // load break switch terminals
          self.createTerminals(lbsEnter);
          self.createStatusInfo(lbsEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn load break switch terminals";
+         yield "DIAGRAM: drawn load break switch terminals";
          // jumper terminals
          self.createTerminals(jumpsEnter);
          self.createStatusInfo(jumpsEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn jumper terminals";
+         yield "DIAGRAM: drawn jumper terminals";
          // junction terminals
          self.createTerminals(junctsEnter);
          self.createStatusInfo(junctsEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn junction terminals";
+         yield "DIAGRAM: drawn junction terminals";
          // energy source terminals
          termSelection = self.createTerminals(ensrcEnter);
          self.createStatusInfo(ensrcEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn energy source terminals";
+         yield "DIAGRAM: drawn energy source terminals";
          // synchronous machine terminals
          termSelection = self.createTerminals(syncEnter);
          self.createStatusInfo(syncEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn synchronous machine terminals";
+         yield "DIAGRAM: drawn synchronous machine terminals";
          // asynchronous machine terminals
          termSelection = self.createTerminals(asyncEnter);
          self.createStatusInfo(asyncEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn asynchronous machine terminals";
+         yield "DIAGRAM: drawn asynchronous machine terminals";
          // energy consumer terminals
          termSelection = self.createTerminals(enconsEnter);
          self.createStatusInfo(enconsEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn energy consumer terminals";
+         yield "DIAGRAM: drawn energy consumer terminals";
          // conform load terminals
          termSelection = self.createTerminals(confEnter);
          self.createStatusInfo(confEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn conform load terminals";
+         yield "DIAGRAM: drawn conform load terminals";
          // non conform load terminals
          termSelection = self.createTerminals(nonconfEnter);
          self.createStatusInfo(nonconfEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn non conform load terminals";
+         yield "DIAGRAM: drawn non conform load terminals";
          // equivalent injection terminals
          termSelection = self.createTerminals(eqInjEnter);
          self.createStatusInfo(eqInjEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn equivalent injection terminals";
+         yield "DIAGRAM: drawn equivalent injection terminals";
          // power transformer terminals
          termSelection = self.createTerminals(trafoEnter);
          self.createStatusInfo(trafoEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn power transformer terminals";
+         yield "DIAGRAM: drawn power transformer terminals";
          // linear shunt compensator terminals
          termSelection = self.createTerminals(lshuntEnter);
          self.createStatusInfo(lshuntEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn linear shunt compensator terminals";
+         yield "DIAGRAM: drawn linear shunt compensator terminals";
          // nonlinear shunt compensator terminals
          termSelection = self.createTerminals(nlshuntEnter);
          self.createStatusInfo(nlshuntEnter);
-         yield "[" + Date.now() + "] DIAGRAM: drawn nonlinear shunt compensator terminals";
+         yield "DIAGRAM: drawn nonlinear shunt compensator terminals";
          
          d3.select("svg").on("mouseover", function() {
              self.model.on("dragend", dragend);

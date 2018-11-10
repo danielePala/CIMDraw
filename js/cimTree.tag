@@ -521,7 +521,7 @@
              "cim:LinearShuntCompensator",
              "cim:NonlinearShuntCompensator"
          ]);
-         yield "[" + Date.now() + "] TREE: extracted equipments";
+         yield "TREE: extracted equipments";
          // get additional objects
          allSubGeoRegions = getObjects(["cim:SubGeographicalRegion"])["cim:SubGeographicalRegion"];
          allGeoRegions = getObjects(["cim:GeographicalRegion"])["cim:GeographicalRegion"];
