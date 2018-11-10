@@ -194,6 +194,24 @@ function cimModel() {
                     data.all = all;
                     return buildModel();
                 } else {
+                    // if we still have files to process, return success
+                    if (zipFilesProcessed !== zipFilesTotal) {
+                        return Promise.resolve();
+                    }
+                    // else, maybe this is a boundary file?
+                    // In this case we load it, but only if we already have a
+                    // valid model loaded.
+                    if (data.all === null) {
+                        return Promise.reject("Invalid CGMES file: no equipment description found.");
+                    }
+                    if (eqbdata !== null) {
+                        if (eqbdata !== null) {
+                            model.updateModel(eqbdata);
+                        }
+                        if (tpbdata !== null) {
+                            model.updateModel(tpbdata);
+                        }
+                    }
                     return Promise.resolve();
                 }
             }).catch(function(e) {
@@ -235,7 +253,13 @@ function cimModel() {
                 let parser = new DOMParser();
                 let cimXML = reader.result;
                 let parsedXML = parser.parseFromString(cimXML, "application/xml");
-                // TODO: the parsing may also fail
+                if (parsedXML.children.length > 0) {
+                    console.log(parsedXML.firstChild);
+                    if (parsedXML.children[0].nodeName === "parsererror") {
+                        // parsing has failed
+                        reject(new DOMException(parsedXML.children[0].firstChild.textContent));
+                    }
+                }
                 resolve(parsedXML);
             };
             reader.readAsText(inputFile);
@@ -569,6 +593,79 @@ function cimModel() {
                     });
                     return result;
                 }
+            } 
+            return result;
+        },
+
+        updateModel(rdf) {
+            let objs = rdf.children[0].children;
+            // first, create all objects
+            for (let obj of objs) {
+                if (obj.nodeName === "md:FullModel") {
+                    continue;
+                }
+                // we must handle both rdf:ID and rdf:about
+                let id = obj.attributes.getNamedItem("rdf:ID");
+                if (id === null) {
+                    id = obj.attributes.getNamedItem("rdf:about");
+                }
+                if (id === null) {
+                    continue;
+                }
+                let idValue = id.value;
+                if (idValue.startsWith("#")) {
+                    idValue = idValue.substring(1);
+                }
+                let actObj = model.getObject(idValue);
+                if (typeof(actObj) === "undefined") {
+                    actObj = model.createObject(obj.nodeName, {uuid: idValue});
+                }
+            }
+            // then, attributes and links
+            for (let obj of objs) {
+                if (obj.nodeName === "md:FullModel") {
+                    continue;
+                }
+                let id = obj.attributes.getNamedItem("rdf:ID");
+                if (id === null) {
+                    id = obj.attributes.getNamedItem("rdf:about");
+                }
+                if (id === null) {
+                    continue;
+                }
+                let idValue = id.value;
+                if (idValue.startsWith("#")) {
+                    idValue = idValue.substring(1);
+                }
+                let actObj = model.getObject(idValue);
+                if (typeof(actObj) === "undefined") {
+                    continue;
+                }
+                // set attributes
+                let attributes = model.getAttributes(obj);
+                for (let attr of attributes) {
+                    model.setAttribute(actObj, attr.nodeName, attr.innerHTML);
+                }
+                // set links
+                let links = model.getLinks(obj);
+                for (let link of links) {
+                    let targetUUID = link.attributes.getNamedItem("rdf:resource").value.substring(1);
+                    model.setLink(actObj, link.nodeName, model.getObject(targetUUID));
+                }
+            }
+        },
+        
+        loadBoundary(file) {
+            let result = Promise.resolve();
+            if (file.name.endsWith(".zip")) {
+                // zip file loading (ENTSO-E).
+                result = JSZip.loadAsync(file)
+                    .then(parseZip())
+                    .catch(function(e) {
+                        return Promise.reject(e);
+                    });
+            } else {
+                result = Promise.reject("Error: not a boundary file.");
             } 
             return result;
         },

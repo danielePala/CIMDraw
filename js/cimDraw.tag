@@ -46,6 +46,10 @@
          text-align: center;
          max-width: 700px;
      }
+
+     #upload-boundary {
+         display: none;
+     }
     </style>
     
     <nav class="navbar navbar-expand-lg navbar-expand navbar-light bg-light">
@@ -67,6 +71,8 @@
                             <a class="dropdown-item" id="cgmes-download" download="file.zip" style="display: none;"></a>
                             <a class="dropdown-item" id="cim-export" download="diagram.xml">Export current diagram</a>
                             <a class="dropdown-item" id="matpower-export" download="file.m">Export to Matpower (EXPERIMENTAL)...</a>
+                            <input type="file" id="upload-boundary" name="upload"/>
+                            <a class="dropdown-item" id="load-boundary" onclick="document.getElementById('upload-boundary').click(); return false">Load boundary file</a>
                         </div>
                     </li>
                     <li class="nav-item">
@@ -253,6 +259,10 @@
          
          $("#cim-create-new-modal").on("click", function() {
              route("/" + cimFile.name + "/diagrams");
+         });
+
+         $("#upload-boundary").change(function(){
+             self.cimModel.loadBoundary(this.files[0]);
          });
          
          // This is the initial route ("the home page").
