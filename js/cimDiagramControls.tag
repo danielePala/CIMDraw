@@ -603,15 +603,16 @@
                  }
                  quadtree.removeAll(selected); // update quadtree
                  // handle movement of cn, for the special case when
-                 // the cn connects only two elements and there is no
-                 // busbar section associated to it.
+                 // the cn connects only two elements and it is a single
+                 // point object (i.e. it is not a linear object like
+                 // a busbar).
                  if (opts.model.schema.isA("ConductingEquipment", d) === true) {
                      let terminals = opts.model.getTerminals([d]);
                      let cns = opts.model.getTargets(
                          terminals,
                          TERM_NODE);
                      for (let cn of cns) {
-                         if (opts.model.getBusbar(cn) !== null) {
+                         if (cn.lineData.length > 1) {
                              continue;
                          }
                          let cnTerms = opts.model.getTargets(

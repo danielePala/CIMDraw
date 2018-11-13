@@ -378,7 +378,6 @@
                                  self.createEdges([newEdge]);
                              }
                          }
-                         
                      }
                  }
              }
@@ -1786,6 +1785,19 @@
          
          for (let cn of allNodes) {
              self.calcLineData(cn);
+             // special rule: if the connectivuty node has more than one point
+             // (i.e. it is drawn like a linear object) then we force it to have
+             // an associated busbar.
+             /*
+             let busbar = self.model.getBusbar(cn);
+             if (cn.lineData.length > 1 && busbar === null) {
+                 let newObj = self.model.createObject("cim:BusbarSection", {node: cn});
+                 let name = self.model.getAttribute(cn, "cim:IdentifiedObject.name");
+                 if (typeof(name) !== "undefined") {
+                     self.model.setAttribute(newObj, "cim:IdentifiedObject.name", name.innerHTML);
+                 }
+             }
+             */
          }
          
          if (d3.select("svg").select("g." + NODE_CLASS + "s").empty()) {
@@ -1860,6 +1872,9 @@
 
      moveTo(uuid) {
          let hoverD = self.model.getObject(uuid);
+         if (typeof(hoverD) === "undefined") {
+             return;
+         }
          // handle busbars
          if (hoverD.nodeName === "cim:BusbarSection") {
              hoverD = self.model.getNode(hoverD);
@@ -2121,7 +2136,10 @@
                       terminalXY = self.rotateTerm(d.target);
                   }     
 
-                  if (self.model.getBusbar(d.source) !== null) {
+                  // if the node is not a single point (e.g. it is a busbar)
+                  // then we calculate the optimal position of the connection
+                  // towards the terminal.
+                  if (d.source.lineData.length > 1) {
                       d.p = self.closestPoint(d.source, terminalXY);
                   } else {
                       d.p = [0, 0];
