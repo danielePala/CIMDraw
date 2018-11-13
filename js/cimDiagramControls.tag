@@ -409,6 +409,9 @@
          let terminals = null;
          let cn = null, cnUUID = null;
          let diagramElem = null;
+         if (typeof(cimObject) === "undefined") {
+             return;
+         }
          switch (cimObject.nodeName) {
              case "cim:Substation":
              case "cim:Line":
