@@ -321,6 +321,7 @@
                  break;
              case "cim:" + NODE_CLASS:
                  selection = self.drawNodes([object]);
+                 updateEdges(object, null);
                  break;
          }
          
@@ -336,17 +337,7 @@
                  terminal,
                  TERM_NODE)[0];
              selection = self.drawNodes([cn]);
-             let equipments = self.model.getEquipments(cn).filter(eq => eq !== object);
-             let eqTerminals = self.model.getTerminals(equipments);
-             for (let eqTerminal of eqTerminals) {
-                 let eqCn = self.model.getTargets(
-                     [eqTerminal],
-                     TERM_NODE)[0];
-                 if (eqCn === cn) {
-                     let newEdge = {source: cn, target: eqTerminal};
-                     self.createEdges([newEdge]);
-                 }
-             }   
+             updateEdges(cn, object);
          }
 
          if (selection !== null) {
@@ -382,7 +373,22 @@
                  }
              }
              self.createTerminals(selection);
-         }
+         };
+
+         function updateEdges(node, busbar) {
+             let equipments = self.model.getEquipments(node).filter(eq => eq !== busbar);
+             let eqTerminals = self.model.getTerminals(equipments);
+             for (let eqTerminal of eqTerminals) {
+                 let eqNode = self.model.getTargets(
+                     [eqTerminal],
+                     TERM_NODE)[0];
+                 if (eqNode === node) {
+                     let newEdge = {source: node, target: eqTerminal};
+                     self.createEdges([newEdge]);
+                 }
+             }   
+         };
+         
      });
 
      // listen to 'addLink' event from model
