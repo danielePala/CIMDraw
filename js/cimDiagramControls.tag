@@ -740,8 +740,10 @@
                      let d = node.data;
                      let datum = d3.select(d).datum();
                      for (let lineDatum of datum.lineData) {
-                         let dx = datum.x + lineDatum.x;
-                         let dy = datum.y + lineDatum.y;
+                         // the object can be rotated
+                         let lineDatumR = self.parent.rotate(lineDatum, datum.rotation);
+                         let dx = datum.x + lineDatumR.x;
+                         let dy = datum.y + lineDatumR.y;
                          if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
                              neighbours.push(d);
                              break;
@@ -1455,7 +1457,7 @@
              selected.push(elm);
          }
          quadtree.removeAll(selected); // update quadtree
-         $(selected).filter('[data-toggle="popover"]').popover("destroy");
+         $(selected).filter('[data-toggle="popover"]').popover("dispose");
          let selection = d3.selectAll(selected);
          let terminals = opts.model.getTerminals(selection.data());
          d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
