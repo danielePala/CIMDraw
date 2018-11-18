@@ -375,11 +375,11 @@
              }
          };
      }).on("start", function(d) {
-         quadtree.removeAll(selected); // update quadtree
+         self.removeFromQuadtree(); // update quadtree
      }).on("end", function(d) {
          self.highlight(null);
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
-         quadtree.addAll(selected); // update quadtree
+         self.addToQuadtree(d3.selectAll(selected)); // update quadtree
      });
 
      // Initialization function (executed when the tag is mounted)
@@ -496,15 +496,25 @@
                  }
              );
          }
-         // setup quadtree
+         // Setup quadtree. The elements are inserted with the following
+         // structure: an object with two fields, one called 'elm' which
+         // references the SVG node and one called 'seq' which identifies
+         // the sequence number of the diagram object point. In fact for
+         // each diagram object point of a given object we must insert
+         // a dedicated node in the quadtree.
          let points = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
-         let edges = d3.select("svg").selectAll("svg > g.diagram > g.edges > g");
          quadtree.x(function(d) {
-             return d3.select(d).data()[0].x;
+             let obj = d3.select(d.elm).datum();
+             let lineDatum = obj.lineData.filter(el => el.seq === d.seq);
+             return obj.x + lineDatum[0].x;
          }).y(function(d) {
-             return d3.select(d).data()[0].y;
-         }).addAll(points.nodes());
+             let obj = d3.select(d.elm).datum();
+             let lineDatum = obj.lineData.filter(el => el.seq === d.seq);
+             return obj.y + lineDatum[0].y;
+         });
+         self.addToQuadtree(points);
          // setup context menu
+         let edges = d3.select("svg").selectAll("svg > g.diagram > g.edges > g");
          self.addContextMenu(points);
          d3.select("svg").on("contextmenu.general", d3.contextMenu(diagramMenu));
          edges.on("contextmenu", d3.contextMenu(edgesMenu));
@@ -553,7 +563,7 @@
      // listen to 'addToDiagram' event from parent 
      self.parent.on("addToDiagram", function(selection) {
          if (selection.size() === 1) {
-             quadtree.add(selection.node()); // update the quadtree
+             self.addToQuadtree(selection);
              if (self.status === "DRAG") {
                  self.disableAll();
                  self.enableDrag();
@@ -604,7 +614,7 @@
                      selected.push(this);
                      self.updateSelected();
                  }
-                 quadtree.removeAll(selected); // update quadtree
+                 self.removeFromQuadtree(); // update quadtree
                  // handle movement of cn, for the special case when
                  // the cn connects only two elements and it is a single
                  // point object (i.e. it is not a linear object like
@@ -688,7 +698,7 @@
                  };
              })
              .on("end", function(d) {
-                 quadtree.addAll(selected); // update quadtree
+                 self.addToQuadtree(d3.selectAll(selected)); // update quadtree
                  cnsToMove = [];
                  let terminals = opts.model.getTerminals(d3.selectAll(selected).data());
                  let links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
@@ -716,7 +726,7 @@
          function selectInsideBrush() {
              // hide the brush
              d3.select("svg").select("g.brush").selectAll("*:not(.overlay)").style("display", "none");
-             // test quadtree
+             // update selection with quadtree
              let extent = d3.event.selection;
              if (extent === null) {
                  return;
@@ -733,19 +743,19 @@
 
      // Find the nodes within the specified rectangle.
      search(quadtree, x0, y0, x3, y3) {
-         let neighbours = [];
+         let neighbours = new Set();
          quadtree.visit(function(node, x1, y1, x2, y2) {
              if (!node.length) {
                  do {
                      let d = node.data;
-                     let datum = d3.select(d).datum();
+                     let datum = d3.select(d.elm).datum();
                      for (let lineDatum of datum.lineData) {
                          // the object can be rotated
                          let lineDatumR = self.parent.rotate(lineDatum, datum.rotation);
                          let dx = datum.x + lineDatumR.x;
                          let dy = datum.y + lineDatumR.y;
                          if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
-                             neighbours.push(d);
+                             neighbours.add(d.elm);
                              break;
                          }
                      }
@@ -753,7 +763,22 @@
              }
              return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
          });
-         return neighbours;
+         return [...neighbours];
+     }
+
+     addToQuadtree(selection) {
+         let nodes = [];
+         selection.each(function(el) {
+             for (let lineDatum of el.lineData) {
+                 nodes.push({elm: this, seq: lineDatum.seq});
+             }
+         });
+         quadtree.addAll(nodes); // update the quadtree
+     }
+     
+     removeFromQuadtree() {
+         let nodes = quadtree.data().filter(el => selected.indexOf(el.elm) > -1);
+         quadtree.removeAll(nodes); // update the quadtree
      }
 
      updateSelected() {
@@ -1437,8 +1462,8 @@
              self.deselectAll();
              selected.push(elm);
          }
-         quadtree.removeAll(selected); // update quadtree
-         $(selected).filter('[data-toggle="popover"]').popover("destroy");
+         self.removeFromQuadtree(); // update quadtree
+         $(selected).filter('[data-toggle="popover"]').popover("dispose");
          let selection = d3.selectAll(selected);
          let terminals = opts.model.getTerminals(selection.data());
          d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
@@ -1456,7 +1481,7 @@
              self.deselectAll();
              selected.push(elm);
          }
-         quadtree.removeAll(selected); // update quadtree
+         self.removeFromQuadtree(); // update quadtree
          $(selected).filter('[data-toggle="popover"]').popover("dispose");
          let selection = d3.selectAll(selected);
          let terminals = opts.model.getTerminals(selection.data());
