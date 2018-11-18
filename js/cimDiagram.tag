@@ -379,6 +379,9 @@
              let equipments = self.model.getEquipments(node).filter(eq => eq !== busbar);
              let eqTerminals = self.model.getTerminals(equipments);
              for (let eqTerminal of eqTerminals) {
+                 if (typeof(eqTerminal.x) === "undefined") {
+                     continue;
+                 }
                  let eqNode = self.model.getTargets(
                      [eqTerminal],
                      TERM_NODE)[0];
