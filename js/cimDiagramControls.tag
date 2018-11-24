@@ -524,7 +524,7 @@
          self.enableDrag();
          $("#cim-diagram-controls").removeClass("invisible");
          // modality for drag+zoom
-         let oldStatus = self.status;         
+         let oldStatus = null;         
          d3.select("body")
            .on("keydown", function() {
                if (typeof(d3.event) === "undefined") {
@@ -532,7 +532,9 @@
                }
                // trap the ctrl key being pressed
                if (d3.event.ctrlKey) {
-                   oldStatus = self.status;
+                   if (oldStatus === null) {
+                       oldStatus = self.status;
+                   }
                    self.disableDrag();
                    self.disableZoom();
                    self.enableZoom();
@@ -552,6 +554,7 @@
                            self.status = oldStatus;
                            break;
                    }
+                   oldStatus = null;
                }
                // handle escape key
                if (d3.event.keyCode === 27) { // "Escape"
