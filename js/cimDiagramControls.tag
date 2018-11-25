@@ -238,13 +238,13 @@
                  selected.push(target);
                  self.updateSelected();
 
+                 self.deleteFromDiagram(this.parentNode);
                  d[0].lineData = d[0].lineData.filter(el => el.seq !== d[1]);
                  for (let p of d[0].lineData) {
                      if (p.seq > d[1]) {
                          p.seq = p.seq - 1;
                      }
                  }
-                 self.deleteFromDiagram(this.parentNode);
                  opts.model.addToActiveDiagram(d[0], d[0].lineData);
              }
          }
@@ -283,19 +283,14 @@
          {
              title: "Delete",
              action: function(d, i) {
-                 let cn = d.source;
-                 if (opts.model.getBusbar(cn) === null) {
-                     let cnTerms = opts.model.getTargets(
-                         [cn],
-                         NODE_TERM);
-                     if (cnTerms.length === 2) {
-                         let cnUUID = d.source.attributes.getNamedItem("rdf:ID").value
-                         let cnElem = d3.select("svg").selectAll("g#cimdiagram-"+cnUUID).node();
-                         self.deleteObject(cnElem);
-                         return;
-                     }
+                 let cn = self.getLinkedCNs([d.target])[0];
+                 if (typeof(cn) !== "undefined") {
+                     let cnUUID = cn.cn.attributes.getNamedItem("rdf:ID").value
+                     let cnElem = d3.select("svg").selectAll("g#cimdiagram-"+cnUUID).node();
+                     self.deleteObject(cnElem);
+                 } else {
+                     opts.model.removeLink(d.source, "cim:" + NODE_TERM, d.target);
                  }
-                 opts.model.removeLink(d.source, "cim:" + NODE_TERM, d.target);
              }
          }
      ];
@@ -624,21 +619,7 @@
                  // a busbar).
                  if (opts.model.schema.isA("ConductingEquipment", d) === true) {
                      let terminals = opts.model.getTerminals([d]);
-                     let cns = opts.model.getTargets(
-                         terminals,
-                         TERM_NODE);
-                     for (let cn of cns) {
-                         if (cn.lineData.length > 1) {
-                             continue;
-                         }
-                         let cnTerms = opts.model.getTargets(
-                             [cn],
-                             NODE_TERM);
-                         if (cnTerms.length === 2) {
-                             let cnToMove = {cn: cn, cnTerms: cnTerms};
-                             cnsToMove.push(cnToMove);
-                         }
-                     }
+                     cnsToMove = self.getLinkedCNs(terminals);
                  }
                  let terminals = opts.model.getTerminals(d3.selectAll(selected).data());
                  let links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
@@ -799,6 +780,29 @@
            .on("contextmenu", d3.contextMenu(resizeMenu));
      }
 
+     getLinkedCNs(terminals) {
+         let linkedCNs = [];
+         let cns = opts.model.getTargets(
+             terminals,
+             TERM_NODE);
+         for (let cn of cns) {
+             if (typeof(cn.lineData) === "undefined") {
+                 continue;
+             }
+             if (cn.lineData.length > 1) {
+                 continue;
+             }
+             let cnTerms = opts.model.getTargets(
+                 [cn],
+                 NODE_TERM);
+             if (cnTerms.length === 2) {
+                 let linkedCN = {cn: cn, cnTerms: cnTerms};
+                 linkedCNs.push(linkedCN);
+             }
+         }
+         return linkedCNs;
+     }
+
      disableDrag() {
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").on(".drag", null);
          d3.select("svg").select("g.brush").on(".brush", null);
@@ -898,14 +902,29 @@
                if (typeof(termToChange) !== "undefined") {
                    termToChange = termToChange.obj;
                }
-               // directly connect terminals
+               // Directly connect terminals: if 'termToChange' is defined than
+               // we have now clicked on the 'target' terminal.
                if (typeof(termToChange) !== "undefined") {
                    let cn = opts.model.getTargets(
                        [d],
                        TERM_NODE)[0];
+                   if (typeof(cn) === "undefined") {
+                       cn = opts.model.getTargets(
+                           [termToChange],
+                           TERM_NODE)[0];
+                   } else {
+                       // we are connecting 'termToChange' with another CN: if
+                       // it is already connected to a CN maybe that it should
+                       // now be deleted.
+                       let cnsToRemove = self.getLinkedCNs([termToChange]);
+                       for (let cnToRemove of cnsToRemove) {
+                           let cnUUID = cnToRemove.cn.attributes.getNamedItem("rdf:ID").value
+                           let cnElem = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID).node();
+                           self.deleteObject(cnElem);
+                       }
+                   }
                    d3.select("svg").selectAll("svg > path").attr("d", null);
                    d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
-                   
                    if (typeof(cn) === "undefined") {
                        // handle rotation of the origin terminal
                        let term1XY = {x: termToChange.x, y: termToChange.y};
@@ -1461,18 +1480,7 @@
      }
 
      deleteObject(elm) {
-         if (selected.indexOf(elm) === -1) {
-             self.deselectAll();
-             selected.push(elm);
-         }
-         self.removeFromQuadtree(); // update quadtree
-         $(selected).filter('[data-toggle="popover"]').popover("dispose");
-         let selection = d3.selectAll(selected);
-         let terminals = opts.model.getTerminals(selection.data());
-         d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
-             return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
-         }).remove();
-         selection.remove();
+         let selection = self.deleteSelection(elm);
          // delete from model
          for (let datum of selection.data()) {
              opts.model.deleteObject(datum);
@@ -1480,22 +1488,31 @@
      }
 
      deleteFromDiagram(elm) {
-         if (selected.indexOf(elm) === -1) {
-             self.deselectAll();
-             selected.push(elm);
-         }
-         self.removeFromQuadtree(); // update quadtree
-         $(selected).filter('[data-toggle="popover"]').popover("dispose");
-         let selection = d3.selectAll(selected);
-         let terminals = opts.model.getTerminals(selection.data());
-         d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
-             return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
-         }).remove();
-         selection.remove();
+         let selection = self.deleteSelection(elm);
          // delete from model
          for (let datum of selection.data()) {
              opts.model.deleteFromDiagram(datum);
          }
+     }
+
+     deleteSelection(elm) {
+         if (selected.indexOf(elm) === -1) {
+             self.deselectAll();
+             selected.push(elm);
+         }
+         let selection = d3.selectAll(selected);
+         let terminals = opts.model.getTerminals(selection.data());
+         let cnsToRemove = self.getLinkedCNs(terminals);
+         for (let cnToRemove of cnsToRemove) {
+             let cnUUID = cnToRemove.cn.attributes.getNamedItem("rdf:ID").value
+             let cnElem = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID).node();
+             selected.push(cnElem);
+         }
+         self.removeFromQuadtree(); // update quadtree
+         selection = d3.selectAll(selected);
+         $(selected).filter('[data-toggle="popover"]').popover("dispose");
+         selection.remove();
+         return selection;
      }
     </script>
 

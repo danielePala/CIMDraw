@@ -1188,29 +1188,31 @@ function cimModel() {
             if (object.nodeName === "cim:BusbarSection") {
                 objsToDelete = getNode(object);
             }
-            
-            for (let [linkAndTarget, sources] of linksMap) {
-                let linkName = "cim:" + linkAndTarget.split("#")[0];
-                // delete links of 'object'
-                if (sources.indexOf(object) > -1) {
-                    let target = dataMap.get("#" + linkAndTarget.split("#")[1]);
-                    // target may be undefined, if it is defined in an external file
-                    // (like a boundary set file for example)
-                    if (typeof(target) !== "undefined") {
-                        if (checkRelatedObject(object, target)) {
-                            objsToDelete.push(target);
-                        }
-                        linksToDelete.push({s: object, l: linkName, t: target});
+
+            // delete links of 'object' 
+            let objlinks = model.getLinks(object);
+            for (let objlink of objlinks) {
+                let target = dataMap.get(objlink.attributes.getNamedItem("rdf:resource").value);
+                let linkName = objlink.nodeName;
+                // target may be undefined, if it is defined in an external file
+                // (like a boundary set file for example)
+                if (typeof(target) !== "undefined") {
+                    if (checkRelatedObject(object, target)) {
+                        objsToDelete.push(target);
                     }
+                    linksToDelete.push({s: object, l: linkName, t: target});
                 }
+            }
+
+            for (let [linkAndTarget, sources] of linksMap) {
                 // delete links pointing to 'object'
-                if (linkAndTarget.endsWith(objUUID) === false) {
-                    continue;
-                }
-                for (let source of sources) {
-                    linksToDelete.push({s: source, l: linkName, t: object});
-                    if (checkRelatedObject(object, source)) {
-                        objsToDelete.push(source);
+                if (linkAndTarget.endsWith(objUUID) === true) {
+                    let linkName = "cim:" + linkAndTarget.split("#")[0];
+                    for (let source of sources) {
+                        linksToDelete.push({s: source, l: linkName, t: object});
+                        if (checkRelatedObject(object, source)) {
+                            objsToDelete.push(source);
+                        }
                     }
                 }
             }
@@ -1368,6 +1370,10 @@ function cimModel() {
         },
 
         // Delete an object from the current diagram.
+        // This means that we delete the diagram objects and diagram object
+        // points associated to the object.
+        // In the special case that the object is a busbar or a node we will
+        // delete the both from the diagram.
         deleteFromDiagram(object) {
             let objUUID = object.attributes.getNamedItem("rdf:ID").value;
             let dobjs = model.getDiagramObjects([object]);
