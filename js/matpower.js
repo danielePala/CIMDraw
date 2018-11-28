@@ -55,6 +55,7 @@ function exportToMatpower(model) {
         let shunts = eqs.filter(el => model.schema.isA("ShuntCompensator", el) === true);
         let gens = eqs.filter(el => model.schema.isA("SynchronousMachine", el) === true);
         let motors = eqs.filter(el => model.schema.isA("AsynchronousMachine", el) === true);
+        let windings = model.getTargets(terms, "Terminal.TransformerEnd");
         let pd = 0.0;
         let qd = 0.0;
         let vm = 1.0;
@@ -105,7 +106,11 @@ function exportToMatpower(model) {
         if (slack.length > 0) {
             type = 3;
         }
-        
+        // If the node is connected to the primary winding of a two-winding
+        // transformer then we must calculate the voltage angle displacement.
+        if (windings.length > 0) {
+            //console.log(windings);
+        }
         mpcFile = mpcFile + busNum + "\t";   // bus_i
         mpcFile = mpcFile + type + "\t";     // type
         mpcFile = mpcFile + pd + "\t";       // Pd
@@ -113,7 +118,7 @@ function exportToMatpower(model) {
         mpcFile = mpcFile + gs + "\t";       // Gs
         mpcFile = mpcFile + bs + "\t";       // Bs
         mpcFile = mpcFile + 1 + "\t";        // area
-        mpcFile = mpcFile + vm + "\t";        // Vm 
+        mpcFile = mpcFile + vm + "\t";       // Vm 
         mpcFile = mpcFile + 0 + "\t";        // Va
         mpcFile = mpcFile + baseV + "\t";    // baseKV
         mpcFile = mpcFile + 1 + "\t";        // zone

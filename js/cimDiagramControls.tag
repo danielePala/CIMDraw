@@ -1482,9 +1482,7 @@
      deleteObject(elm) {
          let selection = self.deleteSelection(elm);
          // delete from model
-         for (let datum of selection.data()) {
-             opts.model.deleteObject(datum);
-         }
+         opts.model.deleteObjects(selection.data());
      }
 
      deleteFromDiagram(elm) {
