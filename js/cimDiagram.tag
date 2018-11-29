@@ -1093,7 +1093,6 @@
                     .attr("stroke-width", 2);
          aclineEnter.append("text")
                     .attr("class", "cim-object-text")
-                    .style("text-anchor", "middle")
                     .attr("font-size", 8);
          updateText(aclineUpdate.select("text"));
          updateText(aclineEnter.select("text"));
@@ -1110,13 +1109,11 @@
 
          function updateText(selection) {
              selection.attr("x", function(d) {
-                 let lineData = d.lineData;
-                 let end = lineData[lineData.length-1];
-                 return (lineData[0].x + end.x)/2;
+                 let path = d3.select(this.parentNode).select("path").node();
+                 return path.getPointAtLength(path.getTotalLength()/2).x + 2;
              }).attr("y", function(d) {
-                 let lineData = d.lineData;
-                 let end = lineData[lineData.length-1];
-                 return (lineData[0].y + end.y)/2;
+                 let path = d3.select(this.parentNode).select("path").node();
+                 return path.getPointAtLength(path.getTotalLength()/2).y - 2;
              }).text(function(d) {
                  let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
                  if (typeof(name) !== "undefined") {
