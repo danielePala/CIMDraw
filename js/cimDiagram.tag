@@ -1846,20 +1846,17 @@
                  return (busbarSection !== null);
              }).append("text")
              .attr("class", "cim-object-text")
-             .style("text-anchor", "end")
              .attr("font-size", 8);
          updateText(cnEnter.select("text"));
          updateText(cnUpdate.select("text"));
 
          function updateText(selection) {
              selection.attr("x", function(d) {
-                 let lineData = d3.select(this.parentNode).datum().lineData;
-                 let end = lineData[lineData.length-1];
-                 return ((lineData[0].x + end.x)/2) - 10;
+                 let path = d3.select(this.parentNode).select("path").node();
+                 return path.getPointAtLength(path.getTotalLength()/2).x + 2;
              }).attr("y", function(d) {
-                 let lineData = d3.select(this.parentNode).datum().lineData;
-                 let end = lineData[lineData.length-1];
-                 return ((lineData[0].y + end.y)/2) + 15;
+                 let path = d3.select(this.parentNode).select("path").node();
+                 return path.getPointAtLength(path.getTotalLength()/2).y - 2;
              }).text(function(d) {
                  // let's try to get a busbar section
                  let busbarSection = self.model.getBusbar(d);
