@@ -28,6 +28,7 @@
          min-width: 500px;
          overflow: scroll;
          resize: horizontal;
+         padding-top: 10px;
      }
 
      .cim-tree-attribute-name {
@@ -82,9 +83,12 @@
                     <input type="checkbox" autocomplete="off" id="showAllObjects"> Show all objects
                 </label>
                 <label class="btn btn-primary">
+                    <input type="checkbox" autocomplete="off" id="shortcircuitInput">Short circuit attributes
+                </label>
+                <label class="btn btn-primary">
                     <input type="checkbox" autocomplete="off" id="sshInput">Power flow input
                 </label>
-            </div>
+             </div>
 
             <form class="form-inline" id="cim-search-form">
                 <div class="form-group">
@@ -153,7 +157,7 @@
                      let children = $(this).children("li.CIM-subobject")
                      let count = toShow.length - subObjects.length + children.length;
                      toShow.parent().show();
-                     $(this).parent().find(">h4>span").html(count);
+                     $(this).parent().parent().find(">h4>span").html(count);
                  });
              } else {
                  $("ul").each(function() {
@@ -164,7 +168,7 @@
                      let count = toShow.length - subObjects.length + children.length;
                      toShow.parent().show();
                      toHide.parent().hide();
-                     $(this).parent().find(">h4>span").html(count);
+                     $(this).parent().parent().find(">h4>span").html(count);
                  });
              }
          });
