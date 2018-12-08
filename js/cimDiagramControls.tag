@@ -1020,7 +1020,8 @@
          }
          self.disableAll();
          d3.select(self.root).selectAll("label").classed("active", false);
-         $("input").prop('checked', false);
+         // contexted jquesry selector
+         $("input", this.root).prop('checked', false);
          $("#addElement").text(text);
          self.status = "ADD" + type;
          d3.select("svg").on("click.add", clicked);
@@ -1056,7 +1057,8 @@
              text = d3.select("#" + type).text();
          }
          d3.select(self.root).selectAll("label").classed("active", false);
-         $("input").prop('checked', false);
+         // contexted jquesry selector
+         $("input", this.root).prop('checked', false);
          $("#addElement").text(text);
          self.status = "ADDMulti" + type;
          d3.select("svg").on("click.add", clicked);

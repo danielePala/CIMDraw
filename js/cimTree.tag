@@ -26,9 +26,13 @@
          flex-flow: column;
          max-height: 800px;
          min-width: 500px;
-         overflow: scroll;
          resize: horizontal;
          padding-top: 10px;
+         overflow: auto;
+     }
+
+     .tab-content {
+         overflow: scroll;
      }
 
      .cim-tree-attribute-name {
@@ -81,9 +85,6 @@
             <div class="btn-group-toggle" data-toggle="buttons" id="tree-controls">
                 <label class="btn btn-primary">
                     <input type="checkbox" autocomplete="off" id="showAllObjects"> Show all objects
-                </label>
-                <label class="btn btn-primary">
-                    <input type="checkbox" autocomplete="off" id="shortcircuitInput">Short circuit attributes
                 </label>
                 <label class="btn btn-primary">
                     <input type="checkbox" autocomplete="off" id="sshInput">Power flow input
@@ -1009,14 +1010,17 @@
                         if (stereotype !== null) {
                             ret = ret + " " + stereotype;
                         }
-                        if (stereotype === "Operation" && self.model.getMode() === "BUS_BRANCH") {
-                            ret = ret + " hidden";
-                        }
                     }
                     return ret;
                 })
                 .style("display", function(d) {
                     if (visible === true) {
+                        if (profile === "EQ") {
+                            let stereotype = self.model.schema.getSchemaStereotype(d);
+                            if (stereotype === "Operation" && self.model.getMode() === "BUS_BRANCH") {
+                                return "none";
+                            }
+                        }
                         return null;
                     } else {
                         return "none";
