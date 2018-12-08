@@ -1306,6 +1306,7 @@
                        .attr("class","btn btn-outline-secondary")
                        .attr("type", "submit")
                        .on("click", function (d) {
+                           //d3.select(".tree").selectAll("a.btn").attr("class", "btn btn-outline-dark btn-sm");
                            $(this).parent().attr("id", "cimTarget");
                        })
                        .html("change");
@@ -1410,9 +1411,9 @@
          $(targetUUID).parents(".collapse:not(.show)").collapse("show");
 
          function scrollToVisible(targetUUID) {
-             $(".tree").scrollTop(
-                 $(".tree").scrollTop() + (
-                     $(".tree").find(targetUUID).parent().offset().top - $(".tree").offset().top
+             $(".tab-content").scrollTop(
+                 $(".tab-content").scrollTop() + (
+                     $(".tab-content").find(targetUUID).parent().offset().top - $(".tab-content").offset().top
                  )
              );
          };
