@@ -49,7 +49,6 @@
                                 <a class="dropdown-item" id="Breaker" onclick={enableAdd}>Breaker</a>
                                 <a class="dropdown-item" id="Disconnector" onclick={enableAdd}>Disconnector</a>
                                 <a class="dropdown-item" id="LoadBreakSwitch" onclick={enableAdd}>Load Break Switch</a>
-                                <a class="dropdown-item" id="Jumper" onclick={enableAdd}>Jumper</a>
                                 <!-- junctions are still not implemented properly for now
                                      <!--<li class="dropdown-header">Connectors</li>-->
                                 <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->

@@ -234,9 +234,6 @@
              case "cim:LoadBreakSwitch":
                  self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", [object]);
                  break;
-             case "cim:Jumper":
-                 self.elements(cimNetwork, "Jumper", "Jumpers", [object]);
-                 break;
              case "cim:Junction":
                  self.elements(cimNetwork, "Junction", "Junctions", [object]);
                  break;
@@ -514,7 +511,6 @@
              "cim:Breaker",
              "cim:Disconnector",
              "cim:LoadBreakSwitch",
-             "cim:Jumper",
              "cim:Junction",
              "cim:EnergySource",
              "cim:EquivalentInjection",
@@ -591,7 +587,6 @@
          self.elements(cimNetwork, "Breaker", "Breakers", eqs["cim:Breaker"]);
          self.elements(cimNetwork, "Disconnector", "Disconnectors", eqs["cim:Disconnector"]);
          self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", eqs["cim:LoadBreakSwitch"]);
-         self.elements(cimNetwork, "Jumper", "Jumpers", eqs["cim:Jumper"]);
          self.elements(cimNetwork, "Junction", "Junctions", eqs["cim:Junction"]);
          // Generic and external injections
          let allEquivalents = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", allInjections);

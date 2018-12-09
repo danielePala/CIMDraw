@@ -283,9 +283,6 @@
              case "cim:LoadBreakSwitch":
                  selection = self.drawLoadBreakSwitches([object]);
                  break;
-             case "cim:Jumper":
-                 selection = self.drawJumpers([object]);
-                 break;
              case "cim:Junction":
                  selection = self.drawJunctions([object]);
                  break;
@@ -624,7 +621,6 @@
               "cim:Breaker",
               "cim:Disconnector",
               "cim:LoadBreakSwitch",
-              "cim:Jumper",
               "cim:Junction",
               "cim:EnergySource",
               "cim:SynchronousMachine",
@@ -641,7 +637,6 @@
          let allBreakers = allEquipments["cim:Breaker"];
          let allDisconnectors = allEquipments["cim:Disconnector"]; 
          let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
-         let allJumpers = allEquipments["cim:Jumper"]; 
          let allJunctions = allEquipments["cim:Junction"];
          let allEnergySources = allEquipments["cim:EnergySource"];
          let allSynchronousMachines = allEquipments["cim:SynchronousMachine"];
@@ -668,9 +663,6 @@
          // load break switches
          let lbsEnter = self.drawLoadBreakSwitches(allLoadBreakSwitches);
          yield "DIAGRAM: drawn load break switches";
-         // jumpers
-         let jumpsEnter = self.drawJumpers(allJumpers);
-         yield "DIAGRAM: drawn jumpers";
          // junctions
          let junctsEnter = self.drawJunctions(allJunctions);
          yield "DIAGRAM: drawn junctions";
@@ -725,10 +717,6 @@
          self.createTerminals(lbsEnter);
          self.createStatusInfo(lbsEnter);
          yield "DIAGRAM: drawn load break switch terminals";
-         // jumper terminals
-         self.createTerminals(jumpsEnter);
-         self.createStatusInfo(jumpsEnter);
-         yield "DIAGRAM: drawn jumper terminals";
          // junction terminals
          self.createTerminals(junctsEnter);
          self.createStatusInfo(junctsEnter);
@@ -1141,11 +1129,6 @@
          return self.drawSwitches(allLoadBreakSwitches, "LoadBreakSwitch", "black");
      }
 
-     // Draw all jumpers
-     drawJumpers(allJumpers) {
-         return self.drawSwitches(allJumpers, "Jumper", "steelblue");
-     }
-
      // Draw all junctions
      drawJunctions(allJunctions) {
          return self.drawSwitches(allJunctions, "Junction", "red");
@@ -1483,7 +1466,6 @@
              case "cim:Breaker":
              case "cim:Disconnector":
              case "cim:LoadBreakSwitch":
-             case "cim:Jumper":
                  term1_cy = ((SWITCH_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
                  term2_cy = (SWITCH_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
                  break;
@@ -2067,7 +2049,6 @@
                               case "cim:Breaker":
                               case "cim:Disconnector":
                               case "cim:LoadBreakSwitch":
-                              case "cim:Jumper":
                               case "cim:Junction":
                                   rotationOrigin = {x:0, y:0};
                                   break;

@@ -1131,7 +1131,6 @@ function cimModel() {
                 type === "cim:Breaker" ||
                 type === "cim:Disconnector" ||
                 type === "cim:LoadBreakSwitch" ||
-                type === "cim:Jumper" ||
                 type === "cim:Junction" ||
                 type === "cim:PowerTransformer") {
                 term2 = createTerminal(newElement);
