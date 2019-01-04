@@ -453,6 +453,42 @@ function cimSchema() {
                 } 
             }
             return ret;
+        },
+
+        // Get the domain of a given link.
+        getLinkDomain(link) {
+            if (typeof(link) === "undefined") {
+                return null;
+            }
+            if (link === null) {
+                return null;
+            }
+            let domainNode = [].filter.call(link.children, function(el) {
+                    return el.nodeName === "rdfs:domain";
+            })[0];
+            if (typeof(domainNode) === "undefined") {
+                return null;
+            }
+            let domain = domainNode.attributes.getNamedItem("rdf:resource").value;
+            return domain.substring(1);
+        },
+
+        // Get the range of a given link.
+        getLinkRange(link) {
+            if (typeof(link) === "undefined") {
+                return null;
+            }
+            if (link === null) {
+                return null;
+            }
+            let rangeNode = [].filter.call(link.children, function(el) {
+                    return el.nodeName === "rdfs:range";
+            })[0];
+            if (typeof(rangeNode) === "undefined") {
+                return null;
+            }
+            let range = rangeNode.attributes.getNamedItem("rdf:resource").value;
+            return range.substring(1);
         }
     };
 

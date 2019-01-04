@@ -56,6 +56,16 @@
          list-style-type: none;
      }
 
+     #tree-link-dialog {
+         max-width: 18rem;
+         align-self: center;
+         min-width: 90%;
+     }
+
+     #tree-link-dialog > .card-body {
+         text-align: center;
+     }
+     
      #tree-controls {
          padding-bottom: 10px;
          align-self: center;
@@ -82,6 +92,13 @@
 
     <div class="app-tree" id="app-tree">
         <div class="tree">
+            <div class="card bg-light mb-3 d-none" id="tree-link-dialog">
+                <div class="card-body">
+                    <h5 class="card-title">Choose the target element</h5>
+                    <p class="card-text">Click on the selection box to select it.</p>
+                    <button type="button" class="btn btn-outline-danger" id="tree-link-dialog-cancel">Cancel</button>
+                </div>
+            </div>
             <div class="btn-group-toggle" data-toggle="buttons" id="tree-controls">
                 <label class="btn btn-primary">
                     <input type="checkbox" autocomplete="off" id="showAllObjects"> Show all objects
@@ -173,7 +190,6 @@
                  });
              }
          });
-
          $("#showAllObjects").change(function() {
              self.createTree(this.checked);
          });
@@ -899,41 +915,16 @@
                  return "#" + d.attributes.getNamedItem("rdf:ID").value;
              })
              .on("click", function (d) {
-                 // check if we are changing some link
-                 let linkToChange = d3.select("#cimTarget");
-                 if (linkToChange.empty() === false) {
-                     let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0];
-                     let targetUUID = target.attributes.getNamedItem("rdf:ID").value;
-                     let targetLink = linkToChange.data()[0];
-                     let targetLinkName = "cim:" + targetLink.attributes[0].value.substring(1);
-                     cimModel.setLink(target, targetLinkName, d);
-                     let hashComponents = window.location.hash.substring(1).split("/");
-                     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-                     let shouldReplace = false;
-                     if (hashComponents.length > 3) {
-                         if (targetUUID === hashComponents[3]) {
-                             shouldReplace = true;
-                         }
-                     }
-                     route(basePath, null, shouldReplace);
-                     route(basePath + "/" + targetUUID, null, true);
-                     // we need to disable the collapse logic
-                     $(this).parent().find("ul").on("show.bs.collapse hide.bs.collapse", function(e) {
-                         e.preventDefault();
-                         $(this).parent().find("ul").off("show.bs.collapse hide.bs.collapse");
-                     });
-                 } else {
-                     // if necessary, generate attributes and links
-                     let elementEnter = d3.select(this.parentNode).select("ul");
-                     if (elementEnter.selectAll("li.attribute").size() === 0) {
-                         self.generateAttrsAndLinks(elementEnter);
-                     }
-                     // change address to 'this object'
-                     let hashComponents = window.location.hash.substring(1).split("/");
-                     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-                     if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
-                         route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
-                     }
+                 // if necessary, generate attributes and links
+                 let elementEnter = d3.select(this.parentNode).select("ul");
+                 if (elementEnter.selectAll("li.attribute").size() === 0) {
+                     self.generateAttrsAndLinks(elementEnter);
+                 }
+                 // change address to 'this object'
+                 let hashComponents = window.location.hash.substring(1).split("/");
+                 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+                 if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
+                     route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
                  }
              })
              .html(function (d) {
@@ -1301,8 +1292,31 @@
                        .attr("class","btn btn-outline-secondary")
                        .attr("type", "submit")
                        .on("click", function (d) {
-                           //d3.select(".tree").selectAll("a.btn").attr("class", "btn btn-outline-dark btn-sm");
-                           $(this).parent().attr("id", "cimTarget");
+                           // handle the modification of links
+                           let linkToChange = d3.select(this.parentNode);
+                           let range = self.model.schema.getLinkRange(d);
+                           let treeItems = d3.select(".tree").selectAll(".tab-pane > .list-group > .list-group-item > div > ul");
+                           // we divide the tree items into two partitions: the
+                           // possible targets of the link and the non-targets.
+                           // TODO: check if there is a more efficient calculation
+                           // for the two partitions.
+                           let targets = treeItems.filter(function(d) {
+                               let ret = false;
+                               let cimObj = d3.select(this).select(".CIM-object");
+                               if (cimObj.size() > 0) {
+                                   ret = self.model.schema.isA(range, cimObj.datum()) === true; 
+                               }
+                               return ret;
+                           });
+                           let nonTargets = treeItems.filter(function(d) {
+                               let ret = true;
+                               let cimObj = d3.select(this).select(".CIM-object");
+                               if (cimObj.size() > 0) {
+                                   ret = self.model.schema.isA(range, cimObj.datum()) === false; 
+                               }
+                               return ret; 
+                           });                           
+                           self.enterSetLinkMode(linkToChange, targets, nonTargets);
                        })
                        .html("change");
          elementLinkBtn.append("button")
@@ -1322,6 +1336,87 @@
                            }
                            return "remove";
                        });
+     }
+
+     setLink(linkToChange, source) {
+         let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0];
+         let targetUUID = target.attributes.getNamedItem("rdf:ID").value;
+         if (source !== null) {
+             let targetLink = linkToChange.data()[0];
+             let targetLinkName = "cim:" + targetLink.attributes[0].value.substring(1);
+             self.model.setLink(target, targetLinkName, source);
+         }
+         let hashComponents = window.location.hash.substring(1).split("/");
+         let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+         let shouldReplace = false;
+         if (hashComponents.length > 3) {
+             if (targetUUID === hashComponents[3]) {
+                 shouldReplace = true;
+             }
+         }
+         route(basePath, null, shouldReplace);
+         route(basePath + "/" + targetUUID, null, true);
+     }
+
+     enterSetLinkMode(linkToChange, targets, nonTargets) {
+         $("#tree-link-dialog").removeClass("d-none");
+         $("#tree-controls").addClass("d-none");
+         targets.each(function(d) {
+             let cimObjs = d3.select(this).selectAll(".CIM-object");
+             cimObjs.select("a").attr("class", "btn btn-outline-dark btn-sm");
+             let checkBtn = cimObjs
+                 .insert("button", ":first-child")
+                 .attr("class", "btn btn-outline-dark btn-sm cim-check-btn")
+                 .attr("type", "submit").on("click", function() {
+                     d3.select(this.firstChild).attr("class", "far fa-check-square");
+                     let source = d3.select(this).datum();
+                     self.setLink(linkToChange, source);
+                     self.exitSetLinkMode();
+                 });
+             checkBtn.append("span")
+                     .attr("class", "far fa-square");
+         });
+         
+         $(nonTargets.nodes()).parent().parent().addClass("d-none").removeClass("d-flex");
+         $(".tab-content > .tab-pane > ul", self.root).each(function() {
+             if($(this).children("li.d-flex").length === 0) {
+                 let tabToHide = $(this).parent().attr("id") + "Tab";
+                 $("#" + tabToHide).addClass("d-none");
+             } else {
+                 let tabToShow = $(this).parent().attr("id") + "Tab";
+                 $("#" + tabToShow).tab("show");
+             }
+         });
+         // handle escape key
+         d3.select("body").on("keyup.tree", function() {
+             if (d3.event.keyCode === 27) { // "Escape"
+                 self.exitSetLinkMode();
+                 self.setLink(linkToChange, null);
+             }
+         });
+         // setup link dialog button
+         d3.select("#tree-link-dialog-cancel").on("click", function() {
+             self.exitSetLinkMode();
+             self.setLink(linkToChange, null);
+         });
+     }
+
+     exitSetLinkMode() {
+         $("#tree-link-dialog").addClass("d-none");
+         $("#tree-controls").removeClass("d-none");
+         let treeItems = d3.select(".tree").selectAll(".tab-pane > .list-group > .list-group-item > div > ul");
+         treeItems.each(function(d) {
+             let cimObjs = d3.select(this).selectAll(".CIM-object");
+             cimObjs.selectAll("button.cim-check-btn").remove();
+             cimObjs.select("a").attr("class", "btn btn-primary btn-sm");
+         });
+         $(treeItems.nodes()).parent().parent().addClass("d-flex").removeClass("d-none");
+         $(".tab-content > .tab-pane > ul", self.root).each(function() {
+             let tabToShow = $(this).parent().attr("id") + "Tab";                                               
+             $("#" + tabToShow).removeClass("d-none");
+         });
+         d3.select("body").on("keyup.tree", null);
+         d3.select("#tree-link-dialog-cancel").on("click", null);
      }
 
      moveTo(uuid) {
