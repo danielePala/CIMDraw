@@ -60,6 +60,7 @@
          max-width: 18rem;
          align-self: center;
          min-width: 90%;
+         min-height: min-content;
      }
 
      #tree-link-dialog > .card-body {
