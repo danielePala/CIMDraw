@@ -60,7 +60,7 @@ element and selecting the "Show element info" option.
 
 ![measurement](doc/05_measurement.png)
 
-You can save the modified file ('Save as...') and also save the current diagram only ('Export current diagram'). Experimantal support for exporting to Matpower and for loading boundary sets is also available.
+You can save the modified file ('Save as...') and also save the current diagram only ('Export current diagram'). Experimental support for exporting to Matpower and for loading boundary sets is also available.
 
 ![save menu](doc/06_save.png)
 
