@@ -42,14 +42,14 @@ will be loaded. Alternatively, you can create a new diagram.
 ![diagram selection](doc/02_select_diagram.png)
 
 Once loaded, you will get a tree view of all the objects in the diagram and a single line diagram.
-You can move and zoom on the diagram by holding down the CTRL key. If you click on an element in the tree, the diagram will focus on that element. If you CTRL+click an element in the diagram, you will see it also in the tree. The attributes in the tree can be edited.
+You can move and zoom on the diagram by holding down the CTRL key or by selecting the 'pan' button. If you click on an element in the tree, the diagram will focus on that element. If you CTRL+click an element in the diagram, you will see it also in the tree. The attributes in the tree can be edited.
 Also, the links between objects can be changed, just click the 'change' button and then click on the target element.
 
 ![diagram view](doc/03_loaded_diagram.png)
 
 By default the tree only shows the elements of the current diagram: you can check the 'Show all objects' flag in order to see all the elements in the file. You can drag and drop from the tree to the diagram in order to add elements to the diagram; if you drag+drop an element which is already in the diagram, the diagram will focus on that element.
 
-By default, the 'select' control is selected for the diagram, which allows you to drag elements. The 'force (auto-layout)' control moves elements around according to a force-based algorithm. The 'edit connections' control allows you to change connections between elements: first click on a terminal and then click on another terminal (or on a busbar).
+By default, the 'select' control is selected for the diagram, which allows you to drag elements. The 'pan' control can be used to navigate the diagram. The 'edit connections' control allows you to change connections between elements: first click on a terminal and then click on another terminal (or on a busbar).
 
 ![edit connections between elements](doc/04_edit_connections.png)
 
@@ -60,13 +60,13 @@ element and selecting the "Show element info" option.
 
 ![measurement](doc/05_measurement.png)
 
-Finally, you can save the modified file ('Save as...') and also save the current diagram only ('Export current diagram').
+You can save the modified file ('Save as...') and also save the current diagram only ('Export current diagram'). Experimantal support for exporting to Matpower and for loading boundary sets is also available.
 
 ![save menu](doc/06_save.png)
 
 ### Data model ###
 
-The attributes shown in the tree are taken from the schema file located inside the 'rdf-schema' folder, and it is the [ENTSO-E CGMES](https://www.entsoe.eu/major-projects/common-information-model-cim/cim-for-grid-models-exchange/standards/Pages/default.aspx) equipment schema with the addition of the 'Jumper' object.
+The attributes shown in the tree are taken from the schema file located inside the 'rdf-schema' folder, and it is the [ENTSO-E CGMES](https://www.entsoe.eu/major-projects/common-information-model-cim/cim-for-grid-models-exchange/standards/Pages/default.aspx) equipment schema.
 
 ### Known bugs/limitations ###
 
@@ -75,8 +75,8 @@ implemented in the future, probably by using IndexedDB.
 - Not all of the CGMES elements are supported, only the most needed ones.
 You are welcome to contribute by supporting more elements, or by adding
 issues for discussing the addition of elements.
-- Only node-breaker network representations are supported. Contributions are welcome for adding bus-branch support.
-- CGMES files containing multiple EQ or DL files are not supported right now.
+- Only node-breaker network representations are fully supported. Contributions are welcome for improving bus-branch support.
+- CGMES files containing multiple EQ or DL files are only experimentally supported right now.
 
 ### License ###
 
