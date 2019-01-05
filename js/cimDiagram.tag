@@ -879,15 +879,14 @@
              if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0 || limitSets.length > 0) {
                  let tooltip = self.createTooltip(measurements, svPFs, svVs, limitSets);
                  // create the actual popover
-                 $(this).popover({title: "<b>Element Status Info</b>",
+                 $(this).popover("dispose").popover({title: "<b>Element Status Info</b>",
                                   content: tooltip,
                                   container: "body",
                                   html: true,
                                   trigger: "manual",
                                   delay: {"show": 200, "hide": 0},
                                   placement: "auto"
-                 });//.data('bs.popover').tip().find('.popover-content').empty().append(tooltip);
-                 //$(this).data('bs.popover').options.content = tooltip;
+                 });
              } else {
                  // no measurements, destroy popover
                  d3.select(this).attr("data-toggle", null);
