@@ -152,6 +152,7 @@
      
      this.model = opts.model;   
      let self = this;
+     let mode = "default";
      let menu = d3.contextMenu([
          {
              title: 'Delete',
@@ -986,33 +987,7 @@
                 })
                 .enter()
                 .append("li")
-                .attr("class", function(d) {
-                    let ret = "attribute " + profile;
-                    let about = d.attributes.getNamedItem("rdf:about").value;
-                    if (about.startsWith("#") === false) {
-                        ret = ret + " entsoe";
-                    }
-                    if (profile === "EQ") {
-                        let stereotype = self.model.schema.getSchemaStereotype(d);
-                        if (stereotype !== null) {
-                            ret = ret + " " + stereotype;
-                        }
-                    }
-                    return ret;
-                })
-                .style("display", function(d) {
-                    if (visible === true) {
-                        if (profile === "EQ") {
-                            let stereotype = self.model.schema.getSchemaStereotype(d);
-                            if (stereotype === "Operation" && self.model.getMode() === "BUS_BRANCH") {
-                                return "none";
-                            }
-                        }
-                        return null;
-                    } else {
-                        return "none";
-                    }
-                })
+                .attr("class", getClasses(visible, profile))
                 .attr("title", function(d) {
                     let about = d.attributes.getNamedItem("rdf:about").value;
                     let fullName = about.split(".")[1];
@@ -1042,21 +1017,17 @@
                                        "#Discrete.ValueAliasSet",
                                        "#OperationalLimitSet.Terminal",
                                        "#OperationalLimitSet.Equipment",
-                                       "#OperationalLimit.OperationalLimitSet"];
+                                       "#OperationalLimit.OperationalLimitSet",
+                                       "#SubGeographicalRegion.Region",
+                                       "#VoltageLevel.Substation",
+                                       "#Bay.VoltageLevel"];
                     return self.model.schema.getSchemaLinks(d.localName, profile)
                                .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
                                .filter(el => hiddenLinks.indexOf(el.attributes[0].value) < 0)
                 })
                 .enter()
                 .append("li")
-                .attr("class", "link " + profile)
-                .style("display", function(d) {
-                    if (visible === true) {
-                        return null;
-                    } else {
-                        return "none";
-                    }
-                })
+                .attr("class", getClasses(visible, profile))
                 .attr("title", function(d) {
                     let about = d.attributes.getNamedItem("rdf:about").value;
                     let fullName = about.split(".")[1];
@@ -1067,8 +1038,44 @@
                         return fullName + " - " + comment[0].textContent;
                     }
                     return fullName;
-                }).append("div").attr("class", "input-group");
+                })
+                .append("div").attr("class", "input-group");
              return elementLink;
+         };
+
+         function getClasses(visible, profile) {
+             return function(d) {
+                 // Every attribute has class "attribute" and either "EQ"
+                 // or "SSH" depending on its profile.
+                 let ret = "attribute " + profile;
+                 // ENTSO-E attributes have class "entsoe".
+                 let about = d.attributes.getNamedItem("rdf:about").value;
+                 if (about.startsWith("#") === false) {
+                     ret = ret + " entsoe";
+                 }
+                 // If profile is "EQ" we add also the stereotype, in order to
+                 // distinguish between core, operation, short circuit.
+                 let stereotype = null;
+                 if (profile === "EQ") {
+                     stereotype = self.model.schema.getSchemaStereotype(d);
+                     if (stereotype !== null) {
+                         ret = ret + " " + stereotype;
+                     }
+                 }
+                 // In some cases we don't want to show the attribute.
+                 // In case of "setLinks" mode, we need to track it with
+                 // a dedicated class, in order to know when to show it
+                 // again.
+                 if ((stereotype === "Operation" && self.model.getMode() === "BUS_BRANCH") ||
+                     (visible === false)) {
+                     ret = ret + " d-none";
+                 } else {
+                     if (mode === "setLinks") {
+                         ret = ret + " d-none set-links";
+                     }
+                 }
+                 return ret;
+             };
          };
      }
 
@@ -1359,7 +1366,9 @@
          route(basePath + "/" + targetUUID, null, true);
      }
 
+     // Enter mode for editing links.
      enterSetLinkMode(linkToChange, targets, nonTargets) {
+         mode = "setLinks";
          $("#tree-link-dialog").removeClass("d-none");
          $("#tree-controls").addClass("d-none");
          targets.each(function(d) {
@@ -1376,6 +1385,7 @@
                  });
              checkBtn.append("span")
                      .attr("class", "far fa-square");
+             cimObjs.selectAll("ul > li.attribute, ul > li.link").classed("d-none set-links", true);
          });
          
          $(nonTargets.nodes()).parent().parent().addClass("d-none").removeClass("d-flex");
@@ -1402,7 +1412,9 @@
          });
      }
 
+     // Exit mode for editing links.
      exitSetLinkMode() {
+         mode = "default";
          $("#tree-link-dialog").addClass("d-none");
          $("#tree-controls").removeClass("d-none");
          let treeItems = d3.select(".tree").selectAll(".tab-pane > .list-group > .list-group-item > div > ul");
@@ -1410,6 +1422,7 @@
              let cimObjs = d3.select(this).selectAll(".CIM-object");
              cimObjs.selectAll("button.cim-check-btn").remove();
              cimObjs.select("a").attr("class", "btn btn-primary btn-sm");
+             cimObjs.selectAll("ul > li.set-links").classed("d-none", false);
          });
          $(treeItems.nodes()).parent().parent().addClass("d-flex").removeClass("d-none");
          $(".tab-content > .tab-pane > ul", self.root).each(function() {
