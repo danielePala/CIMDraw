@@ -1394,42 +1394,51 @@
              return winds.length === 3;
          });
 
-         twoWind.append("circle")
+         twoWind.append("g")
+                .attr("class", "TransformerEnd")
+                .append("circle")
                 .attr("r", TRAFO_RADIUS)
                 .attr("cx", 0) 
                 .attr("cy", wind1y)
                 .attr("fill", "none")
                 .attr("stroke", "black")
                 .attr("stroke-width", 4);
-         twoWind.append("circle")
+         twoWind.append("g")
+                .attr("class", "TransformerEnd")
+                .append("circle")
                 .attr("r", TRAFO_RADIUS)
                 .attr("cx", 0)
                 .attr("cy", wind2y)
                 .attr("fill", "none")
                 .attr("stroke", "black")
                 .attr("stroke-width", 4);
-         threeWind.append("circle")
-                .attr("r", TRAFO_RADIUS)
-                .attr("cx", 0) 
-                .attr("cy", wind1y)
-                .attr("fill", "none")
-                .attr("stroke", "black")
-                .attr("stroke-width", 4);
-         threeWind.append("circle")
-                .attr("r", TRAFO_RADIUS)
-                .attr("cx", (TRAFO_RADIUS/2) * (-1)) 
-                .attr("cy", wind2y)
-                .attr("fill", "none")
-                .attr("stroke", "black")
-                .attr("stroke-width", 4);
-         threeWind.append("circle")
-                .attr("r", TRAFO_RADIUS)
-                .attr("cx", (TRAFO_RADIUS/2))
-                .attr("cy", wind2y)
-                .attr("fill", "none")
-                .attr("stroke", "black")
-                .attr("stroke-width", 4);
-
+         threeWind.append("g")
+                  .attr("class", "TransformerEnd")
+                  .append("circle")
+                  .attr("r", TRAFO_RADIUS)
+                  .attr("cx", 0) 
+                  .attr("cy", wind1y)
+                  .attr("fill", "none")
+                  .attr("stroke", "black")
+                  .attr("stroke-width", 4);
+         threeWind.append("g")
+                  .attr("class", "TransformerEnd")
+                  .append("circle")
+                  .attr("r", TRAFO_RADIUS)
+                  .attr("cx", (TRAFO_RADIUS/2) * (-1)) 
+                  .attr("cy", wind2y)
+                  .attr("fill", "none")
+                  .attr("stroke", "black")
+                  .attr("stroke-width", 4);
+         threeWind.append("g")
+                  .attr("class", "TransformerEnd")
+                  .append("circle")
+                  .attr("r", TRAFO_RADIUS)
+                  .attr("cx", (TRAFO_RADIUS/2))
+                  .attr("cy", wind2y)
+                  .attr("fill", "none")
+                  .attr("stroke", "black")
+                  .attr("stroke-width", 4);
          
          trafoEnter.append("text")
                    .attr("class", "cim-object-text")
@@ -1446,6 +1455,29 @@
                    });
          
          return trafoEnter;
+     }
+
+     handlePowerTransformerEnds(termNode) {
+         let term = d3.select(termNode).datum();
+         let eq = d3.select(termNode.parentNode).datum();
+         let minDist2 = null;
+         let circleSel = null;
+         let trafoEnd = self.model.getTargets([term], "Terminal.TransformerEnd");
+         let termX = term.x - eq.x;
+         let termY = term.y - eq.y;
+         let circles = d3.select(termNode.parentNode).selectAll(":scope > g.TransformerEnd").each(function() {
+             let cx = parseInt(d3.select(this).select(":scope > circle").attr("cx"));
+             let cy = parseInt(d3.select(this).select(":scope > circle").attr("cy"));
+             let dist2 = ((cx-termX)**2) + ((cy-termY)**2);
+             if (minDist2 === null || minDist2 > dist2) {
+                 minDist2 = dist2;
+                 circleSel = d3.select(this);
+             }
+         });
+         circleSel.data(trafoEnd);
+         circleSel.attr("id", function() {
+             return "cimdiagram-" + trafoEnd[0].attributes.getNamedItem("rdf:ID").value;
+         });
      }
 
      // Adds terminals to the objects contained in the selection.
@@ -1492,7 +1524,7 @@
          }
          let allEdges = [];
          let updateTermSelection = eqSelection
-             .selectAll("g")
+             .selectAll("g.Terminal")
              .data(function(d) {
                  return self.model.getTerminals([d]);
              });
@@ -1569,6 +1601,10 @@
                  if (typeof(cn) !== "undefined" && typeof(cn.lineData) !== "undefined") {
                      let newEdge = {source: cn, target: d};
                      allEdges.push(newEdge);
+                 }
+                 // Now that terminal are allocated, we can handle power transformer ends
+                 if (objType === "cim:PowerTransformer") {
+                     self.handlePowerTransformerEnds(this);
                  }
              })
              .attr("id", function(d) {
@@ -1897,6 +1933,12 @@
                      hoverD = self.model.getNode(hoverD);
                  }
              }
+         }
+         // handle power transformer ends
+         if (hoverD.nodeName === "cim:PowerTransformerEnd") {
+             hoverD = self.model.getTargets(
+                 [hoverD],
+                 "PowerTransformerEnd.PowerTransformer")[0];
          }
          
          if (typeof(hoverD.x) === "undefined" || typeof(hoverD.y) === "undefined") {
