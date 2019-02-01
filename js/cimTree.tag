@@ -946,9 +946,9 @@
              })
              .attr("class", "collapse");
          // update element count
-         let elementCount = parseInt(elementsTopContainer.select("h4 > span").html());
+         let elementCount = parseInt(elementsTopContainer.select(":scope > h4 > span").html());
          elementCount = elementCount + elementEnter.size();
-         elementsTopContainer.select("h4 > span").html(elementCount);
+         elementsTopContainer.select(":scope > h4 > span").html(elementCount);
          // update also the top containers (if any)
          let tcNode = elementsTopContainer.node(); 
          $(tcNode).parents("li.cim-parent-container")
