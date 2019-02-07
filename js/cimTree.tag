@@ -89,6 +89,19 @@
      .tree > .nav-tabs {
          flex-shrink: 0;
      }
+
+     .cim-expand-object {
+         border: transparent;
+     }
+
+     .cim-expand-object:focus {
+         box-shadow: initial;
+     }
+
+     .cim-expand-object:hover {
+         color: #6c757d;
+         background-color: transparent;
+     }
     </style>
 
     <div class="app-tree" id="app-tree">
@@ -218,7 +231,7 @@
              self.moveTo(element);
          } else {
              // reset any element highlight
-             d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
+             d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
          }
      });
 
@@ -810,7 +823,7 @@
              elementsTopContainer.on("click", function() {
                  if (d3.event.target === this) {
                      // reset any element highlight
-                     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
+                     d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
                  }
              });
          } 
@@ -884,7 +897,7 @@
              elementsTopContainer.on("click", function() {
                  if (d3.event.target === this) {
                      // reset any element highlight
-                     d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
+                     d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
                  }
              });
              elements = elementsTopContainer
@@ -904,24 +917,31 @@
                 .attr("class", name + " CIM-object").on("click", function() {
                     if (d3.event.target === this) {
                         // reset any element highlight
-                        d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
+                        d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
                     }
                 });
          let cimModel = this.model;
+         // Add two buttons: one for expanding attributes and links,
+         // the other for navigation
          elementTopContainer
              .append("a")
-             .attr("class", "btn btn-primary btn-sm")
+             .attr("class", "btn btn-outline-secondary btn-sm cim-expand-object")
              .attr("role", "button")
              .attr("data-toggle", "collapse")
              .attr("href", function(d) {
                  return "#" + d.attributes.getNamedItem("rdf:ID").value;
-             })
-             .on("click", function (d) {
+             }).on("click", function (d) {
                  // if necessary, generate attributes and links
                  let elementEnter = d3.select(this.parentNode).select("ul");
                  if (elementEnter.selectAll("li.attribute").size() === 0) {
                      self.generateAttrsAndLinks(elementEnter);
                  }
+             })
+             .html("<span class=\"fas fa-plus\" aria-hidden=\"true\"></span>");
+         elementTopContainer
+             .append("button")
+             .attr("class", "btn btn-primary btn-sm cim-object-btn")
+             .on("click", function (d) {
                  // change address to 'this object'
                  let hashComponents = window.location.hash.substring(1).split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
@@ -1456,7 +1476,7 @@
              return;
          }
          target = targetChild.parentNode;
-         d3.select(".tree").selectAll(".btn-danger").attr("class", "btn btn-primary btn-sm");
+         d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
          // show the relevant tab
          let tabId = $(target).parents("div.tab-pane").first().attr("id") + "Tab";
          if ($("#" + tabId).hasClass("active")) {
@@ -1468,7 +1488,7 @@
              });
          }
          $("#" + tabId).tab("show");
-         d3.select(target).select("a").attr("class", "btn btn-danger btn-sm");
+         d3.select(target).select("button.cim-object-btn").classed("btn-danger", true).classed("btn-primary", false);
      }
      
      deleteObject(objectUUID) {
