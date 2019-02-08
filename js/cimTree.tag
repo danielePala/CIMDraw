@@ -213,11 +213,7 @@
          });
          // setup tabs: reset path upon clicking on another tab
          $("a[data-toggle=\"tab\"]").on("click", function (e) {
-             let hashComponents = window.location.hash.substring(1).split("/");
-             if (hashComponents.length > 3) {
-                 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-                 route(basePath);
-             }
+             self.goToBasePath();
          });
      });
 
@@ -239,6 +235,14 @@
      self.model.on("addToActiveDiagram", function(object) {
          self.addNewObject(object);
      });
+
+     goToBasePath() {
+       let hashComponents = window.location.hash.substring(1).split("/");
+         if (hashComponents.length > 3) {
+             let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
+             route(basePath);
+         }
+     }
      
      addNewObject(object) {
          let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
@@ -822,8 +826,7 @@
                 .attr("class", "collapse");
              elementsTopContainer.on("click", function() {
                  if (d3.event.target === this) {
-                     // reset any element highlight
-                     d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
+                     self.goToBasePath();
                  }
              });
          } 
@@ -896,8 +899,7 @@
                                  .html(0);
              elementsTopContainer.on("click", function() {
                  if (d3.event.target === this) {
-                     // reset any element highlight
-                     d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
+                     self.goToBasePath();
                  }
              });
              elements = elementsTopContainer
@@ -916,8 +918,7 @@
                 .append("li")
                 .attr("class", name + " CIM-object").on("click", function() {
                     if (d3.event.target === this) {
-                        // reset any element highlight
-                        d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
+                        self.goToBasePath();
                     }
                 });
          let cimModel = this.model;
