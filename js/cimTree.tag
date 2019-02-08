@@ -1546,15 +1546,15 @@
 
      resetAttrs() {
          if ($("#sshInput").prop('checked') === true) {
-             d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").style("display", "none");
-             d3.select("#app-tree").selectAll("li.link:not(.SSH)").style("display", "none");
-             d3.select("#app-tree").selectAll("li.attribute.SSH").style("display", null);
-             d3.select("#app-tree").selectAll("li.link.SSH").style("display", null);
+             d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").classed("d-none", true);
+             d3.select("#app-tree").selectAll("li.link:not(.SSH)").classed("d-none", true);
+             d3.select("#app-tree").selectAll("li.attribute.SSH").classed("d-none", false);
+             d3.select("#app-tree").selectAll("li.link.SSH").classed("d-none", false);
          } else {
-             d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").style("display", null);
-             d3.select("#app-tree").selectAll("li.link:not(.SSH)").style("display", null);
-             d3.select("#app-tree").selectAll("li.attribute.SSH").style("display", "none");
-             d3.select("#app-tree").selectAll("li.link.SSH").style("display", "none");
+             d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").classed("d-none", false);
+             d3.select("#app-tree").selectAll("li.link:not(.SSH)").classed("d-none", false)
+             d3.select("#app-tree").selectAll("li.attribute.SSH").classed("d-none", true);
+             d3.select("#app-tree").selectAll("li.link.SSH").classed("d-none", true);
          }
      }
     </script> 
