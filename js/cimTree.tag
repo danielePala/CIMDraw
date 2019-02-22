@@ -184,25 +184,29 @@
          $("#cimTreeSearchBtn").on("click", function() {
              searchKey = document.getElementById("cim-search-key").value;
              if (searchKey === "") {
-                 $("ul").each(function() {
-                     let toShow = $(this).find("li.CIM-object>a");
-                     let subObjects = $(this).find("li.CIM-subobject>a");
+                 $("ul:not(.CIM-object-list)", self.root).each(function() {
+                     let toShow = $(this).find("li.CIM-object>button.cim-object-btn");
+                     let subObjects = $(this).find("li.CIM-subobject>button.cim-object-btn");
                      let children = $(this).children("li.CIM-subobject")
                      let count = toShow.length - subObjects.length + children.length;
                      toShow.parent().show();
                      $(this).parent().parent().find(">h4>span").html(count);
                  });
              } else {
-                 $("ul").each(function() {
-                     let toShow = $(this).find("li.CIM-object>a:contains(" + searchKey + ")");
-                     let subObjects = $(this).find("li.CIM-subobject>a:contains(" + searchKey + ")");
-                     let children = $(this).children("li.CIM-subobject").children("a:contains(" + searchKey + ")");
-                     let toHide = $(this).find("li.CIM-object>a:not(:contains(" + searchKey + "))");
+                 let total = [];
+                 $("ul:not(.CIM-object-list)", self.root).each(function() {
+                     let toShow = $(this).find("li.CIM-object>button.cim-object-btn:contains(" + searchKey + ")");
+                     let subObjects = $(this).find("li.CIM-subobject>button.cim-object-btn:contains(" + searchKey + ")");
+                     let children = $(this).children("li.CIM-subobject").children("button.cim-object-btn:contains(" + searchKey + ")");
+                     let toHide = $(this).find("li.CIM-object>button.cim-object-btn:not(:contains(" + searchKey + "))");
                      let count = toShow.length - subObjects.length + children.length;
                      toShow.parent().show();
                      toHide.parent().hide();
                      $(this).parent().parent().find(">h4>span").html(count);
+                     total = total.concat(toShow.get());
                  });
+                 total = [...new Set(total)];
+                 console.log(d3.selectAll(total).data());
              }
          });
          $("#showAllObjects").change(function() {
@@ -965,7 +969,7 @@
              .attr("id", function(d) {
                  return d.attributes.getNamedItem("rdf:ID").value;
              })
-             .attr("class", "collapse");
+             .attr("class", "collapse CIM-object-list");
          // update element count
          let elementCount = parseInt(elementsTopContainer.select(":scope > h4 > span").html());
          elementCount = elementCount + elementEnter.size();

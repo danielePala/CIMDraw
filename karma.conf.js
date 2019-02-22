@@ -26,7 +26,7 @@ module.exports = function(config) {
         singleRun: true,
         reporters: ['progress', 'coverage'],
         preprocessors: {
-            'js/*.tag': ['riot', 'coverage'],
+            'js/*.tag': ['riot'], //'coverage'],
             'js/*.js': ['coverage']
         },
         proxies: {

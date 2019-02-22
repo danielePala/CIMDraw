@@ -818,19 +818,11 @@
              return self.model.schema.isA("Switch", d);
          }).selectAll("path");
          path.attr("fill", function(d) {
-             let value = "0"; // default is OPEN
              // check the status of this switch
              let measurement = self.model.getTargets(
                  [d],
                  "PowerSystemResource.Measurements")[0];
-             if (typeof(measurement) !== "undefined") {
-                 let valueObject = self.model.getTargets(
-                     [measurement],
-                     "Discrete.DiscreteValues")[0];
-                 if (typeof(valueObject) !== "undefined") {
-                     value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
-                 }
-             }
+             let value = self.getDiscreteValue(measurement);
              if (value === "0") {
                  return "white";
              } else {
@@ -895,6 +887,24 @@
          })
      }
 
+     // Get the discrete value associated to a measurement, if available.
+     // Defaults to OPEN.
+     getDiscreteValue(measurement) {
+         let value = "0"; // default is OPEN
+         if (typeof(measurement) !== "undefined") {
+             let valueObject = self.model.getTargets(
+                 [measurement],
+                 "Discrete.DiscreteValues")[0];
+             if (typeof(valueObject) !== "undefined") {
+                 let valueAttribute = self.model.getAttribute(valueObject, "cim:DiscreteValue.value"); 
+                 if(typeof(valueAttribute) !== "undefined") {
+                     value = valueAttribute.textContent;
+                 }
+             }
+         }
+         return value;
+     }
+
      // create the actual tooltip content for element status info
      createTooltip(measurements, svPFs, svVs, limitSets) {
          let tooltip = "";
@@ -936,15 +946,8 @@
                          value = parseFloat(value).toFixed(2);
                      }
                  } else {
-                     valueObject = self.model.getTargets(
-                         [measurement],
-                         "Discrete.DiscreteValues")[0];
-                     if (typeof(valueObject) !== "undefined") {
-                         if(typeof(self.model.getAttribute(valueObject, "cim:DiscreteValue.value")) !== "undefined") {
-                             value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
-                             value = parseInt(value);
-                         }
-                     }
+                     value = self.getDiscreteValue(measurement);
+                     value = parseInt(value);
                  }
                  let measUUID = measurement.attributes.getNamedItem("rdf:ID").value;
                  let hashComponents = window.location.hash.split("/");
@@ -1153,19 +1156,11 @@
                                  {x:xStart, y:yEnd, seq:4}]);               
                 })
                 .attr("fill", function(d) {
-                    let value = "0"; // default is OPEN
                     // check the status of this switch
                     let measurement = self.model.getTargets(
                         [d],
                         "PowerSystemResource.Measurements")[0];
-                    if (typeof(measurement) !== "undefined") {
-                        let valueObject = self.model.getTargets(
-                            [measurement],
-                            "Discrete.DiscreteValues")[0];
-                        if (typeof(valueObject) !== "undefined") {
-                            value = self.model.getAttribute(valueObject, "cim:DiscreteValue.value").textContent;
-                        }
-                    }
+                    let value = self.getDiscreteValue(measurement);
                     if (value === "0") {
                         return "white";
                     } else {
