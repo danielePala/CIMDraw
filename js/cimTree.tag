@@ -75,7 +75,8 @@
 
      #cim-search-form {
          align-self: center;
-         flex-shrink: 0;
+         max-width: 400px;
+         padding-bottom: 20px;
      }
 
      .list-group-item > div {
@@ -122,12 +123,20 @@
                 </label>
              </div>
 
-            <form class="form-inline" id="cim-search-form">
-                <div class="form-group">
-                    <input type="search" class="form-control" id="cim-search-key" placeholder="Search..."></input>
-                </div>
-                <button type="submit" class="btn btn-default" id="cimTreeSearchBtn">Search</button>
-            </form>
+             <div class="input-group" id="cim-search-form">
+                 <input type="text" class="form-control" placeholder="Search..." aria-label="Search" aria-describedby="button-addon4" id="cim-search-key">
+                 <div class="input-group-append" id="button-addon4">
+                     <button class="btn btn-outline-secondary" id="cim-search-prev" type="button">
+                         <span class="fas fa-angle-up"></span>
+                     </button>
+                     <button class="btn btn-outline-secondary" id="cim-search-next" type="button">
+                         <span class="fas fa-angle-down"></span>
+                     </button>
+                 </div>
+                 <div class="input-group-append d-none" id="cim-search-results">
+                     <span class="input-group-text" id="basic-addon2"></span>
+                 </div>
+             </div>
             <!-- Nav tabs -->
             <ul class="nav nav-tabs" role="tablist">
                 <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#components" id="componentsTab">Components</a></li>
@@ -174,39 +183,56 @@
              }
          }
      ]);
-     let searchKey = "";
+     let searchResults = null;
      
      self.on("mount", function() {
          $("form").submit(function(event) {
              event.preventDefault();
          });
-         // setup search button
-         $("#cimTreeSearchBtn").on("click", function() {
-             searchKey = document.getElementById("cim-search-key").value;
-             if (searchKey === "") {
-                 $("ul:not(.CIM-object-list)", self.root).each(function() {
-                     let toShow = $(this).find("li.CIM-object>button.cim-object-btn");
-                     let subObjects = $(this).find("li.CIM-subobject>button.cim-object-btn");
-                     let children = $(this).children("li.CIM-subobject")
-                     let count = toShow.length - subObjects.length + children.length;
-                     toShow.parent().show();
-                     $(this).parent().parent().find(">h4>span").html(count);
-                 });
-             } else {
-                 let total = [];
-                 $("ul:not(.CIM-object-list)", self.root).each(function() {
-                     let toShow = $(this).find("li.CIM-object>button.cim-object-btn:contains(" + searchKey + ")");
-                     let subObjects = $(this).find("li.CIM-subobject>button.cim-object-btn:contains(" + searchKey + ")");
-                     let children = $(this).children("li.CIM-subobject").children("button.cim-object-btn:contains(" + searchKey + ")");
-                     let toHide = $(this).find("li.CIM-object>button.cim-object-btn:not(:contains(" + searchKey + "))");
-                     let count = toShow.length - subObjects.length + children.length;
-                     toShow.parent().show();
-                     toHide.parent().hide();
-                     $(this).parent().parent().find(">h4>span").html(count);
-                     total = total.concat(toShow.get());
-                 });
-                 total = [...new Set(total)];
-                 console.log(d3.selectAll(total).data());
+         // setup search input field
+         $("#cim-search-key").on("keyup", function(event) {
+             if (event.key === "Enter") {
+                 let searchKey = document.getElementById("cim-search-key").value;
+                 if (searchKey === "") {
+                     $("#cim-search-results", self.root).addClass("d-none");
+                     self.searchResults = null;
+                 } else {
+                     let total = [];
+                     $("ul:not(.CIM-object-list)", self.root).each(function() {
+                         let matches = $(this).find("li.CIM-object>button.cim-object-btn:contains(" + searchKey + ")");
+                         total = total.concat(matches.get());
+                     });
+                     total = [...new Set(total)];
+                     $("#cim-search-results", self.root).removeClass("d-none");
+                     if (total.length > 0) {
+                         $("#cim-search-results > span", self.root).html("Result 1 of " + total.length);
+                         self.searchResults = {elements: d3.selectAll(total).data(), actualResult: 0};
+                         self.moveTo(self.searchResults.elements[self.searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+                     } else {
+                         $("#cim-search-results > span", self.root).html("Text not found");
+                     }
+                 }
+             }
+         });
+         // setup search buttons
+         $("#cim-search-next").on("click", function() {
+             if (self.searchResults !== null) {
+                 if (self.searchResults.actualResult < (self.searchResults.elements.length - 1)) {
+                     self.searchResults.actualResult = self.searchResults.actualResult + 1;
+                     let result = self.searchResults.actualResult + 1;
+                     $("#cim-search-results > span", self.root).html("Result " + result  + " of " + self.searchResults.elements.length);
+                     self.moveTo(self.searchResults.elements[self.searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+                 } 
+             }
+         });
+         $("#cim-search-prev").on("click", function() {
+             if (self.searchResults !== null) {
+                 if (self.searchResults.actualResult > 0) {
+                     self.searchResults.actualResult = self.searchResults.actualResult - 1;
+                     let result = self.searchResults.actualResult + 1;
+                     $("#cim-search-results > span", self.root).html("Result " + result  + " of " + self.searchResults.elements.length);
+                     self.moveTo(self.searchResults.elements[self.searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+                 } 
              }
          });
          $("#showAllObjects").change(function() {
