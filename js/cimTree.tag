@@ -75,7 +75,7 @@
 
      #cim-search-form {
          align-self: center;
-         max-width: 400px;
+         max-width: 600px;
          padding-bottom: 20px;
      }
 
@@ -126,12 +126,15 @@
              <div class="input-group" id="cim-search-form">
                  <input type="text" class="form-control" placeholder="Search..." aria-label="Search" aria-describedby="button-addon4" id="cim-search-key">
                  <div class="input-group-append" id="button-addon4">
-                     <button class="btn btn-outline-secondary" id="cim-search-prev" type="button">
+                     <button class="btn btn-outline-secondary" id="cim-search-prev" type="button" title="Find previous">
                          <span class="fas fa-angle-up"></span>
                      </button>
-                     <button class="btn btn-outline-secondary" id="cim-search-next" type="button">
+                     <button class="btn btn-outline-secondary" id="cim-search-next" type="button" title="Find next">
                          <span class="fas fa-angle-down"></span>
                      </button>
+                 </div>
+                 <div class="input-group-append">
+                     <button class="btn btn-outline-secondary" type="button" id="cim-search-case" data-toggle="button" aria-pressed="false" autocomplete="off">Match case</button>
                  </div>
                  <div class="input-group-append d-none" id="cim-search-results">
                      <span class="input-group-text" id="basic-addon2"></span>
@@ -192,22 +195,33 @@
          // setup search input field
          $("#cim-search-key").on("keyup", function(event) {
              if (event.key === "Enter") {
+                 // check if we are case-sensitive
+                 let caseSensitive = $("#cim-search-case").hasClass("active");
                  let searchKey = document.getElementById("cim-search-key").value;
                  if (searchKey === "") {
                      $("#cim-search-results", self.root).addClass("d-none");
-                     self.searchResults = null;
+                     searchResults = null;
                  } else {
                      let total = [];
                      $("ul:not(.CIM-object-list)", self.root).each(function() {
-                         let matches = $(this).find("li.CIM-object>button.cim-object-btn:contains(" + searchKey + ")");
+                         let matches = null;
+                         if (caseSensitive === true) {
+                             matches = $(this).find("li.CIM-object>button.cim-object-btn:contains(" + searchKey + ")");
+                         } else {
+                             matches = $(this).find("li.CIM-object>button.cim-object-btn").filter(function(i, el) {
+                                 let searchString = searchKey.toLocaleLowerCase();
+                                 let target = $(this).html().toLocaleLowerCase();
+                                 return (target.indexOf(searchString) >= 0);
+                             });
+                         }
                          total = total.concat(matches.get());
                      });
                      total = [...new Set(total)];
                      $("#cim-search-results", self.root).removeClass("d-none");
                      if (total.length > 0) {
                          $("#cim-search-results > span", self.root).html("Result 1 of " + total.length);
-                         self.searchResults = {elements: d3.selectAll(total).data(), actualResult: 0};
-                         self.moveTo(self.searchResults.elements[self.searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+                         searchResults = {elements: d3.selectAll(total).data(), actualResult: 0};
+                         self.moveTo(searchResults.elements[searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
                      } else {
                          $("#cim-search-results > span", self.root).html("Text not found");
                      }
@@ -216,22 +230,22 @@
          });
          // setup search buttons
          $("#cim-search-next").on("click", function() {
-             if (self.searchResults !== null) {
-                 if (self.searchResults.actualResult < (self.searchResults.elements.length - 1)) {
-                     self.searchResults.actualResult = self.searchResults.actualResult + 1;
-                     let result = self.searchResults.actualResult + 1;
-                     $("#cim-search-results > span", self.root).html("Result " + result  + " of " + self.searchResults.elements.length);
-                     self.moveTo(self.searchResults.elements[self.searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+             if (searchResults !== null) {
+                 if (searchResults.actualResult < (searchResults.elements.length - 1)) {
+                     searchResults.actualResult = searchResults.actualResult + 1;
+                     let result = searchResults.actualResult + 1;
+                     $("#cim-search-results > span", self.root).html("Result " + result  + " of " + searchResults.elements.length);
+                     self.moveTo(searchResults.elements[searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
                  } 
              }
          });
          $("#cim-search-prev").on("click", function() {
-             if (self.searchResults !== null) {
-                 if (self.searchResults.actualResult > 0) {
-                     self.searchResults.actualResult = self.searchResults.actualResult - 1;
-                     let result = self.searchResults.actualResult + 1;
-                     $("#cim-search-results > span", self.root).html("Result " + result  + " of " + self.searchResults.elements.length);
-                     self.moveTo(self.searchResults.elements[self.searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+             if (searchResults !== null) {
+                 if (searchResults.actualResult > 0) {
+                     searchResults.actualResult = searchResults.actualResult - 1;
+                     let result = searchResults.actualResult + 1;
+                     $("#cim-search-results > span", self.root).html("Result " + result  + " of " + searchResults.elements.length);
+                     self.moveTo(searchResults.elements[searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
                  } 
              }
          });
