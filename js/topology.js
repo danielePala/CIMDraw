@@ -1,7 +1,7 @@
 /*
   Simple topology processor implementation.
 
-  Copyright 2017, 2018 Daniele Pala <pala.daniele@gmail.com>
+  Copyright 2017-2019 Daniele Pala <pala.daniele@gmail.com>
 
   This file is part of CIMDraw.
 
