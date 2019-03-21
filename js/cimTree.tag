@@ -446,8 +446,8 @@
              let target = d3.select("div.tree")
                             .selectAll("ul#" + object.attributes.getNamedItem("rdf:ID").value);
              if (target.empty() === false) {
-                 let a = d3.select(target.node().parentNode).select("a");
-                 a.html(value);
+                 let btn = d3.select(target.node().parentNode).select("button");
+                 btn.html(value);
              }
              $("[cim-target=\"" + object.attributes.getNamedItem("rdf:ID").value + "\"]").html(value);
          }
