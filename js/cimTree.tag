@@ -76,6 +76,8 @@
      #cim-search-form {
          align-self: center;
          max-width: 600px;
+         padding-right: 20px;
+         padding-left: 20px;
          padding-bottom: 20px;
      }
 
