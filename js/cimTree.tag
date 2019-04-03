@@ -921,7 +921,7 @@
 
      // delete menu for non graphic objects
      createDeleteMenu(selection) {
-         let btnSel = selection.selectAll(function() { return this.parentNode.childNodes; }).filter("a");
+         let btnSel = selection.selectAll(function() { return this.parentNode.childNodes; }).filter("button.cim-object-btn");
          btnSel.on("contextmenu", menu);
      }
 
@@ -1130,17 +1130,10 @@
                      }
                  }
                  // In some cases we don't want to show the attribute.
-                 // In case of "setLinks" mode, we need to track it with
-                 // a dedicated class, in order to know when to show it
-                 // again.
                  if ((stereotype === "Operation" && self.model.getMode() === "BUS_BRANCH") ||
                      (visible === false)) {
                      ret = ret + " d-none";
-                 } else {
-                     if (mode === "setLinks") {
-                         ret = ret + " d-none set-links";
-                     }
-                 }
+                 } 
                  return ret;
              };
          };
@@ -1440,7 +1433,7 @@
          $("#tree-controls").addClass("d-none");
          targets.each(function(d) {
              let cimObjs = d3.select(this).selectAll(".CIM-object");
-             cimObjs.select("a").attr("class", "btn btn-outline-dark btn-sm");
+             cimObjs.select("button.cim-object-btn").classed("btn-primary", false).classed("btn-outline-dark", true);
              let checkBtn = cimObjs
                  .insert("button", ":first-child")
                  .attr("class", "btn btn-outline-dark btn-sm cim-check-btn")
@@ -1452,7 +1445,7 @@
                  });
              checkBtn.append("span")
                      .attr("class", "far fa-square");
-             cimObjs.selectAll("ul > li.attribute, ul > li.link").classed("d-none set-links", true);
+             cimObjs.selectAll("a.cim-expand-object").classed("d-none", true);
          });
          
          $(nonTargets.nodes()).parent().parent().addClass("d-none").removeClass("d-flex");
@@ -1488,8 +1481,8 @@
          treeItems.each(function(d) {
              let cimObjs = d3.select(this).selectAll(".CIM-object");
              cimObjs.selectAll("button.cim-check-btn").remove();
-             cimObjs.select("a").attr("class", "btn btn-primary btn-sm");
-             cimObjs.selectAll("ul > li.set-links").classed("d-none", false);
+             cimObjs.select("button.cim-object-btn").classed("btn-primary", true).classed("btn-outline-dark", false);
+             cimObjs.selectAll("a.cim-expand-object").classed("d-none", false);
          });
          $(treeItems.nodes()).parent().parent().addClass("d-flex").removeClass("d-none");
          $(".tab-content > .tab-pane > ul", self.root).each(function() {
