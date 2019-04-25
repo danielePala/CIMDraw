@@ -425,6 +425,12 @@
              case "cim:OperationalLimitSet":
                  self.limitSets(cimLimits, [object]);
                  break;
+             case "cim:OperationalLimit":
+                 let opSet = self.model.getTargets([object], "OperationalLimit.OperationalLimitSet");
+                 let setUUID = opSet[0].attributes.getNamedItem("rdf:ID").value;
+                 let setG = cimLimits.selectAll("ul#" + setUUID);
+                 self.limits(setG, [object]);
+                 break;
              default:
          }       
      }
@@ -838,14 +844,23 @@
              let lims = self.model.getTargets(
                  [d],
                  "OperationalLimitSet.OperationalLimitValue");
-             let limEnter = self.elements(
+             self.limits(d3.select(this), lims);
+             self.subAddButton(
                  d3.select(this),
-                 d.attributes.getNamedItem("rdf:ID").value + "OperationalLimit",
-                 "Operational Limits",
-                 lims);
-             self.createDeleteMenu(limEnter);
+                 "OperationalLimit",
+                 "cim:OperationalLimit.OperationalLimitSet");
          });
          self.createDeleteMenu(limSetEnter);
+     }
+
+     limits(setG, lims) {
+         let opset = setG.data()[0];
+         let limEnter = self.elements(
+             setG,
+             opset.attributes.getNamedItem("rdf:ID").value + "OperationalLimit",
+             "Operational Limits",
+             lims);
+         self.createDeleteMenu(limEnter);
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
