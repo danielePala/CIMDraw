@@ -425,7 +425,10 @@
              case "cim:OperationalLimitSet":
                  self.limitSets(cimLimits, [object]);
                  break;
-             case "cim:OperationalLimit":
+             case "cim:VoltageLimit":
+             case "cim:CurrentLimit":
+             case "cim:ActivePowerLimit":
+             case "cim:ApparentPowerLimit":
                  let opSet = self.model.getTargets([object], "OperationalLimit.OperationalLimitSet");
                  let setUUID = opSet[0].attributes.getNamedItem("rdf:ID").value;
                  let setG = cimLimits.selectAll("ul#" + setUUID);
@@ -847,7 +850,19 @@
              self.limits(d3.select(this), lims);
              self.subAddButton(
                  d3.select(this),
-                 "OperationalLimit",
+                 "VoltageLimit",
+                 "cim:OperationalLimit.OperationalLimitSet");
+             self.subAddButton(
+                 d3.select(this),
+                 "CurrentLimit",
+                 "cim:OperationalLimit.OperationalLimitSet");
+             self.subAddButton(
+                 d3.select(this),
+                 "ActivePowerLimit",
+                 "cim:OperationalLimit.OperationalLimitSet");
+             self.subAddButton(
+                 d3.select(this),
+                 "ApparentPowerLimit",
                  "cim:OperationalLimit.OperationalLimitSet");
          });
          self.createDeleteMenu(limSetEnter);
@@ -855,12 +870,34 @@
 
      limits(setG, lims) {
          let opset = setG.data()[0];
-         let limEnter = self.elements(
+         let vLims = lims.filter(el => self.model.schema.isA("VoltageLimit", el));
+         let iLims = lims.filter(el => self.model.schema.isA("CurrentLimit", el));
+         let pLims = lims.filter(el => self.model.schema.isA("ActivePowerLimit", el));
+         let sLims = lims.filter(el => self.model.schema.isA("ApparentPowerLimit", el));
+         let vLimEnter = self.elements(
              setG,
-             opset.attributes.getNamedItem("rdf:ID").value + "OperationalLimit",
-             "Operational Limits",
-             lims);
-         self.createDeleteMenu(limEnter);
+             opset.attributes.getNamedItem("rdf:ID").value + "VoltageLimit",
+             "Voltage limits",
+             vLims);
+         let iLimEnter = self.elements(
+             setG,
+             opset.attributes.getNamedItem("rdf:ID").value + "CurrentLimit",
+             "Current limits",
+             iLims);
+         let pLimEnter = self.elements(
+             setG,
+             opset.attributes.getNamedItem("rdf:ID").value + "ActivePowerLimit",
+             "Active power limits",
+             pLims);
+         let sLimEnter = self.elements(
+             setG,
+             opset.attributes.getNamedItem("rdf:ID").value + "ApparentPowerLimit",
+             "Apparent power limits",
+             sLims);
+         self.createDeleteMenu(vLimEnter);
+         self.createDeleteMenu(iLimEnter);
+         self.createDeleteMenu(pLimEnter);
+         self.createDeleteMenu(sLimEnter);
      }
 
      createTopContainer(cimNetwork, name, printName, data) {
