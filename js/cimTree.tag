@@ -422,6 +422,9 @@
                  let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", [object]);
                  self.createDeleteMenu(rcEnter);
                  break;
+             case "cim:OperationalLimitType":
+                 let limTypesEnter = self.elements(cimLimits, "OperationalLimitType", "Operational Limit Types", [object]);
+                 self.createDeleteMenu(limTypesEnter);
              case "cim:OperationalLimitSet":
                  self.limitSets(cimLimits, [object]);
                  break;
@@ -652,7 +655,11 @@
              allLoadResponses = getObjects(["cim:LoadResponseCharacteristic"]);
              allLimitSets = getObjects(["cim:OperationalLimitSet"]);
          }
-         let noDiagObjs = self.model.getObjects(["cim:BaseVoltage", "cim:TapChangerControl", "cim:RegulatingControl"])
+         let noDiagObjs = self.model.getObjects(
+             ["cim:BaseVoltage",
+              "cim:TapChangerControl",
+              "cim:RegulatingControl",
+              "cim:OperationalLimitType"])
          let allBusbarSections = getConnectors(["cim:BusbarSection"])["cim:BusbarSection"];
          let allInjections = eqs["cim:EnergySource"].concat(eqs["cim:EquivalentInjection"]);
          let allRotatingMachines = eqs["cim:SynchronousMachine"].concat(eqs["cim:AsynchronousMachine"]);
@@ -720,6 +727,8 @@
          // ====================================================================
          // ======================= "Operational Limits" =======================
          // ====================================================================
+         let limTypesEnter = self.elements(cimLimits, "OperationalLimitType", "Operational Limit Types", noDiagObjs["cim:OperationalLimitType"]);
+         self.createDeleteMenu(limTypesEnter);
          self.limitSets(cimLimits, allLimitSets["cim:OperationalLimitSet"]);
          
          // add buttons
@@ -730,6 +739,7 @@
          self.createAddButton(cimContainers, "GeneratingUnit");
          self.createAddButton(cimContainers, "ThermalGeneratingUnit");
          self.createAddButton(cimCurvesAndRegs, "LoadResponseCharacteristic");
+         self.createAddButton(cimLimits, "OperationalLimitType");
      }
 
      geoRegions(tab, allGeoRegions) {
