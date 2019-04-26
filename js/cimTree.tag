@@ -701,7 +701,7 @@
          // Compensators
          let allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", allCompensators);
          self.elements(allComps, "LinearShuntCompensator", "Linear", eqs["cim:LinearShuntCompensator"]);
-         self.elements(allComps, "NonlinearShuntCompensator", "Nonlinear", eqs["cim:NonlinearShuntCompensator"]);
+         self.nlCompensators(allComps, eqs["cim:NonlinearShuntCompensator"]);
          // Busbars
          self.elements(cimNetwork, "BusbarSection", "Nodes", allBusbarSections);
          // Transformers
@@ -836,6 +836,22 @@
                  let tcs = self.model.getTargets([d], "TransformerEnd.RatioTapChanger");
                  self.tapChangers(d3.select(this), tcs);
              });
+         });
+     }
+
+     nlCompensators(tab, allNLCs) {
+         let nlcEnter = self.elements(tab, "NonlinearShuntCompensator", "Nonlinear", allNLCs);
+         nlcEnter.each(function(d, i) {
+             // nlc points
+             let nlcPoints = self.model.getTargets(
+                 [d],
+                 "NonlinearShuntCompensator.NonlinearShuntCompensatorPoints");
+             let nlcPointsEnter = self.elements(
+                 d3.select(this),
+                 d.attributes.getNamedItem("rdf:ID").value + "NonlinearShuntCompensatorPoint",
+                 "Points",
+                 nlcPoints);
+             $(nlcPointsEnter.nodes()).parent().addClass("CIM-subobject");
          });
      }
 
