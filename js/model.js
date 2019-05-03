@@ -1106,7 +1106,9 @@ function cimModel() {
         // created and connected to the busbar).
         createObject(type, options) {
             let newElement = cimObject(type, options);
-            model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
+            if (model.schema.isA("IdentifiedObject", newElement)) {
+                model.setAttribute(newElement, "cim:IdentifiedObject.name", "new1");
+            }
             if (model.schema.isA("ConductingEquipment", newElement) === false) {
                 // if not a conducting equipment, we are done
                 model.trigger("createObject", newElement);
