@@ -348,7 +348,7 @@
                  break;
              case "cim:NonlinearShuntCompensator":
                  allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", [object]);
-                 self.elements(allComps, "NonlinearShuntCompensator", "Nonlinear", [object]);
+                 self.nlCompensators(allComps, [object]);
                  break;
              case "cim:PowerTransformer":
                  self.powerTransformers(cimNetwork, [object]);
@@ -850,8 +850,13 @@
                  d3.select(this),
                  d.attributes.getNamedItem("rdf:ID").value + "NonlinearShuntCompensatorPoint",
                  "Points",
-                 nlcPoints);
+                 nlcPoints, true);
              $(nlcPointsEnter.nodes()).parent().addClass("CIM-subobject");
+             self.createDeleteMenu(nlcPointsEnter);
+             self.subAddButton(
+                 d3.select(this),
+                 "NonlinearShuntCompensatorPoint",
+                 "cim:NonlinearShuntCompensatorPoint.NonlinearShuntCompensator");
          });
      }
 
@@ -1003,7 +1008,7 @@
          btnSel.on("contextmenu", menu);
      }
 
-     elements(cimNetwork, name, printName, data) {
+     elements(cimNetwork, name, printName, data, isSubobject) {
          let elementsTopContainer = cimNetwork.select("li." + name + "s");
          let elements = elementsTopContainer.select("ul#" + name + "sList");
          if (elementsTopContainer.empty() === true) {
@@ -1095,14 +1100,16 @@
          elementCount = elementCount + elementEnter.size();
          elementsTopContainer.select(":scope > h4 > span").html(elementCount);
          // update also the top containers (if any)
-         let tcNode = elementsTopContainer.node(); 
-         $(tcNode).parents("li.cim-parent-container")
-                  .find(">h4>span")
-                  .each(function() {
-                      let elementCount = parseInt($(this).html());
-                      elementCount = elementCount + elementEnter.size();
-                      $(this).html(elementCount);
-                  });
+         if (typeof(isSubobject) === "undefined" || isSubobject === false) {
+             let tcNode = elementsTopContainer.node(); 
+             $(tcNode).parents("li.cim-parent-container")
+                      .find(">h4>span")
+                      .each(function() {
+                          let elementCount = parseInt($(this).html());
+                          elementCount = elementCount + elementEnter.size();
+                          $(this).html(elementCount);
+                      });
+         }
          return elementEnter;
      }
 
@@ -1153,19 +1160,21 @@
                 .selectAll("li.link." + profile)
                 .data(function(d) {
                     // links we don't want to show in the tree
-                    let hiddenLinks = ["#TransformerEnd.Terminal",
-                                       "#PowerTransformerEnd.PowerTransformer",
-                                       "#RatioTapChanger.TransformerEnd",
-                                       "#RegulatingControl.Terminal",
-                                       "#Measurement.Terminal",
-                                       "#Measurement.PowerSystemResource",
-                                       "#Discrete.ValueAliasSet",
-                                       "#OperationalLimitSet.Terminal",
-                                       "#OperationalLimitSet.Equipment",
-                                       "#OperationalLimit.OperationalLimitSet",
-                                       "#SubGeographicalRegion.Region",
-                                       "#VoltageLevel.Substation",
-                                       "#Bay.VoltageLevel"];
+                    let hiddenLinks = [
+                        "#NonlinearShuntCompensatorPoint.NonlinearShuntCompensator",
+                        "#TransformerEnd.Terminal",
+                        "#PowerTransformerEnd.PowerTransformer",
+                        "#RatioTapChanger.TransformerEnd",
+                        "#RegulatingControl.Terminal",
+                        "#Measurement.Terminal",
+                        "#Measurement.PowerSystemResource",
+                        "#Discrete.ValueAliasSet",
+                        "#OperationalLimitSet.Terminal",
+                        "#OperationalLimitSet.Equipment",
+                        "#OperationalLimit.OperationalLimitSet",
+                        "#SubGeographicalRegion.Region",
+                        "#VoltageLevel.Substation",
+                        "#Bay.VoltageLevel"];
                     return self.model.schema.getSchemaLinks(d.localName, profile)
                                .filter(el => self.model.getAttribute(el, "cims:AssociationUsed").textContent === "Yes")
                                .filter(el => hiddenLinks.indexOf(el.attributes[0].value) < 0)
