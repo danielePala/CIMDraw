@@ -350,6 +350,12 @@
                  allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", [object]);
                  self.nlCompensators(allComps, [object]);
                  break;
+             case "cim:NonlinearShuntCompensatorPoint":
+                 let nlc = self.model.getTargets([object], "NonlinearShuntCompensatorPoint.NonlinearShuntCompensator");
+                 let nlcUUID = nlc[0].attributes.getNamedItem("rdf:ID").value;
+                 let nlcG = cimNetwork.selectAll("ul#" + nlcUUID);
+                 self.nlCompensatorPoints(nlcG, [object]);
+                 break;
              case "cim:PowerTransformer":
                  self.powerTransformers(cimNetwork, [object]);
                  break;
@@ -846,18 +852,23 @@
              let nlcPoints = self.model.getTargets(
                  [d],
                  "NonlinearShuntCompensator.NonlinearShuntCompensatorPoints");
-             let nlcPointsEnter = self.elements(
-                 d3.select(this),
-                 d.attributes.getNamedItem("rdf:ID").value + "NonlinearShuntCompensatorPoint",
-                 "Points",
-                 nlcPoints, true);
-             $(nlcPointsEnter.nodes()).parent().addClass("CIM-subobject");
-             self.createDeleteMenu(nlcPointsEnter);
+             self.nlCompensatorPoints(d3.select(this), nlcPoints);
              self.subAddButton(
                  d3.select(this),
                  "NonlinearShuntCompensatorPoint",
                  "cim:NonlinearShuntCompensatorPoint.NonlinearShuntCompensator");
          });
+     }
+
+     nlCompensatorPoints(nlcG, nlcPoints) {
+         let nlc = nlcG.data()[0];
+         let nlcPointsEnter = self.elements(
+             nlcG,
+             nlc.attributes.getNamedItem("rdf:ID").value + "NonlinearShuntCompensatorPoint",
+             "Points",
+             nlcPoints, true);
+         $(nlcPointsEnter.nodes()).parent().addClass("CIM-subobject");
+         self.createDeleteMenu(nlcPointsEnter);
      }
 
      tapChangers(trafoG, tcs) {
