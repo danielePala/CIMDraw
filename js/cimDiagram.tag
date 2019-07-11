@@ -1389,24 +1389,37 @@
              return winds.length === 3;
          });
 
-         twoWind.append("g")
-                .attr("class", "TransformerEnd")
-                .append("circle")
-                .attr("r", TRAFO_RADIUS)
-                .attr("cx", 0) 
-                .attr("cy", wind1y)
-                .attr("fill", "none")
-                .attr("stroke", "black")
-                .attr("stroke-width", 4);
+         let firstEnd = twoWind
+             .append("g")
+             .attr("class", "TransformerEnd");
+         firstEnd
+             .append("circle")
+             .attr("r", TRAFO_RADIUS)
+             .attr("cx", 0)
+             .attr("cy", wind2y)
+             .attr("fill", "white")
+             .attr("stroke", "black")
+             .attr("stroke-width", 4);
+         firstEnd
+             .append("circle")
+             .attr("r", TRAFO_RADIUS)
+             .attr("cx", 0) 
+             .attr("cy", wind1y)
+             .attr("fill", "white")
+             .attr("stroke", "black")
+             .attr("stroke-width", 4)
+             .attr("class", "TransformerEndCircle");
          twoWind.append("g")
                 .attr("class", "TransformerEnd")
                 .append("circle")
                 .attr("r", TRAFO_RADIUS)
                 .attr("cx", 0)
                 .attr("cy", wind2y)
-                .attr("fill", "none")
+                .attr("fill", "white")
+                .attr("fill-opacity", "0")
                 .attr("stroke", "black")
-                .attr("stroke-width", 4);
+                .attr("stroke-width", 4)
+                .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
                   .append("circle")
@@ -1461,8 +1474,8 @@
          let termX = term.x - eq.x;
          let termY = term.y - eq.y;
          let circles = d3.select(termNode.parentNode).selectAll(":scope > g.TransformerEnd").each(function() {
-             let cx = parseInt(d3.select(this).select(":scope > circle").attr("cx"));
-             let cy = parseInt(d3.select(this).select(":scope > circle").attr("cy"));
+             let cx = parseInt(d3.select(this).select(":scope > circle.TransformerEndCircle").attr("cx"));
+             let cy = parseInt(d3.select(this).select(":scope > circle.TransformerEndCircle").attr("cy"));
              let dist2 = ((cx-termX)**2) + ((cy-termY)**2);
              if (minDist2 === null || minDist2 > dist2) {
                  minDist2 = dist2;

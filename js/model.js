@@ -371,13 +371,11 @@ function cimModel() {
         let document = data.all;
         let obj = document.createElementNS(cimNS, name);
         document.children[0].appendChild(obj);
-        let objID = document.createAttribute("rdf:ID");
         if (typeof(uuid) !== "undefined") {
-            objID.nodeValue = uuid;
+            obj.setAttributeNS(rdfNS, "rdf:ID", uuid);
         } else {
-            objID.nodeValue = generateUUID();
+            obj.setAttributeNS(rdfNS, "rdf:ID", generateUUID());
         }
-        obj.setAttributeNode(objID);
         dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
         return obj;
     };
@@ -401,12 +399,9 @@ function cimModel() {
             return;
         }
         let link = source.ownerDocument.createElementNS(cimNS, linkName);
-        let linkValue = source.ownerDocument.createAttribute("rdf:resource");
-        linkValue.nodeValue = "#";
-        link.setAttributeNode(linkValue);
         source.appendChild(link);
         // set the new value
-        link.attributes[0].value = "#" + target.attributes.getNamedItem("rdf:ID").value;
+        link.setAttributeNS(rdfNS, "rdf:resource", "#" + target.attributes.getNamedItem("rdf:ID").value);
         
         let key = link.localName + link.attributes[0].value;
         let val = linksMap.get(key);

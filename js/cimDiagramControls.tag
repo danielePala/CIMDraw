@@ -91,6 +91,9 @@
          {
              title: "Copy",
              action: function(d, i) {
+                 if (opts.model.schema.isA("PowerTransformerEnd", d) === true) {
+                     console.log(d, this);
+                 }
                  let elm = this;
                  if (selected.indexOf(elm) === -1) {
                      selected.push(elm);
@@ -271,6 +274,14 @@
      ];
      // context menu for terminals of transformers 
      let trafoTermsMenu = terminalsMenu.concat(
+         [{
+             title: "Add ratio tap changer",
+             action: function(d, i) {
+                 self.addTC(this, d, i);
+             }
+         }]);
+     // context menu for transformer ends 
+     let trafoEndsMenu = menu.concat(
          [{
              title: "Add ratio tap changer",
              action: function(d, i) {
@@ -1444,12 +1455,18 @@
          opts.model.addToActiveDiagram(newObject, []);
      }
 
+     // Associate a new tap changer to the object 'd', which can be either
+     // a terminal or a transformer end. If 'd' is already associated with a
+     // tap changer the function does nothing.
      addTC(elm, d, i) {
          // applies to only one element
          self.deselectAll();
-         let wind = opts.model.getTargets(
-             [d],
-             "Terminal.TransformerEnd")[0];
+         let wind = d;
+         if (opts.model.schema.isA("Terminal", d) === true) {
+             wind = opts.model.getTargets(
+                 [d],
+                 "Terminal.TransformerEnd")[0];             
+         }
          let tc = opts.model.getTargets([wind], "TransformerEnd.RatioTapChanger");
          if (tc.length === 0) {
              let newObject = opts.model.createObject("cim:RatioTapChanger");
@@ -1461,6 +1478,7 @@
      addContextMenu(selection) {
          selection.filter("g:not(.ACLineSegment)")
                   .filter("g:not(." + NODE_CLASS + ")")
+                  .filter("g:not(.PowerTransformer)")
                   .on("contextmenu", d3.contextMenu(menu));
          let multis = selection.filter("g.ACLineSegment,g." + NODE_CLASS);
          multis.selectAll("path").on("contextmenu", function(d, i, nodes) {
@@ -1476,6 +1494,12 @@
          let trafoTerms = selection.filter("g.PowerTransformer").selectAll("g.Terminal");
          trafoTerms.on("contextmenu", function(d, i, nodes) {
              d3.contextMenu(trafoTermsMenu).bind(this)(d, i, nodes);
+             d3.event.stopPropagation();
+         });
+         let trafoEnds = selection.filter("g.PowerTransformer").selectAll("g.TransformerEnd");
+         trafoEnds.on("contextmenu", function(d, i, nodes) {
+             console.log(d);
+             d3.contextMenu(trafoEndsMenu).bind(this)(d, i, nodes);
              d3.event.stopPropagation();
          });
      }
