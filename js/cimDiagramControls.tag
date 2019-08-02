@@ -154,6 +154,7 @@
              action: function(d, i) {
                  let elm = this;
                  if (selected.indexOf(elm) === -1) {
+                     self.deselectAll();
                      selected.push(elm);
                      self.updateSelected();
                  }
@@ -1330,8 +1331,9 @@
      }
 
      hover(hoverD) {
+         let node = d3.select(hoverD);
          // 'normal' elements
-         d3.select(hoverD)
+         node
            .filter("g:not(.ACLineSegment)")
            .filter("g:not(." + NODE_CLASS + ")")
            .filter("g:not(.Terminal)")
@@ -1348,7 +1350,7 @@
                  .attr("class", "selection-rect");             
            });
          // resizable elements (TODO: junction)
-         let res = d3.select(hoverD)
+         let res = node
                      .filter("g.ACLineSegment,g." + NODE_CLASS) 
                      .selectAll("g.resize")
                      .data(function(d) {
@@ -1366,7 +1368,7 @@
             .attr("width", 4)
             .attr("height", 4);
          // terminals
-         d3.select(hoverD)
+         node
            .filter("g.Terminal")
            .each(function (d) {
                let term = d3.select(this).select("circle");
