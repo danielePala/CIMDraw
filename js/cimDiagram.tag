@@ -1389,26 +1389,38 @@
              return winds.length === 3;
          });
 
-         twoWind
-             .append("circle")
-             .attr("r", TRAFO_RADIUS)
-             .attr("cx", 0)
-             .attr("cy", wind2y)
-             .attr("fill", "white")
-             .attr("stroke", "black")
-             .attr("stroke-width", 4);
-         let firstEnd = twoWind
-             .append("g")
-             .attr("class", "TransformerEnd");
-         firstEnd
-             .append("circle")
-             .attr("r", TRAFO_RADIUS)
-             .attr("cx", 0) 
-             .attr("cy", wind1y)
-             .attr("fill", "white")
-             .attr("stroke", "black")
-             .attr("stroke-width", 4)
-             .attr("class", "TransformerEndCircle");
+         twoWind.append("circle")
+                .attr("r", TRAFO_RADIUS)
+                .attr("cx", 0)
+                .attr("cy", wind2y)
+                .attr("fill", "white")
+                .attr("stroke", "black")
+                .attr("stroke-width", 4);
+         threeWind.append("circle")
+                  .attr("r", TRAFO_RADIUS)
+                  .attr("cx", (TRAFO_RADIUS/2) * (-1)) 
+                  .attr("cy", wind2y)
+                  .attr("fill", "white")
+                  .attr("stroke", "black")
+                  .attr("stroke-width", 4);
+         threeWind.append("circle")
+                  .attr("r", TRAFO_RADIUS)
+                  .attr("cx", (TRAFO_RADIUS/2))
+                  .attr("cy", wind2y)
+                  .attr("fill", "white")
+                  .attr("stroke", "black")
+                  .attr("stroke-width", 4);
+         
+         twoWind.append("g")
+                .attr("class", "TransformerEnd")
+                .append("circle")
+                .attr("r", TRAFO_RADIUS)
+                .attr("cx", 0) 
+                .attr("cy", wind1y)
+                .attr("fill", "white")
+                .attr("stroke", "black")
+                .attr("stroke-width", 4)
+                .attr("class", "TransformerEndCircle");
          twoWind.append("g")
                 .attr("class", "TransformerEnd")
                 .append("circle")
@@ -1426,27 +1438,32 @@
                   .attr("r", TRAFO_RADIUS)
                   .attr("cx", 0) 
                   .attr("cy", wind1y)
-                  .attr("fill", "none")
+                  .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4);
+                  .attr("stroke-width", 4)
+                  .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
                   .append("circle")
                   .attr("r", TRAFO_RADIUS)
                   .attr("cx", (TRAFO_RADIUS/2) * (-1)) 
                   .attr("cy", wind2y)
-                  .attr("fill", "none")
+                  .attr("fill", "white")
+                  .attr("fill-opacity", "0")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4);
+                  .attr("stroke-width", 4)
+                  .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
                   .append("circle")
                   .attr("r", TRAFO_RADIUS)
                   .attr("cx", (TRAFO_RADIUS/2))
                   .attr("cy", wind2y)
-                  .attr("fill", "none")
+                  .attr("fill", "white")
+                  .attr("fill-opacity", "0")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4);
+                  .attr("stroke-width", 4)
+                  .attr("class", "TransformerEndCircle");
          
          trafoEnter.append("text")
                    .attr("class", "cim-object-text")
