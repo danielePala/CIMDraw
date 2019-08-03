@@ -1389,10 +1389,7 @@
              return winds.length === 3;
          });
 
-         let firstEnd = twoWind
-             .append("g")
-             .attr("class", "TransformerEnd");
-         firstEnd
+         twoWind
              .append("circle")
              .attr("r", TRAFO_RADIUS)
              .attr("cx", 0)
@@ -1400,6 +1397,9 @@
              .attr("fill", "white")
              .attr("stroke", "black")
              .attr("stroke-width", 4);
+         let firstEnd = twoWind
+             .append("g")
+             .attr("class", "TransformerEnd");
          firstEnd
              .append("circle")
              .attr("r", TRAFO_RADIUS)

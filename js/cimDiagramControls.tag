@@ -153,6 +153,9 @@
              title: "Show element info",
              action: function(d, i) {
                  let elm = this;
+                 if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
+                     elm = elm.parentElement;
+                 }
                  if (selected.indexOf(elm) === -1) {
                      self.deselectAll();
                      selected.push(elm);
@@ -1418,24 +1421,32 @@
      addNewLimitSet(elm, d, i) {
          // applies to only one element
          self.deselectAll();
-         if (d.nodeName !== "cim:Terminal") { // TODO: select element associated with terminal
-             selected.push(elm);
+         let element = elm;
+         let datum = d;
+         // handle transformer ends
+         if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
+             element = elm.parentElement;
+             datum = d3.select(element).datum();
+         }
+         
+         if (datum.nodeName !== "cim:Terminal") { // TODO: select element associated with terminal
+             selected.push(element);
              self.updateSelected();
          }
          let newObject = opts.model.createObject("cim:OperationalLimitSet");
-         if (d.nodeName === "cim:Terminal") {
+         if (datum.nodeName === "cim:Terminal") {
              let psr = opts.model.getTargets(
-                 [d],
+                 [datum],
                  "Terminal.ConductingEquipment")[0];
-             opts.model.setLink(newObject, "cim:OperationalLimitSet.Terminal", d);
+             opts.model.setLink(newObject, "cim:OperationalLimitSet.Terminal", datum);
          } else {
-             if (d.nodeName === "cim:" + NODE_CLASS) {
-                 let busbar = opts.model.getBusbar(d);
+             if (datum.nodeName === "cim:" + NODE_CLASS) {
+                 let busbar = opts.model.getBusbar(datum);
                  if (busbar !== null) {
                      opts.model.setLink(newObject, "cim:OperationalLimitSet.Equipment", busbar);
                  }
              } else {
-                 opts.model.setLink(newObject, "cim:OperationalLimitSet.Equipment", d);
+                 opts.model.setLink(newObject, "cim:OperationalLimitSet.Equipment", datum);
              }
          }
          opts.model.addToActiveDiagram(newObject, []);
@@ -1500,7 +1511,6 @@
          });
          let trafoEnds = selection.filter("g.PowerTransformer").selectAll("g.TransformerEnd");
          trafoEnds.on("contextmenu", function(d, i, nodes) {
-             console.log(d);
              d3.contextMenu(trafoEndsMenu).bind(this)(d, i, nodes);
              d3.event.stopPropagation();
          });
