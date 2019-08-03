@@ -91,10 +91,10 @@
          {
              title: "Copy",
              action: function(d, i) {
-                 if (opts.model.schema.isA("PowerTransformerEnd", d) === true) {
-                     console.log(d, this);
-                 }
                  let elm = this;
+                 if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
+                     elm = elm.parentElement;
+                 }
                  if (selected.indexOf(elm) === -1) {
                      selected.push(elm);
                      self.updateSelected();
@@ -119,6 +119,9 @@
              title: "Rotate",
              action: function(d, i) {
                  let elm = this;
+                 if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
+                     elm = elm.parentElement;
+                 }
                  if (selected.indexOf(elm) === -1) {
                      self.deselectAll();
                      selected.push(elm);
@@ -140,13 +143,21 @@
          {
              title: "Delete",
              action: function(d, i) {
-                 self.deleteObject(this)
+                 let elm = this;
+                 if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
+                     elm = elm.parentElement;
+                 }
+                 self.deleteObject(elm)
              }
          },
          {
              title: "Delete from current diagram",
              action: function(d, i) {
-                 self.deleteFromDiagram(this);
+                 let elm = this;
+                 if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
+                     elm = elm.parentElement;
+                 }
+                 self.deleteFromDiagram(elm);
              }
          },
          {
