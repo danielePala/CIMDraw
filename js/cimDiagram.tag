@@ -761,22 +761,27 @@
          termSelection = self.createTerminals(nlshuntEnter);
          self.createStatusInfo(nlshuntEnter);
          yield "DIAGRAM: drawn nonlinear shunt compensator terminals";
-         
-         d3.select("svg").on("mouseover", function() {
-             self.model.on("dragend", dragend);
-         }).on("mouseout",function() {
-             self.model.off("dragend", dragend);
-         });
 
-         function dragend(d) {
-             let dobjs = self.model.getDiagramObjects([d]);
+         d3.select("svg").on("dragover", function() {
+             d3.event.preventDefault();
+         }).on("drop", function() {
+             d3.event.preventDefault();
+             let objUUID = d3.event.dataTransfer.getData("text/plain");
+             if (typeof(objUUID) === "undefined") {
+                 return;
+             }
+             let datum = self.model.getObject(objUUID);
+             if (typeof(datum) === "undefined") {
+                 return;
+             }
+             let dobjs = self.model.getDiagramObjects([datum]);
              if (dobjs.length > 0) {
-                 self.moveTo(d.attributes.getNamedItem("rdf:ID").value);
+                 self.moveTo(objUUID);
              } else {
                  // add object to diagram
-                 self.addToDiagram(d);
+                 self.addToDiagram(datum);
              }
-         }
+         });
 
          function mouseOut(d) {
              d3.select(this).selectAll("rect").remove();             

@@ -1097,9 +1097,11 @@
                  }
                  return "unnamed";
              })
-             .call(d3.drag().on("end", function(d) {
-                 cimModel.trigger("dragend", d);
-             }));
+             .attr("draggable", "true")
+             .on("dragstart", function(d) {
+                 d3.event.dataTransfer.setData('text/plain', d.attributes.getNamedItem("rdf:ID").value);
+             });
+         
          let elementEnter = elementTopContainer
              .append("ul")
              .attr("id", function(d) {
