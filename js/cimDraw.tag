@@ -176,6 +176,20 @@
             </div>
         </div>
 
+        <!-- Modal for loading boundary file -->
+        <div class="modal fade" id="boundaryModal" tabindex="-1" role="dialog" aria-labelledby="boundaryModalLabel" data-backdrop="static">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <p id="boundaryMsg">loading boundary file...</p>
+                    </div>
+                    <div class="modal-footer" id="cim-boundary-modal-error-container">
+                        <button type="button" class="btn btn-primary" id="cim-boundary-modal-error">Ok</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal for selecting the modeling type: bus-branch vs node-breaker -->
         <div class="modal fade" id="cimModeModal" tabindex="-1" role="dialog" aria-labelledby="cimModeModalLabel">
             <div class="modal-dialog" role="document">
@@ -252,22 +266,40 @@
              $("#cimModeModal").modal("show");
          });
 
+         // Button shown in loading modal in case of errors.
          $("#cim-loading-modal-error").on("click", function() {
              $("#loadingModal").modal("hide");
              route("/");
+         });
+
+         // Button shown in boundary modal in case of errors.
+         $("#cim-boundary-modal-error").on("click", function() {
+             $("#boundaryModal").modal("hide");
+             $("#boundaryMsg").text("loading boundary file...");
          });
          
          $("#cim-create-new-modal").on("click", function() {
              route("/" + cimFile.name + "/diagrams");
          });
 
-         $("#load-boundary").on("click", function(){
+         $("#load-boundary").on("click", function() {
              document.getElementById('upload-boundary').click();
              return false;
          });
          
-         $("#upload-boundary").change(function(){
-             self.cimModel.loadBoundary(this.files[0]);
+         $("#upload-boundary").change(function() {
+             const bdFile = this.files[0];
+             $("#boundaryModal").off("shown.bs.modal");
+             $("#boundaryModal").on("shown.bs.modal", function(e) {
+                 self.cimModel.loadBoundary(bdFile).then(function() {
+                     $("#boundaryMsg").append("<br>OK.");
+                     $("#cim-boundary-modal-error-container").show();
+                 }).catch(function(e) {
+                     $("#boundaryMsg").append("<br>" + e);
+                     $("#cim-boundary-modal-error-container").show();
+                 });
+             });
+             $("#boundaryModal").modal("show");
          });
          
          // This is the initial route ("the home page").
@@ -282,6 +314,7 @@
              $("#cim-mode").hide();
              $("#cim-topology-processor").hide();
              $("#cim-loading-modal-error-container").hide();
+             $("#cim-boundary-modal-error-container").hide();
              // main logic
              d3.select("#cim-diagrams").selectAll("option").remove();
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
