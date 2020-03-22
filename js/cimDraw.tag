@@ -72,7 +72,7 @@
                             <a class="dropdown-item" id="cim-export" download="diagram.xml">Export current diagram</a>
                             <a class="dropdown-item" id="matpower-export" download="file.m">Export to Matpower (EXPERIMENTAL)...</a>
                             <input type="file" id="upload-boundary" name="upload"/>
-                            <a class="dropdown-item" id="load-boundary" onclick="document.getElementById('upload-boundary').click(); return false">Load boundary file</a>
+                            <a class="dropdown-item" id="load-boundary">Load boundary file</a>
                         </div>
                     </li>
                     <li class="nav-item">
@@ -261,6 +261,11 @@
              route("/" + cimFile.name + "/diagrams");
          });
 
+         $("#load-boundary").on("click", function(){
+             document.getElementById('upload-boundary').click();
+             return false;
+         });
+         
          $("#upload-boundary").change(function(){
              self.cimModel.loadBoundary(this.files[0]);
          });
