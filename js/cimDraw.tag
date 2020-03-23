@@ -291,8 +291,8 @@
              const bdFile = this.files[0];
              $("#boundaryModal").off("shown.bs.modal");
              $("#boundaryModal").on("shown.bs.modal", function(e) {
-                 self.cimModel.loadBoundary(bdFile).then(function() {
-                     $("#boundaryMsg").append("<br>OK.");
+                 self.cimModel.loadBoundary(bdFile).then(function(result) {
+                     $("#boundaryMsg").append("<br>OK. " + result);
                      $("#cim-boundary-modal-error-container").show();
                  }).catch(function(e) {
                      $("#boundaryMsg").append("<br>" + e);

@@ -63,7 +63,7 @@ function cimModel() {
     // Parse and load an ENTSO-E CIM file. Returns a promise which resolves
     // after successful initialization.
     // This is a 'private' function (not visible in the model object).
-    function parseZip() {
+    function parseZip(isBoundary) {
         let parser = new DOMParser();
         let eqdata = [];
         let dldata = [];
@@ -73,7 +73,7 @@ function cimModel() {
         let gldata = [];
         let eqbdata = null;
         let tpbdata = null;
-        function success(content) {
+        function parseUnzipped(content) {
             let result = readUploadedFileAsText(content).then(function(parsedXML) {
                 if (eqdata.length === 0 ||
                     dldata.length === 0 ||
@@ -128,7 +128,7 @@ function cimModel() {
             let promises = [];
             zip.forEach(function (relativePath, zipEntry) {
                 let promise = zipEntry.async("blob")
-                    .then(success)
+                    .then(parseUnzipped)
                     .catch(function(e) {
                         return Promise.reject(e);
                     });
@@ -136,7 +136,7 @@ function cimModel() {
             });
             let result = Promise.all(promises).then(function() {
                 // at the end we need to have at least the EQ file
-                if (eqdata.length > 0) {
+                if (eqdata.length > 0 && isBoundary === false) {
                     let all = parser.parseFromString(emptyFile, "application/xml");
                     for (let eqfile of eqdata) {
                         for (let datum of eqfile.children[0].children) {
@@ -209,21 +209,29 @@ function cimModel() {
                     // else, maybe this is a boundary file?
                     // In this case we load it, but only if we already have a
                     // valid model loaded.
-                    if (data.all === null) {
+                    if (data.all === null || isBoundary === false) {
                         return Promise.reject("Invalid CGMES file: no equipment description found.");
                     }
                     if (eqbdata !== null) {
-                        if (eqbdata !== null) {
-                            model.updateModel(eqbdata);
-                        }
+                        let bdObjects = eqbdata.children[0].children;
+                        let bdNodes = [].filter.call(bdObjects, function(el) {
+                            return el.nodeName === "cim:ConnectivityNode"; 
+                        });
+                        let bdNum = bdNodes.filter(el => model.isBoundary(el)).length;
+                        
+                        model.updateModel(eqbdata);
                         if (tpbdata !== null) {
                             model.updateModel(tpbdata);
                         }
+                        return Promise.resolve("Loaded " + bdNum + " boundary nodes.");
                     }
-                    return Promise.resolve();
+                    return Promise.reject("Invalid boundary file: no equipment boundary file found.");
                 }
             }).catch(function(e) {
-                model.clear();
+                // if boundary loading failed there is no need to clear the model
+                if (isBoundary === false) {
+                    model.clear();
+                }
                 return Promise.reject(e);
             });
             return result;
@@ -566,7 +574,7 @@ function cimModel() {
                 if (file.name.endsWith(".zip")) {
                     // zip file loading (ENTSO-E).
                     result = JSZip.loadAsync(file)
-                        .then(parseZip())
+                        .then(parseZip(false))
                         .catch(function(e) {
                             model.clear();
                             return Promise.reject(e);
@@ -648,7 +656,7 @@ function cimModel() {
             if (file.name.endsWith(".zip")) {
                 // zip file loading (ENTSO-E).
                 result = JSZip.loadAsync(file)
-                    .then(parseZip())
+                    .then(parseZip(true))
                     .catch(function(e) {
                         return Promise.reject(e);
                     });
