@@ -45,6 +45,7 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "%bus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin\n";
     let busNums = new Map();
     for (let i in allNodes) {
+        let nodeUUID = allNodes[i].attributes.getNamedItem("rdf:ID").value;
         let type = 1;
         let baseVobj = model.getTargets([allNodes[i]], "TopologicalNode.BaseVoltage")[0];
         let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
@@ -106,11 +107,7 @@ function exportToMatpower(model) {
         if (slack.length > 0) {
             type = 3;
         }
-        // If the node is connected to the primary winding of a two-winding
-        // transformer then we must calculate the voltage angle displacement.
-        if (windings.length > 0) {
-            //console.log(windings);
-        }
+        
         mpcFile = mpcFile + busNum + "\t";   // bus_i
         mpcFile = mpcFile + type + "\t";     // type
         mpcFile = mpcFile + pd + "\t";       // Pd
@@ -124,6 +121,7 @@ function exportToMatpower(model) {
         mpcFile = mpcFile + 1 + "\t";        // zone
         mpcFile = mpcFile + 1.1 + "\t";      // Vmax
         mpcFile = mpcFile + 0.9 + ";\t";     // Vmin
+        mpcFile = mpcFile + "%Node (" + nodeUUID + ")";
         mpcFile = mpcFile + "\n";
         busNums.set(allNodes[i], busNum);
     }
@@ -141,6 +139,7 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "mpc.gen = [\n";
     mpcFile = mpcFile + "%bus\tPg\tQg\tQmax\tQmin\tVg\tmBase\tstatus\tPmax\tPmin\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\n";
     machines.forEach(function(machine) {
+        let machineUUID = machine.attributes.getNamedItem("rdf:ID").value;
         let terminals = tp.getTerminals(machine); 
         let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
         let genUnit = model.getTargets([machine], "RotatingMachine.GeneratingUnit")[0];
@@ -182,6 +181,7 @@ function exportToMatpower(model) {
             mpcFile = mpcFile + 0 + "\t";      // ramp_30
             mpcFile = mpcFile + 0 + "\t";      // ramp_q
             mpcFile = mpcFile + 0 + ";\t";     // apf
+            mpcFile = mpcFile + "%Generator (" + machineUUID + ")";
             mpcFile = mpcFile + "\n";
         });
     });
@@ -192,6 +192,7 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "mpc.branch = [\n";
     mpcFile = mpcFile + "%fbus\ttbus\tr\tx\tb\trateA\trateB\trateC\tratio\tangle\tstatus\tangmin\tangmax\n";
     aclines.forEach(function(acline) {
+        let aclineUUID = acline.attributes.getNamedItem("rdf:ID").value;
         let terms = tp.getTerminals(acline); 
         let nodes = model.getTargets(terms, "Terminal.TopologicalNode");
         // TODO: a valid case is that conducting equipment can be connected in
@@ -223,6 +224,7 @@ function exportToMatpower(model) {
             mpcFile = mpcFile + 1 + "\t";                     // initial branch status, 1 = in-service, 0 = out-of-service
             mpcFile = mpcFile + "-360" + "\t";                // minimum angle difference
             mpcFile = mpcFile + "360" + ";\t";                // maximum angle difference
+            mpcFile = mpcFile + "%AC line segment (" + aclineUUID + ")";
             mpcFile = mpcFile + "\n";
         }
     });
@@ -302,9 +304,8 @@ function exportToMatpower(model) {
                     }
                     ratio = ratio * corr;
                 } 
-                let w1Clock = getAttrDefault(w1, "cim:PowerTransformerEnd.phaseAngleClock", "0");
-                let w2Clock = getAttrDefault(w2, "cim:PowerTransformerEnd.phaseAngleClock", "0");
-                let shift = 30.0 * (parseFloat(w1Clock) + parseFloat(w2Clock)); 
+                // Note that the transformer phase shift is always set to 0, as
+                // this is in accordance with CGMES rules.
                 mpcFile = mpcFile + busNums.get(w1Node) + "\t"; // “from” bus number
                 mpcFile = mpcFile + busNums.get(w2Node) + "\t"; // “to” bus number
                 mpcFile = mpcFile + rpu + "\t";                 // resistance (p.u.)
@@ -314,7 +315,7 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + 0 + "\t";                   // MVA rating B (short term rating)
                 mpcFile = mpcFile + 0 + "\t";                   // MVA rating C (emergency rating)
                 mpcFile = mpcFile + ratio + "\t";               // transformer off nominal turns ratio
-                mpcFile = mpcFile + shift + "\t";               // transformer phase shift angle (degrees)
+                mpcFile = mpcFile + 0 + "\t";                   // transformer phase shift angle (degrees)
                 mpcFile = mpcFile + 1 + "\t";                   // initial branch status, 1 = in-service, 0 = out-of-service
                 mpcFile = mpcFile + "-360" + "\t";              // minimum angle difference
                 mpcFile = mpcFile + "360" + ";\t";              // maximum angle difference
@@ -380,31 +381,11 @@ function exportToMatpower(model) {
                 let ratio12 = (parseFloat(baseV2)*parseFloat(w1RefV))/(parseFloat(baseV1)*parseFloat(w2RefV));
                 let ratio23 = (parseFloat(baseV3)*parseFloat(w2RefV))/(parseFloat(baseV2)*parseFloat(w3RefV));
                 let ratio31 = (parseFloat(baseV1)*parseFloat(w3RefV))/(parseFloat(baseV3)*parseFloat(w1RefV));
-                // calculate nominal trafo ratio
-                // must be calculated (in percent) as:
-                // (RatioTapChanger.step - RatioTapChanger.neutralStep) * RatioTapChanger.stepVoltageIncrement
-                // while the sign depends on the position of the tap changer (primary vs secondary winding).
-                /*let tc = model.getTargets([hvEnd], "TransformerEnd.RatioTapChanger");
-                let corr = 1.0;
-                if (tc.length === 0) {
-                    tc = model.getTargets([lvEnd], "TransformerEnd.RatioTapChanger");
-                    corr = -1.0;
-                }
-                if (tc.length > 0) {
-                    let nStep = getAttrDefault(tc[0], "cim:TapChanger.neutralStep", "0");
-                    let step = getAttrDefault(tc[0], "cim:TapChanger.step", nStep);
-                    let stepVol = getAttrDefault(tc[0], "cim:RatioTapChanger.stepVoltageIncrement", "0");
-                    corr = corr * (parseFloat(step) - parseFloat(nStep)) * parseFloat(stepVol);
-                    corr = corr/100;
-                } else {
-                    corr = 0.0;
-                }
-                let ratio = 1.0 + corr;
-                let hvClock = getAttrDefault(hvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
-                let lvClock = getAttrDefault(lvEnd, "cim:PowerTransformerEnd.phaseAngleClock", "0");
-                let shift = 30.0 * (parseFloat(hvClock) + parseFloat(lvClock)); */
+                // TODO: handle tap changers
                 
                 // We need to create 3 transformers, one for each side of the delta equivalent
+                // Note that the transformer phase shift is always set to 0, as
+                // this is in accordance with CGMES rules.
                 // branch 1-2
                 mpcFile = mpcFile + busNums.get(node1) + "\t"; // “from” bus number
                 mpcFile = mpcFile + busNums.get(node2) + "\t"; // “to” bus number
@@ -415,7 +396,7 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
                 mpcFile = mpcFile + ratio12 + "\t";            // transformer off nominal turns ratio
-                mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
+                mpcFile = mpcFile + 0 + "\t";                  // transformer phase shift angle (degrees)
                 mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
                 mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference
                 mpcFile = mpcFile + "360" + ";\t";             // maximum angle difference
@@ -431,7 +412,7 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
                 mpcFile = mpcFile + ratio23 + "\t";            // transformer off nominal turns ratio
-                mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
+                mpcFile = mpcFile + 0 + "\t";                  // transformer phase shift angle (degrees)
                 mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
                 mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference
                 mpcFile = mpcFile + "360" + ";\t";             // maximum angle difference
@@ -447,7 +428,7 @@ function exportToMatpower(model) {
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating C (emergency rating)
                 mpcFile = mpcFile + ratio31 + "\t";            // transformer off nominal turns ratio
-                mpcFile = mpcFile + 0/*shift*/ + "\t";         // transformer phase shift angle (degrees)
+                mpcFile = mpcFile + 0 + "\t";                  // transformer phase shift angle (degrees)
                 mpcFile = mpcFile + 1 + "\t";                  // initial branch status, 1 = in-service, 0 = out-of-service
                 mpcFile = mpcFile + "-360" + "\t";             // minimum angle difference
                 mpcFile = mpcFile + "360" + ";\t";             // maximum angle difference
