@@ -134,55 +134,62 @@ function exportToMatpower(model) {
     // at most one machine and always assume that the machine is a synchronous one.
     // This simplification is also reported in the CIM Primer, when illustrating the
     // mapping from CIM to PSS/E.
+    // Other objects to be considered in this section are Equivalent Injections,
+    // used in boundary sets.
     let machines = model.getObjects(["cim:SynchronousMachine"])["cim:SynchronousMachine"];
+    let injections = model.getObjects(["cim:EquivalentInjection"])["cim:EquivalentInjection"];
     mpcFile = mpcFile + "% generator data\n";
     mpcFile = mpcFile + "mpc.gen = [\n";
     mpcFile = mpcFile + "%bus\tPg\tQg\tQmax\tQmin\tVg\tmBase\tstatus\tPmax\tPmin\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\n";
     machines.forEach(function(machine) {
-        let machineUUID = machine.attributes.getNamedItem("rdf:ID").value;
+        let genData = {};
+        genData.genUUID = machine.attributes.getNamedItem("rdf:ID").value;
         let terminals = tp.getTerminals(machine); 
         let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
         let genUnit = model.getTargets([machine], "RotatingMachine.GeneratingUnit")[0];
         let regCtrl = model.getTargets([machine],"RegulatingCondEq.RegulatingControl")[0];
         nodes.forEach(function(node) {
-            let busNum = busNums.get(node);
-            let p = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.p", "0")) * (-1.0);
-            let q = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.q", "0")) * (-1.0);
-            let qmax = getAttrDefault(machine, "cim:SynchronousMachine.maxQ", "0");
-            let qmin = getAttrDefault(machine, "cim:SynchronousMachine.minQ", "0");
-            let vg = 1.0;
+            genData.busNum = busNums.get(node);
+            genData.p = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.p", "0")) * (-1.0);
+            genData.q = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.q", "0")) * (-1.0);
+            genData.qmax = getAttrDefault(machine, "cim:SynchronousMachine.maxQ", "0");
+            genData.qmin = getAttrDefault(machine, "cim:SynchronousMachine.minQ", "0");
+            genData.vg = 1.0;
             if (typeof(regCtrl) !== "undefined") {
                 let baseVobj = model.getTargets([node], "TopologicalNode.BaseVoltage")[0];
                 let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
                 let vTarget = getAttrDefault(regCtrl, "cim:RegulatingControl.targetValue", baseV);
-                vg = parseFloat(vTarget) / parseFloat(baseV);
+                genData.vg = parseFloat(vTarget) / parseFloat(baseV);
             }
-            let mbase = getAttrDefault(machine, "cim:SynchronousMachine.ratedS", baseMVA);
-            let pmax = getAttrDefault(genUnit, "cim:GeneratingUnit.maxOperatingP", "0");
-            let pmin = getAttrDefault(genUnit, "cim:GeneratingUnit.minOperatingP", "0");
-            mpcFile = mpcFile + busNum + "\t"; // bus
-            mpcFile = mpcFile + p + "\t";      // Pg
-            mpcFile = mpcFile + q + "\t";      // Qg
-            mpcFile = mpcFile + qmax + "\t";   // Qmax
-            mpcFile = mpcFile + qmin + "\t";   // Qmin
-            mpcFile = mpcFile + vg + "\t";     // Vg 
-            mpcFile = mpcFile + mbase + "\t";  // mBase
-            mpcFile = mpcFile + 1 + "\t";      // status
-            mpcFile = mpcFile + pmax + "\t";   // Pmax
-            mpcFile = mpcFile + pmin + "\t";   // Pmin
-            mpcFile = mpcFile + 0 + "\t";      // Pc1
-            mpcFile = mpcFile + 0 + "\t";      // Pc2
-            mpcFile = mpcFile + 0 + "\t";      // Qc1min
-            mpcFile = mpcFile + 0 + "\t";      // Qc1max
-            mpcFile = mpcFile + 0 + "\t";      // Qc2min
-            mpcFile = mpcFile + 0 + "\t";      // Qc2max
-            mpcFile = mpcFile + 0 + "\t";      // ramp_agc
-            mpcFile = mpcFile + 0 + "\t";      // ramp_10
-            mpcFile = mpcFile + 0 + "\t";      // ramp_30
-            mpcFile = mpcFile + 0 + "\t";      // ramp_q
-            mpcFile = mpcFile + 0 + ";\t";     // apf
-            mpcFile = mpcFile + "%Generator (" + machineUUID + ")";
-            mpcFile = mpcFile + "\n";
+            genData.mbase = getAttrDefault(machine, "cim:SynchronousMachine.ratedS", baseMVA);
+            genData.pmax = getAttrDefault(genUnit, "cim:GeneratingUnit.maxOperatingP", "0");
+            genData.pmin = getAttrDefault(genUnit, "cim:GeneratingUnit.minOperatingP", "0");
+            mpcFile = mpcFile + addGenerator(genData);
+        });
+    });
+    injections.forEach(function(injection) {
+        let genData = {};
+        genData.genUUID = injection.attributes.getNamedItem("rdf:ID").value;
+        let terminals = tp.getTerminals(injection);
+        let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
+        let regStatus = getAttrDefault(injection, "cim:EquivalentInjection.regulationStatus", "false");
+        nodes.forEach(function(node) {
+            genData.busNum = busNums.get(node);
+            genData.p = parseFloat(getAttrDefault(injection, "cim:EquivalentInjection.p", "0")) * (-1.0);
+            genData.q = parseFloat(getAttrDefault(injection, "cim:EquivalentInjection.q", "0")) * (-1.0);
+            genData.qmax = getAttrDefault(injection, "cim:EquivalentInjection.maxQ", "0");
+            genData.qmin = getAttrDefault(injection, "cim:EquivalentInjection.minQ", "0");
+            genData.vg = 1.0;
+            if (regStatus === "true") {
+                let baseVobj = model.getTargets([node], "TopologicalNode.BaseVoltage")[0];
+                let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
+                let vTarget = getAttrDefault(injection, "cim:EquivalentInjection.regulationTarget", baseV);
+                genData.vg = parseFloat(vTarget) / parseFloat(baseV);
+            }
+            genData.mbase = baseMVA;
+            genData.pmax = getAttrDefault(injection, "cim:EquivalentInjection.maxP", "0");
+            genData.pmin = getAttrDefault(injection, "cim:EquivalentInjection.minP", "0");
+            mpcFile = mpcFile + addGenerator(genData);
         });
     });
     mpcFile = mpcFile + "];\n"
@@ -440,7 +447,35 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "];\n";
     
     return mpcFile;
-                     
+
+    function addGenerator(genData) {
+        let mpcFile = "";
+        mpcFile = mpcFile + genData.busNum + "\t"; // bus
+        mpcFile = mpcFile + genData.p + "\t";      // Pg
+        mpcFile = mpcFile + genData.q + "\t";      // Qg
+        mpcFile = mpcFile + genData.qmax + "\t";   // Qmax
+        mpcFile = mpcFile + genData.qmin + "\t";   // Qmin
+        mpcFile = mpcFile + genData.vg + "\t";     // Vg 
+        mpcFile = mpcFile + genData.mbase + "\t";  // mBase
+        mpcFile = mpcFile + 1 + "\t";              // status
+        mpcFile = mpcFile + genData.pmax + "\t";   // Pmax
+        mpcFile = mpcFile + genData.pmin + "\t";   // Pmin
+        mpcFile = mpcFile + 0 + "\t";              // Pc1
+        mpcFile = mpcFile + 0 + "\t";              // Pc2
+        mpcFile = mpcFile + 0 + "\t";              // Qc1min
+        mpcFile = mpcFile + 0 + "\t";              // Qc1max
+        mpcFile = mpcFile + 0 + "\t";              // Qc2min
+        mpcFile = mpcFile + 0 + "\t";              // Qc2max
+        mpcFile = mpcFile + 0 + "\t";              // ramp_agc
+        mpcFile = mpcFile + 0 + "\t";              // ramp_10
+        mpcFile = mpcFile + 0 + "\t";              // ramp_30
+        mpcFile = mpcFile + 0 + "\t";              // ramp_q
+        mpcFile = mpcFile + 0 + ";\t";             // apf
+        mpcFile = mpcFile + "%Generator (" + genData.genUUID + ")";
+        mpcFile = mpcFile + "\n";
+        return mpcFile;
+    };
+    
     function getAttrDefault(el, attr, defVal) {
         let ret = model.getAttribute(el, attr);
         if (typeof(ret) === "undefined") {
