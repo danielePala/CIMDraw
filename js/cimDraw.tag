@@ -70,7 +70,7 @@
                             <a class="dropdown-item" id="cgmes-save">Save as CGMES...</a>
                             <a class="dropdown-item" id="cgmes-download" download="file.zip" style="display: none;"></a>
                             <a class="dropdown-item" id="cim-export" download="diagram.xml">Export current diagram</a>
-                            <a class="dropdown-item" id="matpower-export" download="file.m">Export to Matpower (EXPERIMENTAL)...</a>
+                            <a class="dropdown-item" id="matpower-export" download="file.m">Export to Matpower</a>
                             <input type="file" id="upload-boundary" name="upload"/>
                             <a class="dropdown-item" id="load-boundary">Load boundary file</a>
                         </div>
