@@ -273,7 +273,7 @@ function exportToMatpower(model) {
             let w1Node = model.getTargets(w1Term, "Terminal.TopologicalNode")[0];
             let w2Term = tp.getTerminals(w2); 
             let w2Node = model.getTargets(w2Term, "Terminal.TopologicalNode")[0];
-            if (w1Term.length === 1 && w2Term.length === 1) {
+            if (w1Term.length === 1 && w2Term.length === 1 && typeof(w1Node) !== "undefined" && typeof(w2Node) !== "undefined") {
                 // calculate base impedance: z_base = (v_base)^2/s_base
                 let baseVobj1 = model.getTargets([w1Node], "TopologicalNode.BaseVoltage")[0];
                 let baseV1 = getAttrDefault(baseVobj1, "cim:BaseVoltage.nominalVoltage", "0");

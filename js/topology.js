@@ -40,10 +40,8 @@ function topologyProcessor(model) {
                 });
             }
             // delete all topological nodes
-            let nodeUUIDs = allNodes.map(el => el.attributes.getNamedItem("rdf:ID").value);
-            nodeUUIDs.forEach(function(nodeUUID) {
-                model.deleteObject(model.getObject(nodeUUID));
-            });
+            model.deleteObjects(allNodes);
+            allNodes = [];;
             // get all connectivity nodes
             let allConnectivityNodes = model.getObjects(["cim:ConnectivityNode"])["cim:ConnectivityNode"];
             let topos = [];
@@ -87,28 +85,37 @@ function topologyProcessor(model) {
                     model.setLink(cn, "cim:ConnectivityNode.TopologicalNode", tobj);
                 });
                 // find the base voltage of this node
-                // we have two ways: via conducting equipment, or via containment in
-                // a voltage level: in the second case it can also be that
-                // the equipment is contained in a bay, which in turn is contained
-                // in a voltage level.
+                // we have three ways: via conducting equipment, via transformer end,
+                // or via containment in a voltage level: in the last case it can
+                // also be that the equipment is contained in a bay, which in
+                // turn is contained in a voltage level.
                 let terms = model.getTargets(topo, "ConnectivityNode.Terminals");
                 let eqs = model.getTargets(terms, "Terminal.ConductingEquipment");
                 let baseVs =  model.getTargets(eqs, "ConductingEquipment.BaseVoltage");
                 if (baseVs.length > 0) {
                     model.setLink(tobj, "cim:TopologicalNode.BaseVoltage", baseVs[0]);
                 } else {
-                    let containers = model.getTargets(eqs, "Equipment.EquipmentContainer");
-                    // we can use both voltage leves and bays
-                    let vlevs = containers.filter(el => model.schema.isA("VoltageLevel", el));
-                    baseVs =  model.getTargets(vlevs, "VoltageLevel.BaseVoltage");
+                    // second option: transformer end
+                    let trafoEnds = model.getTargets(terms, "Terminal.TransformerEnd");
+                    baseVs =  model.getTargets(trafoEnds, "TransformerEnd.BaseVoltage");
                     if (baseVs.length > 0) {
+                        console.log(trafoEnds);
                         model.setLink(tobj, "cim:TopologicalNode.BaseVoltage", baseVs[0]);
                     } else {
-                        let bays = containers.filter(el => model.schema.isA("Bay", el));
-                        vlevs =  model.getTargets(bays, "Bay.VoltageLevel");
+                        // third option: containment in voltage level
+                        let containers = model.getTargets(eqs, "Equipment.EquipmentContainer");
+                        // we can use both voltage leves and bays
+                        let vlevs = containers.filter(el => model.schema.isA("VoltageLevel", el));
                         baseVs =  model.getTargets(vlevs, "VoltageLevel.BaseVoltage");
                         if (baseVs.length > 0) {
                             model.setLink(tobj, "cim:TopologicalNode.BaseVoltage", baseVs[0]);
+                        } else {
+                            let bays = containers.filter(el => model.schema.isA("Bay", el));
+                            vlevs =  model.getTargets(bays, "Bay.VoltageLevel");
+                            baseVs =  model.getTargets(vlevs, "VoltageLevel.BaseVoltage");
+                            if (baseVs.length > 0) {
+                                model.setLink(tobj, "cim:TopologicalNode.BaseVoltage", baseVs[0]);
+                            }
                         }
                     }
                 }
