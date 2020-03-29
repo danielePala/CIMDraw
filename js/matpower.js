@@ -152,8 +152,8 @@ function exportToMatpower(model) {
             genData.busNum = busNums.get(node);
             genData.p = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.p", "0")) * (-1.0);
             genData.q = parseFloat(getAttrDefault(machine, "cim:RotatingMachine.q", "0")) * (-1.0);
-            genData.qmax = getAttrDefault(machine, "cim:SynchronousMachine.maxQ", "0");
-            genData.qmin = getAttrDefault(machine, "cim:SynchronousMachine.minQ", "0");
+            genData.qmax = parseFloat(getAttrDefault(machine, "cim:SynchronousMachine.maxQ", "0"));
+            genData.qmin = parseFloat(getAttrDefault(machine, "cim:SynchronousMachine.minQ", "0"));
             genData.vg = 1.0;
             if (typeof(regCtrl) !== "undefined") {
                 let baseVobj = model.getTargets([node], "TopologicalNode.BaseVoltage")[0];
@@ -161,9 +161,9 @@ function exportToMatpower(model) {
                 let vTarget = getAttrDefault(regCtrl, "cim:RegulatingControl.targetValue", baseV);
                 genData.vg = parseFloat(vTarget) / parseFloat(baseV);
             }
-            genData.mbase = getAttrDefault(machine, "cim:SynchronousMachine.ratedS", baseMVA);
-            genData.pmax = getAttrDefault(genUnit, "cim:GeneratingUnit.maxOperatingP", "0");
-            genData.pmin = getAttrDefault(genUnit, "cim:GeneratingUnit.minOperatingP", "0");
+            genData.mbase = parseFloat(getAttrDefault(machine, "cim:SynchronousMachine.ratedS", baseMVA));
+            genData.pmax = parseFloat(getAttrDefault(genUnit, "cim:GeneratingUnit.maxOperatingP", "0"));
+            genData.pmin = parseFloat(getAttrDefault(genUnit, "cim:GeneratingUnit.minOperatingP", "0"));
             mpcFile = mpcFile + addGenerator(genData);
         });
     });
@@ -177,8 +177,8 @@ function exportToMatpower(model) {
             genData.busNum = busNums.get(node);
             genData.p = parseFloat(getAttrDefault(injection, "cim:EquivalentInjection.p", "0")) * (-1.0);
             genData.q = parseFloat(getAttrDefault(injection, "cim:EquivalentInjection.q", "0")) * (-1.0);
-            genData.qmax = getAttrDefault(injection, "cim:EquivalentInjection.maxQ", "0");
-            genData.qmin = getAttrDefault(injection, "cim:EquivalentInjection.minQ", "0");
+            genData.qmax = parseFloat(getAttrDefault(injection, "cim:EquivalentInjection.maxQ", "0"));
+            genData.qmin = parseFloat(getAttrDefault(injection, "cim:EquivalentInjection.minQ", "0"));
             genData.vg = 1.0;
             if (regStatus === "true") {
                 let baseVobj = model.getTargets([node], "TopologicalNode.BaseVoltage")[0];
@@ -187,8 +187,8 @@ function exportToMatpower(model) {
                 genData.vg = parseFloat(vTarget) / parseFloat(baseV);
             }
             genData.mbase = baseMVA;
-            genData.pmax = getAttrDefault(injection, "cim:EquivalentInjection.maxP", "0");
-            genData.pmin = getAttrDefault(injection, "cim:EquivalentInjection.minP", "0");
+            genData.pmax = parseFloat(getAttrDefault(injection, "cim:EquivalentInjection.maxP", "0"));
+            genData.pmin = parseFloat(getAttrDefault(injection, "cim:EquivalentInjection.minP", "0"));
             mpcFile = mpcFile + addGenerator(genData);
         });
     });

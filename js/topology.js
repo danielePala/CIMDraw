@@ -27,8 +27,17 @@ function topologyProcessor(model) {
             let ret = [];
             let allNodes = model.getObjects(["cim:TopologicalNode"])["cim:TopologicalNode"];
             if (model.getMode() === "BUS_BRANCH") {
-                // nothing to do
-                return allNodes;
+                // run topology processor anyway by creating one
+                // connectivity node for each topological node.
+                // We do this because also bus-branch networks can
+                // contain switches.
+                allNodes.forEach(function (node) {
+                    let cn = model.createObject("cim:ConnectivityNode");
+                    let terms = model.getTargets([node], "TopologicalNode.Terminal");
+                    terms.forEach(function(term) {
+                        model.setLink(term, "cim:Terminal.ConnectivityNode", cn);
+                    });
+                });
             }
             // delete all topological nodes
             let nodeUUIDs = allNodes.map(el => el.attributes.getNamedItem("rdf:ID").value);
@@ -41,12 +50,8 @@ function topologyProcessor(model) {
             let actNodes = allConnectivityNodes;
             while(actNodes.length > 0) {
                 let topo = calcTopo(actNodes[0]);
-                if (topo.length === 0) {
-                    actNodes.splice(0, 1);
-                } else {
-                    actNodes = actNodes.filter(el => topo.indexOf(el) < 0);
-                    topos.push(topo);
-                }
+                actNodes = actNodes.filter(el => topo.indexOf(el) < 0);
+                topos.push(topo);
             }
 
             function calcTopo(v) {
@@ -56,9 +61,6 @@ function topologyProcessor(model) {
                 while (oldSize !== topo.size) {
                     oldSize = topo.size;
                     let cnTerminals = model.getTargets([...topo], "ConnectivityNode.Terminals");
-                    if (cnTerminals.length === 0) {
-                        return [];
-                    }
                     let switches = model.getTargets(cnTerminals, "Terminal.ConductingEquipment").filter(function(el) {
                         return model.schema.isA("Switch", el) === true;
                     });
