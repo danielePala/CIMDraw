@@ -929,16 +929,16 @@
                      type = typeAttr.textContent;
                  }
                  if (typeof(phasesAttr) !== "undefined") {
-                     phases = phasesAttr.attributes[0].textContent.split("#")[1].split(".")[1];
+                     phases = phasesAttr;
                  }
                  if (typeof(unitMultiplierAttr) !== "undefined") {
-                     unitMultiplier = unitMultiplierAttr.attributes[0].textContent.split("#")[1].split(".")[1];
+                     unitMultiplier = unitMultiplierAttr;
                      if (unitMultiplier === "none") {
                          unitMultiplier = "";
                      }
                  }
                  if (typeof(unitSymbolAttr) !== "undefined") {
-                     unitSymbol = unitSymbolAttr.attributes[0].textContent.split("#")[1].split(".")[1];
+                     unitSymbol = unitSymbolAttr;
                  }
                  let valueObject = self.model.getTargets(
                      [measurement],
@@ -1508,6 +1508,14 @@
          circleSel.attr("id", function() {
              return "cimdiagram-" + trafoEnd[0].attributes.getNamedItem("rdf:ID").value;
          });
+         console.log(self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind"));
+
+         /*
+star connection:
+  <line x1="0" stroke="black" x2="0" y1="8" y2="15"></line>
+  <line x1="0" stroke="black" x2="-5" y1="15" y2="20"></line>
+   <line x1="0" stroke="black" x2="5" y1="15" y2="20"></line>
+         */
      }
 
      // Adds terminals to the objects contained in the selection.

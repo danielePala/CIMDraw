@@ -1374,8 +1374,7 @@
              let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
              let value = self.model.getEnum(object, "cim:" + d.attributes[0].value.substring(1));
              if (typeof(value) !== "undefined") {
-                 let enumRef = value.attributes.getNamedItem("rdf:resource").value;
-                 d3.select(this).text(enumRef.split("#")[1].split(".")[1]);
+                 d3.select(this).text(value);
              } else { 
                  d3.select(this).text("none");
              }

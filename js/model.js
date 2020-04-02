@@ -545,6 +545,26 @@ function cimModel() {
         });
         return "_" + uuid;
     };
+
+    // Get all the enums of a given object which are actually set.
+    // This is a 'private' function (not visible in the model object).
+    function getEnumElements(object) {
+        return [].filter.call(object.children, function(el) {
+            let resource = el.attributes.getNamedItem("rdf:resource");
+            if (el.attributes.length === 0 || resource === null) {
+                return false;
+            }
+            return (resource.value.charAt(0) !== "#");
+        });
+    };
+
+    // Get a specific enum of a given object.
+    // The returned object is an Element.
+    // This is a 'private' function (not visible in the model object).
+    function getEnumElement(object, enumName) {
+        let enums = getEnumElements(object);
+        return enums.filter(el => el.nodeName === enumName)[0];
+    };
     
     // This is the fundamental object used by CIMDraw to manipulate CIM files.
     let model = {
@@ -775,7 +795,7 @@ function cimModel() {
                         }
                     });
                     // take profile enums
-                    let enums = model.getEnums(data[i]);
+                    let enums = getEnumElements(data[i]);
                     enums.forEach(function(en) {                  
                         let schEnum = model.schema.getSchemaAttribute(datum.localName, en.localName, profile);
                         if (typeof(schEnum) !== "undefined") {
@@ -1084,7 +1104,7 @@ function cimModel() {
 
         // Set a specific enum of a given object. If it doesen't exists, it is created.
         setEnum(object, enumName, value) {
-            let enumAttr = model.getEnum(object, enumName);
+            let enumAttr = getEnumElement(object, enumName);
             if (typeof(enumAttr) === "undefined") {
                 enumAttr = object.ownerDocument.createElement(enumName);
                 let enumValue = object.ownerDocument.createAttribute("rdf:resource");
@@ -1498,21 +1518,15 @@ function cimModel() {
             return links.filter(el => el.nodeName === linkName);
         },
 
-        // Get all the enums of a given object which are actually set.
-        getEnums(object) {
-            return [].filter.call(object.children, function(el) {
-                let resource = el.attributes.getNamedItem("rdf:resource");
-                if (el.attributes.length === 0 || resource === null) {
-                    return false;
-                }
-                return (resource.value.charAt(0) !== "#");
-            });
-        },
-
         // Get a specific enum of a given object.
+        // Returns the string value, if present, or undefined.
         getEnum(object, enumName) {
-            let enums = model.getEnums(object);
-            return enums.filter(el => el.nodeName === enumName)[0];
+            let enumEl = getEnumElement(object, enumName);
+            let ret = undefined;
+            if (typeof(enumEl) !== "undefined") {
+                ret = enumEl.attributes.getNamedItem("rdf:resource").value.split("#")[1].split(".")[1];
+            }
+            return ret;
         },
 
         // Set a specific link of a given object.
