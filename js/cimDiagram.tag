@@ -1418,20 +1418,22 @@
          
          twoWind.append("g")
                 .attr("class", "TransformerEnd")
+                .attr("transform", d3.zoomIdentity.translate(0, wind1y))
                 .append("circle")
                 .attr("r", TRAFO_RADIUS)
                 .attr("cx", 0) 
-                .attr("cy", wind1y)
+                .attr("cy", 0)
                 .attr("fill", "white")
                 .attr("stroke", "black")
                 .attr("stroke-width", 4)
                 .attr("class", "TransformerEndCircle");
          twoWind.append("g")
                 .attr("class", "TransformerEnd")
+                .attr("transform", d3.zoomIdentity.translate(0, wind2y))
                 .append("circle")
                 .attr("r", TRAFO_RADIUS)
                 .attr("cx", 0)
-                .attr("cy", wind2y)
+                .attr("cy", 0)
                 .attr("fill", "white")
                 .attr("fill-opacity", "0")
                 .attr("stroke", "black")
@@ -1496,8 +1498,13 @@
          let termX = term.x - eq.x;
          let termY = term.y - eq.y;
          let circles = d3.select(termNode.parentNode).selectAll(":scope > g.TransformerEnd").each(function() {
-             let cx = parseInt(d3.select(this).select(":scope > circle.TransformerEndCircle").attr("cx"));
-             let cy = parseInt(d3.select(this).select(":scope > circle.TransformerEndCircle").attr("cy"));
+             let transform = this.transform.baseVal.consolidate();
+             let matrix = {e: 0, f: 0};
+             if (transform !== null) { 
+                 matrix = transform.matrix;
+             }
+             let cx = matrix.e;
+             let cy = matrix.f;
              let dist2 = ((cx-termX)**2) + ((cy-termY)**2);
              if (minDist2 === null || minDist2 > dist2) {
                  minDist2 = dist2;
@@ -1509,7 +1516,13 @@
              return "cimdiagram-" + trafoEnd[0].attributes.getNamedItem("rdf:ID").value;
          });
          console.log(self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind"));
-
+         let connKind = self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind");
+         if (typeof(connKind) !== "undefined") {
+             circleSel.append("path")
+                      .attr("d", d3.line()([[0, 8], [0, 15]]))
+                      .attr("stroke", "black")
+         }
+         
          /*
 star connection:
   <line x1="0" stroke="black" x2="0" y1="8" y2="15"></line>
