@@ -172,7 +172,7 @@
                  if (psr.nodeName === "cim:BusbarSection") {
                      psr = self.model.getNode(psr);
                  }
-                 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let psrUUID = self.model.ID(psr);
                  let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
                  break;
@@ -185,7 +185,7 @@
                      let psr = self.model.getTargets(
                          [svTerminal],
                          "Terminal.ConductingEquipment")[0];
-                     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let psrUUID = self.model.ID(psr);
                      let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
@@ -201,7 +201,7 @@
                  if (psr.nodeName === "cim:BusbarSection") {
                      psr = self.model.getNode(psr);
                  }       
-                 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let psrUUID = self.model.ID(psr);
                  let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
              }
@@ -222,7 +222,7 @@
                  if (psr.nodeName === "cim:BusbarSection") {
                      psr = self.model.getNode(psr);
                  }       
-                 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let psrUUID = self.model.ID(psr);
                  let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
              }
@@ -240,7 +240,7 @@
                  if (psr.nodeName === "cim:BusbarSection") {
                      psr = self.model.getNode(psr);
                  }       
-                 let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let psrUUID = self.model.ID(psr);
                  let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
              }
@@ -261,7 +261,7 @@
                  break;
          }
          let type = object.localName;
-         let uuid = object.attributes.getNamedItem("rdf:ID").value;
+         let uuid = self.model.ID(object);
          let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
          let target = types.select("#cimdiagram-" + uuid);
          self.forceTick(target); 
@@ -424,7 +424,7 @@
                  } else {
                      edgeToChange.source = cn;
                  }
-                 let cnUUID = cn.attributes.getNamedItem("rdf:ID").value;
+                 let cnUUID = self.model.ID(cn);
                  let selection = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID);
                  self.forceTick(selection);
                  break;
@@ -440,7 +440,7 @@
                      let psr = self.model.getTargets(
                          [terminal],
                          "Terminal.ConductingEquipment")[0];
-                     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let psrUUID = self.model.ID(psr);
                      let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
@@ -455,7 +455,7 @@
                  let psr = self.model.getTargets(
                      [terminal],
                      "Terminal.ConductingEquipment")[0];
-                 let measPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let measPsrUUID = self.model.ID(psr);
                  let measPsrSelection = d3.select("g#cimdiagram-" + measPsrUUID);
                  self.createStatusInfo(measPsrSelection);
                  break;
@@ -471,7 +471,7 @@
                      if (psr.nodeName === "cim:BusbarSection") {
                          psr = self.model.getNode(psr);
                      }   
-                     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let psrUUID = self.model.ID(psr);
                      let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
@@ -486,7 +486,7 @@
                  let psr = self.model.getTargets(
                      [terminal],
                      "Terminal.ConductingEquipment")[0];
-                 let limPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                 let limPsrUUID = self.model.ID(psr);
                  let limPsrSelection = d3.select("g#cimdiagram-" + limPsrUUID);
                  self.createStatusInfo(limPsrSelection);
                  break;
@@ -502,7 +502,7 @@
                      if (psr.nodeName === "cim:BusbarSection") {
                          psr = self.model.getNode(psr);
                      }   
-                     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let psrUUID = self.model.ID(psr);
                      let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
@@ -525,7 +525,7 @@
                      if (psr.nodeName === "cim:BusbarSection") {
                          psr = self.model.getNode(psr);
                      }   
-                     let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let psrUUID = self.model.ID(psr);
                      let psrSelection = d3.select("g#" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
@@ -564,7 +564,7 @@
                      [terminal],
                      "Terminal.ConductingEquipment")[0];
                  if (typeof(psr) !== "undefined") {
-                     let limPsrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                     let limPsrUUID = self.model.ID(psr);
                      let limPsrSelection = d3.select("g#" + limPsrUUID);
                      self.createStatusInfo(limPsrSelection);
                  }
@@ -582,7 +582,7 @@
                          psr = self.model.getNode(psr);
                      }
                      if (psr !== null) {
-                         let psrUUID = psr.attributes.getNamedItem("rdf:ID").value;
+                         let psrUUID = self.model.ID(psr);
                          let psrSelection = d3.select("g#" + psrUUID);
                          self.createStatusInfo(psrSelection);
                      }
@@ -954,7 +954,7 @@
                      value = self.getDiscreteValue(measurement);
                      value = parseInt(value);
                  }
-                 let measUUID = measurement.attributes.getNamedItem("rdf:ID").value;
+                 let measUUID = self.model.ID(measurement);
                  let hashComponents = window.location.hash.split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                  let targetPath = basePath + "/" + measUUID;
@@ -1026,7 +1026,7 @@
                  if (typeof(typeAttr) !== "undefined") {
                      type = typeAttr.textContent;
                  }
-                 let uuid = limitSet.attributes.getNamedItem("rdf:ID").value;
+                 let uuid = self.model.ID(limitSet);
                  let hashComponents = window.location.hash.split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                  let targetPath = basePath + "/" + uuid;
@@ -1055,13 +1055,13 @@
          
          let updateSel = d3.select("svg").select("g." + types).selectAll("g." + type)
                            .data(data, function(d) {
-                               return d.attributes.getNamedItem("rdf:ID").value;
+                               return self.model.ID(d);
                            });
          let enterSel = updateSel.enter()
                                  .append("g")
                                  .attr("class", type)
                                  .attr("id", function(d) {
-                                     return "cimdiagram-" + d.attributes.getNamedItem("rdf:ID").value;
+                                     return "cimdiagram-" + self.model.ID(d);
                                  });
          return [updateSel, enterSel]; 
      }
@@ -1513,7 +1513,7 @@
          });
          circleSel.data(trafoEnd);
          circleSel.attr("id", function() {
-             return "cimdiagram-" + trafoEnd[0].attributes.getNamedItem("rdf:ID").value;
+             return "cimdiagram-" + self.model.ID(trafoEnd[0]);
          });
          console.log(self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind"));
          let connKind = self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind");
@@ -1659,7 +1659,7 @@ star connection:
                  }
              })
              .attr("id", function(d) {
-                 return "cimdiagram-" + d.attributes.getNamedItem("rdf:ID").value;
+                 return "cimdiagram-" + self.model.ID(d);
              })
              .attr("class", function(d) {
                  return d.localName;
@@ -1883,14 +1883,14 @@ star connection:
                           .select("g." + NODE_CLASS + "s")
                           .selectAll("g." + NODE_CLASS)
                           .data(allNodes, function (d) {
-                              return d.attributes.getNamedItem("rdf:ID").value;
+                              return self.model.ID(d);
                           });
 
          let cnEnter = cnUpdate.enter()
                                .append("g")
                                .attr("class", NODE_CLASS)
                                .attr("id", function(d) {
-                                   return "cimdiagram-" + d.attributes.getNamedItem("rdf:ID").value;
+                                   return "cimdiagram-" + self.model.ID(d);
                                });
          
          cnUpdate.select("path").attr("d", function(d) {

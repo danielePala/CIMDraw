@@ -307,13 +307,11 @@ function cimModel() {
         let allObjects = getAllObjects();
         for (let i in allObjects) {
             let object = allObjects[i];
-            if (typeof(object.attributes) === "undefined") {
+            let uuid = model.ID(object);
+            if (uuid === null) {
                 continue;
             }
-            if (object.attributes.getNamedItem("rdf:ID") === null) {
-                continue;
-            }
-            dataMap.set("#" + object.attributes.getNamedItem("rdf:ID").value, object);
+            dataMap.set("#" + uuid, object);
             if (typeof(object.attributes) !== "undefined") {
                 let links = model.getLinks(object);
                 for (let link of links) {
@@ -384,7 +382,7 @@ function cimModel() {
         } else {
             obj.setAttributeNS(rdfNS, "rdf:ID", generateUUID());
         }
-        dataMap.set("#" + obj.attributes.getNamedItem("rdf:ID").value, obj);
+        dataMap.set("#" + model.ID(obj), obj);
         return obj;
     };
 
@@ -409,7 +407,7 @@ function cimModel() {
         let link = source.ownerDocument.createElementNS(cimNS, linkName);
         source.appendChild(link);
         // set the new value
-        link.setAttributeNS(rdfNS, "rdf:resource", "#" + target.attributes.getNamedItem("rdf:ID").value);
+        link.setAttributeNS(rdfNS, "rdf:resource", "#" + model.ID(target));
         
         let key = link.localName + link.attributes[0].value;
         let val = linksMap.get(key);
@@ -430,13 +428,13 @@ function cimModel() {
         let resultKeys = new Map();
         let result = [];
         for (let source of sources) {
-            let srcUUID = source.attributes.getNamedItem("rdf:ID").value;
+            let srcUUID = model.ID(source);
             let links = model.getLink(source, "cim:" + linkName);
             for (let link of links) {
                 let target = dataMap.get(
                     link.attributes.getNamedItem("rdf:resource").value);
                 if (typeof(target) !== "undefined") {
-                    let dstUUID = target.attributes.getNamedItem("rdf:ID").value;
+                    let dstUUID = model.ID(target);
                     result.push({
                         source: source,
                         target: target
@@ -450,7 +448,7 @@ function cimModel() {
                 continue;
             }
             for (let target of targets) {
-                let dstUUID = target.attributes.getNamedItem("rdf:ID").value;
+                let dstUUID = model.ID(target);
                 if (typeof(resultKeys.get(srcUUID + dstUUID)) === "undefined") {
                     result.push({
                         source: source,
@@ -805,9 +803,9 @@ function cimModel() {
                     // handle rdf:about
                     let isAbout = model.schema.isDescription(datum, profile);
                     let isConcrete = model.schema.isConcrete(datum, profile);
-                    if (isAbout === true && datum.attributes.getNamedItem("rdf:ID") !== null) {
+                    if (isAbout === true && model.ID(datum) !== null) {
                         // we must use rdf:about
-                        let idVal = datum.attributes.getNamedItem("rdf:ID").value; 
+                        let idVal = model.ID(datum); 
                         datum.removeAttribute("rdf:ID");
                         let about = datum.ownerDocument.createAttribute("rdf:about");
                         about.value = "#" + idVal;
@@ -1253,7 +1251,7 @@ function cimModel() {
                 model.deleteObjects(objsToDelete);
             }
             for (let object of objects) {
-                let objUUID = object.attributes.getNamedItem("rdf:ID").value;
+                let objUUID = model.ID(object);
                 // update the 'dataMap' map
                 dataMap.delete("#" + objUUID);
                 // delete the object
@@ -1414,7 +1412,7 @@ function cimModel() {
         // In the special case that the object is a busbar or a node we will
         // delete the both from the diagram.
         deleteFromDiagram(object) {
-            let objUUID = object.attributes.getNamedItem("rdf:ID").value;
+            let objUUID = model.ID(object);
             let dobjs = model.getDiagramObjects([object]);
             let nodeName = "ConnectivityNode";
             if (mode === "BUS_BRANCH") {
@@ -1555,7 +1553,7 @@ function cimModel() {
                 // the link may be many-valued
                 for (let linkEntry of link) {
                     let targetUUID = linkEntry.attributes.getNamedItem("rdf:resource").value;
-                    if (targetUUID === "#" + targetInt.attributes.getNamedItem("rdf:ID").value) {
+                    if (targetUUID === "#" + model.ID(targetInt)) {
                         let linksMapKey = linkEntry.localName + targetUUID;
                         let linksMapValue = linksMap.get(linksMapKey);
                         linkEntry.remove();

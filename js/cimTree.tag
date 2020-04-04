@@ -223,7 +223,7 @@
                      if (total.length > 0) {
                          $("#cim-search-results > span", self.root).html("Result 1 of " + total.length);
                          searchResults = {elements: d3.selectAll(total).data(), actualResult: 0};
-                         self.moveTo(searchResults.elements[searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+                         self.moveTo(self.model.ID(searchResults.elements[searchResults.actualResult]));
                      } else {
                          $("#cim-search-results > span", self.root).html("Text not found");
                      }
@@ -237,7 +237,7 @@
                      searchResults.actualResult = searchResults.actualResult + 1;
                      let result = searchResults.actualResult + 1;
                      $("#cim-search-results > span", self.root).html("Result " + result  + " of " + searchResults.elements.length);
-                     self.moveTo(searchResults.elements[searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+                     self.moveTo(self.model.ID(searchResults.elements[searchResults.actualResult]));
                  } 
              }
          });
@@ -247,7 +247,7 @@
                      searchResults.actualResult = searchResults.actualResult - 1;
                      let result = searchResults.actualResult + 1;
                      $("#cim-search-results > span", self.root).html("Result " + result  + " of " + searchResults.elements.length);
-                     self.moveTo(searchResults.elements[searchResults.actualResult].attributes.getNamedItem("rdf:ID").value);
+                     self.moveTo(self.model.ID(searchResults.elements[searchResults.actualResult]));
                  } 
              }
          });
@@ -352,7 +352,7 @@
                  break;
              case "cim:NonlinearShuntCompensatorPoint":
                  let nlc = self.model.getTargets([object], "NonlinearShuntCompensatorPoint.NonlinearShuntCompensator");
-                 let nlcUUID = nlc[0].attributes.getNamedItem("rdf:ID").value;
+                 let nlcUUID = self.model.ID(nlc[0]);
                  let nlcG = cimNetwork.selectAll("ul#" + nlcUUID);
                  self.nlCompensatorPoints(nlcG, [object]);
                  break;
@@ -361,7 +361,7 @@
                  break;
              case "cim:RatioTapChanger":
                  let tcEnd = self.model.getTargets([object], "RatioTapChanger.TransformerEnd");
-                 let endUUID = tcEnd[0].attributes.getNamedItem("rdf:ID").value;
+                 let endUUID = self.model.ID(tcEnd[0]);
                  let endG = cimNetwork.selectAll("ul#" + endUUID);
                  self.tapChangers(endG, [object]);
                  break;
@@ -377,7 +377,7 @@
                  break;
              case "cim:SubGeographicalRegion":
                  let region = self.model.getTargets([object], "SubGeographicalRegion.Region");
-                 let regionUUID = region[0].attributes.getNamedItem("rdf:ID").value;
+                 let regionUUID = self.model.ID(region[0]);
                  let regionG = cimContainers.selectAll("ul#" + regionUUID);
                  self.subGeoRegions(regionG, [object]);
                  break;          
@@ -386,13 +386,13 @@
                  break;
              case "cim:VoltageLevel":
                  let vlSub = self.model.getTargets([object], "VoltageLevel.Substation");
-                 let subUUID = vlSub[0].attributes.getNamedItem("rdf:ID").value;
+                 let subUUID = self.model.ID(vlSub[0]);
                  let subG = cimContainers.selectAll("ul#" + subUUID);
                  self.voltageLevels(subG, [object]);
                  break;
              case "cim:Bay":
                  let bayVl = self.model.getTargets([object], "Bay.VoltageLevel");
-                 let vlUUID = bayVl[0].attributes.getNamedItem("rdf:ID").value;
+                 let vlUUID = self.model.ID(bayVl[0]);
                  let vlG = cimContainers.selectAll("ul#" + vlUUID);
                  self.bays(vlG, [object]);
                  break;
@@ -439,7 +439,7 @@
              case "cim:ActivePowerLimit":
              case "cim:ApparentPowerLimit":
                  let opSet = self.model.getTargets([object], "OperationalLimit.OperationalLimitSet");
-                 let setUUID = opSet[0].attributes.getNamedItem("rdf:ID").value;
+                 let setUUID = self.model.ID(opSet[0]);
                  let setG = cimLimits.selectAll("ul#" + setUUID);
                  self.limits(setG, [object]);
                  break;
@@ -464,18 +464,18 @@
          if (attrName === "cim:IdentifiedObject.name") {
              let type = object.localName;
              let target = d3.select("div.tree")
-                            .selectAll("ul#" + object.attributes.getNamedItem("rdf:ID").value);
+                            .selectAll("ul#" + self.model.ID(object));
              if (target.empty() === false) {
                  let btn = d3.select(target.node().parentNode).select("button");
                  btn.html(value);
              }
-             $("[cim-target=\"" + object.attributes.getNamedItem("rdf:ID").value + "\"]").html(value);
+             $("[cim-target=\"" + self.model.ID(object) + "\"]").html(value);
          }
      });
 
      // listen to 'addLink' event from model
      self.model.on("addLink", function(source, linkName, target) {
-         let sourceUUID = source.attributes.getNamedItem("rdf:ID").value;
+         let sourceUUID = self.model.ID(source);
          let sourceNode = d3.select(".tree").select("#" + sourceUUID);
          let removeBtn = sourceNode.selectAll("#cimRemoveBtn").filter(function(d) {
              return (d.attributes[0].value === "#" + linkName.split(":")[1]);
@@ -487,7 +487,7 @@
          linkBtn.html(function() {
              return self.model.getAttribute(target, "cim:IdentifiedObject.name").textContent;
          }).attr("cim-target", function() {
-             return target.attributes.getNamedItem("rdf:ID").value;
+             return self.model.ID(target);
          }).attr("disabled", null);
          sourceNode.selectAll("#cimTarget").attr("id", null);
          removeBtn.attr("disabled", null);
@@ -503,7 +503,7 @@
 
      // listen to 'removeLink' event from model
      self.model.on("removeLink", function(source, linkName, target) {
-         let sourceUUID = source.attributes.getNamedItem("rdf:ID").value;
+         let sourceUUID = self.model.ID(source);
          let sourceNode = d3.select(".tree").select("#" + sourceUUID);
          let removeBtn = sourceNode.selectAll("#cimRemoveBtn").filter(function(d) {
              return (d.attributes[0].value === "#" + linkName.split(":")[1]);
@@ -769,7 +769,7 @@
          let geo = geoG.data()[0];
          let subGeoEnter = self.elements(
              geoG,
-             geo.attributes.getNamedItem("rdf:ID").value + "SubGeographicalRegion",
+             self.model.ID(geo) + "SubGeographicalRegion",
              "Sub-Geographical Regions",
              subGeos);
          self.createDeleteMenu(subGeoEnter);     
@@ -796,7 +796,7 @@
          let sub = subG.data()[0];
          let vlEnter = self.elements(
              subG,
-             sub.attributes.getNamedItem("rdf:ID").value + "VoltageLevel",
+             self.model.ID(sub) + "VoltageLevel",
              "Voltage Levels",
              vlevs);
          vlEnter.each(function(d, i) {
@@ -818,7 +818,7 @@
          let vl = vlG.data()[0];
          let bayEnter = self.elements(
              vlG,
-             vl.attributes.getNamedItem("rdf:ID").value + "Bay",
+             self.model.ID(vl) + "Bay",
              "Bays",
              bays);
          self.createDeleteMenu(bayEnter);
@@ -833,7 +833,7 @@
                  "PowerTransformer.PowerTransformerEnd");
              let trafoEndsEnter = self.elements(
                  d3.select(this),
-                 d.attributes.getNamedItem("rdf:ID").value + "PowerTransformerEnd",
+                 self.model.ID(d) + "PowerTransformerEnd",
                  "Transformer Windings",
                  trafoEnds);
              $(trafoEndsEnter.nodes()).parent().addClass("CIM-subobject");
@@ -864,7 +864,7 @@
          let nlc = nlcG.data()[0];
          let nlcPointsEnter = self.elements(
              nlcG,
-             nlc.attributes.getNamedItem("rdf:ID").value + "NonlinearShuntCompensatorPoint",
+             self.model.ID(nlc) + "NonlinearShuntCompensatorPoint",
              "Points",
              nlcPoints, true);
          $(nlcPointsEnter.nodes()).parent().addClass("CIM-subobject");
@@ -875,7 +875,7 @@
          let trafo = trafoG.data()[0];
          let tcEnter = self.elements(
              trafoG,
-             trafo.attributes.getNamedItem("rdf:ID").value + "RatioTapChanger",
+             self.model.ID(trafo) + "RatioTapChanger",
              "Ratio Tap Changer",
              tcs);
          $(tcEnter.nodes()).parent().addClass("CIM-subobject");
@@ -918,22 +918,22 @@
          let sLims = lims.filter(el => self.model.schema.isA("ApparentPowerLimit", el));
          let vLimEnter = self.elements(
              setG,
-             opset.attributes.getNamedItem("rdf:ID").value + "VoltageLimit",
+             self.model.ID(opset) + "VoltageLimit",
              "Voltage limits",
              vLims);
          let iLimEnter = self.elements(
              setG,
-             opset.attributes.getNamedItem("rdf:ID").value + "CurrentLimit",
+             self.model.ID(opset) + "CurrentLimit",
              "Current limits",
              iLims);
          let pLimEnter = self.elements(
              setG,
-             opset.attributes.getNamedItem("rdf:ID").value + "ActivePowerLimit",
+             self.model.ID(opset) + "ActivePowerLimit",
              "Active power limits",
              pLims);
          let sLimEnter = self.elements(
              setG,
-             opset.attributes.getNamedItem("rdf:ID").value + "ApparentPowerLimit",
+             self.model.ID(opset) + "ApparentPowerLimit",
              "Apparent power limits",
              sLims);
          self.createDeleteMenu(vLimEnter);
@@ -994,7 +994,7 @@
 
      subAddButton(cimContainer, type, link) {
          let parent = cimContainer.data()[0];
-         let name = parent.attributes.getNamedItem("rdf:ID").value + type;
+         let name = self.model.ID(parent) + type;
          let elementsTopContainer = cimContainer.select("li." + name + "s");
          let elements = elementsTopContainer.select("ul#" + name + "sList");
          let addBtn = elementsTopContainer.select("ul#" + name + "sList > button.cim-add-btn");
@@ -1052,7 +1052,7 @@
          let elementTopContainer = elements
                 .selectAll("li." + name)
                 .data(data, function(d) {
-                    return d.attributes.getNamedItem("rdf:ID").value;
+                    return self.model.ID(d);
                 })
                 .enter()
                 .append("li")
@@ -1070,7 +1070,7 @@
              .attr("role", "button")
              .attr("data-toggle", "collapse")
              .attr("href", function(d) {
-                 return "#" + d.attributes.getNamedItem("rdf:ID").value;
+                 return "#" + self.model.ID(d);
              }).on("click", function (d) {
                  // if necessary, generate attributes and links
                  let elementEnter = d3.select(this.parentNode).select("ul");
@@ -1086,8 +1086,8 @@
                  // change address to 'this object'
                  let hashComponents = window.location.hash.substring(1).split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-                 if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
-                     route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
+                 if (window.location.hash.substring(1) !== basePath + "/" + self.model.ID(d)) {
+                     route(basePath + "/" + self.model.ID(d));
                  }
              })
              .html(function (d) {
@@ -1099,13 +1099,13 @@
              })
              .attr("draggable", "true")
              .on("dragstart", function(d) {
-                 d3.event.dataTransfer.setData('text/plain', d.attributes.getNamedItem("rdf:ID").value);
+                 d3.event.dataTransfer.setData('text/plain', self.model.ID(d));
              });
          
          let elementEnter = elementTopContainer
              .append("ul")
              .attr("id", function(d) {
-                 return d.attributes.getNamedItem("rdf:ID").value;
+                 return self.model.ID(d);
              })
              .attr("class", "collapse CIM-object-list");
          // update element count
@@ -1441,7 +1441,7 @@
                            if (typeof(targetObj) === "undefined") {
                                return "none";
                            }
-                           return targetObj.attributes.getNamedItem("rdf:ID").value;
+                           return self.model.ID(targetObj);
                        })
                        .html(function (d) {
                            let targetObj = self.model.getObject(d3.select(this).attr("cim-target"));
@@ -1507,7 +1507,7 @@
 
      setLink(linkToChange, source) {
          let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0];
-         let targetUUID = target.attributes.getNamedItem("rdf:ID").value;
+         let targetUUID = self.model.ID(target);
          if (source !== null) {
              let targetLink = linkToChange.data()[0];
              let targetLinkName = "cim:" + targetLink.attributes[0].value.substring(1);
@@ -1608,7 +1608,7 @@
              if (busbarSection === null) {
                  return;
              }
-             uuid = busbarSection.attributes.getNamedItem("rdf:ID").value;
+             uuid = self.model.ID(busbarSection);
          } 
          targetChild = d3.select(".tree").select("#" + uuid).node();
          if (targetChild === null) {

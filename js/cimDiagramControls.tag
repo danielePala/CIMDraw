@@ -310,7 +310,7 @@
              action: function(d, i) {
                  let cn = self.getLinkedCNs([d.target])[0];
                  if (typeof(cn) !== "undefined") {
-                     let cnUUID = cn.cn.attributes.getNamedItem("rdf:ID").value
+                     let cnUUID = opts.model.ID(cn);
                      let cnElem = d3.select("svg").selectAll("g#cimdiagram-"+cnUUID).node();
                      self.deleteObject(cnElem);
                  } else {
@@ -446,7 +446,7 @@
                              equipment = cn;
                          }
                      }
-                     diagramElem = d3.select("svg").select("#cimdiagram-" + equipment.attributes.getNamedItem("rdf:ID").value).node();
+                     diagramElem = d3.select("svg").select("#cimdiagram-" + opts.model.ID(equipment)).node();
                      if (diagramElem !== null) {
                          selected.push(diagramElem);
                      }
@@ -458,7 +458,7 @@
                      [cimObject],
                      "Measurement.Terminal");
                  for (let terminal of terminals) {
-                     diagramElem = d3.select("svg").select("#cimdiagram-" + terminal.attributes.getNamedItem("rdf:ID").value).node();
+                     diagramElem = d3.select("svg").select("#cimdiagram-" + opts.model.ID(terminal)).node();
                      if (diagramElem !== null) {
                          selected.push(diagramElem);
                      }
@@ -466,7 +466,7 @@
                  break;
              case "cim:BusbarSection":
                  cn = opts.model.getNode(cimObject);
-                 cnUUID = cn.attributes.getNamedItem("rdf:ID").value;
+                 cnUUID = opts.model.ID(cn);
                  diagramElem = d3.select("svg").selectAll("g#cimdiagram-" + cnUUID).node();
                  selected = [diagramElem];
                  break;
@@ -844,8 +844,8 @@
            .on("click.zoom", function (d) {
                let hashComponents = window.location.hash.substring(1).split("/");
                let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-               if (window.location.hash.substring(1) !== basePath + "/" + d.attributes.getNamedItem("rdf:ID").value) {
-                   route(basePath + "/" + d.attributes.getNamedItem("rdf:ID").value);
+               if (window.location.hash.substring(1) !== basePath + "/" + opts.model.ID(d)) {
+                   route(basePath + "/" + opts.model.ID(d));
                }
            });
          let zoomComp = d3.zoom();
@@ -943,7 +943,7 @@
                        // now be deleted.
                        let cnsToRemove = self.getLinkedCNs([termToChange]);
                        for (let cnToRemove of cnsToRemove) {
-                           let cnUUID = cnToRemove.cn.attributes.getNamedItem("rdf:ID").value
+                           let cnUUID = opts.model.ID(cnToRemove.cn);
                            let cnElem = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID).node();
                            self.deleteObject(cnElem);
                        }
@@ -1550,7 +1550,7 @@
          let terminals = opts.model.getTerminals(selection.data());
          let cnsToRemove = self.getLinkedCNs(terminals);
          for (let cnToRemove of cnsToRemove) {
-             let cnUUID = cnToRemove.cn.attributes.getNamedItem("rdf:ID").value
+             let cnUUID = opts.model.ID(cnToRemove.cn);
              let cnElem = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID).node();
              selected.push(cnElem);
          }

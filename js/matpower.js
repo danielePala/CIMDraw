@@ -45,7 +45,7 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "%bus_i\ttype\tPd\tQd\tGs\tBs\tarea\tVm\tVa\tbaseKV\tzone\tVmax\tVmin\n";
     let busNums = new Map();
     for (let i in allNodes) {
-        let nodeUUID = allNodes[i].attributes.getNamedItem("rdf:ID").value;
+        let nodeUUID = model.ID(allNodes[i]);
         let type = 1;
         let baseVobj = model.getTargets([allNodes[i]], "TopologicalNode.BaseVoltage")[0];
         let baseV = getAttrDefault(baseVobj, "cim:BaseVoltage.nominalVoltage", "0");
@@ -143,7 +143,7 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "%bus\tPg\tQg\tQmax\tQmin\tVg\tmBase\tstatus\tPmax\tPmin\tPc1\tPc2\tQc1min\tQc1max\tQc2min\tQc2max\tramp_agc\tramp_10\tramp_30\tramp_q\tapf\n";
     machines.forEach(function(machine) {
         let genData = {};
-        genData.genUUID = machine.attributes.getNamedItem("rdf:ID").value;
+        genData.genUUID = model.ID(machine);
         let terminals = tp.getTerminals(machine); 
         let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
         let genUnit = model.getTargets([machine], "RotatingMachine.GeneratingUnit")[0];
@@ -169,7 +169,7 @@ function exportToMatpower(model) {
     });
     injections.forEach(function(injection) {
         let genData = {};
-        genData.genUUID = injection.attributes.getNamedItem("rdf:ID").value;
+        genData.genUUID = model.ID(injection);
         let terminals = tp.getTerminals(injection);
         let nodes = model.getTargets(terminals, "Terminal.TopologicalNode");
         let regStatus = getAttrDefault(injection, "cim:EquivalentInjection.regulationStatus", "false");
@@ -199,7 +199,7 @@ function exportToMatpower(model) {
     mpcFile = mpcFile + "mpc.branch = [\n";
     mpcFile = mpcFile + "%fbus\ttbus\tr\tx\tb\trateA\trateB\trateC\tratio\tangle\tstatus\tangmin\tangmax\n";
     aclines.forEach(function(acline) {
-        let aclineUUID = acline.attributes.getNamedItem("rdf:ID").value;
+        let aclineUUID = model.ID(acline);
         let terms = tp.getTerminals(acline); 
         let nodes = model.getTargets(terms, "Terminal.TopologicalNode");
         // TODO: a valid case is that conducting equipment can be connected in
@@ -253,7 +253,7 @@ function exportToMatpower(model) {
         //    PowerTransformerEnd impedance values cannot
         //    be used. Instead use the TransformerMeshImpedance or split
         //    the transformer into multiple PowerTransformers.
-        let trafoUUID = trafo.attributes.getNamedItem("rdf:ID").value;
+        let trafoUUID = model.ID(trafo);
         let trafoEnds = model.getTargets([trafo], "PowerTransformer.PowerTransformerEnd");
         // process the two Terminal PowerTransformers
         if (trafoEnds.length === 2) {
