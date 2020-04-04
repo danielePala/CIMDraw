@@ -147,7 +147,7 @@
          switch (attrName) {
              case "cim:IdentifiedObject.name":
                  let type = object.localName;
-                 let uuid = object.attributes.getNamedItem("rdf:ID").value;
+                 let uuid = self.model.ID(object);
                  // special case for busbars
                  if (object.nodeName === "cim:BusbarSection") {
                      let cn = self.model.getNode(object);
@@ -155,7 +155,7 @@
                          return;
                      }
                      type = cn.localName;
-                     uuid = cn.attributes.getNamedItem("rdf:ID").value;
+                     uuid = self.model.ID(cn);
                  }
                  let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
                  let target = types.select("#cimdiagram-" + uuid);

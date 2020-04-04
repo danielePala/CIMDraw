@@ -1648,6 +1648,22 @@ function cimModel() {
             model.trigger("setMode", mode);
         },
 
+        // Get the rdf:ID attribute of a given object, or null if not present.
+        ID(object) {
+            if (object === null || typeof(object) === "undefined") {
+                return null;
+            }
+            if (typeof(object.attributes) === "undefined") {
+                return null;
+            } else {
+                let idNode = object.attributes.getNamedItem("rdf:ID");
+                if (idNode === null) {
+                    return null;
+                }
+                return idNode.value;
+            }
+        },
+
         // Reset the model to its initial state.
         clear() {
             data.all = null;
