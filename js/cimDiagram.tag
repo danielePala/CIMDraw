@@ -173,7 +173,7 @@
                      psr = self.model.getNode(psr);
                  }
                  let psrUUID = self.model.ID(psr);
-                 let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
+                 let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
                  break;
              case "cim:SvPowerFlow.p":
@@ -186,7 +186,7 @@
                          [svTerminal],
                          "Terminal.ConductingEquipment")[0];
                      let psrUUID = self.model.ID(psr);
-                     let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
+                     let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                      self.createStatusInfo(psrSelection);
                  }
                  break;
@@ -223,7 +223,7 @@
                      psr = self.model.getNode(psr);
                  }       
                  let psrUUID = self.model.ID(psr);
-                 let psrSelection = d3.select("g#cimDiagram-" + psrUUID);
+                 let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
              }
          }
@@ -243,6 +243,15 @@
                  let psrUUID = self.model.ID(psr);
                  let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
+             }
+         }
+         switch (enumName) {
+             case "cim:PowerTransformerEnd.connectionKind": {
+                 const terms = self.model.getTargets([object], "TransformerEnd.Terminal");
+                 const termUUID = self.model.ID(terms[0]);
+                 let termSelection = d3.select("g#cimdiagram-" + termUUID);
+                 self.handlePowerTransformerEnds(termSelection.node());
+                 break;
              }
          }
      });
@@ -613,10 +622,10 @@
 
          self.model.selectDiagram(decodeURI(diagramName));
          self.diagramName = decodeURI(diagramName);
-         let allNodes = self.model.getNodes();
+         const allNodes = self.model.getNodes();
          yield "DIAGRAM: extracted nodes";
          
-         let allEquipments = self.model.getGraphicObjects(
+         const allEquipments = self.model.getGraphicObjects(
              ["cim:ACLineSegment",
               "cim:Breaker",
               "cim:Disconnector",
@@ -633,76 +642,76 @@
               "cim:BusbarSection",
               "cim:LinearShuntCompensator",
               "cim:NonlinearShuntCompensator"]);
-         let allACLines = allEquipments["cim:ACLineSegment"];
-         let allBreakers = allEquipments["cim:Breaker"];
-         let allDisconnectors = allEquipments["cim:Disconnector"]; 
-         let allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
-         let allJunctions = allEquipments["cim:Junction"];
-         let allEnergySources = allEquipments["cim:EnergySource"];
-         let allSynchronousMachines = allEquipments["cim:SynchronousMachine"];
-         let allAsynchronousMachines = allEquipments["cim:AsynchronousMachine"];
-         let allEnergyConsumers = allEquipments["cim:EnergyConsumer"];
-         let allConformLoads = allEquipments["cim:ConformLoad"];
-         let allNonConformLoads = allEquipments["cim:NonConformLoad"];
-         let allEquivalentInjections = allEquipments["cim:EquivalentInjection"];
-         let allPowerTransformers = allEquipments["cim:PowerTransformer"];
-         let allBusbarSections = allEquipments["cim:BusbarSection"];
-         let allLinearShuntCompensators = allEquipments["cim:LinearShuntCompensator"];
-         let allNonlinearShuntCompensators = allEquipments["cim:NonlinearShuntCompensator"];
+         const allACLines = allEquipments["cim:ACLineSegment"];
+         const allBreakers = allEquipments["cim:Breaker"];
+         const allDisconnectors = allEquipments["cim:Disconnector"]; 
+         const allLoadBreakSwitches = allEquipments["cim:LoadBreakSwitch"]; 
+         const allJunctions = allEquipments["cim:Junction"];
+         const allEnergySources = allEquipments["cim:EnergySource"];
+         const allSynchronousMachines = allEquipments["cim:SynchronousMachine"];
+         const allAsynchronousMachines = allEquipments["cim:AsynchronousMachine"];
+         const allEnergyConsumers = allEquipments["cim:EnergyConsumer"];
+         const allConformLoads = allEquipments["cim:ConformLoad"];
+         const allNonConformLoads = allEquipments["cim:NonConformLoad"];
+         const allEquivalentInjections = allEquipments["cim:EquivalentInjection"];
+         const allPowerTransformers = allEquipments["cim:PowerTransformer"];
+         const allBusbarSections = allEquipments["cim:BusbarSection"];
+         const allLinearShuntCompensators = allEquipments["cim:LinearShuntCompensator"];
+         const allNonlinearShuntCompensators = allEquipments["cim:NonlinearShuntCompensator"];
          yield "DIAGRAM: extracted equipments";
          
          // AC Lines
-         let aclineEnter = self.drawACLines(allACLines)[1];
+         const aclineEnter = self.drawACLines(allACLines)[1];
          yield "DIAGRAM: drawn acLines";
          // breakers
-         let breakerEnter = self.drawBreakers(allBreakers);
+         const breakerEnter = self.drawBreakers(allBreakers);
          yield "DIAGRAM: drawn breakers";
          // disconnectors
-         let discEnter = self.drawDisconnectors(allDisconnectors);
+         const discEnter = self.drawDisconnectors(allDisconnectors);
          yield "DIAGRAM: drawn disconnectors";
          // load break switches
-         let lbsEnter = self.drawLoadBreakSwitches(allLoadBreakSwitches);
+         const lbsEnter = self.drawLoadBreakSwitches(allLoadBreakSwitches);
          yield "DIAGRAM: drawn load break switches";
          // junctions
-         let junctsEnter = self.drawJunctions(allJunctions);
+         const junctsEnter = self.drawJunctions(allJunctions);
          yield "DIAGRAM: drawn junctions";
          // energy sources
-         let ensrcEnter = self.drawEnergySources(allEnergySources);
+         const ensrcEnter = self.drawEnergySources(allEnergySources);
          yield "DIAGRAM: drawn energy sources";
          // synchronous machines
-         let syncEnter = self.drawSynchronousMachines(allSynchronousMachines);
+         const syncEnter = self.drawSynchronousMachines(allSynchronousMachines);
          yield "DIAGRAM: drawn synchronous machines";
          // asynchronous machines
-         let asyncEnter = self.drawAsynchronousMachines(allAsynchronousMachines);
+         const asyncEnter = self.drawAsynchronousMachines(allAsynchronousMachines);
          yield "DIAGRAM: drawn asynchronous machines";      
          // energy consumers
-         let enconsEnter = self.drawEnergyConsumers(allEnergyConsumers);
+         const enconsEnter = self.drawEnergyConsumers(allEnergyConsumers);
          yield "DIAGRAM: drawn energy consumers";
          // conform loads
-         let confEnter = self.drawConformLoads(allConformLoads);
+         const confEnter = self.drawConformLoads(allConformLoads);
          yield "DIAGRAM: drawn conform loads";
          // non conform loads
-         let nonconfEnter = self.drawNonConformLoads(allNonConformLoads);
+         const nonconfEnter = self.drawNonConformLoads(allNonConformLoads);
          yield "DIAGRAM: drawn non conform loads";
          // equivalent injections
-         let eqInjEnter = self.drawEquivalentInjections(allEquivalentInjections);
+         const eqInjEnter = self.drawEquivalentInjections(allEquivalentInjections);
          yield "DIAGRAM: drawn equivalent injections";
          // power transformers
-         let trafoEnter = self.drawPowerTransformers(allPowerTransformers);
+         const trafoEnter = self.drawPowerTransformers(allPowerTransformers);
          yield "DIAGRAM: drawn power transformers";
          // linear shunt compensators
-         let lshuntEnter = self.drawLinearCompensators(allLinearShuntCompensators);
+         const lshuntEnter = self.drawLinearCompensators(allLinearShuntCompensators);
          yield "DIAGRAM: drawn linear shunt compensators";
          // nonlinear shunt compensators
-         let nlshuntEnter = self.drawNonlinearCompensators(allNonlinearShuntCompensators);
+         const nlshuntEnter = self.drawNonlinearCompensators(allNonlinearShuntCompensators);
          yield "DIAGRAM: drawn nonlinear shunt compensators";
          // connectivity nodes
-         let cnEnter = self.drawNodes(allNodes);
+         const cnEnter = self.drawNodes(allNodes);
          self.createStatusInfo(cnEnter);
          yield "DIAGRAM: drawn connectivity nodes";
 
          // ac line terminals
-         let termSelection = self.createTerminals(aclineEnter);
+         self.createTerminals(aclineEnter);
          self.createStatusInfo(aclineEnter);
          yield "DIAGRAM: drawn acline terminals";
          // breaker terminals
@@ -722,43 +731,43 @@
          self.createStatusInfo(junctsEnter);
          yield "DIAGRAM: drawn junction terminals";
          // energy source terminals
-         termSelection = self.createTerminals(ensrcEnter);
+         self.createTerminals(ensrcEnter);
          self.createStatusInfo(ensrcEnter);
          yield "DIAGRAM: drawn energy source terminals";
          // synchronous machine terminals
-         termSelection = self.createTerminals(syncEnter);
+         self.createTerminals(syncEnter);
          self.createStatusInfo(syncEnter);
          yield "DIAGRAM: drawn synchronous machine terminals";
          // asynchronous machine terminals
-         termSelection = self.createTerminals(asyncEnter);
+         self.createTerminals(asyncEnter);
          self.createStatusInfo(asyncEnter);
          yield "DIAGRAM: drawn asynchronous machine terminals";
          // energy consumer terminals
-         termSelection = self.createTerminals(enconsEnter);
+         self.createTerminals(enconsEnter);
          self.createStatusInfo(enconsEnter);
          yield "DIAGRAM: drawn energy consumer terminals";
          // conform load terminals
-         termSelection = self.createTerminals(confEnter);
+         self.createTerminals(confEnter);
          self.createStatusInfo(confEnter);
          yield "DIAGRAM: drawn conform load terminals";
          // non conform load terminals
-         termSelection = self.createTerminals(nonconfEnter);
+         self.createTerminals(nonconfEnter);
          self.createStatusInfo(nonconfEnter);
          yield "DIAGRAM: drawn non conform load terminals";
          // equivalent injection terminals
-         termSelection = self.createTerminals(eqInjEnter);
+         self.createTerminals(eqInjEnter);
          self.createStatusInfo(eqInjEnter);
          yield "DIAGRAM: drawn equivalent injection terminals";
          // power transformer terminals
-         termSelection = self.createTerminals(trafoEnter);
+         self.createTerminals(trafoEnter);
          self.createStatusInfo(trafoEnter);
          yield "DIAGRAM: drawn power transformer terminals";
          // linear shunt compensator terminals
-         termSelection = self.createTerminals(lshuntEnter);
+         self.createTerminals(lshuntEnter);
          self.createStatusInfo(lshuntEnter);
          yield "DIAGRAM: drawn linear shunt compensator terminals";
          // nonlinear shunt compensator terminals
-         termSelection = self.createTerminals(nlshuntEnter);
+         self.createTerminals(nlshuntEnter);
          self.createStatusInfo(nlshuntEnter);
          yield "DIAGRAM: drawn nonlinear shunt compensator terminals";
 
@@ -766,15 +775,15 @@
              d3.event.preventDefault();
          }).on("drop", function() {
              d3.event.preventDefault();
-             let objUUID = d3.event.dataTransfer.getData("text/plain");
+             const objUUID = d3.event.dataTransfer.getData("text/plain");
              if (typeof(objUUID) === "undefined") {
                  return;
              }
-             let datum = self.model.getObject(objUUID);
+             const datum = self.model.getObject(objUUID);
              if (typeof(datum) === "undefined") {
                  return;
              }
-             let dobjs = self.model.getDiagramObjects([datum]);
+             const dobjs = self.model.getDiagramObjects([datum]);
              if (dobjs.length > 0) {
                  self.moveTo(objUUID);
              } else {
@@ -1382,8 +1391,8 @@
      // Draw all PowerTransformers
      drawPowerTransformers(allPowerTransformers) {
          let trafoEnter = this.createSelection("PowerTransformer", allPowerTransformers)[1];
-         let wind1y = TRAFO_RADIUS - (TRAFO_HEIGHT/2);
-         let wind2y = (TRAFO_HEIGHT/2) - TRAFO_RADIUS;
+         let wind1y = (TRAFO_RADIUS * 0.8) - (TRAFO_HEIGHT/2);
+         let wind2y = (TRAFO_HEIGHT/2) - (TRAFO_RADIUS * 0.8);
 
          let twoWind = trafoEnter.filter(function(d) {
              let winds = self.model.getTargets([d], "PowerTransformer.PowerTransformerEnd");
@@ -1400,21 +1409,21 @@
                 .attr("cy", wind2y)
                 .attr("fill", "white")
                 .attr("stroke", "black")
-                .attr("stroke-width", 4);
+                .attr("stroke-width", 1);
          threeWind.append("circle")
                   .attr("r", TRAFO_RADIUS)
-                  .attr("cx", (TRAFO_RADIUS/2) * (-1)) 
-                  .attr("cy", wind2y)
+                  .attr("cx", wind1y) 
+                  .attr("cy", wind2y * 0.8)
                   .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4);
+                  .attr("stroke-width", 1);
          threeWind.append("circle")
                   .attr("r", TRAFO_RADIUS)
-                  .attr("cx", (TRAFO_RADIUS/2))
-                  .attr("cy", wind2y)
+                  .attr("cx", wind2y)
+                  .attr("cy", wind2y * 0.8)
                   .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4);
+                  .attr("stroke-width", 1);
          
          twoWind.append("g")
                 .attr("class", "TransformerEnd")
@@ -1425,7 +1434,7 @@
                 .attr("cy", 0)
                 .attr("fill", "white")
                 .attr("stroke", "black")
-                .attr("stroke-width", 4)
+                .attr("stroke-width", 1)
                 .attr("class", "TransformerEndCircle");
          twoWind.append("g")
                 .attr("class", "TransformerEnd")
@@ -1437,39 +1446,42 @@
                 .attr("fill", "white")
                 .attr("fill-opacity", "0")
                 .attr("stroke", "black")
-                .attr("stroke-width", 4)
+                .attr("stroke-width", 1)
                 .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
+                  .attr("transform", d3.zoomIdentity.translate(0, wind1y))
                   .append("circle")
                   .attr("r", TRAFO_RADIUS)
                   .attr("cx", 0) 
-                  .attr("cy", wind1y)
+                  .attr("cy", 0)
                   .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4)
+                  .attr("stroke-width", 1)
                   .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
+                  .attr("transform", d3.zoomIdentity.translate(wind1y, wind2y * 0.8))
                   .append("circle")
                   .attr("r", TRAFO_RADIUS)
-                  .attr("cx", (TRAFO_RADIUS/2) * (-1)) 
-                  .attr("cy", wind2y)
+                  .attr("cx", 0) 
+                  .attr("cy", 0)
                   .attr("fill", "white")
                   .attr("fill-opacity", "0")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4)
+                  .attr("stroke-width", 1)
                   .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
+                  .attr("transform", d3.zoomIdentity.translate(wind2y, wind2y * 0.8))
                   .append("circle")
                   .attr("r", TRAFO_RADIUS)
-                  .attr("cx", (TRAFO_RADIUS/2))
-                  .attr("cy", wind2y)
+                  .attr("cx", 0)
+                  .attr("cy", 0)
                   .attr("fill", "white")
                   .attr("fill-opacity", "0")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4)
+                  .attr("stroke-width", 1)
                   .attr("class", "TransformerEndCircle");
          
          trafoEnter.append("text")
@@ -1490,22 +1502,23 @@
      }
 
      handlePowerTransformerEnds(termNode) {
-         let term = d3.select(termNode).datum();
-         let eq = d3.select(termNode.parentNode).datum();
+         const term = d3.select(termNode).datum();
+         const eq = d3.select(termNode.parentNode).datum();
+         const trafoEnd = self.model.getTargets([term], "Terminal.TransformerEnd");
+         const termX = term.x - eq.x;
+         const termY = term.y - eq.y;
          let minDist2 = null;
          let circleSel = null;
-         let trafoEnd = self.model.getTargets([term], "Terminal.TransformerEnd");
-         let termX = term.x - eq.x;
-         let termY = term.y - eq.y;
-         let circles = d3.select(termNode.parentNode).selectAll(":scope > g.TransformerEnd").each(function() {
-             let transform = this.transform.baseVal.consolidate();
+
+         d3.select(termNode.parentNode).selectAll(":scope > g.TransformerEnd").each(function() {
+             const transform = this.transform.baseVal.consolidate();
              let matrix = {e: 0, f: 0};
              if (transform !== null) { 
                  matrix = transform.matrix;
              }
-             let cx = matrix.e;
-             let cy = matrix.f;
-             let dist2 = ((cx-termX)**2) + ((cy-termY)**2);
+             const cx = matrix.e;
+             const cy = matrix.f;
+             const dist2 = ((cx-termX)**2) + ((cy-termY)**2);
              if (minDist2 === null || minDist2 > dist2) {
                  minDist2 = dist2;
                  circleSel = d3.select(this);
@@ -1515,20 +1528,37 @@
          circleSel.attr("id", function() {
              return "cimdiagram-" + self.model.ID(trafoEnd[0]);
          });
-         console.log(self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind"));
-         let connKind = self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind");
+         circleSel.selectAll("path").remove();
+         // We draw a "star" or "delta" depending on the winding connections.
+         const connKind = self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind");
          if (typeof(connKind) !== "undefined") {
-             circleSel.append("path")
-                      .attr("d", d3.line()([[0, 8], [0, 15]]))
-                      .attr("stroke", "black")
+             const o = [0, termY * 0.1];
+             const a = [0, termY * 0.4];
+             const b = [termY * (-0.26), termY * (-0.05)];
+             const c = [termY * 0.26, termY * (-0.05)];
+             if (connKind.startsWith("Y")) {
+                 circleSel.append("path")
+                          .attr("d", d3.line()([a, o]))
+                          .attr("stroke", "black");
+                 circleSel.append("path")
+                          .attr("d", d3.line()([o, b]))
+                          .attr("stroke", "black");
+                 circleSel.append("path")
+                          .attr("d", d3.line()([o, c]))
+                          .attr("stroke", "black");
+             }
+             if (connKind === "D") {
+                 circleSel.append("path")
+                          .attr("d", d3.line()([a, b]))
+                          .attr("stroke", "black");
+                 circleSel.append("path")
+                          .attr("d", d3.line()([b, c]))
+                          .attr("stroke", "black");
+                 circleSel.append("path")
+                          .attr("d", d3.line()([c, a]))
+                          .attr("stroke", "black");
+             }
          }
-         
-         /*
-star connection:
-  <line x1="0" stroke="black" x2="0" y1="8" y2="15"></line>
-  <line x1="0" stroke="black" x2="-5" y1="15" y2="20"></line>
-   <line x1="0" stroke="black" x2="5" y1="15" y2="20"></line>
-         */
      }
 
      // Adds terminals to the objects contained in the selection.
@@ -1632,11 +1662,11 @@ star connection:
                                  d.y = eqY + term1_cy;
                              }
                              if (i === 1) {
-                                 d.x = d.x - (TRAFO_RADIUS/2);
+                                 d.x = d.x - (TRAFO_RADIUS*0.8);
                                  d.y = eqY + term2_cy;
                              }
                              if (i === 2) {
-                                 d.x = d.x + (TRAFO_RADIUS/2);
+                                 d.x = d.x + (TRAFO_RADIUS*0.8);
                                  d.y = eqY + term2_cy;
                              }
                              
