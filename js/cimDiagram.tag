@@ -82,15 +82,15 @@
      const COMP_WIDTH = 30;  // width of compensator elements
      // trafo-related defs
      const TRAFO_HEIGHT = 50;  // height of transformer elements
-     const TRAFO_RADIUS = 15;
+     const TRAFO_RADIUS = 14;
      // terminal-related defs
      const TERMINAL_RADIUS = 2; // radius of terminals
-     const TERMINAL_OFFSET = 1; // distance between element and its terminals
-     let self = this;
+     const TERMINAL_OFFSET = 0; // distance between element and its terminals
+     const self = this;
+     self.model = opts.model;
      let NODE_CLASS = "ConnectivityNode";
      let NODE_TERM = "ConnectivityNode.Terminals";
      let TERM_NODE = "Terminal.ConnectivityNode";
-     self.model = opts.model;
      
      // listen to 'showDiagram' event from parent
      self.parent.on("showDiagram", function(file, name, element) {
@@ -1390,16 +1390,20 @@
      
      // Draw all PowerTransformers
      drawPowerTransformers(allPowerTransformers) {
-         let trafoEnter = this.createSelection("PowerTransformer", allPowerTransformers)[1];
-         let wind1y = (TRAFO_RADIUS * 0.8) - (TRAFO_HEIGHT/2);
-         let wind2y = (TRAFO_HEIGHT/2) - (TRAFO_RADIUS * 0.8);
+         const trafoEnter = this.createSelection("PowerTransformer", allPowerTransformers)[1];
+         const wind1y = TRAFO_RADIUS - (TRAFO_HEIGHT/2);
+         const wind2y = (TRAFO_HEIGHT/2) - TRAFO_RADIUS;
+         const wind23x = wind1y;
+         const wind33x = wind2y;
+         const wind13y = wind1y;
+         const wind23y = wind2y;
 
-         let twoWind = trafoEnter.filter(function(d) {
-             let winds = self.model.getTargets([d], "PowerTransformer.PowerTransformerEnd");
+         const twoWind = trafoEnter.filter(function(d) {
+             const winds = self.model.getTargets([d], "PowerTransformer.PowerTransformerEnd");
              return winds.length === 2;
          });
-         let threeWind = trafoEnter.filter(function(d) {
-             let winds = self.model.getTargets([d], "PowerTransformer.PowerTransformerEnd");
+         const threeWind = trafoEnter.filter(function(d) {
+             const winds = self.model.getTargets([d], "PowerTransformer.PowerTransformerEnd");
              return winds.length === 3;
          });
 
@@ -1412,15 +1416,15 @@
                 .attr("stroke-width", 1);
          threeWind.append("circle")
                   .attr("r", TRAFO_RADIUS)
-                  .attr("cx", wind1y) 
-                  .attr("cy", wind2y * 0.8)
+                  .attr("cx", wind23x) 
+                  .attr("cy", wind23y)
                   .attr("fill", "white")
                   .attr("stroke", "black")
                   .attr("stroke-width", 1);
          threeWind.append("circle")
                   .attr("r", TRAFO_RADIUS)
-                  .attr("cx", wind2y)
-                  .attr("cy", wind2y * 0.8)
+                  .attr("cx", wind33x)
+                  .attr("cy", wind23y)
                   .attr("fill", "white")
                   .attr("stroke", "black")
                   .attr("stroke-width", 1);
@@ -1450,7 +1454,7 @@
                 .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
-                  .attr("transform", d3.zoomIdentity.translate(0, wind1y))
+                  .attr("transform", d3.zoomIdentity.translate(0, wind13y))
                   .append("circle")
                   .attr("r", TRAFO_RADIUS)
                   .attr("cx", 0) 
@@ -1461,7 +1465,7 @@
                   .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
-                  .attr("transform", d3.zoomIdentity.translate(wind1y, wind2y * 0.8))
+                  .attr("transform", d3.zoomIdentity.translate(wind23x, wind23y))
                   .append("circle")
                   .attr("r", TRAFO_RADIUS)
                   .attr("cx", 0) 
@@ -1473,7 +1477,7 @@
                   .attr("class", "TransformerEndCircle");
          threeWind.append("g")
                   .attr("class", "TransformerEnd")
-                  .attr("transform", d3.zoomIdentity.translate(wind2y, wind2y * 0.8))
+                  .attr("transform", d3.zoomIdentity.translate(wind33x, wind23y))
                   .append("circle")
                   .attr("r", TRAFO_RADIUS)
                   .attr("cx", 0)
@@ -1491,7 +1495,7 @@
                    .attr("x", (TRAFO_HEIGHT/2) * (-1))
                    .attr("y", (TRAFO_HEIGHT/2))
                    .text(function(d) {
-                       let name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
+                       const name = self.model.getAttribute(d, "cim:IdentifiedObject.name");
                        if (typeof(name) !== "undefined") {
                            return name.innerHTML;
                        }
@@ -1532,10 +1536,15 @@
          // We draw a "star" or "delta" depending on the winding connections.
          const connKind = self.model.getEnum(trafoEnd[0], "cim:PowerTransformerEnd.connectionKind");
          if (typeof(connKind) !== "undefined") {
-             const o = [0, termY * 0.1];
-             const a = [0, termY * 0.4];
-             const b = [termY * (-0.26), termY * (-0.05)];
-             const c = [termY * 0.26, termY * (-0.05)];
+             const yo = 0.2;
+             const ya = 0.4;
+             const o = [0, termY * yo];
+             const a = [0, termY * ya];
+             const len = ya - yo;
+             const xlen = len * Math.sqrt(3) / 2;
+             const ylen = len / 2;
+             const b = [termY * (-xlen), termY * (yo - ylen)];
+             const c = [termY * xlen, termY * (yo - ylen)];
              if (connKind.startsWith("Y")) {
                  circleSel.append("path")
                           .attr("d", d3.line()([a, o]))
@@ -1594,7 +1603,7 @@
                  break;
              case "cim:PowerTransformer":
                  term1_cy = ((TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET)) * (-1);
-                 term2_cy = (TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET);
+                 term2_cy = ((TRAFO_HEIGHT/2) + (TERMINAL_RADIUS + TERMINAL_OFFSET));
                  break;
              case "cim:LinearShuntCompensator":
              case "cim:NonlinearShuntCompensator":
@@ -1662,11 +1671,11 @@
                                  d.y = eqY + term1_cy;
                              }
                              if (i === 1) {
-                                 d.x = d.x - (TRAFO_RADIUS*0.8);
+                                 d.x = d.x - (TRAFO_HEIGHT/2) + (TRAFO_RADIUS);
                                  d.y = eqY + term2_cy;
                              }
                              if (i === 2) {
-                                 d.x = d.x + (TRAFO_RADIUS*0.8);
+                                 d.x = d.x + (TRAFO_HEIGHT/2) - (TRAFO_RADIUS);
                                  d.y = eqY + term2_cy;
                              }
                              
