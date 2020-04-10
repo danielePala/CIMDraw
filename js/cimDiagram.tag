@@ -1558,14 +1558,9 @@
              }
              if (connKind === "D") {
                  circleSel.append("path")
-                          .attr("d", d3.line()([a, b]))
-                          .attr("stroke", "black");
-                 circleSel.append("path")
-                          .attr("d", d3.line()([b, c]))
-                          .attr("stroke", "black");
-                 circleSel.append("path")
-                          .attr("d", d3.line()([c, a]))
-                          .attr("stroke", "black");
+                          .attr("d", d3.line().curve(d3.curveLinearClosed)([a, b, c]))
+                          .attr("stroke", "black")
+                          .attr("fill", "white");
              }
          }
      }
