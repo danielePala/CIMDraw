@@ -49,6 +49,18 @@
          stroke: black;
          stroke-width: 2;
      }
+
+     g.voltage132 > path {
+         stroke: yellow;
+     }
+
+     g.voltage220 > path {
+         stroke: red;
+     }
+
+     g.voltage33 > path {
+         stroke: green;
+     }
     </style>
     
     <cimDiagramControls model={model}></cimDiagramControls>
@@ -1068,7 +1080,21 @@
                            });
          let enterSel = updateSel.enter()
                                  .append("g")
-                                 .attr("class", type)
+                                 .attr("class", function(d) {
+                                     if (type !== "ACLineSegment") {
+                                         return type;
+                                     }
+                                     // assign a class corresponding to thet type
+                                     // and one corresponing to the base voltage.
+                                     const baseVobj =  self.model.getTargets([d], "ConductingEquipment.BaseVoltage")[0];
+                                     const baseV = self.model.getAttribute(baseVobj, "cim:BaseVoltage.nominalVoltage");
+                                     let value = "undefined";
+                                     if (typeof(baseV) !== "undefined") {
+                                         value = "voltage" + baseV.textContent;
+                                     }
+
+                                     return type + " " + value;
+                                 })
                                  .attr("id", function(d) {
                                      return "cimdiagram-" + self.model.ID(d);
                                  });
