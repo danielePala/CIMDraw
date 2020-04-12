@@ -908,7 +908,7 @@
              } else {
                  // no measurements, destroy popover
                  d3.select(this).attr("data-toggle", null);
-                 $(this).popover("destroy");
+                 $(this).popover("dispose");
              }
          })
      }
