@@ -1,7 +1,7 @@
 /*
  This file handles the export of CIM files to Matpower.
 
- Copyright 2017-2019 Daniele Pala <pala.daniele@gmail.com>
+ Copyright 2017-2020 Daniele Pala <pala.daniele@gmail.com>
 
  This file is part of CIMDraw.
 
