@@ -49,18 +49,6 @@
          stroke: black;
          stroke-width: 2;
      }
-
-     g.voltage132 > path {
-         stroke: yellow;
-     }
-
-     g.voltage220 > path {
-         stroke: red;
-     }
-
-     g.voltage33 > path {
-         stroke: green;
-     }
     </style>
     
     <cimDiagramControls model={model}></cimDiagramControls>
@@ -151,7 +139,6 @@
          let xAxis = d3.axisBottom(xScale);
          d3.select("svg").select("#yAxisG").call(yAxis);
          d3.select("svg").select("#xAxisG").call(xAxis);
-         //self.updateEdges(newx, newy, newZoom);
      });
 
      // listen to 'setAttribute' event from model
@@ -1103,13 +1090,15 @@
 
      // Draw all ACLineSegments
      drawACLines(allACLines) {
-         let line = d3.line()
+         const line = d3.line()
                       .x(function(d) { return d.x; })
-                      .y(function(d) { return d.y; });
+                        .y(function(d) { return d.y; });
+         // color scale for voltage levels
+         const colors = d3.scaleSequential([0, 500], d3.interpolateTurbo);
 
-         let aclineSel = self.createSelection("ACLineSegment", allACLines);
-         let aclineUpdate = aclineSel[0];
-         let aclineEnter = aclineSel[1];
+         const aclineSel = self.createSelection("ACLineSegment", allACLines);
+         const aclineUpdate = aclineSel[0];
+         const aclineEnter = aclineSel[1];
          
          aclineEnter.append("path")
                     .attr("d", function(d) {
@@ -1119,7 +1108,15 @@
                         return line(d.lineData);
                     })
                     .attr("fill", "none")
-                    .attr("stroke", "darkred")
+                    .attr("stroke", function(d) {
+                        const voltageClass = d3.select(this.parentNode).attr("class").split(" ").filter(el => el.startsWith("voltage"));
+                        let color = "darkred";
+                        if (voltageClass.length === 1) {
+                            const voltage = parseFloat(voltageClass[0].substring(7));
+                            color = colors(voltage);
+                        }
+                        return color;
+                    })
                     .attr("stroke-width", 2);
          aclineEnter.append("text")
                     .attr("class", "cim-object-text")
@@ -2294,23 +2291,6 @@
                   }
                   return null;
               });
-         // test
-         /*links.each(function(d) {
-             let pathDs = [];
-             let cn = d.source;
-             let cnLinks = d3
-                 .select("svg")
-                 .selectAll("svg > g.diagram > g.edges > g")
-                 .filter(d => d.source === cn);
-             let paths = cnLinks.selectAll("path");
-             paths.each(function(d) {
-                 pathDs.push(d3.select(this).attr("d"));
-             });
-             console.log(pathDs);
-             for (let pathD of pathDs) {
-                 console.log(pathD.substring(1).split("L"));
-             }
-         })*/
      }
 
      rotateTerm(term) {
