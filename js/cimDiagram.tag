@@ -1070,21 +1070,7 @@
          let enterSel = updateSel
              .enter()
              .append("g")
-             .attr("class", function(d) {
-                 if (type !== "ACLineSegment") {
-                     return type;
-                 }
-                 // assign a class corresponding to the type
-                 // and one corresponing to the base voltage.
-                 const baseVobj =  self.model.getTargets([d], "ConductingEquipment.BaseVoltage")[0];
-                 const baseV = self.model.getAttribute(baseVobj, "cim:BaseVoltage.nominalVoltage");
-                 let value = "undefined";
-                 if (typeof(baseV) !== "undefined") {
-                     value = "voltage" + baseV.textContent;
-                 }
-                 
-                 return type + " " + value;
-             })
+             .attr("class", type)
              .attr("id", function(d) {
                  return "cimdiagram-" + self.model.ID(d);
              });
@@ -1109,13 +1095,7 @@
                     })
                     .attr("fill", "none")
                     .attr("stroke", function(d) {
-                        const voltageClass = d3.select(this.parentNode).attr("class").split(" ").filter(el => el.startsWith("voltage"));
-                        let color = "darkred";
-                        if (voltageClass.length === 1) {
-                            const voltage = parseFloat(voltageClass[0].substring(7));
-                            color = colors(voltage);
-                        }
-                        return color;
+                        return self.voltageColor(d, "darkred");
                     })
                     .attr("stroke-width", 2);
          aclineEnter.append("text")
@@ -1554,24 +1534,9 @@
          circleSel.data(trafoEnd);
          circleSel.attr("id", function() {
              return "cimdiagram-" + self.model.ID(trafoEnd[0]);
-         }).attr("class", function(d) {
-             const baseVobj =  self.model.getTargets([d], "TransformerEnd.BaseVoltage")[0];
-             const baseV = self.model.getAttribute(baseVobj, "cim:BaseVoltage.nominalVoltage");
-             let value = "undefined";
-                 if (typeof(baseV) !== "undefined") {
-                     value = "voltage" + baseV.textContent;
-                 }
-             return  "TransformerEnd " + value;
          });
          circleSel.select("circle.TransformerEndCircle").attr("stroke", function(d) {
-             const pClass = d3.select(this.parentNode).attr("class");
-             const voltageClass = pClass.split(" ").filter(el => el.startsWith("voltage"));
-             let color = "black";
-             if (voltageClass.length === 1) {
-                 const voltage = parseFloat(voltageClass[0].substring(7));
-                 color = colors(voltage);
-             }
-             return color;
+             return self.voltageColor(d, "black");
          });
          circleSel.selectAll("path").remove();
          // We draw a "star" or "delta" depending on the winding connections.
@@ -1934,19 +1899,6 @@
          
          for (let cn of allNodes) {
              self.calcLineData(cn);
-             // special rule: if the connectivuty node has more than one point
-             // (i.e. it is drawn like a linear object) then we force it to have
-             // an associated busbar.
-             /*
-             let busbar = self.model.getBusbar(cn);
-             if (cn.lineData.length > 1 && busbar === null) {
-                 let newObj = self.model.createObject("cim:BusbarSection", {node: cn});
-                 let name = self.model.getAttribute(cn, "cim:IdentifiedObject.name");
-                 if (typeof(name) !== "undefined") {
-                     self.model.setAttribute(newObj, "cim:IdentifiedObject.name", name.innerHTML);
-                 }
-             }
-             */
          }
          
          if (d3.select("svg").select("g." + NODE_CLASS + "s").empty()) {
@@ -1978,7 +1930,10 @@
                     let lineData = d3.select(this.parentNode).data()[0].lineData
                     return line(lineData);
                 })
-                .attr("stroke", "black")
+                .attr("stroke", function(d) {
+                    return self.voltageColor(self.model.getBusbar(d), "black");
+                })
+                //.attr("stroke", "black")
                 .attr("stroke-width", 2)
                 .attr("fill", "none");
          
@@ -1987,12 +1942,13 @@
              .filter(function(d) {
                  let busbarSection = self.model.getBusbar(d);
                  return (busbarSection !== null);
-             }).append("text")
+             })
+             .append("text")
              .attr("class", "cim-object-text")
              .attr("font-size", 8);
          updateText(cnEnter.select("text"));
          updateText(cnUpdate.select("text"));
-
+         
          function updateText(selection) {
              selection.attr("x", function(d) {
                  let path = d3.select(this.parentNode).select("path").node();
@@ -2371,6 +2327,21 @@
                   .style("stroke-width", 1);
          };
          gridG.attr("transform", "scale(" + zoom + ")");
+     }
+     
+     // assign a color corresponding to the base voltage of an object. 
+     voltageColor(obj, defaultCol) {
+         let color = defaultCol;
+         if (obj !== null && typeof(obj) !== "undefined") {
+             const baseVobj =  self.model.getTargets([obj], "ConductingEquipment.BaseVoltage")[0];
+             const baseV = self.model.getAttribute(baseVobj, "cim:BaseVoltage.nominalVoltage");
+             if (typeof(baseV) !== "undefined") {
+                 const value = baseV.textContent;
+                 const voltage = parseFloat(value);
+                 color = colors(voltage);
+             }
+         }
+         return color;
      }
 
     </script>
