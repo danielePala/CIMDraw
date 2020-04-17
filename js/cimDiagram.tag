@@ -65,6 +65,10 @@
             <g class="diagram">
                 <g class="edges"></g>
             </g>
+            <g id="legend" transform="translate(1050,50)">
+                <rect id="legend-rect" x="0" y="0" width="150" height="100" fill="white"/>
+                <text x="75" y="25" text-anchor="middle" font-weight="bold">Legend</text>
+            </g>
         </svg>
     </div>    
     <script>
@@ -772,6 +776,62 @@
          self.createStatusInfo(nlshuntEnter);
          yield "DIAGRAM: drawn nonlinear shunt compensator terminals";
 
+         // Draw the legend
+         let bvObjs = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"];
+         d3.select("#legend-rect").attr("height", 60 + (20*bvObjs.length));
+         bvObjs.sort(function(a, b) {
+             const baseVa = self.model.getAttribute(a, "cim:BaseVoltage.nominalVoltage");
+             const baseVb = self.model.getAttribute(b, "cim:BaseVoltage.nominalVoltage");
+             if (typeof(baseVa) !== "undefined" && typeof(baseVb) !== "undefined") {
+                 const valuea = baseVa.textContent;
+                 const voltagea = parseFloat(valuea);
+                 const valueb = baseVb.textContent;
+                 const voltageb = parseFloat(valueb);
+                 return voltagea < voltageb;
+             }
+             return 0;
+         });
+         const voltages =
+             d3.select("#legend")
+               .selectAll("g.voltage")
+               .data(bvObjs)
+               .enter()
+               .append("g")
+               .attr("class", "voltage");
+         voltages
+             .append("rect")
+             .attr("x", 10)
+             .attr("y", function(d, i) {
+                 return 50 + (20 * i);
+             })
+             .attr("width", 40)
+             .attr("height", 10)
+             .attr("fill", function(d) {
+                 const baseV = self.model.getAttribute(d, "cim:BaseVoltage.nominalVoltage");
+                 if (typeof(baseV) !== "undefined") {
+                     const value = baseV.textContent;
+                     const voltage = parseFloat(value);
+                     return colors(voltage);
+                 }
+                 return "black";
+             })
+             .attr("stroke", "black");
+         voltages
+             .append("text")
+             .attr("x", 60)
+             .attr("y", function(d, i) {
+                 return 55 + (20 * i);
+             })
+             .attr("dominant-baseline", "middle")
+             .text(function(d) {
+                 const baseV = self.model.getAttribute(d, "cim:BaseVoltage.nominalVoltage");
+                 if (typeof(baseV) !== "undefined") {
+                     return baseV.textContent + " kV";
+                 }
+                 return "undefined";
+             });
+
+         
          d3.select("svg").on("dragover", function() {
              d3.event.preventDefault();
          }).on("drop", function() {
