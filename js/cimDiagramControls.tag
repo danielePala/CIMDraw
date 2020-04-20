@@ -70,6 +70,11 @@
                             </div>
                         </div>
                     </div>
+                    <div class="btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-secondary active" id="legendLabel">
+                            <input type="checkbox" id="legendToggle" checked> Show legend
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -419,6 +424,17 @@
              self.disableAll();
              self.enableConnect();
          });
+         $("#legendToggle").change(function() {
+             const t = d3.transition()
+                       .duration(750)
+                       .ease(d3.easeLinear);
+             if (this.checked === false) {
+                 d3.select("#legend").transition(t).attr("transform", d3.zoomIdentity.translate(1200, 50)); 
+             } else {
+                 d3.select("#legend").transition(t).attr("transform", d3.zoomIdentity.translate(1050, 50));
+             }
+         });
+
      });
 
      // listen to 'moveTo' event from parent
@@ -620,7 +636,7 @@
      enableDrag() {
          let cnsToMove = [];
          self.disableDrag();
-         d3.select(self.root).selectAll("label:not(#selectLabel)").classed("active", false);
+         d3.select(self.root).selectAll("#cim-diagram-controls > label:not(#selectLabel)").classed("active", false);
          self.status = "DRAG";
          let drag = d3
              .drag()
@@ -906,7 +922,7 @@
                  self.enableConnect();
              }
          });
-         d3.select(self.root).selectAll("label:not(#connectLabel)").classed("active", false);
+         d3.select(self.root).selectAll("#cim-diagram-controls > label:not(#connectLabel)").classed("active", false);
          self.status = "CONNECT";
 
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
@@ -1044,7 +1060,7 @@
              options = {windNum: 3};
          }
          self.disableAll();
-         d3.select(self.root).selectAll("label").classed("active", false);
+         d3.select(self.root).selectAll("#cim-diagram-controls > label").classed("active", false);
          // contexted jquesry selector
          $("input", this.root).prop('checked', false);
          $("#addElement").text(text);
@@ -1081,7 +1097,7 @@
              type = e;
              text = d3.select("#" + type).text();
          }
-         d3.select(self.root).selectAll("label").classed("active", false);
+         d3.select(self.root).selectAll("#cim-diagram-controls > label").classed("active", false);
          // contexted jquesry selector
          $("input", this.root).prop('checked', false);
          $("#addElement").text(text);
