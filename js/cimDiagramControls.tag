@@ -34,40 +34,39 @@
                         <label class="btn btn-secondary" id="connectLabel">
                             <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections
                         </label>
-
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span id="addElement">Insert element</span>
-                                <span class="caret"></span>
-                            </button>
-                            <div class="dropdown-menu" id="cimElementList">
-                                <h6 class="dropdown-header">Busses</h6>
-                                <a class="dropdown-item" id="BusbarSection" onclick={enableAddMulti}>Node</a>
-                                <h6 class="dropdown-header">Branches</h6>
-                                <a class="dropdown-item" id="ACLineSegment" onclick={enableAddMulti}>AC Line Segment</a>
-                                <h6 class="dropdown-header">Switches</h6>
-                                <a class="dropdown-item" id="Breaker" onclick={enableAdd}>Breaker</a>
-                                <a class="dropdown-item" id="Disconnector" onclick={enableAdd}>Disconnector</a>
-                                <a class="dropdown-item" id="LoadBreakSwitch" onclick={enableAdd}>Load Break Switch</a>
-                                <!-- junctions are still not implemented properly for now
-                                     <!--<li class="dropdown-header">Connectors</li>-->
-                                <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
-                                <h6 class="dropdown-header">Equivalents</h6>
-                                <a class="dropdown-item" id="EnergySource" onclick={enableAdd}>Energy Source</a>
-                                <h6 class="dropdown-header">Rotating Machines</h6>
-                                <a class="dropdown-item" id="SynchronousMachine" onclick={enableAdd}>Synchronous Machine</a>
-                                <a class="dropdown-item" id="AsynchronousMachine" onclick={enableAdd}>Asynchronous Machine</a>
-                                <h6 class="dropdown-header">Loads</h6>
-                                <a class="dropdown-item" id="EnergyConsumer" onclick={enableAdd}>Energy Consumer</a>
-                                <a class="dropdown-item" id="ConformLoad" onclick={enableAdd}>Conform Load</a>
-                                <a class="dropdown-item" id="NonConformLoad" onclick={enableAdd}>Non Conform Load</a>
-                                <h6 class="dropdown-header">Compensators</h6>
-                                <a class="dropdown-item" id="LinearShuntCompensator" onclick={enableAdd}>Linear</a>
-                                <a class="dropdown-item" id="NonlinearShuntCompensator" onclick={enableAdd}>Nonlinear</a>
-                                <h6 class="dropdown-header">Transformers</h6>
-                                <a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Two-winding Transformer</a>
-                                <a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Three-winding Transformer</a>
-                            </div>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <span id="addElement">Insert element</span>
+                            <span class="caret"></span>
+                        </button>
+                        <div class="dropdown-menu" id="cimElementList">
+                            <h6 class="dropdown-header">Busses</h6>
+                            <a class="dropdown-item" id="BusbarSection" onclick={enableAddMulti}>Node</a>
+                            <h6 class="dropdown-header">Branches</h6>
+                            <a class="dropdown-item" id="ACLineSegment" onclick={enableAddMulti}>AC Line Segment</a>
+                            <h6 class="dropdown-header">Switches</h6>
+                            <a class="dropdown-item" id="Breaker" onclick={enableAdd}>Breaker</a>
+                            <a class="dropdown-item" id="Disconnector" onclick={enableAdd}>Disconnector</a>
+                            <a class="dropdown-item" id="LoadBreakSwitch" onclick={enableAdd}>Load Break Switch</a>
+                            <!-- junctions are still not implemented properly for now
+                                 <!--<li class="dropdown-header">Connectors</li>-->
+                            <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
+                            <h6 class="dropdown-header">Equivalents</h6>
+                            <a class="dropdown-item" id="EnergySource" onclick={enableAdd}>Energy Source</a>
+                            <h6 class="dropdown-header">Rotating Machines</h6>
+                            <a class="dropdown-item" id="SynchronousMachine" onclick={enableAdd}>Synchronous Machine</a>
+                            <a class="dropdown-item" id="AsynchronousMachine" onclick={enableAdd}>Asynchronous Machine</a>
+                            <h6 class="dropdown-header">Loads</h6>
+                            <a class="dropdown-item" id="EnergyConsumer" onclick={enableAdd}>Energy Consumer</a>
+                            <a class="dropdown-item" id="ConformLoad" onclick={enableAdd}>Conform Load</a>
+                            <a class="dropdown-item" id="NonConformLoad" onclick={enableAdd}>Non Conform Load</a>
+                            <h6 class="dropdown-header">Compensators</h6>
+                            <a class="dropdown-item" id="LinearShuntCompensator" onclick={enableAdd}>Linear</a>
+                            <a class="dropdown-item" id="NonlinearShuntCompensator" onclick={enableAdd}>Nonlinear</a>
+                            <h6 class="dropdown-header">Transformers</h6>
+                            <a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Two-winding Transformer</a>
+                            <a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Three-winding Transformer</a>
                         </div>
                     </div>
                     <div class="btn-group-toggle" data-toggle="buttons">
