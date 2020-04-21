@@ -150,7 +150,7 @@
      // listen to 'setAttribute' event from model
      self.model.on("setAttribute", function(object, attrName, value) {
          switch (attrName) {
-             case "cim:IdentifiedObject.name":
+             case "cim:IdentifiedObject.name": {
                  let type = object.localName;
                  let uuid = self.model.ID(object);
                  // special case for busbars
@@ -166,7 +166,8 @@
                  let target = types.select("#cimdiagram-" + uuid);
                  target.select("text").html(value);
                  break;
-             case "cim:AnalogValue.value":
+             }
+             case "cim:AnalogValue.value": {
                  let analog = self.model.getTargets(
                      [object],
                      "AnalogValue.Analog");
@@ -181,8 +182,9 @@
                  let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                  self.createStatusInfo(psrSelection);
                  break;
+             }
              case "cim:SvPowerFlow.p":
-             case "cim:SvPowerFlow.q":
+             case "cim:SvPowerFlow.q": {
                  let svTerminal = self.model.getTargets(
                      [object],
                      "SvPowerFlow.Terminal")[0];
@@ -195,6 +197,11 @@
                      self.createStatusInfo(psrSelection);
                  }
                  break;
+             }
+             case "cim:BaseVoltage.nominalVoltage": {
+                 self.drawLegend();
+                 break;
+             }
          }
          if (object.nodeName === "cim:Analog" ||
              object.nodeName === "cim:Discrete") {
@@ -522,6 +529,20 @@
                  }
                  break;
              }
+             case "cim:ConductingEquipment.BaseVoltage":
+             case "cim:BaseVoltage.ConductingEquipment": {
+                 let psr = source;
+                 if (linkName === "cim:BaseVoltage.ConductingEquipment") {
+                     psr = target;
+                 }
+                 if (typeof(psr) !== "undefined") {
+                     // handle aclines
+                     if (psr.nodeName === "cim:ACLineSegment") {
+                         self.drawACLines([psr]);
+                     }
+                 }
+                 break;
+             }
          }
      });
 
@@ -775,62 +796,9 @@
          self.createTerminals(nlshuntEnter);
          self.createStatusInfo(nlshuntEnter);
          yield "DIAGRAM: drawn nonlinear shunt compensator terminals";
-
-         // Draw the legend
-         let bvObjs = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"];
-         d3.select("#legend-rect").attr("height", 60 + (20*bvObjs.length));
-         bvObjs.sort(function(a, b) {
-             const baseVa = self.model.getAttribute(a, "cim:BaseVoltage.nominalVoltage");
-             const baseVb = self.model.getAttribute(b, "cim:BaseVoltage.nominalVoltage");
-             if (typeof(baseVa) !== "undefined" && typeof(baseVb) !== "undefined") {
-                 const valuea = baseVa.textContent;
-                 const voltagea = parseFloat(valuea);
-                 const valueb = baseVb.textContent;
-                 const voltageb = parseFloat(valueb);
-                 return voltagea < voltageb;
-             }
-             return 0;
-         });
-         const voltages =
-             d3.select("#legend")
-               .selectAll("g.voltage")
-               .data(bvObjs)
-               .enter()
-               .append("g")
-               .attr("class", "voltage");
-         voltages
-             .append("rect")
-             .attr("x", 10)
-             .attr("y", function(d, i) {
-                 return 50 + (20 * i);
-             })
-             .attr("width", 40)
-             .attr("height", 10)
-             .attr("fill", function(d) {
-                 const baseV = self.model.getAttribute(d, "cim:BaseVoltage.nominalVoltage");
-                 if (typeof(baseV) !== "undefined") {
-                     const value = baseV.textContent;
-                     const voltage = parseFloat(value);
-                     return colors(voltage);
-                 }
-                 return "black";
-             })
-             .attr("stroke", "black");
-         voltages
-             .append("text")
-             .attr("x", 60)
-             .attr("y", function(d, i) {
-                 return 55 + (20 * i);
-             })
-             .attr("dominant-baseline", "middle")
-             .text(function(d) {
-                 const baseV = self.model.getAttribute(d, "cim:BaseVoltage.nominalVoltage");
-                 if (typeof(baseV) !== "undefined") {
-                     return baseV.textContent + " kV";
-                 }
-                 return "undefined";
-             });
-
+         
+         // draw the legend
+         self.drawLegend();
          
          d3.select("svg").on("dragover", function() {
              d3.event.preventDefault();
@@ -1163,16 +1131,19 @@
                     .attr("font-size", 8);
          updateText(aclineUpdate.select("text"));
          updateText(aclineEnter.select("text"));
-         aclineUpdate.select("path")
-                     .attr("d", function(d) {
-                         if (d.lineData.length === 1) {
-                             d.lineData.push({x:150, y:0, seq:2});
-                         }
-                         return line(d.lineData);
-                     })
-                     .attr("fill", "none")
-                     .attr("stroke", "darkred")
-                     .attr("stroke-width", 2);
+         aclineUpdate
+             .select("path")
+             .attr("d", function(d) {
+                 if (d.lineData.length === 1) {
+                     d.lineData.push({x:150, y:0, seq:2});
+                 }
+                 return line(d.lineData);
+             })
+             .attr("fill", "none")
+             .attr("stroke", function(d) {
+                 return self.voltageColor(d, "darkred");
+             })
+             .attr("stroke-width", 2);
 
          function updateText(selection) {
              selection.attr("x", function(d) {
@@ -2404,6 +2375,67 @@
          return color;
      }
 
+     drawLegend() {
+         // Draw the legend
+         let bvObjs = self.model.getObjects(["cim:BaseVoltage"])["cim:BaseVoltage"];
+         d3.select("#legend-rect").attr("height", 60 + (20*bvObjs.length));
+         bvObjs.sort(function(a, b) {
+             const baseVa = self.model.getAttribute(a, "cim:BaseVoltage.nominalVoltage");
+             const baseVb = self.model.getAttribute(b, "cim:BaseVoltage.nominalVoltage");
+             if (typeof(baseVa) !== "undefined" && typeof(baseVb) !== "undefined") {
+                 const valuea = baseVa.textContent;
+                 const voltagea = parseFloat(valuea);
+                 const valueb = baseVb.textContent;
+                 const voltageb = parseFloat(valueb);
+                 return voltagea < voltageb;
+             }
+             return 0;
+         });
+         // clean up
+         d3.select("#legend")
+           .selectAll("g.voltage")
+           .remove();
+         const voltages =
+             d3.select("#legend")
+               .selectAll("g.voltage")
+               .data(bvObjs)
+               .enter()
+               .append("g")
+               .attr("class", "voltage");
+         voltages
+             .append("rect")
+             .attr("x", 10)
+             .attr("y", function(d, i) {
+                 return 50 + (20 * i);
+             })
+             .attr("width", 40)
+             .attr("height", 10)
+             .attr("fill", function(d) {
+                 const baseV = self.model.getAttribute(d, "cim:BaseVoltage.nominalVoltage");
+                 if (typeof(baseV) !== "undefined") {
+                     const value = baseV.textContent;
+                     const voltage = parseFloat(value);
+                     return colors(voltage);
+                 }
+                 return "black";
+             })
+             .attr("stroke", "black");
+         voltages
+             .append("text")
+             .attr("x", 60)
+             .attr("y", function(d, i) {
+                 return 55 + (20 * i);
+             })
+             .attr("dominant-baseline", "middle")
+             .text(function(d) {
+                 const baseV = self.model.getAttribute(d, "cim:BaseVoltage.nominalVoltage");
+                 if (typeof(baseV) !== "undefined") {
+                     return baseV.textContent + " kV";
+                 }
+                 return "undefined";
+             });
+     }
+     
     </script>
 
 </cimDiagram>
