@@ -199,7 +199,13 @@
                  break;
              }
              case "cim:BaseVoltage.nominalVoltage": {
+                 // If a nominal voltage is changed we update the legend
                  self.drawLegend();
+                 const eqs = self.model.getTargets([object], "BaseVoltage.ConductingEquipment");
+                 const aclines = eqs.filter(function(el) {
+                     return self.model.schema.isA("ACLineSegment", el) === true;
+                 });
+                 self.drawACLines(aclines);
                  break;
              }
          }
@@ -539,6 +545,11 @@
                      // handle aclines
                      if (psr.nodeName === "cim:ACLineSegment") {
                          self.drawACLines([psr]);
+                     }
+                     // handle busbars
+                     if (psr.nodeName === "cim:BusbarSection") {
+                         psr = self.model.getNode(psr);
+                         self.drawNodes([psr]);
                      }
                  }
                  break;
@@ -1954,6 +1965,8 @@
          cnUpdate.select("path").attr("d", function(d) {
              let lineData = d3.select(this.parentNode).data()[0].lineData
              return line(lineData);
+         }).attr("stroke", function(d) {
+             return self.voltageColor(self.model.getBusbar(d), "black");
          });
          
          cnEnter.append("path")
@@ -1964,7 +1977,6 @@
                 .attr("stroke", function(d) {
                     return self.voltageColor(self.model.getBusbar(d), "black");
                 })
-                //.attr("stroke", "black")
                 .attr("stroke-width", 2)
                 .attr("fill", "none");
          
@@ -2367,9 +2379,11 @@
              const baseVobj =  self.model.getTargets([obj], "ConductingEquipment.BaseVoltage")[0];
              const baseV = self.model.getAttribute(baseVobj, "cim:BaseVoltage.nominalVoltage");
              if (typeof(baseV) !== "undefined") {
-                 const value = baseV.textContent;
-                 const voltage = parseFloat(value);
-                 color = colors(voltage);
+                 if (baseV.textContent !== "") {
+                     const value = baseV.textContent;
+                     const voltage = parseFloat(value);
+                     color = colors(voltage);
+                 }
              }
          }
          return color;
@@ -2430,7 +2444,13 @@
              .text(function(d) {
                  const baseV = self.model.getAttribute(d, "cim:BaseVoltage.nominalVoltage");
                  if (typeof(baseV) !== "undefined") {
-                     return baseV.textContent + " kV";
+                     if (baseV.textContent !== "") {
+                         let val =  parseFloat(baseV.textContent);
+                         val = +val.toFixed(1);
+                         return val + " kV";
+                     } else {
+                         return "n.a."
+                     }
                  }
                  return "undefined";
              });
