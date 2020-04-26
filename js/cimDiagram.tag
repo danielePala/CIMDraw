@@ -73,11 +73,15 @@
     </div>    
     <script>
      "use strict";
+     // General defs
+     const LABEL_SIZE = 3;
+     // AC line-related defs
+     const LINE_WIDTH = 2;
      // Switch-related defs
-     const SWITCH_HEIGHT = 15; // height of switch elements
-     const SWITCH_WIDTH = 15; // width of switch elements
+     const SWITCH_HEIGHT = 10; // height of switch elements
+     const SWITCH_WIDTH = 10; // width of switch elements
      // generator-related defs
-     const GEN_HEIGHT = 50;  // height of generator elements
+     const GEN_HEIGHT = 25;  // height of generator elements
      // load-related defs
      const LOAD_HEIGHT = 20;  // height of load elements
      const LOAD_WIDTH = 30;  // width of load elements
@@ -1165,10 +1169,10 @@
                     .attr("stroke", function(d) {
                         return self.voltageColor(d, "darkred");
                     })
-                    .attr("stroke-width", 2);
+                    .attr("stroke-width", LINE_WIDTH);
          aclineEnter.append("text")
                     .attr("class", "cim-object-text")
-                    .attr("font-size", 8);
+                    .attr("font-size", LABEL_SIZE);
          updateText(aclineUpdate.select("text"));
          updateText(aclineEnter.select("text"));
          aclineUpdate
@@ -1256,11 +1260,11 @@
                     }
                 })
                 .attr("stroke", color)
-                .attr("stroke-width", 2);
+                .attr("stroke-width", 1);
          swEnter.append("text")
                 .attr("class", "cim-object-text")
                 .style("text-anchor", "end")
-                .attr("font-size", 8)
+                .attr("font-size", LABEL_SIZE)
                 .attr("x", -10)
                 .attr("y", 0)
                 .text(function(d) {
@@ -1321,13 +1325,11 @@
      // Draw all generators
      drawGenerators(allGens, type) {
          let genEnter = self.createSelection(type, allGens)[1];
-         let label = "~";
-         let labelSize = 64;
-         let labelPos = (GEN_HEIGHT/2)-4;
+         let label = "G";
+         const labelSize = Math.round(GEN_HEIGHT * 0.6);
+         const labelPos = (GEN_HEIGHT/4);
          if (type === "AsynchronousMachine") {
              label = "M";
-             labelSize = 32;
-             labelPos = (GEN_HEIGHT/4);
          }
          
          genEnter.append("circle")
@@ -1335,12 +1337,12 @@
                  .attr("cx", 0) 
                  .attr("cy", 0)
                  .attr("fill", "white")
-                 .attr("stroke", "blue")
-                 .attr("stroke-width", 4);
+                 .attr("stroke", "black")
+                 .attr("stroke-width", 1);
          genEnter.append("text")
                  .attr("class", "cim-object-text")
                  .style("text-anchor", "middle")
-                 .attr("font-size", 8)
+                 .attr("font-size", LABEL_SIZE)
                  .attr("x", 0)
                  .attr("y", (GEN_HEIGHT/2)-60)
                  .text(function(d) {
@@ -1384,7 +1386,7 @@
          loadEnter.append("text")
                   .attr("class", "cim-object-text")
                   .style("text-anchor", "middle")
-                  .attr("font-size", 8)
+                  .attr("font-size", LABEL_SIZE)
                   .attr("x", 0) 
                   .attr("y", ly2 + 10)
                   .text(function(d) {
@@ -1449,7 +1451,7 @@
          compEnter.append("text")
                   .attr("class", "cim-object-text")
                   .style("text-anchor", "middle")
-                  .attr("font-size", 8)
+                  .attr("font-size", LABEL_SIZE)
                   .attr("x", 0) 
                   .attr("y", ty2 + 10)
                   .text(function(d) {
@@ -1565,7 +1567,7 @@
          trafoEnter.append("text")
                    .attr("class", "cim-object-text")
                    .style("text-anchor", "end")
-                   .attr("font-size", 8)
+                   .attr("font-size", LABEL_SIZE)
                    .attr("x", (TRAFO_HEIGHT/2) * (-1))
                    .attr("y", (TRAFO_HEIGHT/2))
                    .text(function(d) {
