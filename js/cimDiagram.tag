@@ -199,13 +199,28 @@
                  break;
              }
              case "cim:BaseVoltage.nominalVoltage": {
-                 // If a nominal voltage is changed we update the legend
+                 // if a nominal voltage is changed we update the legend
                  self.drawLegend();
+                 // we also update the color of the affected elements
+                 // AC lines
                  const eqs = self.model.getTargets([object], "BaseVoltage.ConductingEquipment");
                  const aclines = eqs.filter(function(el) {
                      return self.model.schema.isA("ACLineSegment", el) === true;
                  });
                  self.drawACLines(aclines);
+                 // Busbars
+                 let nodes = eqs.filter(function(el) {
+                     return self.model.schema.isA("BusbarSection", el) === true;
+                 }).map(el => self.model.getNode(el));
+                 self.drawNodes(nodes);
+                 // Transformers - here we have a different link
+                 const trafoEnds = self.model.getTargets([object], "BaseVoltage.TransformerEnds");
+                 for (const trafoEnd of trafoEnds) {
+                     const termNode = self.getTermNode(trafoEnd);
+                     if (termNode !== null) {
+                         self.handlePowerTransformerEnds(termNode);
+                     }
+                 };
                  break;
              }
          }
@@ -265,10 +280,10 @@
          }
          switch (enumName) {
              case "cim:PowerTransformerEnd.connectionKind": {
-                 const terms = self.model.getTargets([object], "TransformerEnd.Terminal");
-                 const termUUID = self.model.ID(terms[0]);
-                 let termSelection = d3.select("g#cimdiagram-" + termUUID);
-                 self.handlePowerTransformerEnds(termSelection.node());
+                 const termNode = self.getTermNode(object);
+                 if (termNode !== null) {
+                     self.handlePowerTransformerEnds(termNode);
+                 }
                  break;
              }
          }
@@ -550,6 +565,20 @@
                      if (psr.nodeName === "cim:BusbarSection") {
                          psr = self.model.getNode(psr);
                          self.drawNodes([psr]);
+                     }
+                 }
+                 break;
+             }
+             case "cim:BaseVoltage.TransformerEnds":
+             case "cim:TransformerEnd.BaseVoltage": {
+                 let trafoEnd = source;
+                 if (linkName === "cim:BaseVoltage.TransformerEnds") {
+                     trafoEnd = target;
+                 }
+                 if (typeof(trafoEnd) !== "undefined") {
+                     const termNode = self.getTermNode(trafoEnd);
+                     if (termNode !== null) {
+                         self.handlePowerTransformerEnds(termNode);
                      }
                  }
                  break;
@@ -2376,7 +2405,12 @@
      voltageColor(obj, defaultCol) {
          let color = defaultCol;
          if (obj !== null && typeof(obj) !== "undefined") {
-             const baseVobj =  self.model.getTargets([obj], "ConductingEquipment.BaseVoltage")[0];
+             const isTrafo = self.model.schema.isA("TransformerEnd", obj);
+             let link = "ConductingEquipment.BaseVoltage";
+             if (isTrafo === true) {
+                 link = "TransformerEnd.BaseVoltage"; 
+             }
+             const baseVobj =  self.model.getTargets([obj], link)[0];
              const baseV = self.model.getAttribute(baseVobj, "cim:BaseVoltage.nominalVoltage");
              if (typeof(baseV) !== "undefined") {
                  if (baseV.textContent !== "") {
@@ -2454,6 +2488,21 @@
                  }
                  return "undefined";
              });
+     }
+
+     // Get the node of the terminal associated to a tranformer end.
+     // This is useful in a couple of cases in the code so it has a
+     // dedicated function.
+     // If the node is not found the function returns null.
+     getTermNode(trafoEnd) {
+         let result = null;
+         const terms = self.model.getTargets([trafoEnd], "TransformerEnd.Terminal");
+         const termUUID = self.model.ID(terms[0]);
+         let termSelection = d3.select("g#cimdiagram-" + termUUID);
+         if (termSelection.size() === 1) {
+             result = termSelection.node();
+         }
+         return result;
      }
      
     </script>
