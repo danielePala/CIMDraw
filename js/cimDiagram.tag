@@ -74,25 +74,34 @@
     <script>
      "use strict";
      // General defs
-     const LABEL_SIZE = 3;
+     const LABEL_SIZE = 3; // size of text labels associted to objects
+     // Edge-related defs
+     const EDGE_WIDTH = 1; // width of edges
      // AC line-related defs
-     const LINE_WIDTH = 2;
+     const LINE_WIDTH = 2; // width of AC lines
+     // Node-related defs
+     const NODE_WIDTH = 2; // width of busbars
      // Switch-related defs
      const SWITCH_HEIGHT = 10; // height of switch elements
      const SWITCH_WIDTH = 10; // width of switch elements
      // generator-related defs
      const GEN_HEIGHT = 25;  // height of generator elements
+     const GEN_LINE_WIDTH = 1; //line width of generators
      // load-related defs
      const LOAD_HEIGHT = 20;  // height of load elements
      const LOAD_WIDTH = 30;  // width of load elements
+     const LOAD_LINE_WIDTH = 2; // line width of loads
      // compensator-related defs
      const COMP_HEIGHT = 20;  // height of compensator elements
      const COMP_WIDTH = 30;  // width of compensator elements
+     const COMP_CONN_WIDTH = 1; // line width of compensator connections
+     const COMP_LINE_WIDTH = 4; // line width of compensators
      // trafo-related defs
      const TRAFO_HEIGHT = 50;  // height of transformer elements
      const TRAFO_RADIUS = 14;
      // terminal-related defs
-     const TERMINAL_RADIUS = 2; // radius of terminals
+     const TERMINAL_RADIUS = 1; // radius of terminals
+     const HIGHLIGHT_RADIUS = 6; // radius of highlighted terminals
      const TERMINAL_OFFSET = 0; // distance between element and its terminals
      const self = this;
      // color scale for voltage levels
@@ -890,7 +899,7 @@
              .append("path")
              .attr("fill", "none")
              .attr("stroke", "black")
-             .attr("stroke-width", 1);
+             .attr("stroke-width", EDGE_WIDTH);
          self.trigger("createEdges", edgesEnter);
      }
 
@@ -1338,7 +1347,7 @@
                  .attr("cy", 0)
                  .attr("fill", "white")
                  .attr("stroke", "black")
-                 .attr("stroke-width", 1);
+                 .attr("stroke-width", GEN_LINE_WIDTH);
          genEnter.append("text")
                  .attr("class", "cim-object-text")
                  .style("text-anchor", "middle")
@@ -1382,7 +1391,7 @@
                   })
                   .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4);
+                  .attr("stroke-width", LOAD_LINE_WIDTH);
          loadEnter.append("text")
                   .attr("class", "cim-object-text")
                   .style("text-anchor", "middle")
@@ -1420,7 +1429,7 @@
                   })
                   .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 1);
+                  .attr("stroke-width", COMP_CONN_WIDTH);
          compEnter.append("path")
                   .attr("d", function(d) {
                       return line([
@@ -1429,7 +1438,7 @@
                   })
                   .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 1);
+                  .attr("stroke-width", COMP_CONN_WIDTH);
          compEnter.append("path")
                   .attr("d", function(d) {
                       return line([
@@ -1438,7 +1447,7 @@
                   })
                   .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4);
+                  .attr("stroke-width", COMP_LINE_WIDTH);
          compEnter.append("path")
                   .attr("d", function(d) {
                       return line([
@@ -1447,7 +1456,7 @@
                   })
                   .attr("fill", "white")
                   .attr("stroke", "black")
-                  .attr("stroke-width", 4);
+                  .attr("stroke-width", COMP_LINE_WIDTH);
          compEnter.append("text")
                   .attr("class", "cim-object-text")
                   .style("text-anchor", "middle")
@@ -1844,7 +1853,7 @@
              d3.select(this).append("circle")
                .attr("cx", term.attr("cx"))
                .attr("cy", term.attr("cy"))
-               .attr("r", 6)
+               .attr("r", HIGHLIGHT_RADIUS)
                .attr("stroke-width", 0)
                .attr("fill", "steelblue")
                .attr("fill-opacity", "0.0")
@@ -2008,7 +2017,7 @@
                 .attr("stroke", function(d) {
                     return self.voltageColor(self.model.getBusbar(d), "black");
                 })
-                .attr("stroke-width", 2)
+                .attr("stroke-width", NODE_WIDTH)
                 .attr("fill", "none");
          
          // for busbars, show the name
@@ -2019,7 +2028,7 @@
              })
              .append("text")
              .attr("class", "cim-object-text")
-             .attr("font-size", 8);
+             .attr("font-size", LABEL_SIZE);
          updateText(cnEnter.select("text"));
          updateText(cnUpdate.select("text"));
          
