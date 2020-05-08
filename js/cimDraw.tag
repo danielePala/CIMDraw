@@ -92,19 +92,14 @@
     <div class="container-fluid">
         <div class="row justify-content-center" id="cim-local-file-component">
             <div class="col-md-12 cim-content-center"> 
-                <div class="row justify-content-center" id="cim-select-file">
-                    <div class="col-md-auto">
-                        <br><br>
-                        <label class="control-label">Select File</label>
-                    </div>
-                </div>
-
-                <!-- File input plugin -->
+                <!-- File input -->
                 <div class="row justify-content-center">
                     <div class="col-md-12" id="cim-file-input-container">
-                        <form enctype="multipart/form-data" method="POST">
-                            <input id="cim-file-input" name="cim-file" type="file" class="file" data-show-preview="false" data-show-upload="false">
-                        </form>
+                        <br><br>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="cim-file-input">
+                            <label class="custom-file-label" for="cim-file-input">Use existing file</label>
+                        </div>
                     </div>
                 </div>
                 
@@ -321,15 +316,28 @@
              d3.select("#cim-filename").html("");    
              $(".selectpicker").selectpicker("refresh");
              // initialize the fileinput component
+             /*
+
              $("#cim-file-input").fileinput({theme: "fa"});
              $("#cim-file-input").fileinput("clear");
              // what to do when the user loads a file
-             $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {        
+             
+                $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {        
                  cimFile = file;
                  createNewFile = false;
                  $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
                  $("#cim-load-container").show();
-             });
+                });
+              */
+             const inputElement = document.getElementById("cim-file-input");
+             inputElement.addEventListener("change", handleFiles, false);
+             function handleFiles() {
+                 cimFile = this.files[0];
+                 createNewFile = false;
+                 $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
+                 $("#cim-load-container").show();
+             }
+             
              // sometimes we must hide the 'load file' button
              $('#cim-file-input').on('fileclear', function(event) {
                  $("#cim-load-container").hide();
