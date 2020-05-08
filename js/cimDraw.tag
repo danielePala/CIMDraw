@@ -249,7 +249,7 @@
      self.on("mount", function() {
          route.stop(); // clear all the old router callbacks
          let cimFile = {};
-         let cimFileReader = {};
+         let createNewFile = false;
          $(".selectpicker").selectpicker();
 
          $("#operational").change(function() {
@@ -262,7 +262,7 @@
          
          $("#cim-create-new-container").on("click", function() {
              cimFile = {name: "new1"};
-             cimFileReader = null;
+             createNewFile = true;
              $("#cimModeModal").modal("show");
          });
 
@@ -326,7 +326,7 @@
              // what to do when the user loads a file
              $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {        
                  cimFile = file;
-                 cimFileReader = reader;
+                 createNewFile = false;
                  $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
                  $("#cim-load-container").show();
              });
@@ -358,7 +358,13 @@
              $("#loadingModal").on("shown.bs.modal", function(e) {
                  if (typeof(cimFile.name) !== "undefined") {
                      d3.select("#cim-filename").html("[" + cimFile.name + "]&nbsp&nbsp");
-                     self.cimModel.load(cimFile, cimFileReader).then(function() {
+                     let loadingResult = null;
+                     if (createNewFile === false) {
+                         loadingResult = self.cimModel.load(cimFile);
+                     } else {
+                         loadingResult = self.cimModel.newFile(cimFile.name);
+                     }
+                     loadingResult.then(function() {
                          loadDiagramList(cimFile.name);
                          $("#loadingModal").modal("hide");
                          if (cimFile.name !== "new1") {

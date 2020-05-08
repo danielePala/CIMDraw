@@ -571,21 +571,14 @@ function cimModel() {
         // The name of the CIM diagram which is actually loaded.
         activeDiagramName: "none",
         schema: new cimSchema(),
-        // Loads a CIM file from the local filesystem. If reader is null, then
-        // it creates a new empty file. Returns a promise which resolves after
+        // Loads a CIM file from the local filesystem.
+        // Returns a promise which resolves after
         // loading the file. The input file can be a plain RDF/XML file
         // or a zipped file, conforming to ENTSO-E format (i.e. the
         // zipped file contains many XML files, one for each profile
         // (EQ, DL, TP etc).
-        load(file, reader) {
+        load(file) {
             let result = Promise.resolve();
-            // should we create a new empty file?
-            if (reader === null) {
-                let parser = new DOMParser();
-                data.all = parser.parseFromString(emptyFile, "application/xml");
-                model.fileName = file.name;
-                return buildModel();
-            }
             // see if this file is already loaded
             if (model.fileName !== file.name) {
                 model.fileName = file.name;
@@ -611,6 +604,15 @@ function cimModel() {
             return result;
         },
 
+        // Creates a new empty file. Returns a promise which resolves after
+        // building the model object.
+        newFile(name) {
+            let parser = new DOMParser();
+            data.all = parser.parseFromString(emptyFile, "application/xml");
+            model.fileName = name;
+            return buildModel();
+        },
+        
         updateModel(rdf) {
             let objs = rdf.children[0].children;
             // first, create all objects
