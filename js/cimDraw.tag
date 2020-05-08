@@ -315,20 +315,7 @@
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
              d3.select("#cim-filename").html("");    
              $(".selectpicker").selectpicker("refresh");
-             // initialize the fileinput component
-             /*
-
-             $("#cim-file-input").fileinput({theme: "fa"});
-             $("#cim-file-input").fileinput("clear");
-             // what to do when the user loads a file
-             
-                $("#cim-file-input").on("fileloaded", function(event, file, previewId, index, reader) {        
-                 cimFile = file;
-                 createNewFile = false;
-                 $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
-                 $("#cim-load-container").show();
-                });
-              */
+             // initialize the file input component
              const inputElement = document.getElementById("cim-file-input");
              inputElement.addEventListener("change", handleFiles, false);
              function handleFiles() {
