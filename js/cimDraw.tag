@@ -79,8 +79,8 @@
                         <cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
                     </li>
                     <li class="nav-item">
-                        <select id="cim-diagrams" class="selectpicker"
-                                onchange="location = this.options[this.selectedIndex].value;" data-live-search="true" title="Select a diagram" data-style="btn-outline-secondary">
+                        <select id="cim-diagrams" class="custom-select"
+                                onchange="location = this.options[this.selectedIndex].value;" title="Select a diagram">
                         </select>
                     </li>
                 </ul>
@@ -245,7 +245,6 @@
          route.stop(); // clear all the old router callbacks
          let cimFile = {};
          let createNewFile = false;
-         $(".selectpicker").selectpicker();
 
          $("#operational").change(function() {
              self.cimModel.setMode("NODE_BREAKER");
@@ -300,21 +299,20 @@
          // This is the initial route ("the home page").
          route(function(name) {
              // things to show
-             $("#cim-local-file-component").show();
+             document.getElementById("cim-local-file-component").style.display = null;
              // things to hide
-             $("#app-container").hide();
-             $("#cim-load-container").hide();
-             $("#cim-home-container").hide();
-             $(".selectpicker").selectpicker("hide");
-             $("#cim-mode").hide();
-             $("#cim-topology-processor").hide();
-             $("#cim-loading-modal-error-container").hide();
-             $("#cim-boundary-modal-error-container").hide();
+             document.getElementById("app-container").style.display = "none";
+             document.getElementById("cim-load-container").style.display = "none";
+             document.getElementById("cim-home-container").style.display = "none";
+             document.getElementById("cim-diagrams").style.display = "none";
+             document.getElementById("cim-mode").style.display = "none";
+             document.getElementById("cim-topology-processor").style.display = "none";
+             document.getElementById("cim-loading-modal-error-container").style.display = "none";
+             document.getElementById("cim-boundary-modal-error-container").style.display = "none";
              // main logic
              d3.select("#cim-diagrams").selectAll("option").remove();
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
              d3.select("#cim-filename").html("");    
-             $(".selectpicker").selectpicker("refresh");
              // initialize the file input component
              const inputElement = document.getElementById("cim-file-input");
              inputElement.addEventListener("change", handleFiles, false);
@@ -322,7 +320,7 @@
                  cimFile = this.files[0];
                  createNewFile = false;
                  $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
-                 $("#cim-load-container").show();
+                 document.getElementById("cim-load-container").style.display = null;
              }
              
              // sometimes we must hide the 'load file' button
@@ -335,7 +333,7 @@
          route('/*/diagrams', function() {
              // things to show
              $("#cim-home-container").show();
-             $(".selectpicker").selectpicker("show");
+             document.getElementById("cim-diagrams").style.display = null;
              $("#cim-mode").show();
              // things to hide
              $("#cim-local-file-component").hide();
@@ -402,7 +400,6 @@
              if (self.cimModel.activeDiagramName === decodeURI(name)) {
                  self.trigger("showDiagram", file, name);
                  $("#app-container").show();
-                 $(".selectpicker").selectpicker("val", decodeURI("#" + file + "/diagrams/" + name));
                  return; // nothing more to do;
              }
              $("#cim-local-file-component").hide();
@@ -425,7 +422,7 @@
              function showDiagram() {
                  self.cimModel.selectDiagram(decodeURI(name));
                  loadDiagramList(decodeURI(file));
-                 $(".selectpicker").selectpicker("val", decodeURI("#" + file + "/diagrams/" + name));
+                 document.getElementById(decodeURI(name)).setAttribute('selected', true);
                  self.trigger("showDiagram", file, name, element);
                  $("#app-container").show();
 
@@ -472,18 +469,19 @@
              });
              
              // load diagram list
-             $(".selectpicker").selectpicker();
              d3.select("#cim-diagrams").selectAll("option").remove();
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
-             $(".selectpicker").selectpicker("refresh");
              d3.select("#cim-diagrams").append("option")
                .attr("value", "#" + filename + "/createNew") 
                .text("Generate a new diagram");
              let diagrams = self.cimModel.getDiagramList();
              for (let i in diagrams) {
-                 d3.select("#cim-diagrams").append("option").attr("value", "#" + filename + "/diagrams/"+diagrams[i]).text(diagrams[i]);
+                 d3.select("#cim-diagrams")
+                   .append("option")
+                   .attr("value", "#" + filename + "/diagrams/"+diagrams[i])
+                   .attr("id", diagrams[i])
+                   .text(diagrams[i]);
              }
-             $(".selectpicker").selectpicker("refresh");
              if (diagrams.length === 0) {
                  route(filename + "/createNew");
              }
