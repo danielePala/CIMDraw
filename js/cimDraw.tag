@@ -195,14 +195,14 @@
                     </div>
                     <div class="modal-body">
                         <div class="row justify-content-center">
-                            <div class="col-md-auto">         
-                                <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                                    <label class="btn btn-primary active">
-                                        <input type="radio" name="options" id="operational" autocomplete="off" checked> Operational
-                                    </label>
-                                    <label class="btn btn-primary">
-                                        <input type="radio" name="options" id="planning" autocomplete="off"> Planning
-                                    </label>
+                            <div class="col-md-auto">
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="operational" name="diagramTypes" class="custom-control-input">
+                                    <label class="custom-control-label" for="operational">Operational</label>
+                                </div>
+                                <div class="custom-control custom-radio custom-control-inline">
+                                    <input type="radio" id="planning" name="diagramTypes" class="custom-control-input">
+                                    <label class="custom-control-label" for="planning">Planning</label>
                                 </div>
                             </div>
                         </div>
@@ -226,9 +226,9 @@
 
      self.cimModel.on("setMode", function(mode) {
          if (mode === "NODE_BREAKER") {
-             $("#cim-mode").text("Mode: Operational");
+             document.getElementById("cim-mode").textContent = "Mode: Operational"; 
          } else {
-             $("#cim-mode").text("Mode: Planning");
+             document.getElementById("cim-mode").textContent = "Mode: Planning"; 
          }
      });
      
@@ -236,7 +236,7 @@
          diagramsToLoad = diagramsToLoad - 1;
          if (diagramsToLoad === 0) {
              $("#loadingModal").modal("hide");
-             $("#loadingDiagramMsg").text("loading diagram...");
+             document.getElementById("loadingDiagramMsg").textContent = "loading diagram..."; 
              diagramsToLoad = 2;
          }
      });
@@ -246,11 +246,11 @@
          let cimFile = {};
          let createNewFile = false;
 
-         $("#operational").change(function() {
+         document.getElementById("operational").addEventListener("change", function() {
              self.cimModel.setMode("NODE_BREAKER");
          });
 
-         $("#planning").change(function() {
+         document.getElementById("planning").addEventListener("change", function() {
              self.cimModel.setMode("BUS_BRANCH");
          });
          
