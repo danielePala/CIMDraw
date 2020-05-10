@@ -377,13 +377,13 @@ function exportToMatpower(model) {
                 let b2pu = (parseFloat(b2) * baseZ2);
                 let b3pu = (parseFloat(b3) * baseZ3);
                 // Let's do a star-delta conversion in order to avoid creating a node for the star point
-                let z1pu = math.complex(r1pu, x1pu);
-                let z2pu = math.complex(r2pu, x2pu);
-                let z3pu = math.complex(r3pu, x3pu);
-                let numerator = math.add(math.add(math.multiply(z1pu, z2pu), math.multiply(z2pu, z3pu)), math.multiply(z3pu, z1pu));
-                let z12pu = math.multiply(numerator, z3pu.inverse());
-                let z23pu = math.multiply(numerator, z1pu.inverse());
-                let z31pu = math.multiply(numerator, z2pu.inverse());
+                let z1pu = complex(r1pu, x1pu);
+                let z2pu = complex(r2pu, x2pu);
+                let z3pu = complex(r3pu, x3pu);
+                let numerator = add(add(multiply(z1pu, z2pu), multiply(z2pu, z3pu)), multiply(z3pu, z1pu));
+                let z12pu = multiply(numerator, inverse(z3pu));
+                let z23pu = multiply(numerator, inverse(z1pu));
+                let z31pu = multiply(numerator, inverse(z2pu));
                 // calculate nominal trafo ratios
                 let ratio12 = (parseFloat(baseV2)*parseFloat(w1RefV))/(parseFloat(baseV1)*parseFloat(w2RefV));
                 let ratio23 = (parseFloat(baseV3)*parseFloat(w2RefV))/(parseFloat(baseV2)*parseFloat(w3RefV));
@@ -396,8 +396,8 @@ function exportToMatpower(model) {
                 // branch 1-2
                 mpcFile = mpcFile + busNums.get(node1) + "\t"; // “from” bus number
                 mpcFile = mpcFile + busNums.get(node2) + "\t"; // “to” bus number
-                mpcFile = mpcFile + math.re(z12pu) + "\t";     // resistance (p.u.)
-                mpcFile = mpcFile + math.im(z12pu) + "\t";     // reactance (p.u.)
+                mpcFile = mpcFile + z12pu.re + "\t";           // resistance (p.u.)
+                mpcFile = mpcFile + z12pu.im + "\t";           // reactance (p.u.)
                 mpcFile = mpcFile + b1pu + "\t";               // total line charging susceptance (p.u.)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
@@ -412,8 +412,8 @@ function exportToMatpower(model) {
                 // branch 2-3
                 mpcFile = mpcFile + busNums.get(node2) + "\t"; // “from” bus number
                 mpcFile = mpcFile + busNums.get(node3) + "\t"; // “to” bus number
-                mpcFile = mpcFile + math.re(z23pu) + "\t";     // resistance (p.u.)
-                mpcFile = mpcFile + math.im(z23pu) + "\t";     // reactance (p.u.)
+                mpcFile = mpcFile + z23pu.re + "\t";           // resistance (p.u.)
+                mpcFile = mpcFile + z23pu.im + "\t";           // reactance (p.u.)
                 mpcFile = mpcFile + b2pu + "\t";               // total line charging susceptance (p.u.)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
@@ -428,8 +428,8 @@ function exportToMatpower(model) {
                 // branch 3-1
                 mpcFile = mpcFile + busNums.get(node3) + "\t"; // “from” bus number
                 mpcFile = mpcFile + busNums.get(node1) + "\t"; // “to” bus number
-                mpcFile = mpcFile + math.re(z31pu) + "\t";     // resistance (p.u.)
-                mpcFile = mpcFile + math.im(z31pu) + "\t";     // reactance (p.u.)
+                mpcFile = mpcFile + z31pu.re + "\t";           // resistance (p.u.)
+                mpcFile = mpcFile + z31pu.im + "\t";           // reactance (p.u.)
                 mpcFile = mpcFile + b3pu + "\t";               // total line charging susceptance (p.u.)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating A (long term rating)
                 mpcFile = mpcFile + 0 + "\t";                  // MVA rating B (short term rating)
@@ -485,4 +485,41 @@ function exportToMatpower(model) {
         }
         return ret;
     };
+
+    // create an object representing a complex number
+    function complex(r, i) {
+        const result = {
+            re: r,
+            im: i
+        };
+        return result;
+    }
+
+    // perform the sum of two complex numbers
+    function add(z1, z2) {
+        const result = {
+            re: z1.re + z2.re,
+            im: z1.im + z2.im
+        };
+        return result;
+    }
+
+    // perform the multiplication of two complex numbers
+    function multiply(z1, z2) {
+        const result = {
+            re: (z1.re * z2.re) - (z1.im * z2.im),
+            im: (z1.re * z2.im) + (z1.im * z2.re)
+        };
+        return result;
+    }
+
+    // returns the inverse of a complex number
+    function inverse(z) {
+        const mod2 = (z.re * z.re) + (z.im * z.im);
+        const result = {
+            re: z.re / mod2,
+            im: -z.im / mod2
+        }
+        return result;
+    }
 }
