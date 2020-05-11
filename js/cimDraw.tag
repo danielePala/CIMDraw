@@ -197,7 +197,7 @@
                         <div class="row justify-content-center">
                             <div class="col-md-auto">
                                 <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" id="operational" name="diagramTypes" class="custom-control-input">
+                                    <input type="radio" id="operational" name="diagramTypes" class="custom-control-input" checked="checked">
                                     <label class="custom-control-label" for="operational">Operational</label>
                                 </div>
                                 <div class="custom-control custom-radio custom-control-inline">
@@ -253,38 +253,37 @@
          document.getElementById("planning").addEventListener("change", function() {
              self.cimModel.setMode("BUS_BRANCH");
          });
-         
-         $("#cim-create-new-container").on("click", function() {
+
+         document.getElementById("cim-create-new-container").addEventListener("click", function() {
              cimFile = {name: "new1"};
              createNewFile = true;
              $("#cimModeModal").modal("show");
          });
 
          // Button shown in loading modal in case of errors.
-         $("#cim-loading-modal-error").on("click", function() {
+         document.getElementById("cim-loading-modal-error").addEventListener("click", function() {
              $("#loadingModal").modal("hide");
              route("/");
          });
 
          // Button shown in boundary modal in case of errors.
-         $("#cim-boundary-modal-error").on("click", function() {
+         document.getElementById("cim-boundary-modal-error").addEventListener("click", function() {
              $("#boundaryModal").modal("hide");
-             $("#boundaryMsg").text("loading boundary file...");
+             document.getElementById("boundaryMsg").textContent = "loading boundary file...";
          });
-         
-         $("#cim-create-new-modal").on("click", function() {
+
+         document.getElementById("cim-create-new-modal").addEventListener("click", function() {
              route("/" + cimFile.name + "/diagrams");
          });
 
-         $("#load-boundary").on("click", function() {
-             document.getElementById('upload-boundary').click();
+         document.getElementById("load-boundary").addEventListener("click", function() {
+             document.getElementById("upload-boundary").click();
              return false;
          });
-         
-         $("#upload-boundary").change(function() {
+
+         document.getElementById("upload-boundary").addEventListener("change", function() {
              const bdFile = this.files[0];
-             $("#boundaryModal").off("shown.bs.modal");
-             $("#boundaryModal").on("shown.bs.modal", function(e) {
+             function loadBoundary() {
                  self.cimModel.loadBoundary(bdFile).then(function(result) {
                      $("#boundaryMsg").append("<br>OK. " + result);
                      $("#cim-boundary-modal-error-container").show();
@@ -292,7 +291,9 @@
                      $("#boundaryMsg").append("<br>" + e);
                      $("#cim-boundary-modal-error-container").show();
                  });
-             });
+             };
+             $("#boundaryModal").off("shown.bs.modal");
+             $("#boundaryModal").on("shown.bs.modal", loadBoundary);
              $("#boundaryModal").modal("show");
          });
          
