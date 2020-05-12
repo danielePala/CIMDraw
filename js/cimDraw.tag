@@ -285,11 +285,13 @@
              const bdFile = this.files[0];
              function loadBoundary() {
                  self.cimModel.loadBoundary(bdFile).then(function(result) {
-                     $("#boundaryMsg").append("<br>OK. " + result);
-                     $("#cim-boundary-modal-error-container").show();
+                     const br = document.createElement("br");
+                     document.getElementById("boundaryMsg").append(br, "OK. " + result);
+                     document.getElementById("cim-boundary-modal-error-container").style.display = null;
                  }).catch(function(e) {
-                     $("#boundaryMsg").append("<br>" + e);
-                     $("#cim-boundary-modal-error-container").show();
+                     const br = document.createElement("br");
+                     document.getElementById("boundaryMsg").append(br, e);
+                     document.getElementById("cim-boundary-modal-error-container").style.display = null;
                  });
              };
              $("#boundaryModal").off("shown.bs.modal");
@@ -316,30 +318,26 @@
              d3.select("#cim-filename").html("");    
              // initialize the file input component
              const inputElement = document.getElementById("cim-file-input");
-             inputElement.addEventListener("change", handleFiles, false);
-             function handleFiles() {
+             inputElement.addEventListener("change", handleFile);
+             function handleFile() {
                  cimFile = this.files[0];
                  createNewFile = false;
-                 $("#cim-load").attr("href", "#" + encodeURI(cimFile.name) + "/diagrams");
+                 const target = "#" + encodeURI(cimFile.name) + "/diagrams";
+                 document.getElementById("cim-load").setAttribute("href", target);
                  document.getElementById("cim-load-container").style.display = null;
              }
-             
-             // sometimes we must hide the 'load file' button
-             $('#cim-file-input').on('fileclear', function(event) {
-                 $("#cim-load-container").hide();
-             });
          });
 
          // here we choose a diagram to display
          route('/*/diagrams', function() {
              // things to show
-             $("#cim-home-container").show();
+             document.getElementById("cim-home-container").style.display = null;
              document.getElementById("cim-diagrams").style.display = null;
-             $("#cim-mode").show();
+             document.getElementById("cim-mode").style.display = null;
              // things to hide
-             $("#cim-local-file-component").hide();
-             $("#app-container").hide();
-             $("#cim-export").parent().addClass("disabled");
+             document.getElementById("cim-local-file-component").style.display = "none";
+             document.getElementById("app-container").style.display = "none";
+             document.getElementById("cim-export").parentNode.classList.add("disabled");
              $("#cimModeModal").modal("hide");
              // main logic
              if (cimFile.name === d3.select("#cim-filename").html()) {
@@ -347,11 +345,11 @@
                  loadDiagramList(cimFile.name);
                  return;
              }
-             $("#loadingDiagramMsg").text("loading CIM network...");
+             document.getElementById("loadingDiagramMsg").textContent = "loading CIM network...";
              $("#loadingModal").off("shown.bs.modal");
              $("#loadingModal").on("shown.bs.modal", function(e) {
                  if (typeof(cimFile.name) !== "undefined") {
-                     d3.select("#cim-filename").html("[" + cimFile.name + "]&nbsp&nbsp");
+                     document.getElementById("cim-filename").innerHTML = "[" + cimFile.name + "]&nbsp&nbsp";
                      let loadingResult = null;
                      if (createNewFile === false) {
                          loadingResult = self.cimModel.load(cimFile);
@@ -365,8 +363,9 @@
                              selectMode();
                          }
                      }).catch(function(e) {
-                         $("#loadingDiagramMsg").append("<br>" + e);
-                         $("#cim-loading-modal-error-container").show();
+                         const br = document.createElement("br");
+                         document.getElementById("loadingDiagramMsg").append(br, e);
+                         document.getElementById("cim-loading-modal-error-container").style.display = null;
                      });
                  } else {
                      $("#loadingModal").modal("hide");
