@@ -337,7 +337,7 @@
 
          // button for creating a new diagram
          document.getElementById("newDiagramBtn").addEventListener("click", function(e) {
-             const diagramName = d3.select("#newDiagramName").node().value;
+             const diagramName = document.getElementById("newDiagramName").value; 
              const hashComponents = window.location.hash.substring(1).split("/");
              const basePath = hashComponents[0] + "/diagrams/";
              const fullPath = basePath + diagramName;
@@ -359,9 +359,10 @@
              document.getElementById("cim-loading-modal-error-container").style.display = "none";
              document.getElementById("cim-boundary-modal-error-container").style.display = "none";
              // main logic
-             d3.select("#cim-diagrams").selectAll("option").remove();
-             d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
-             d3.select("#cim-filename").html("");    
+             // clean up any diagram in the list which may be present
+             resetDiagramList();
+             // clean up the file name
+             document.getElementById("cim-filename").textContent = "";
              // initialize the file input component
              const inputElement = document.getElementById("cim-file-input");
              inputElement.addEventListener("change", handleFile);
@@ -386,7 +387,8 @@
              document.getElementById("cim-export").parentNode.classList.add("disabled");
              $("#cimModeModal").modal("hide");
              // main logic
-             if (cimFile.name === d3.select("#cim-filename").html()) {
+             const actFile = document.getElementById("cim-filename").textContent;
+             if (cimFile.name === actFile) {
                  // nothing to do in this case, just refresh the diagram list
                  loadDiagramList(cimFile.name);
                  return;
@@ -477,27 +479,43 @@
              document.getElementById("app-container").style.display = null;
              document.getElementById("cim-export").parentNode.classList.remove("disabled");
              self.trigger("showDiagram", file, name, element);
-         };
+         }
 
          function loadDiagramList(filename) {
              // load diagram list
-             d3.select("#cim-diagrams").selectAll("option").remove();
-             d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
-             d3.select("#cim-diagrams").append("option")
-               .attr("value", "#" + filename + "/createNew") 
-               .text("Generate a new diagram");
+             resetDiagramList();
+             const cimDiagrams = document.getElementById("cim-diagrams");
+             // create theoption for generating anew diagram
+             const opt = document.createElement("option");
+             opt.setAttribute("value", "#" + filename + "/createNew");
+             opt.textContent = "Generate a new diagram";
+             cimDiagrams.appendChild(opt);
+             // create all theother options
              const diagrams = self.cimModel.getDiagramList();
              for (let i in diagrams) {
-                 d3.select("#cim-diagrams")
-                   .append("option")
-                   .attr("value", "#" + filename + "/diagrams/"+diagrams[i])
-                   .attr("id", diagrams[i])
-                   .text(diagrams[i]);
+                 const diagOpt = document.createElement("option");
+                 diagOpt.setAttribute("value", "#" + filename + "/diagrams/" + diagrams[i]);
+                 diagOpt.setAttribute("id", diagrams[i]);
+                 diagOpt.textContent = diagrams[i];
+                 cimDiagrams.appendChild(diagOpt);
              }
              if (diagrams.length === 0) {
                  route(filename + "/createNew");
              }
-         };
+         }
+
+         function resetDiagramList() {
+             const cimDiagrams = document.getElementById("cim-diagrams");
+             while (cimDiagrams.firstChild !== null) {
+                 cimDiagrams.removeChild(cimDiagrams.lastChild);
+             }
+             // create the initial option
+             const opt = document.createElement("option");
+             opt.setAttribute("disabled", "disabled");
+             opt.setAttribute("selected", "selected");
+             opt.textContent = "Select a diagram";
+             cimDiagrams.appendChild(opt);
+         }
 
          // start router
          route.start(true);
