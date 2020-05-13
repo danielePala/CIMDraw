@@ -220,7 +220,7 @@
 
     <script>
      "use strict";
-     let self = this;
+     const self = this;
      self.cimModel = cimModel();
      let diagramsToLoad = 2;
 
@@ -276,11 +276,11 @@
              route("/" + cimFile.name + "/diagrams");
          });
 
+         // Boundary file loading menu item 
          document.getElementById("load-boundary").addEventListener("click", function() {
              document.getElementById("upload-boundary").click();
              return false;
          });
-
          document.getElementById("upload-boundary").addEventListener("change", function() {
              const bdFile = this.files[0];
              function loadBoundary() {
@@ -297,6 +297,52 @@
              $("#boundaryModal").off("shown.bs.modal");
              $("#boundaryModal").on("shown.bs.modal", loadBoundary);
              $("#boundaryModal").modal("show");
+         });
+
+         // allow saving a copy of the file as plain XML
+         document.getElementById("cim-save").addEventListener("click", function(e) {
+             const out = self.cimModel.save();
+             const blob = new Blob([out], {type : "text/xml"});
+             const objectURL = URL.createObjectURL(blob);
+             e.currentTarget.setAttribute("href", objectURL);
+         });
+
+         // allow saving a copy of the file as CGMES
+         document.getElementById("cgmes-save").addEventListener("click", function(e) {
+             const out = self.cimModel.saveAsCGMES();
+             out.then(function(content) {
+                 const objectURL = URL.createObjectURL(content);
+                 document.getElementById("cgmes-download").setAttribute("href", objectURL);
+                 document.getElementById("cgmes-download").click();
+             }).catch(function(reason) {
+                 console.log(reason);
+             });
+         });
+
+         // allow exporting a copy of the diagram
+         document.getElementById("cim-export").addEventListener("click", function(e) {
+             const out = self.cimModel.export();
+             const blob = new Blob([out], {type : "text/xml"});
+             const objectURL = URL.createObjectURL(blob);
+             e.currentTarget.setAttribute("href", objectURL);
+         });
+
+         // export CIM network to Matpower
+         document.getElementById("matpower-export").addEventListener("click", function(e) {
+             const out = exportToMatpower(self.cimModel);
+             const blob = new Blob([out], {type : "text/plain"});
+             const objectURL = URL.createObjectURL(blob);
+             e.currentTarget.setAttribute("href", objectURL);
+         });
+
+         // button for creating a new diagram
+         document.getElementById("newDiagramBtn").addEventListener("click", function(e) {
+             const diagramName = d3.select("#newDiagramName").node().value;
+             const hashComponents = window.location.hash.substring(1).split("/");
+             const basePath = hashComponents[0] + "/diagrams/";
+             const fullPath = basePath + diagramName;
+             $('#newDiagramModal').modal("hide");
+             route(fullPath);
          });
          
          // This is the initial route ("the home page").
@@ -374,9 +420,9 @@
                  }
 
                  function selectMode() {
-                     let nodes = self.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
+                     const nodes = self.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
                      let cns = nodes["cim:ConnectivityNode"];
-                     let tns = nodes["cim:TopologicalNode"];
+                     const tns = nodes["cim:TopologicalNode"];
                      cns = cns.filter(function(el) {
                          return self.cimModel.isBoundary(el) === false;
                      });
@@ -399,11 +445,11 @@
              }
              if (self.cimModel.activeDiagramName === decodeURI(name)) {
                  self.trigger("showDiagram", file, name);
-                 $("#app-container").show();
+                 document.getElementById("app-container").style.display = null;
                  return; // nothing more to do;
              }
-             $("#cim-local-file-component").hide();
-             $("#loadingDiagramMsg").text("loading diagram...");
+             document.getElementById("cim-local-file-component").style.display = "none";
+             document.getElementById("loadingDiagramMsg").textContent = "loading diagram...";
              $("#loadingModal").off("shown.bs.modal");
              $("#loadingModal").modal("show");
              $("#loadingModal").on("shown.bs.modal", function(e) {
@@ -411,70 +457,36 @@
              });
          });
 
+         // here we focus on a specific element of the diagram
+         route("/*/diagrams/*/*", function(file, name, element) {
+             document.getElementById("cim-local-file-component").style.display = "none";
+             self.trigger("showDiagram", file, name, element);
+         });
+
+         // here we create a new diagram
+         route("/*/createNew", function(file) {
+             window.history.back();
+             $("#newDiagramModal").modal("show");
+         });
+         
          // creates a new model if it doesn't exist, and shows a diagram.
          function loadDiagram(file, name, element) {
-             self.cimModel.loadRemote("/" + file).then(function() {
-                 showDiagram();
-             }).catch(function(e) {
-                 $("#loadingDiagramMsg").append("<br>" + e);
-                 $("#cim-loading-modal-error-container").show();
-             });
-             function showDiagram() {
-                 self.cimModel.selectDiagram(decodeURI(name));
-                 loadDiagramList(decodeURI(file));
-                 document.getElementById(decodeURI(name)).setAttribute('selected', true);
-                 self.trigger("showDiagram", file, name, element);
-                 $("#app-container").show();
-
-                 // allow exporting a copy of the diagram 
-                 $("#cim-export").on("click", function() {
-                     let out = self.cimModel.export();
-                     let blob = new Blob([out], {type : "text/xml"});
-                     let objectURL = URL.createObjectURL(blob);
-                     $("#cim-export").attr("href", objectURL);
-                 });
-                 $("#cim-export").parent().removeClass("disabled");
-             };
+             self.cimModel.selectDiagram(decodeURI(name));
+             loadDiagramList(decodeURI(file));
+             document.getElementById(decodeURI(name)).setAttribute("selected", true);
+             document.getElementById("app-container").style.display = null;
+             document.getElementById("cim-export").parentNode.classList.remove("disabled");
+             self.trigger("showDiagram", file, name, element);
          };
 
          function loadDiagramList(filename) {
-             $("#cim-save").off("click");
-             // allow saving a copy of the file as plain XML
-             $("#cim-save").on("click", function() {
-                 let out = self.cimModel.save();
-                 let blob = new Blob([out], {type : "text/xml"});
-                 let objectURL = URL.createObjectURL(blob);
-                 $("#cim-save").attr("href", objectURL);
-             });
-             $("#cgmes-save").off("click");
-             // allow saving a copy of the file as CGMES
-             $("#cgmes-save").on("click", cgmesSave);
-             function cgmesSave() {
-                 let out = self.cimModel.saveAsCGMES();
-                 out.then(function(content) {
-                     let objectURL = URL.createObjectURL(content);
-                     $("#cgmes-download").attr("href", objectURL);
-                     document.getElementById("cgmes-download").click();
-                 }).catch(function(reason) {
-                     console.log(reason);
-                 });
-             };
-             $("#matpower-export").off("click");
-             // allow saving a copy of the file as plain XML
-             $("#matpower-export").on("click", function() {
-                 let out = exportToMatpower(self.cimModel);
-                 let blob = new Blob([out], {type : "text/plain"});
-                 let objectURL = URL.createObjectURL(blob);
-                 $("#matpower-export").attr("href", objectURL);
-             });
-             
              // load diagram list
              d3.select("#cim-diagrams").selectAll("option").remove();
              d3.select("#cim-diagrams").append("option").attr("disabled", "disabled").html("Select a diagram");
              d3.select("#cim-diagrams").append("option")
                .attr("value", "#" + filename + "/createNew") 
                .text("Generate a new diagram");
-             let diagrams = self.cimModel.getDiagramList();
+             const diagrams = self.cimModel.getDiagramList();
              for (let i in diagrams) {
                  d3.select("#cim-diagrams")
                    .append("option")
@@ -486,24 +498,6 @@
                  route(filename + "/createNew");
              }
          };
-         
-         route("/*/diagrams/*/*", function(file, name, element) {
-             $("#cim-local-file-component").hide();
-             self.trigger("showDiagram", file, name, element);
-         });
-
-         route("/*/createNew", function(file) {
-             window.history.back();
-             $("#newDiagramModal").modal("show");
-             d3.select("#newDiagramBtn").on("click", function() {
-                 let diagramName = d3.select("#newDiagramName").node().value;
-                 let hashComponents = window.location.hash.substring(1).split("/");
-                 let basePath = hashComponents[0] + "/diagrams/";
-                 let fullPath = basePath + diagramName;
-                 $('#newDiagramModal').modal("hide");
-                 route(fullPath);
-             });
-         });
 
          // start router
          route.start(true);
