@@ -71,6 +71,7 @@
          padding-bottom: 10px;
          align-self: center;
          flex-shrink: 0;
+         width: 370px;
      }
 
      #cim-search-form {
@@ -116,15 +117,20 @@
                     <button type="button" class="btn btn-outline-danger" id="tree-link-dialog-cancel">Cancel</button>
                 </div>
             </div>
-            <div class="btn-group-toggle" data-toggle="buttons" id="tree-controls">
-                <label class="btn btn-primary">
-                    <input type="checkbox" autocomplete="off" id="showAllObjects"> Show all objects
-                </label>
-                <label class="btn btn-primary">
-                    <input type="checkbox" autocomplete="off" id="sshInput">Power flow input
-                </label>
-             </div>
-
+            <div class="row" id="tree-controls">
+                <div class="col">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="showAllObjects">
+                        <label class="custom-control-label" for="showAllObjects">Show all objects</label>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="sshInput">
+                        <label class="custom-control-label" for="sshInput">Power flow input</label>
+                    </div>
+                </div>
+            </div>
              <div class="input-group" id="cim-search-form">
                  <input type="text" class="form-control" placeholder="Search..." aria-label="Search" aria-describedby="button-addon4" id="cim-search-key">
                  <div class="input-group-append" id="button-addon4">
@@ -175,7 +181,7 @@
         </div>
     </div>    
     <script>
-     "use strict";
+    "use strict";
      
      this.model = opts.model;   
      let self = this;
@@ -191,76 +197,76 @@
      let searchResults = null;
      
      self.on("mount", function() {
-         $("form").submit(function(event) {
-             event.preventDefault();
-         });
          // setup search input field
-         $("#cim-search-key").on("keyup", function(event) {
+         document.getElementById("cim-search-key").addEventListener("keyup", function(event) {
              if (event.key === "Enter") {
                  // check if we are case-sensitive
-                 let caseSensitive = $("#cim-search-case").hasClass("active");
+                 let caseSensitive = document.getElementById("cim-search-case").classList.contains("active");
                  let searchKey = document.getElementById("cim-search-key").value;
                  if (searchKey === "") {
-                     $("#cim-search-results", self.root).addClass("d-none");
+                     document.getElementById("cim-search-results").classList.add("d-none");
                      searchResults = null;
                  } else {
                      let total = [];
-                     $("ul:not(.CIM-object-list)", self.root).each(function() {
+                     document.getElementById("app-tree").querySelectorAll("ul:not(.CIM-object-list)").forEach(function(el) {
                          let matches = null;
                          if (caseSensitive === true) {
-                             matches = $(this).find("li.CIM-object>button.cim-object-btn:contains(" + searchKey + ")");
+                             matches = Array.prototype.filter.call(el.querySelectorAll("li.CIM-object>button.cim-object-btn"), function(btn) {
+                                 let target = btn.textContent;
+                                 return (target.indexOf(searchKey) >= 0);
+                             });
                          } else {
-                             matches = $(this).find("li.CIM-object>button.cim-object-btn").filter(function(i, el) {
+                             matches = Array.prototype.filter.call(el.querySelectorAll("li.CIM-object>button.cim-object-btn"), function(btn) {
                                  let searchString = searchKey.toLocaleLowerCase();
-                                 let target = $(this).html().toLocaleLowerCase();
+                                 let target = btn.textContent.toLocaleLowerCase();
                                  return (target.indexOf(searchString) >= 0);
                              });
                          }
-                         total = total.concat(matches.get());
+                         total = total.concat(matches);
                      });
                      total = [...new Set(total)];
-                     $("#cim-search-results", self.root).removeClass("d-none");
+                     document.getElementById("cim-search-results").classList.remove("d-none");
                      if (total.length > 0) {
-                         $("#cim-search-results > span", self.root).html("Result 1 of " + total.length);
+                         document.querySelector("#cim-search-results > span").textContent = "Result 1 of " + total.length;
                          searchResults = {elements: d3.selectAll(total).data(), actualResult: 0};
                          self.moveTo(self.model.ID(searchResults.elements[searchResults.actualResult]));
                      } else {
-                         $("#cim-search-results > span", self.root).html("Text not found");
+                         document.querySelector("#cim-search-results > span").textContent = "Text not found"; 
                      }
                  }
              }
          });
          // setup search buttons
-         $("#cim-search-next").on("click", function() {
+         document.getElementById("cim-search-next").addEventListener("click", function() {
              if (searchResults !== null) {
                  if (searchResults.actualResult < (searchResults.elements.length - 1)) {
                      searchResults.actualResult = searchResults.actualResult + 1;
                      let result = searchResults.actualResult + 1;
-                     $("#cim-search-results > span", self.root).html("Result " + result  + " of " + searchResults.elements.length);
+                     document.querySelector("#cim-search-results > span").textContent = "Result " + result  + " of " + searchResults.elements.length;
                      self.moveTo(self.model.ID(searchResults.elements[searchResults.actualResult]));
                  } 
              }
          });
-         $("#cim-search-prev").on("click", function() {
+         document.getElementById("cim-search-prev").addEventListener("click", function() {
              if (searchResults !== null) {
                  if (searchResults.actualResult > 0) {
                      searchResults.actualResult = searchResults.actualResult - 1;
                      let result = searchResults.actualResult + 1;
-                     $("#cim-search-results > span", self.root).html("Result " + result  + " of " + searchResults.elements.length);
+                     document.querySelector("#cim-search-results > span").textContent = "Result " + result  + " of " + searchResults.elements.length;
                      self.moveTo(self.model.ID(searchResults.elements[searchResults.actualResult]));
                  } 
              }
          });
-         $("#showAllObjects").change(function() {
+         document.getElementById("showAllObjects").addEventListener("change", function() {
              self.createTree(this.checked);
          });
-         $("#sshInput").change(function() {
+         document.getElementById("sshInput").addEventListener("change", function() {
              self.resetAttrs();
          });
          // setup tabs: reset path upon clicking on another tab
-         $("a[data-toggle=\"tab\"]").on("click", function (e) {
+         document.querySelectorAll("a[data-toggle=\"tab\"]").forEach(tab => tab.addEventListener("click", function(e) {
              self.goToBasePath();
-         });
+         }));
      });
 
      // listen to 'showDiagram' event from parent
@@ -454,7 +460,7 @@
 
      // listen to 'deleteFromDiagram' event from model
      self.model.on("deleteFromDiagram", function(objectUUID) {
-         if ($("#showAllObjects").prop('checked') === false) {
+         if (document.getElementById("showAllObjects").checked === false) {
              self.deleteObject(objectUUID);
          }
      });
@@ -469,7 +475,7 @@
                  let btn = d3.select(target.node().parentNode).select("button");
                  btn.html(value);
              }
-             $("[cim-target=\"" + self.model.ID(object) + "\"]").html(value);
+             document.querySelectorAll("[cim-target=\"" + self.model.ID(object) + "\"]").innerHTML = value;
          }
      });
 
@@ -520,9 +526,9 @@
      // listen to 'createdDiagram' event from model
      self.model.on("createdDiagram", function() {
          self.diagramName = decodeURI(self.model.activeDiagramName);
-         $("#showAllObjects").prop("checked", true);
-         $("#showAllObjects").change();
-         $("#showAllObjects").parent().addClass("active");
+         // the toggling of this checkbox actually renders the tree
+         document.getElementById("showAllObjects").checked = false;
+         document.getElementById("showAllObjects").dispatchEvent(new MouseEvent('click'));
      });
 
      // listen to 'setMode' event from model
@@ -530,7 +536,7 @@
      // when working in bus-branch mode.
      self.model.on("setMode", function(mode) {
          if (mode === "BUS_BRANCH") {
-             $("#measurementsTab").hide();
+             document.getElementById("measurementsTab").style.display = null;;
          }
      });
 
@@ -539,7 +545,7 @@
          function periodic() {
              let ret = treeRender.next().value;
              if (typeof(ret) !== "undefined") {
-                 $("#loadingDiagramMsg").html("<br>" + ret);
+                 document.getElementById("loadingDiagramMsg").innerHTML = "<br>" + ret;
                  setTimeout(periodic, 1);
              } else {
                  self.parent.trigger("loaded");
@@ -548,12 +554,12 @@
          periodic();
      }
      
-     render(diagramName) {
-         self.model.selectDiagram(decodeURI(diagramName));
-         self.diagramName = decodeURI(diagramName);
-         $("#showAllObjects").prop("checked", false);
-         $("#showAllObjects").change();
-         $("#showAllObjects").parent().removeClass("active");
+    render(diagramName) {     
+        self.model.selectDiagram(decodeURI(diagramName));
+        self.diagramName = decodeURI(diagramName);
+        // the toggling of this checkbox actually renders the tree
+        document.getElementById("showAllObjects").checked = true;
+        document.getElementById("showAllObjects").dispatchEvent(new MouseEvent('click'));
      }
 
      self.createTreeGenerator = function*(showAllObjects) {
@@ -836,7 +842,9 @@
                  self.model.ID(d) + "PowerTransformerEnd",
                  "Transformer Windings",
                  trafoEnds);
-             $(trafoEndsEnter.nodes()).parent().addClass("CIM-subobject");
+                 for (const node of trafoEndsEnter.nodes()) {
+                     node.parentNode.classList.add("CIM-subobject")
+                 }
              // tap changer(s)
              trafoEndsEnter.each(function(d, i) {
                  let tcs = self.model.getTargets([d], "TransformerEnd.RatioTapChanger");
@@ -860,27 +868,31 @@
          });
      }
 
-     nlCompensatorPoints(nlcG, nlcPoints) {
-         let nlc = nlcG.data()[0];
-         let nlcPointsEnter = self.elements(
-             nlcG,
-             self.model.ID(nlc) + "NonlinearShuntCompensatorPoint",
-             "Points",
-             nlcPoints, true);
-         $(nlcPointsEnter.nodes()).parent().addClass("CIM-subobject");
-         self.createDeleteMenu(nlcPointsEnter);
-     }
+    nlCompensatorPoints(nlcG, nlcPoints) {
+        let nlc = nlcG.data()[0];
+        let nlcPointsEnter = self.elements(
+            nlcG,
+            self.model.ID(nlc) + "NonlinearShuntCompensatorPoint",
+            "Points",
+            nlcPoints, true); 
+        for (const node of nlcPointsEnter.nodes()) {
+            node.parentNode.classList.add("CIM-subobject")
+        }
+        self.createDeleteMenu(nlcPointsEnter);
+    }
 
-     tapChangers(trafoG, tcs) {
-         let trafo = trafoG.data()[0];
-         let tcEnter = self.elements(
-             trafoG,
-             self.model.ID(trafo) + "RatioTapChanger",
-             "Ratio Tap Changer",
-             tcs);
-         $(tcEnter.nodes()).parent().addClass("CIM-subobject");
-         self.createDeleteMenu(tcEnter);
-     }
+    tapChangers(trafoG, tcs) {
+        let trafo = trafoG.data()[0];
+        let tcEnter = self.elements(
+            trafoG,
+            self.model.ID(trafo) + "RatioTapChanger",
+            "Ratio Tap Changer",
+            tcs);
+        for (const node of tcEnter.nodes()) {
+            node.parentNode.classList.add("CIM-subobject")
+        }
+        self.createDeleteMenu(tcEnter);
+    }
 
      limitSets(tab, allLimits) {
          let limSetEnter = self.elements(tab, "OperationalLimitSet", "Operational Limit Sets", allLimits);
@@ -1114,28 +1126,30 @@
          elementsTopContainer.select(":scope > h4 > span").html(elementCount);
          // update also the top containers (if any)
          if (typeof(isSubobject) === "undefined" || isSubobject === false) {
-             let tcNode = elementsTopContainer.node(); 
-             $(tcNode).parents("li.cim-parent-container")
-                      .find(">h4>span")
-                      .each(function() {
-                          let elementCount = parseInt($(this).html());
-                          elementCount = elementCount + elementEnter.size();
-                          $(this).html(elementCount);
-                      });
+             let tcNode = elementsTopContainer.node();
+             let parent = tcNode.closest("li.cim-parent-container");
+             while (parent !== null) {
+                let span = parent.querySelector(":scope>h4>span");
+                let elementCount = parseInt(span.innerHTML);
+                elementCount = elementCount + elementEnter.size();
+                span.innerHTML = elementCount;    
+                parent = parent.parentNode.closest("li.cim-parent-container");
+             }
          }
          return elementEnter;
      }
 
      generateAttrsAndLinks(elementEnter) {
          // add attributes
-         let elementDiv = createTopDivs($("#sshInput").prop('checked') === false, "EQ");
+         
+         let elementDiv = createTopDivs(document.getElementById("sshInput").checked === false, "EQ");
          self.generateAttributes(elementDiv);
-         let sshDiv = createTopDivs($("#sshInput").prop('checked') === true, "SSH");
+         let sshDiv = createTopDivs(document.getElementById("sshInput").checked === true, "SSH");
          self.generateAttributes(sshDiv);
          // add links
-         let eqLinks = createLinkDivs($("#sshInput").prop('checked') === false, "EQ");
+         let eqLinks = createLinkDivs(document.getElementById("sshInput").checked === false, "EQ");
          self.generateLinks(eqLinks);
-         let sshLinks = createLinkDivs($("#sshInput").prop('checked') === true, "SSH");
+         let sshLinks = createLinkDivs(document.getElementById("sshInput").checked === true, "SSH");
          self.generateLinks(sshLinks);
          
          function createTopDivs(visible, profile) {
@@ -1335,7 +1349,7 @@
                  return d;
              });
          function setValueFromModel(d) {
-             let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
+             let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
              let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
              if (typeof(value) !== "undefined") {
                  this.value = value.innerHTML;
@@ -1344,7 +1358,7 @@
              }
          };
          function setIntValueFromModel(d) {
-             let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
+             let object = d3.select(this.closest("ul")).data()[0]; 
              let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
              if (typeof(value) !== "undefined") {
                  this.value = parseInt(value.innerHTML);
@@ -1353,7 +1367,7 @@
              }
          };
          function setFloatValueFromModel(d) {
-             let object = d3.select($(this).parents("ul").first().get(0)).data()[0]; 
+             let object = d3.select(this.closest("ul")).data()[0]; 
              let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
              if (typeof(value) !== "undefined") {
                  this.value = parseFloat(value.innerHTML).toFixed(5);
@@ -1362,7 +1376,7 @@
              }
          };
          function setBoolValueFromModel(d) {
-             let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
+             let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
              let value = self.model.getAttribute(object, "cim:" + d.attributes[0].value.substring(1));
              if (typeof(value) !== "undefined") {
                  d3.select(this).text(value.innerHTML);
@@ -1371,7 +1385,7 @@
              }
          };
          function setEnumValueFromModel(d) {
-             let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
+             let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
              let value = self.model.getEnum(object, "cim:" + d.attributes[0].value.substring(1));
              if (typeof(value) !== "undefined") {
                  d3.select(this).text(value);
@@ -1384,7 +1398,7 @@
              // change the element's text
              let value = d3.select(this).node().textContent;
              $(this).parent().parent().find(">button>span.boolVal").text(value);
-             let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
+             let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
              let attrName = "cim:" + d.attributes[0].value.substring(1);
              // update the model
              self.model.setAttribute(object, attrName, value);
@@ -1393,15 +1407,15 @@
          function setEnumAttr(d) {
              // change the element's text
              $(this).parent().parent().find(">button>span.enumVal").text(d);
-             let object = d3.select($(this).parents("li.attribute").first().parent().get(0)).data()[0];
-             let attr = d3.select($(this).parents("li.attribute").first().get(0)).data()[0];
+             let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
+             let attr = d3.select(this.closest("li.attribute").parentNode).data()[0];
              let attrName = "cim:" + attr.attributes[0].value.substring(1);
              let value = self.model.schema.getSchemaEnumName(attr) + "." + d;
              // update the model
              self.model.setEnum(object, attrName, value);
          };
          function attrInput(d) {
-             let object = d3.select($(this).parents("ul").first().get(0)).data()[0];
+             let object = d3.select(this.closest("ul")).data()[0];
              let about = d.attributes.getNamedItem("rdf:about").value;
              let ns = "cim:";
              if (about.startsWith("#") === false) {
@@ -1434,7 +1448,7 @@
                            route(basePath + "/" + targetUUID.substring(1));
                        })
                        .attr("cim-target", function(d) {
-                           let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
+                           let source = d3.select(this.closest("ul")).data()[0];
                            let targetObj = self.model.getTargets(
                                [source],
                                d.attributes[0].value.substring(1))[0];
@@ -1491,7 +1505,7 @@
                        .attr("type", "submit")
                        .attr("id", "cimRemoveBtn")
                        .on("click", function (d) {
-                           let source = d3.select($(this).parents("ul").first().get(0)).data()[0];
+                           let source = d3.select(this.closest("ul")).data()[0];
                            let linkName = "cim:" + d.attributes[0].value.substring(1);
                            let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
                            self.model.removeLink(source, linkName, target);

@@ -346,7 +346,7 @@
          });
          
          // This is the initial route ("the home page").
-         route(function(name) {
+         route(function() {
              // things to show
              document.getElementById("cim-local-file-component").style.display = null;
              // things to hide
