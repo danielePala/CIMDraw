@@ -1520,7 +1520,7 @@
      }
 
      setLink(linkToChange, source) {
-         let target = d3.select($(linkToChange.node()).parents("ul").first().get(0)).data()[0];
+         let target = d3.select(linkToChange.node().closest("ul")).data()[0];
          let targetUUID = self.model.ID(target);
          if (source !== null) {
              let targetLink = linkToChange.data()[0];
@@ -1542,8 +1542,8 @@
      // Enter mode for editing links.
      enterSetLinkMode(linkToChange, targets, nonTargets) {
          mode = "setLinks";
-         $("#tree-link-dialog").removeClass("d-none");
-         $("#tree-controls").addClass("d-none");
+         document.getElementById("tree-link-dialog").classList.remove("d-none");
+         document.getElementById("tree-controls").classList.add("d-none");
          targets.each(function(d) {
              let cimObjs = d3.select(this).selectAll(".CIM-object");
              cimObjs.select("button.cim-object-btn").classed("btn-primary", false).classed("btn-outline-dark", true);
