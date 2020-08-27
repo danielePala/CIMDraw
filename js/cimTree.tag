@@ -1397,7 +1397,7 @@
          function setBoolAttr(d) {
              // change the element's text
              let value = d3.select(this).node().textContent;
-             $(this).parent().parent().find(">button>span.boolVal").text(value);
+             this.parentNode.parentNode.querySelector(":scope>button>span.boolVal").textContent = value;
              let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
              let attrName = "cim:" + d.attributes[0].value.substring(1);
              // update the model
@@ -1406,9 +1406,9 @@
          // set an enum attribute according to user input
          function setEnumAttr(d) {
              // change the element's text
-             $(this).parent().parent().find(">button>span.enumVal").text(d);
+             this.parentNode.parentNode.querySelector(":scope>button>span.enumVal").textContent = d;
              let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
-             let attr = d3.select(this.closest("li.attribute").parentNode).data()[0];
+             let attr = d3.select(this.closest("li.attribute")).data()[0];
              let attrName = "cim:" + attr.attributes[0].value.substring(1);
              let value = self.model.schema.getSchemaEnumName(attr) + "." + d;
              // update the model
@@ -1507,11 +1507,11 @@
                        .on("click", function (d) {
                            let source = d3.select(this.closest("ul")).data()[0];
                            let linkName = "cim:" + d.attributes[0].value.substring(1);
-                           let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+                           let target = self.model.getObject(this.parentNode.querySelector("[cim-target]").getAttribute("cim-target"));
                            self.model.removeLink(source, linkName, target);
                        })
                        .html(function() {
-                           let target = self.model.getObject($(this).parent().find("[cim-target]").attr("cim-target"));
+                           let target = self.model.getObject(this.parentNode.querySelector("[cim-target]").getAttribute("cim-target"));
                            if (typeof(target) === "undefined") {
                                d3.select(this).attr("disabled", "disabled");
                            }
