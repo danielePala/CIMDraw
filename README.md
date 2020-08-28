@@ -17,9 +17,9 @@ This work has been financed by the Research Fund for the Italian Electrical Syst
 ### Resources ###
 
 - [Online demo](https://danielepala.github.io/CIMDraw/index.html)
-- [Wiki](https://bitbucket.org/danielePala/cimdraw/wiki/Home)
-- [Code architecture and API reference](https://bitbucket.org/danielePala/cimdraw/wiki/API.md)
-- [Examples](https://bitbucket.org/danielePala/cimdraw/wiki/Examples.md)
+- [Wiki](https://github.com/danielePala/CIMDraw/wiki)
+- [Code architecture and API reference](https://github.com/danielePala/CIMDraw/wiki/API.md)
+- [Examples](https://github.com/danielePala/CIMDraw/wiki/Examples.md)
 
 ### Installing ###
 
