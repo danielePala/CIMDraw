@@ -1561,16 +1561,20 @@
              cimObjs.selectAll("a.cim-expand-object").classed("d-none", true);
          });
          
-         $(nonTargets.nodes()).parent().parent().addClass("d-none").removeClass("d-flex");
-         $(".tab-content > .tab-pane > ul", self.root).each(function() {
-             if($(this).children("li.d-flex").length === 0) {
-                 let tabToHide = $(this).parent().attr("id") + "Tab";
-                 $("#" + tabToHide).addClass("d-none");
+         nonTargets.each(function(d) {
+             this.parentNode.parentNode.classList.add("d-none");
+             this.parentNode.parentNode.classList.remove("d-flex");
+         });
+
+         document.querySelectorAll(".tab-content > .tab-pane > ul").forEach(function(el) {
+             const tab = el.parentNode.getAttribute("id") + "Tab";
+             if (el.querySelectorAll(":scope > li.d-flex").length === 0) {
+                 document.getElementById(tab).classList.add("d-none");
              } else {
-                 let tabToShow = $(this).parent().attr("id") + "Tab";
-                 $("#" + tabToShow).tab("show");
+                 $("#" + tab).tab("show");
              }
          });
+         
          // handle escape key
          d3.select("body").on("keyup.tree", function() {
              if (d3.event.keyCode === 27) { // "Escape"
@@ -1588,8 +1592,8 @@
      // Exit mode for editing links.
      exitSetLinkMode() {
          mode = "default";
-         $("#tree-link-dialog").addClass("d-none");
-         $("#tree-controls").removeClass("d-none");
+         document.getElementById("tree-link-dialog").classList.add("d-none");
+         document.getElementById("tree-controls").classList.remove("d-none");
          let treeItems = d3.select(".tree").selectAll(".tab-pane > .list-group > .list-group-item > div > ul");
          treeItems.each(function(d) {
              let cimObjs = d3.select(this).selectAll(".CIM-object");
