@@ -157,7 +157,7 @@
                 <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#curvesAndRegs" id="curvesAndRegsTab">Curves and Regulations</a></li>
                 <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#limits" id="limitsTab">Operational Limits</a></li>
             </ul>
-            <div class="tab-content">
+            <div class="tab-content" id="tab-content">
                 <div role="tabpanel" class="tab-pane fade show active" id="components">
                     <ul class="list-group" id="CIMComponents"></ul>
                 </div>
@@ -1600,12 +1600,15 @@
              cimObjs.selectAll("button.cim-check-btn").remove();
              cimObjs.select("button.cim-object-btn").classed("btn-primary", true).classed("btn-outline-dark", false);
              cimObjs.selectAll("a.cim-expand-object").classed("d-none", false);
+             this.parentNode.parentNode.classList.add("d-flex");
+             this.parentNode.parentNode.classList.remove("d-none");
          });
-         $(treeItems.nodes()).parent().parent().addClass("d-flex").removeClass("d-none");
-         $(".tab-content > .tab-pane > ul", self.root).each(function() {
-             let tabToShow = $(this).parent().attr("id") + "Tab";                                               
-             $("#" + tabToShow).removeClass("d-none");
+
+         document.querySelectorAll(".tab-content > .tab-pane > ul").forEach(function(el) {
+             const tab = el.parentNode.getAttribute("id") + "Tab";
+             document.getElementById(tab).classList.remove("d-none");
          });
+
          d3.select("body").on("keyup.tree", null);
          d3.select("#tree-link-dialog-cancel").on("click", null);
      }
@@ -1635,8 +1638,8 @@
          target = targetChild.parentNode;
          d3.select(".tree").selectAll(".btn-danger").classed("btn-danger", false).classed("btn-primary", true);
          // show the relevant tab
-         let tabId = $(target).parents("div.tab-pane").first().attr("id") + "Tab";
-         if ($("#" + tabId).hasClass("active")) {
+         const tabId = target.closest("div.tab-pane").getAttribute("id") + "Tab";
+         if (document.getElementById(tabId).classList.contains("active")) {
              self.scrollTo("#" + uuid);
          } else {
              $("#" + tabId).on("shown.bs.tab", function(event) {
@@ -1653,30 +1656,31 @@
          if (cimObject !== null) {
              let cimObjectContainer = cimObject.parentNode;
              // update element count
-             $(cimObjectContainer)
-                 .parents("li.list-group-item")
-                 .first()
-                 .find(">h4>span")
-                 .each(function() {
-                     let elementCount = parseInt($(this).html());
+             cimObjectContainer
+             .closest("li.list-group-item")
+             .querySelectorAll(":scope>h4>span")
+             .forEach(function(element) {
+                     let elementCount = parseInt(element.innerHTML);
                      elementCount = elementCount - 1;
-                     $(this).html(elementCount);
-                 });
-             $(cimObjectContainer)
-                 .parents("li.cim-parent-container")
-                 .find(">h4>span")
-                 .each(function() {
-                     let elementCount = parseInt($(this).html());
-                     elementCount = elementCount - 1;
-                     $(this).html(elementCount);
-                 });
+                     element.innerHTML = elementCount;
+             });
+
+             let parent = cimObjectContainer.closest("li.cim-parent-container");
+             while (parent !== null) {
+                let span = parent.querySelector(":scope>h4>span");
+                let elementCount = parseInt(span.innerHTML);
+                elementCount = elementCount - 1;
+                span.innerHTML = elementCount;    
+                parent = parent.parentNode.closest("li.cim-parent-container");
+             }
+
              // remove object
              cimObjectContainer.remove();
          }
      }
 
      scrollTo(targetUUID) {
-         if ($(targetUUID).parents(".collapse:not(.show)").length !== 0) {
+         if (document.querySelector(targetUUID).parentNode.closest(".collapse:not(.show)") !== null) {
              $(targetUUID).parents(".collapse:not(.show)").on("shown.bs.collapse", function(event) {
                  event.stopPropagation();
                  let elementEnter = d3.select(this.parentNode).filter(".CIM-object").select("ul");
@@ -1692,16 +1696,17 @@
          $(targetUUID).parents(".collapse:not(.show)").collapse("show");
 
          function scrollToVisible(targetUUID) {
-             $(".tab-content").scrollTop(
-                 $(".tab-content").scrollTop() + (
-                     $(".tab-content").find(targetUUID).parent().offset().top - $(".tab-content").offset().top
-                 )
-             );
+             
+             const tabContent = document.getElementById("tab-content");
+             const target = tabContent.querySelector(targetUUID);
+             const tabOffset = tabContent.getBoundingClientRect().top + document.body.scrollTop;
+             const targetOffset = target.parentNode.getBoundingClientRect().top + document.body.scrollTop;
+             tabContent.scrollTop = tabContent.scrollTop + targetOffset - tabOffset;
          };
      }
 
      resetAttrs() {
-         if ($("#sshInput").prop('checked') === true) {
+         if (document.getElementById("sshInput").checked === true) {
              d3.select("#app-tree").selectAll("li.attribute:not(.SSH)").classed("d-none", true);
              d3.select("#app-tree").selectAll("li.link:not(.SSH)").classed("d-none", true);
              d3.select("#app-tree").selectAll("li.attribute.SSH").classed("d-none", false);
