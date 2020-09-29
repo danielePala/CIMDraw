@@ -685,7 +685,7 @@
          function periodic() {
              let ret = diagramRender.next().value;
              if (typeof(ret) !== "undefined") {
-                 $("#loadingDiagramMsg").html("<br>" + ret);
+                 document.getElementById("loadingDiagramMsg").innerHTML = "<br>" + ret;
                  setTimeout(periodic, 1);
              } else {
                  self.parent.trigger("loaded");

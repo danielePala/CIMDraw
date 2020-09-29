@@ -409,21 +409,25 @@
      // Initialization function (executed when the tag is mounted)
      self.on("mount", function() {
          // setup diagram buttons
+         // document.querySelector("#select").addEventListener("change",function() {
          $("#select").change(function() {
              self.disableAll();
              self.enableDrag();
          });
          
+         // document.querySelector("#pan").addEventListener("change",function() {
          $("#pan").change(function() {
              self.disableAll();
              self.enableZoom();
          });
 
+         // document.querySelector("#connect").addEventListener("change",function() {
          $("#connect").change(function() {
              self.disableAll();
              self.enableConnect();
          });
-         $("#legendToggle").change(function() {
+
+         document.querySelector("#legendToggle").addEventListener("change",function() {
              const t = d3.transition()
                        .duration(750)
                        .ease(d3.easeLinear);
@@ -433,7 +437,6 @@
                  d3.select("#legend").transition(t).attr("transform", d3.zoomIdentity.translate(1050, 50));
              }
          });
-
      });
 
      // listen to 'moveTo' event from parent
@@ -557,7 +560,7 @@
          self.disableZoom();
          self.disableConnect();
          self.enableDrag();
-         $("#cim-diagram-controls").removeClass("invisible");
+         document.querySelector("#cim-diagram-controls").classList.remove("invisible");
          // modality for drag+zoom
          let oldStatus = null;         
          d3.select("body")
@@ -1060,9 +1063,10 @@
          }
          self.disableAll();
          d3.select(self.root).selectAll("#cim-diagram-controls > label").classed("active", false);
-         // contexted jquesry selector
-         $("input", this.root).prop('checked', false);
-         $("#addElement").text(text);
+         document.querySelector("cimDiagramControls").querySelectorAll("input").forEach(function(el) {
+             el.checked = false;
+         });
+         document.querySelector("#addElement").textContent = text;
          self.status = "ADD" + type;
          d3.select("svg").on("click.add", clicked);
          function clicked() {
@@ -1097,9 +1101,10 @@
              text = d3.select("#" + type).text();
          }
          d3.select(self.root).selectAll("#cim-diagram-controls > label").classed("active", false);
-         // contexted jquesry selector
-         $("input", this.root).prop('checked', false);
-         $("#addElement").text(text);
+         document.querySelector("cimDiagramControls").querySelectorAll("input").forEach(function(el) {
+             el.checked = false;
+         });
+         document.querySelector("#addElement").textContent = text;
          self.status = "ADDMulti" + type;
          d3.select("svg").on("click.add", clicked);
          let newObject = undefined;
@@ -1333,7 +1338,7 @@
      }
 
      disableAdd() {
-         $("#addElement").text("Insert element");
+         document.querySelector("#addElement").textContent = "Insert element";
          d3.select("body").on("keyup.addMulti", null);
          d3.select("svg").on("click.add", null);
          d3.select("svg").on("contextmenu.add", null);

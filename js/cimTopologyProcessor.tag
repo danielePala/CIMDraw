@@ -57,15 +57,15 @@
      let self = this;
 
      self.parent.on("diagrams", function() {
-         $("#cim-topology-processor").show();
+         document.querySelector("#cim-topology-processor").style.display = "flex";
      });
 
      run(e) {
-         $("#tpMsg").text("Loading...");
+         document.querySelector("#tpMsg").textContent = "Loading...";
          $("#tpStatusModal").modal("show");
          $("#tpStatusModal").on("shown.bs.modal", function (e) {
              let topos = topologyProcessor(opts.model).calcTopology();
-             $("#tpMsg").text("Done (" + topos.length + " nodes calculated).");
+             document.querySelector("#tpMsg").textContent = "Done (" + topos.length + " nodes calculated).";
          });
 
      }
