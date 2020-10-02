@@ -314,7 +314,7 @@
              action: function(d, i) {
                  let cn = self.getLinkedCNs([d.target])[0];
                  if (typeof(cn) !== "undefined") {
-                     let cnUUID = opts.model.ID(cn);
+                     let cnUUID = opts.model.ID(cn.cn);
                      let cnElem = d3.select("svg").selectAll("g#cimdiagram-"+cnUUID).node();
                      self.deleteObject(cnElem);
                  } else {
