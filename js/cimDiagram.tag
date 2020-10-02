@@ -853,11 +853,11 @@
          // draw the legend
          self.drawLegend();
          
-         d3.select("svg").on("dragover", function() {
-             d3.event.preventDefault();
-         }).on("drop", function() {
-             d3.event.preventDefault();
-             const objUUID = d3.event.dataTransfer.getData("text/plain");
+         d3.select("svg").on("dragover", function(event) {
+             event.preventDefault();
+         }).on("drop", function(event) {
+             event.preventDefault();
+             const objUUID = event.dataTransfer.getData("text/plain");
              if (typeof(objUUID) === "undefined") {
                  return;
              }
@@ -870,7 +870,7 @@
                  self.moveTo(objUUID);
              } else {
                  // add object to diagram
-                 self.addToDiagram(datum);
+                 self.addToDiagram(event, datum);
              }
          });
 
@@ -1857,11 +1857,11 @@
                .attr("stroke-width", 0)
                .attr("fill", "steelblue")
                .attr("fill-opacity", "0.0")
-               .attr("class", "big-circle").on("mouseout", function(d) {
+               .attr("class", "big-circle").on("mouseout", function(event, d) {
                    d3.select(this).attr("fill-opacity", "0.0");
                });
          });
-         termSelection.on("mouseover", function(d) {
+         termSelection.on("mouseover", function(event, d) {
              if (d3.select(this).select("circle.selection-circle").size() === 0) {
                  d3.select(this).select("circle.big-circle").attr("fill-opacity", "0.7");
              }
@@ -2290,8 +2290,8 @@
          };
      }
 
-     addToDiagram(object) {
-         let m = d3.mouse(d3.select("svg").node());
+     addToDiagram(event, object) {
+         let m = d3.pointer(event, d3.select("svg").node());
          let transform = d3.zoomTransform(d3.select("svg").node());
          let xoffset = transform.x; 
          let yoffset = transform.y; 

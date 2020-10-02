@@ -20,7 +20,7 @@
 	function (d3) {
 		var utils = {
 			noop: function () {},
-			
+
 			/**
 			 * @param {*} value
 			 * @returns {Boolean}
@@ -94,11 +94,27 @@
 
 			/**
 			 * Context menu event handler
-			 * @param {*} data
-			 * @param {Number} index
+			 * @param {*} param1
+			 * @param {*} param2
 			 */
-			return function (data, index) {
+			return function (param1, param2) {
 				var element = this;
+
+				var event, data, index;
+				if (d3.event === undefined) {
+					// Using D3 6.x or above
+					event = param1;
+					data = param2;
+
+					// We cannot tell the index properly in new D3 versions,
+					// since it is not possible to access the original selection.
+					index = undefined;
+				} else {
+					// Using D3 5.x or below
+					event = d3.event;
+					data = param1;
+					index = param2;
+				}
 
 				// close any menu that's already opened
 				closeMenu();
@@ -116,62 +132,105 @@
 
 				// close menu on mousedown outside
 				d3.select('body').on('mousedown.d3-context-menu', closeMenu);
+				d3.select('body').on('click.d3-context-menu', closeMenu);
 
-				var list = d3.selectAll('.d3-context-menu')
+				var parent = d3.selectAll('.d3-context-menu')
 					.on('contextmenu', function() {
 						closeMenu();
-						d3.event.preventDefault();
-						d3.event.stopPropagation();
+						event.preventDefault();
+						event.stopPropagation();
 					})
 					.append('ul');
-				
-				list.selectAll('li').data(menuItems.bind(element)(data, index)).enter()
-					.append('li')
-					.attr('class', function(d) {
-						var ret = '';
-						if (utils.toFactory(d.divider).bind(element)(data, index)) {
-							ret += ' is-divider';
-						}
-						if (utils.toFactory(d.disabled).bind(element)(data, index)) {
-							ret += ' is-disabled';
-						}
-						if (!d.action) {
-							ret += ' is-header';
-						}
-						return ret;
-					})
-					.html(function(d) {
-						if (utils.toFactory(d.divider).bind(element)(data, index)) {
-							return '<hr>';
-						}
-						if (!d.title) {
-							console.error('No title attribute set. Check the spelling of your options.');
-						}
-						return utils.toFactory(d.title).bind(element)(data, index);
-					})
-					.on('click', function(d, i) {
-						if (utils.toFactory(d.disabled).bind(element)(data, index)) return; // do nothing if disabled
-						if (!d.action) return; // headers have no "action"
-						d.action.bind(element)(data, index);
-						closeMenu();
-					});
+
+				parent.call(createNestedMenu, element);
 
 				// the openCallback allows an action to fire before the menu is displayed
 				// an example usage would be closing a tooltip
 				if (openCallback.bind(element)(data, index) === false) {
 					return;
 				}
+        
+				//console.log(this.parentNode.parentNode.parentNode);//.getBoundingClientRect());   Use this if you want to align your menu from the containing element, otherwise aligns towards center of window
 
 				// get position
 				var position = positionFactory.bind(element)(data, index);
 
+				var doc = document.documentElement;
+				var pageWidth = window.innerWidth || doc.clientWidth;
+				var pageHeight = window.innerHeight || doc.clientHeight;
+
+				var horizontalAlignment = 'left';
+				var horizontalAlignmentReset = 'right';
+				var horizontalValue = position ? position.left : event.pageX - 2;
+				if (event.pageX > pageWidth/2){
+					horizontalAlignment = 'right';
+					horizontalAlignmentReset = 'left';
+					horizontalValue = position ? pageWidth - position.left : pageWidth - event.pageX - 2;
+				} 
+				
+
+				var verticalAlignment = 'top';
+				var verticalAlignmentReset = 'bottom';
+				var verticalValue = position ? position.top : event.pageY - 2;
+				if (event.pageY > pageHeight/2){
+					verticalAlignment = 'bottom';
+					verticalAlignmentReset = 'top';
+					verticalValue = position ? pageHeight - position.top : pageHeight - event.pageY - 2;
+				} 
+
 				// display context menu
 				d3.select('.d3-context-menu')
-					.style('left', (position ? position.left : d3.event.pageX - 2) + 'px')
-					.style('top', (position ? position.top : d3.event.pageY - 2) + 'px');
+					.style(horizontalAlignment, (horizontalValue) + 'px')
+					.style(horizontalAlignmentReset, null)
+					.style(verticalAlignment, (verticalValue) + 'px')
+					.style(verticalAlignmentReset, null)
+					.style('display', 'block');
 
-				d3.event.preventDefault();
-				d3.event.stopPropagation();
+				event.preventDefault();
+				event.stopPropagation();
+
+
+				function createNestedMenu(parent, root, depth = 0) {
+					var resolve = function (value) {
+						return utils.toFactory(value).call(root, data, index);
+					};
+
+					parent.selectAll('li')
+					.data(function (d) {
+							var baseData = depth === 0 ? menuItems : d.children;
+							return resolve(baseData);
+						})
+						.enter()
+						.append('li')
+						.each(function (d) {
+							// get value of each data
+							var isDivider = !!resolve(d.divider);
+							var isDisabled = !!resolve(d.disabled);
+							var hasChildren = !!resolve(d.children);
+							var hasAction = !!d.action;
+							var text = isDivider ? '<hr>' : resolve(d.title);
+
+							var listItem = d3.select(this)
+								.classed('is-divider', isDivider)
+								.classed('is-disabled', isDisabled)
+								.classed('is-header', !hasChildren && !hasAction)
+								.classed('is-parent', hasChildren)
+								.html(text)
+								.on('click', function () {
+									// do nothing if disabled or no action
+									if (isDisabled || !hasAction) return;
+
+									d.action.call(root, data, index);
+									closeMenu();
+								});
+
+							if (hasChildren) {
+								// create children(`next parent`) and call recursive
+								var children = listItem.append('ul').classed('is-children', true);
+								createNestedMenu(children, root, ++depth)
+							}
+						});
+				}
 			};
 		};
 	}

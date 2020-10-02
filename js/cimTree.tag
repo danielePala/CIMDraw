@@ -976,8 +976,8 @@
                 .append("ul")
                 .attr("id", name + "sList")
                 .attr("class", "collapse");
-             elementsTopContainer.on("click", function() {
-                 if (d3.event.target === this) {
+             elementsTopContainer.on("click", function(event) {
+                 if (event.target === this) {
                      self.goToBasePath();
                  }
              });
@@ -1049,8 +1049,8 @@
                                  .append("span")
                                  .attr("class", "badge badge-primary badge-pill")
                                  .html(0);
-             elementsTopContainer.on("click", function() {
-                 if (d3.event.target === this) {
+             elementsTopContainer.on("click", function(event) {
+                 if (event.target === this) {
                      self.goToBasePath();
                  }
              });
@@ -1068,8 +1068,8 @@
                 })
                 .enter()
                 .append("li")
-                .attr("class", name + " CIM-object").on("click", function() {
-                    if (d3.event.target === this) {
+                .attr("class", name + " CIM-object").on("click", function(event) {
+                    if (event.target === this) {
                         self.goToBasePath();
                     }
                 });
@@ -1083,7 +1083,7 @@
              .attr("data-toggle", "collapse")
              .attr("href", function(d) {
                  return "#" + self.model.ID(d);
-             }).on("click", function (d) {
+             }).on("click", function (event, d) {
                  // if necessary, generate attributes and links
                  let elementEnter = d3.select(this.parentNode).select("ul");
                  if (elementEnter.selectAll("li.attribute").size() === 0) {
@@ -1094,7 +1094,7 @@
          elementTopContainer
              .append("button")
              .attr("class", "btn btn-primary btn-sm cim-object-btn")
-             .on("click", function (d) {
+             .on("click", function (event, d) {
                  // change address to 'this object'
                  let hashComponents = window.location.hash.substring(1).split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
@@ -1110,8 +1110,8 @@
                  return "unnamed";
              })
              .attr("draggable", "true")
-             .on("dragstart", function(d) {
-                 d3.event.dataTransfer.setData('text/plain', self.model.ID(d));
+             .on("dragstart", function(event, d) {
+                 event.dataTransfer.setData('text/plain', self.model.ID(d));
              });
          
          let elementEnter = elementTopContainer
@@ -1394,7 +1394,7 @@
              }
          };
          // set a boolean attribute according to user input
-         function setBoolAttr(d) {
+         function setBoolAttr(event, d) {
              // change the element's text
              let value = d3.select(this).node().textContent;
              this.parentNode.parentNode.querySelector(":scope>button>span.boolVal").textContent = value;
@@ -1404,7 +1404,7 @@
              self.model.setAttribute(object, attrName, value);
          };
          // set an enum attribute according to user input
-         function setEnumAttr(d) {
+         function setEnumAttr(event, d) {
              // change the element's text
              this.parentNode.parentNode.querySelector(":scope>button>span.enumVal").textContent = d;
              let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
@@ -1414,7 +1414,7 @@
              // update the model
              self.model.setEnum(object, attrName, value);
          };
-         function attrInput(d) {
+         function attrInput(event, d) {
              let object = d3.select(this.closest("ul")).data()[0];
              let about = d.attributes.getNamedItem("rdf:about").value;
              let ns = "cim:";
@@ -1441,7 +1441,7 @@
          elementLinkBtn.append("button")
                        .attr("class","btn btn-outline-secondary cimLinkBtn")
                        .attr("type", "submit")
-                       .on("click", function (d) {
+                       .on("click", function(event, d) {
                            let targetUUID = "#" + d3.select(this).attr("cim-target"); 
                            let hashComponents = window.location.hash.substring(1).split("/");
                            let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
@@ -1472,7 +1472,7 @@
          elementLinkBtn.append("button")
                        .attr("class","btn btn-outline-secondary")
                        .attr("type", "submit")
-                       .on("click", function (d) {
+                       .on("click", function (event, d) {
                            // handle the modification of links
                            let linkToChange = d3.select(this.parentNode);
                            let range = self.model.schema.getLinkRange(d);
@@ -1504,7 +1504,7 @@
                        .attr("class","btn btn-outline-secondary")
                        .attr("type", "submit")
                        .attr("id", "cimRemoveBtn")
-                       .on("click", function (d) {
+                       .on("click", function (event, d) {
                            let source = d3.select(this.closest("ul")).data()[0];
                            let linkName = "cim:" + d.attributes[0].value.substring(1);
                            let target = self.model.getObject(this.parentNode.querySelector("[cim-target]").getAttribute("cim-target"));
@@ -1576,8 +1576,8 @@
          });
          
          // handle escape key
-         d3.select("body").on("keyup.tree", function() {
-             if (d3.event.keyCode === 27) { // "Escape"
+         d3.select("body").on("keyup.tree", function(event) {
+             if (event.keyCode === 27) { // "Escape"
                  self.exitSetLinkMode();
                  self.setLink(linkToChange, null);
              }

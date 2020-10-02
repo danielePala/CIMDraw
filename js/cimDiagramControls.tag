@@ -198,11 +198,11 @@
                  selected.push(elm);
                  // disable general context menu
                  d3.select("svg").on("contextmenu.general", null);
-                 self.addDrawing(d, function() {
+                 self.addDrawing(d, function(event) {
                      let svg = d3.select("svg");
                      let path = svg.selectAll("svg > path");
                      let circle = svg.selectAll("svg > circle");
-                     d3.event.preventDefault();
+                     event.preventDefault();
                      self.addNewPoint(d);
                      self.deleteFromDiagram(elm);
                      opts.model.addToActiveDiagram(d, d.lineData);
@@ -372,10 +372,10 @@
      // move one point of the multi-segment. "lineData" coordinates
      // are relative to d.x and d.y, and the first point is always (0,0).
      // Therefore, we must handle the translation of the first point in a different way.
-     let resizeDrag = d3.drag().on("drag", function(d) {
+     let resizeDrag = d3.drag().on("drag", function(event, d) {
          // hide popovers
          $(selected).filter('[data-toggle="popover"]').popover("hide");
-         let lineDatum = {x: d3.event.x, y: d3.event.y, seq: d[1]};
+         let lineDatum = {x: event.x, y: event.y, seq: d[1]};
          let aligned = self.align(d[0], lineDatum, true);
          movePoint(d[0], d[1], aligned);
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
@@ -398,9 +398,9 @@
                  }
              }
          };
-     }).on("start", function(d) {
+     }).on("start", function(event, d) {
          self.removeFromQuadtree(); // update quadtree
-     }).on("end", function(d) {
+     }).on("end", function(event, d) {
          self.highlight(null);
          opts.model.updateActiveDiagram(d[0], d[0].lineData);
          self.addToQuadtree(d3.selectAll(selected)); // update quadtree
@@ -564,12 +564,12 @@
          // modality for drag+zoom
          let oldStatus = null;         
          d3.select("body")
-           .on("keydown", function() {
-               if (typeof(d3.event) === "undefined") {
+           .on("keydown", function(event) {
+               if (typeof(event) === "undefined") {
                    return;
                }
                // trap the ctrl key being pressed
-               if (d3.event.ctrlKey) {
+               if (event.ctrlKey) {
                    if (oldStatus === null) {
                        oldStatus = self.status;
                    }
@@ -578,8 +578,8 @@
                    self.enableZoom();
                }
            })
-           .on("keyup", function() {
-               if (d3.event.keyCode === 17) { // "Control"
+           .on("keyup", function(event) {
+               if (event.keyCode === 17) { // "Control"
                    self.disableZoom();
                    switch(oldStatus) {
                        case "DRAG":
@@ -595,7 +595,7 @@
                    oldStatus = null;
                }
                // handle escape key
-               if (d3.event.keyCode === 27) { // "Escape"
+               if (event.keyCode === 27) { // "Escape"
                    d3.contextMenu("close");
                }
            });
@@ -642,7 +642,7 @@
          self.status = "DRAG";
          let drag = d3
              .drag()
-             .on("start", function(d) {
+             .on("start", function(event, d) {
                  d3.contextMenu("close");
                  // reset the current path
                  let hashComponents = window.location.hash.substring(1).split("/");
@@ -670,10 +670,10 @@
                  });
                  links.select("path").attr("stroke", "green").attr("stroke-width", "3");
              })
-             .on("drag", function(d) {
+             .on("drag", function(event, d) {
                  $(selected).filter('[data-toggle="popover"]').popover("hide");
-                 let deltax = d3.event.x - d.x;
-                 let deltay = d3.event.y - d.y;
+                 let deltax = event.x - d.x;
+                 let deltay = event.y - d.y;
                  let delta = {x: 0.0, y: 0.0};
                  for (let selNode of selected) {
                      let dd = d3.select(selNode).data()[0];
@@ -724,7 +724,7 @@
                      d.py = d.y;
                  };
              })
-             .on("end", function(d) {
+             .on("end", function(event, d) {
                  self.addToQuadtree(d3.selectAll(selected)); // update quadtree
                  cnsToMove = [];
                  let terminals = opts.model.getTerminals(d3.selectAll(selected).data());
@@ -750,11 +750,11 @@
                .on("end", selectInsideBrush)
          );
 
-         function selectInsideBrush() {
+         function selectInsideBrush(event) {
              // hide the brush
              d3.select("svg").select("g.brush").selectAll("*:not(.overlay)").style("display", "none");
              // update selection with quadtree
-             let extent = d3.event.selection;
+             let extent = event.selection;
              if (extent === null) {
                  return;
              }
@@ -859,7 +859,7 @@
          self.status = "ZOOM";
          $('[data-toggle="popover"]').popover("hide");
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g")
-           .on("click.zoom", function (d) {
+           .on("click.zoom", function (event, d) {
                let hashComponents = window.location.hash.substring(1).split("/");
                let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                if (window.location.hash.substring(1) !== basePath + "/" + opts.model.ID(d)) {
@@ -877,8 +877,8 @@
          d3.select("svg").on(".zoom", null);
      }
 
-     zooming() {
-         d3.select("svg").select("g.diagram").attr("transform", d3.event.transform);
+     zooming(event) {
+         d3.select("svg").select("g.diagram").attr("transform", event.transform);
          self.parent.trigger("transform");
          // Update path data.
          // Needed if zooming while connecting objects or drawing multi-lines.
@@ -918,8 +918,8 @@
      enableConnect() {
          self.deselectAll();
          // handle escape key
-         d3.select("body").on("keyup.connect", function() {
-             if (d3.event.keyCode === 27) { // "Escape"
+         d3.select("body").on("keyup.connect", function(event) {
+             if (event.keyCode === 27) { // "Escape"
                  self.disableConnect();
                  self.enableConnect();
              }
@@ -928,7 +928,7 @@
          self.status = "CONNECT";
 
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
-           .on("click", function (d) {
+           .on("click", function(event, d) {
                let line = d3.line()
                             .x(function(d) { return d.x; })
                             .y(function(d) { return d.y; });
@@ -989,8 +989,8 @@
                } else {
                    svg.on("mousemove", mousemoved);
                    path.datum({obj: d});
-                   function mousemoved() {
-                       let m = d3.mouse(this);
+                   function mousemoved(event) {
+                       let m = d3.pointer(event);
                        let transform = d3.zoomTransform(d3.select("svg").node());
                        circle.attr("transform", function () {
                            let mousex = m[0] + 10;
@@ -1006,11 +1006,11 @@
                }
            });
          d3.select("svg").selectAll("svg > g.diagram > g." + NODE_CLASS + "s > g." + NODE_CLASS)
-           .on("click", function (d) {
+           .on("click", function(event, d) {
                connect(d);
            });
          d3.select("svg").selectAll("svg > g.diagram > g.edges > g")
-           .on("click", function (d) {
+           .on("click", function(event, d) {
                connect(d.source);
            });
          
@@ -1069,10 +1069,10 @@
          document.querySelector("#addElement").textContent = text;
          self.status = "ADD" + type;
          d3.select("svg").on("click.add", clicked);
-         function clicked() {
-             if (d3.event.ctrlKey === false) {
+         function clicked(event) {
+             if (event.ctrlKey === false) {
                  let newObject = opts.model.createObject("cim:" + type, options);
-                 self.parent.addToDiagram(newObject);
+                 self.parent.addToDiagram(event, newObject);
              }
          }
      }
@@ -1087,8 +1087,8 @@
          self.disableAll();
          d3.select("svg").on("contextmenu.general", null);
          // handle escape key
-         d3.select("body").on("keyup.addMulti", function() {
-             if (d3.event.keyCode === 27) { // "Escape"
+         d3.select("body").on("keyup.addMulti", function(event) {
+             if (event.keyCode === 27) { // "Escape"
                  self.disableAdd();
                  self.enableAddMulti(e);
              }
@@ -1108,11 +1108,11 @@
          self.status = "ADDMulti" + type;
          d3.select("svg").on("click.add", clicked);
          let newObject = undefined;
-         function clicked() {
-             if (d3.event.ctrlKey === false) {
+         function clicked(event) {
+             if (event.ctrlKey === false) {
                  if (self.status === "ADDMulti" + type) {
                      newObject = opts.model.createObject("cim:" + type);
-                     let m = d3.mouse(d3.select("svg").node());
+                     let m = d3.pointer(event);
                      let transform = d3.zoomTransform(d3.select("svg").node());
                      let xoffset = transform.x;
                      let yoffset = transform.y;
@@ -1123,8 +1123,8 @@
                      newObject.py = newObject.y;
                      newObject.lineData = [{x: 0, y: 0, seq: 1}];
                      newObject.rotation = 0;
-                     self.addDrawing(newObject, function() {
-                         d3.event.preventDefault();
+                     self.addDrawing(newObject, function(newEvent) {
+                         newEvent.preventDefault();
                          self.addNewPoint(newObject);
                          opts.model.addToActiveDiagram(newObject, newObject.lineData);
                          self.status = "ADDMulti" + type;
@@ -1150,8 +1150,8 @@
 
          // Show a path corresponding to the mouse position,
          // so that the user can see where to put the new point.
-         function mousemoved() {
-             let m = d3.mouse(this);
+         function mousemoved(event) {
+             let m = d3.pointer(event);
              let transform = d3.zoomTransform(svg.node());
              // highlight when aligned
              let absx = ((m[0] - transform.x) / transform.k);
@@ -1525,25 +1525,25 @@
                   .filter("g:not(.PowerTransformer)")
                   .on("contextmenu", d3.contextMenu(menu));
          let multis = selection.filter("g.ACLineSegment,g." + NODE_CLASS);
-         multis.selectAll("path").on("contextmenu", function(d, i, nodes) {
-             d3.contextMenu(multiMenu).bind(this.parentNode)(d, i, nodes);
-             d3.event.stopPropagation();
+         multis.selectAll("path").on("contextmenu", function(event, d) {
+             d3.contextMenu(multiMenu).bind(this.parentNode)(event, d);
+             event.stopPropagation();
          });
          // setup context menu for terminals
          let terminals = selection.filter("g:not(.PowerTransformer)").selectAll("g.Terminal");
-         terminals.on("contextmenu", function(d, i, nodes) {
-             d3.contextMenu(terminalsMenu).bind(this)(d, i, nodes);
-             d3.event.stopPropagation();
+         terminals.on("contextmenu", function(event, d) {
+             d3.contextMenu(terminalsMenu).bind(this)(event, d);
+             event.stopPropagation();
          });
          let trafoTerms = selection.filter("g.PowerTransformer").selectAll("g.Terminal");
-         trafoTerms.on("contextmenu", function(d, i, nodes) {
-             d3.contextMenu(trafoTermsMenu).bind(this)(d, i, nodes);
-             d3.event.stopPropagation();
+         trafoTerms.on("contextmenu", function(event, d) {
+             d3.contextMenu(trafoTermsMenu).bind(this)(event, d);
+             event.stopPropagation();
          });
          let trafoEnds = selection.filter("g.PowerTransformer").selectAll("g.TransformerEnd");
-         trafoEnds.on("contextmenu", function(d, i, nodes) {
-             d3.contextMenu(trafoEndsMenu).bind(this)(d, i, nodes);
-             d3.event.stopPropagation();
+         trafoEnds.on("contextmenu", function(event, d) {
+             d3.contextMenu(trafoEndsMenu).bind(this)(event, d);
+             event.stopPropagation();
          });
      }
 
