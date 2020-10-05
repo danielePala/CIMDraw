@@ -292,7 +292,7 @@
        let hashComponents = window.location.hash.substring(1).split("/");
          if (hashComponents.length > 3) {
              let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-             route(basePath);
+             route.router.push(basePath);
          }
      }
      
@@ -1099,7 +1099,7 @@
                  let hashComponents = window.location.hash.substring(1).split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                  if (window.location.hash.substring(1) !== basePath + "/" + self.model.ID(d)) {
-                     route(basePath + "/" + self.model.ID(d));
+                     route.router.push(basePath + "/" + self.model.ID(d));
                  }
              })
              .html(function (d) {
@@ -1445,7 +1445,7 @@
                            let targetUUID = "#" + d3.select(this).attr("cim-target"); 
                            let hashComponents = window.location.hash.substring(1).split("/");
                            let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-                           route(basePath + "/" + targetUUID.substring(1));
+                           route.router.push(basePath + "/" + targetUUID.substring(1));
                        })
                        .attr("cim-target", function(d) {
                            let source = d3.select(this.closest("ul")).data()[0];
@@ -1529,14 +1529,7 @@
          }
          let hashComponents = window.location.hash.substring(1).split("/");
          let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-         let shouldReplace = false;
-         if (hashComponents.length > 3) {
-             if (targetUUID === hashComponents[3]) {
-                 shouldReplace = true;
-             }
-         }
-         route(basePath, null, shouldReplace);
-         route(basePath + "/" + targetUUID, null, true);
+         route.router.push(basePath + "/" + targetUUID);
      }
 
      // Enter mode for editing links.

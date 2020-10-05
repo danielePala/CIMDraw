@@ -116,7 +116,7 @@
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-md-auto" id="cim-create-new-container">
-                        <a class="btn btn-primary btn-lg" role="button" id="cim-create-new" href="">Create new</a>
+                        <button class="btn btn-primary btn-lg" type="button" id="cim-create-new">Create new</a>
                     </div>
                 </div>
             </div>
@@ -242,9 +242,14 @@
      });
      
      self.on("mount", function() {
-         route.stop(); // clear all the old router callbacks
          let cimFile = {};
          let createNewFile = false;
+
+         // router setup
+         route.setBase("index.html#");
+         // start router
+         route.router.push(window.location.hash.replace("#", ""));
+         route.initDomListeners();
 
          document.getElementById("operational").addEventListener("change", function() {
              self.cimModel.setMode("NODE_BREAKER");
@@ -263,7 +268,7 @@
          // Button shown in loading modal in case of errors.
          document.getElementById("cim-loading-modal-error").addEventListener("click", function() {
              $("#loadingModal").modal("hide");
-             route("/");
+             route.router.push("");
          });
 
          // Button shown in boundary modal in case of errors.
@@ -273,7 +278,7 @@
          });
 
          document.getElementById("cim-create-new-modal").addEventListener("click", function() {
-             route("/" + cimFile.name + "/diagrams");
+             route.router.push(cimFile.name + "/diagrams");
          });
 
          // Boundary file loading menu item 
@@ -342,11 +347,11 @@
              const basePath = hashComponents[0] + "/diagrams/";
              const fullPath = basePath + diagramName;
              $('#newDiagramModal').modal("hide");
-             route(fullPath);
+             route.router.push(fullPath);
          });
          
          // This is the initial route ("the home page").
-         route(function() {
+         route.route("").on.value(function(url) {
              // things to show
              document.getElementById("cim-local-file-component").style.display = null;
              // things to hide
@@ -376,7 +381,7 @@
          });
 
          // here we choose a diagram to display
-         route('/*/diagrams', function() {
+         route.route(":file/diagrams").on.value(function(url) {
              // things to show
              document.getElementById("cim-home-container").style.display = null;
              document.getElementById("cim-diagrams").style.display = null;
@@ -417,7 +422,7 @@
                      });
                  } else {
                      $("#loadingModal").modal("hide");
-                     route("/");
+                     route.router.push("");
                      return;
                  }
 
@@ -440,9 +445,11 @@
          });
 
          // here we show a certain diagram
-         route('/*/diagrams/*', function(file, name) {
+         route.route(":file/diagrams/:name").on.value(function(url) {
+             const file = url.params.file;
+             const name = url.params.name;
              if (typeof(cimFile.name) === "undefined") {
-                 route("/");
+                 route.router.push("");
                  return;
              }
              if (self.cimModel.activeDiagramName === decodeURI(name)) {
@@ -460,13 +467,16 @@
          });
 
          // here we focus on a specific element of the diagram
-         route("/*/diagrams/*/*", function(file, name, element) {
+         route.route(":file/diagrams/:name/:element").on.value(function(url) {
+             const file = url.params.file;
+             const name = url.params.name;
+             const element = url.params.element;
              document.getElementById("cim-local-file-component").style.display = "none";
              self.trigger("showDiagram", file, name, element);
          });
 
          // here we create a new diagram
-         route("/*/createNew", function(file) {
+         route.route(":file/createNew").on.value(function(url) {
              window.history.back();
              $("#newDiagramModal").modal("show");
          });
@@ -500,7 +510,7 @@
                  cimDiagrams.appendChild(diagOpt);
              }
              if (diagrams.length === 0) {
-                 route(filename + "/createNew");
+                 route.router.push(filename + "/createNew");
              }
          }
 
@@ -516,9 +526,6 @@
              opt.textContent = "Select a diagram";
              cimDiagrams.appendChild(opt);
          }
-
-         // start router
-         route.start(true);
      });
     </script>
 </cimDraw>

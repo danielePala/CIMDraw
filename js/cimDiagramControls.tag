@@ -647,7 +647,7 @@
                  // reset the current path
                  let hashComponents = window.location.hash.substring(1).split("/");
                  let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-                 route(basePath + "/");
+                 route.router.push(basePath);
                  if (selected.indexOf(this) === -1) {
                      self.deselectAll();
                  }
@@ -742,7 +742,7 @@
                    // reset the current path
                    let hashComponents = window.location.hash.substring(1).split("/");
                    let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-                   route(basePath + "/");
+                   route.router.push(basePath);
                    self.deselectAll();
                    $('[data-toggle="popover"]').popover("hide");
                    d3.contextMenu("close");
@@ -863,7 +863,7 @@
                let hashComponents = window.location.hash.substring(1).split("/");
                let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                if (window.location.hash.substring(1) !== basePath + "/" + opts.model.ID(d)) {
-                   route(basePath + "/" + opts.model.ID(d));
+                   route.router.push(basePath + "/" + opts.model.ID(d));
                }
            });
          let zoomComp = d3.zoom();
