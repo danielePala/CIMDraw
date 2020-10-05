@@ -246,7 +246,11 @@
          let createNewFile = false;
 
          // router setup
-         route.setBase("index.html#");
+         let path = window.location.pathname.substring(1);
+         if (path.indexOf("index.html") === -1) {
+             path = path + "index.html";
+         }
+         route.setBase(path + "#");
          // start router
          route.router.push(window.location.hash.replace("#", ""));
          route.initDomListeners();
