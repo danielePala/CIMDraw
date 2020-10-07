@@ -730,10 +730,6 @@
                  links.select("path").attr("stroke", "black").attr("stroke-width", "1");
                  self.highlight("x", null);
                  self.highlight("y", null);
-                 // reset the current path
-                 let hashComponents = window.location.hash.substring(1).split("/");
-                 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-                 route.router.push(basePath);
              });
          d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
          d3.select("svg").select("g.brush").call(
@@ -862,9 +858,7 @@
            .on("click.zoom", function (event, d) {
                let hashComponents = window.location.hash.substring(1).split("/");
                let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
-               if (window.location.hash.substring(1) !== basePath + "/" + opts.model.ID(d)) {
-                   route.router.push(basePath + "/" + opts.model.ID(d));
-               }
+               route.router.push(basePath + "/" + opts.model.ID(d));
            });
          let zoomComp = d3.zoom();
          zoomComp.on("zoom", this.zooming);
