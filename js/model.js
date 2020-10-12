@@ -1672,6 +1672,6 @@ function cimModel() {
             linksMap = new Map();
         }
     };
-    riot.observable(model);
+    observable(model);
     return model;
 };

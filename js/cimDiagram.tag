@@ -51,7 +51,7 @@
      }
     </style>
     
-    <cimDiagramControls model={model}></cimDiagramControls>
+    <cimDiagramControls model={model} dispatcher={dispatcher}></cimDiagramControls>
     <div class="app-diagram">   
         <svg width="1200" height="800" style="border: 1px solid black;">
             <path stroke-width="1" stroke="black" fill="none"></path>
@@ -107,12 +107,13 @@
      // color scale for voltage levels
      const colors = d3.scaleSequential([0, 500], d3.interpolateTurbo);
      self.model = opts.model;
+     self.dispatcher = opts.dispatcher;
      let NODE_CLASS = "ConnectivityNode";
      let NODE_TERM = "ConnectivityNode.Terminals";
      let TERM_NODE = "Terminal.ConnectivityNode";
      
      // listen to 'showDiagram' event from parent
-     self.parent.on("showDiagram", function(file, name, element) {
+     opts.dispatcher.on("showDiagram", function(file, name, element) {
          if (decodeURI(name) !== self.diagramName) {
              let mode = self.model.getMode();
              if (mode === "BUS_BRANCH") {
@@ -124,9 +125,9 @@
          }
          if (typeof(element) !== "undefined") {
              self.moveTo(element);
-             self.trigger("moveTo", element);
+             opts.dispatcher.trigger("moveTo", element);
          } else {
-             self.trigger("deselect");
+             opts.dispatcher.trigger("deselect");
          }
      });
 
@@ -144,7 +145,7 @@
      });
      
      // listen to 'transform' event
-     self.on("transform", function() {
+     opts.dispatcher.on("transform", function() {
          let transform = d3.zoomTransform(d3.select("svg").node());
          let newx = transform.x;
          let newy = transform.y;
@@ -394,7 +395,7 @@
 
          if (selection !== null) {
              self.forceTick(selection);
-             self.trigger("addToDiagram", selection);
+             opts.dispatcher.trigger("addToDiagram", selection);
          }
 
          function handleTerminals(selection) {
@@ -688,7 +689,7 @@
                  document.getElementById("loadingDiagramMsg").innerHTML = "<br>" + ret;
                  setTimeout(periodic, 1);
              } else {
-                 self.parent.trigger("loaded");
+                 opts.dispatcher.trigger("loaded");
              }
          };
          periodic();
@@ -879,7 +880,7 @@
          }
         
          self.forceTick();
-         self.trigger("render");
+         opts.dispatcher.trigger("render");
      }
 
      createEdges(edges) {
@@ -900,7 +901,7 @@
              .attr("fill", "none")
              .attr("stroke", "black")
              .attr("stroke-width", EDGE_WIDTH);
-         self.trigger("createEdges", edgesEnter);
+         opts.dispatcher.trigger("createEdges", edgesEnter);
      }
 
      // Create element status info (measurements, state variables, operational
@@ -2124,7 +2125,7 @@
          let t = d3.zoomIdentity.translate(newx, newy).scale(1);
          d3.selectAll("svg").select("g.diagram").transition(trans).attr("transform", t);
          d3.zoom().transform(d3.selectAll("svg"), t);
-         self.trigger("transform");
+         opts.dispatcher.trigger("transform");
      }
 
      /** Calculate the closest point on a given busbar relative to a given point (a terminal) */

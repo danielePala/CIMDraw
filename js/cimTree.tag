@@ -270,7 +270,7 @@
      });
 
      // listen to 'showDiagram' event from parent
-     self.parent.on("showDiagram", function(file, name, element) {
+     opts.dispatcher.on("showDiagram", function(file, name, element) {
          if (decodeURI(name) !== self.diagramName) {
              d3.drag().on("drag.end", null);
              self.render(name);
@@ -548,7 +548,7 @@
                  document.getElementById("loadingDiagramMsg").innerHTML = "<br>" + ret;
                  setTimeout(periodic, 1);
              } else {
-                 self.parent.trigger("loaded");
+                 opts.dispatcher.trigger("loaded");
              }
          };
          periodic();

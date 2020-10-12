@@ -76,7 +76,7 @@
                         </div>
                     </li>
                     <li class="nav-item">
-                        <cimTopologyProcessor model={cimModel}></cimTopologyProcessor>
+                        <cimTopologyProcessor model={cimModel} dispatcher={dispatcher}></cimTopologyProcessor>
                     </li>
                     <li class="nav-item">
                         <select id="cim-diagrams" class="custom-select"
@@ -129,8 +129,8 @@
 
         <div class="row">
             <div class="app-container col-md-12" id="app-container">
-                <cimTree model={cimModel}></cimTree>
-                <cimDiagram model={cimModel}></cimDiagram>
+                <cimTree model={cimModel} dispatcher={dispatcher}></cimTree>
+                <cimDiagram model={cimModel} dispatcher={dispatcher}></cimDiagram>
             </div>
         </div>
 
@@ -223,6 +223,8 @@
      const self = this;
      self.cimModel = cimModel();
      let diagramsToLoad = 2;
+     self.dispatcher = {};
+     observable(self.dispatcher);
 
      self.cimModel.on("setMode", function(mode) {
          if (mode === "NODE_BREAKER") {
@@ -232,7 +234,7 @@
          }
      });
      
-     self.on("loaded", function() {
+     self.dispatcher.on("loaded", function() {
          diagramsToLoad = diagramsToLoad - 1;
          if (diagramsToLoad === 0) {
              $("#loadingModal").modal("hide");
@@ -244,7 +246,6 @@
      self.on("mount", function() {
          let cimFile = {};
          let createNewFile = false;
-
          // router setup
          let path = window.location.pathname.substring(1);
          if (path.indexOf("index.html") === -1) {
@@ -445,7 +446,7 @@
                  };
              });
              $("#loadingModal").modal("show");
-             self.trigger("diagrams");
+             self.dispatcher.trigger("diagrams");
          });
 
          // here we show a certain diagram
@@ -457,7 +458,7 @@
                  return;
              }
              if (self.cimModel.activeDiagramName === decodeURI(name)) {
-                 self.trigger("showDiagram", file, name);
+                 self.dispatcher.trigger("showDiagram", file, name);
                  document.getElementById("app-container").style.display = null;
                  return; // nothing more to do;
              }
@@ -476,7 +477,7 @@
              const name = url.params.name;
              const element = url.params.element;
              document.getElementById("cim-local-file-component").style.display = "none";
-             self.trigger("showDiagram", file, name, element);
+             self.dispatcher.trigger("showDiagram", file, name, element);
          });
 
          // here we create a new diagram
@@ -492,7 +493,7 @@
              document.getElementById(decodeURI(name)).setAttribute("selected", true);
              document.getElementById("app-container").style.display = null;
              document.getElementById("cim-export").parentNode.classList.remove("disabled");
-             self.trigger("showDiagram", file, name, element);
+             self.dispatcher.trigger("showDiagram", file, name, element);
          }
 
          function loadDiagramList(filename) {

@@ -94,7 +94,7 @@
      let menu = [
          {
              title: "Copy",
-             action: function(d, i) {
+             action: function(event, d) {
                  let elm = this;
                  if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
                      elm = elm.parentElement;
@@ -121,7 +121,7 @@
          },
          {
              title: "Rotate",
-             action: function(d, i) {
+             action: function(event, d) {
                  let elm = this;
                  if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
                      elm = elm.parentElement;
@@ -146,7 +146,7 @@
          },
          {
              title: "Delete",
-             action: function(d, i) {
+             action: function(event, d) {
                  let elm = this;
                  if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
                      elm = elm.parentElement;
@@ -156,7 +156,7 @@
          },
          {
              title: "Delete from current diagram",
-             action: function(d, i) {
+             action: function(event, d) {
                  let elm = this;
                  if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
                      elm = elm.parentElement;
@@ -166,7 +166,7 @@
          },
          {
              title: "Show element info",
-             action: function(d, i) {
+             action: function(event, d) {
                  let elm = this;
                  if (opts.model.schema.isA("TransformerEnd", d3.select(elm).datum()) === true) {
                      elm = elm.parentElement;
@@ -181,8 +181,8 @@
          },
          {
              title: "Add new operational limit set",
-             action: function(d, i) {
-                 self.addNewLimitSet(this, d, i);
+             action: function(event, d) {
+                 self.addNewLimitSet(this, d);
              }
          }   
      ];
@@ -190,7 +190,7 @@
      let multiMenu = menu.concat(
          [{
              title: "Add points",
-             action: function(d, i) {
+             action: function(event, d) {
                  let oldStatus = self.status;
                  let elm = this;
                  self.disableAll();
@@ -251,7 +251,7 @@
      let resizeMenu = [
          {
              title: "Delete point",
-             action: function(d, i) {
+             action: function(event, d) {
                  // applies to only one element
                  let target = d3.selectAll(selected).data().filter(el => el === d[0])[0];
                  selected = selected.filter(el => d3.select(el).datum() !== d[0]);
@@ -274,20 +274,20 @@
      let terminalsMenu = [
          {
              title: "Add new operational limit set",
-             action: function(d, i) {
-                 self.addNewLimitSet(this, d, i);
+             action: function(event, d) {
+                 self.addNewLimitSet(this, d);
              }
          },
          {
              title: "Add regulating control",
-             action: function(d, i) {
-                 self.addRegulatingControl(this, d, i);
+             action: function(event, d) {
+                 self.addRegulatingControl(this, d);
              }
          },
          {
              title: "Add tap changer control",
-             action: function(d, i) {
-                 self.addTCControl(this, d, i);
+             action: function(event, d) {
+                 self.addTCControl(this, d);
              }
          }
      ];
@@ -295,23 +295,23 @@
      let trafoTermsMenu = terminalsMenu.concat(
          [{
              title: "Add ratio tap changer",
-             action: function(d, i) {
-                 self.addTC(this, d, i);
+             action: function(event, d) {
+                 self.addTC(this, d);
              }
          }]);
      // context menu for transformer ends 
      let trafoEndsMenu = menu.concat(
          [{
              title: "Add ratio tap changer",
-             action: function(d, i) {
-                 self.addTC(this, d, i);
+             action: function(event, d) {
+                 self.addTC(this, d);
              }
          }]);
      // context menu for connections between objects
      let edgesMenu = [
          {
              title: "Delete",
-             action: function(d, i) {
+             action: function(event, d) {
                  let cn = self.getLinkedCNs([d.target])[0];
                  if (typeof(cn) !== "undefined") {
                      let cnUUID = opts.model.ID(cn.cn);
@@ -327,17 +327,17 @@
      let diagramMenu = [
          {
              title: "Paste",
-             disabled: function(d, i) {
+             disabled: function(event, d) {
                  if (copied.length < 1) {
                      return true;
                  }
                  return false;
              },
-             action: function(d, i) {
+             action: function(event, d) {
                  if (copied.length < 1) {
                      return;
                  }
-                 let m = d3.mouse(d3.select("svg").node());
+                 let m = d3.pointer(event, d3.select("svg").node());
                  let transform = d3.zoomTransform(d3.select("svg").node());
                  let xoffset = transform.x;
                  let yoffset = transform.y;
@@ -440,7 +440,7 @@
      });
 
      // listen to 'moveTo' event from parent
-     self.parent.on("moveTo", function(element) {
+     opts.dispatcher.on("moveTo", function(element) {
          self.deselectAll();
          let cimObject = opts.model.getObject(element);
          let equipments = null;
@@ -496,12 +496,12 @@
      });
 
      // listen to 'deselect' event from parent
-     self.parent.on("deselect", function() {
+     opts.dispatcher.on("deselect", function() {
          self.deselectAll();
      });
      
      // listen to 'render' event from parent
-     self.parent.on("render", function() {
+     opts.dispatcher.on("render", function() {
          // select mode
          let mode = opts.model.getMode();
          if (mode === "BUS_BRANCH") {
@@ -512,24 +512,24 @@
              menu.push(
                  {
                      title: 'Add new measurement',
-                     action: function(d, i) {
-                         self.addNewMeasurement(this, d, i);
+                     action: function(event, d) {
+                         self.addNewMeasurement(this, d);
                      }
                  }
              );
              multiMenu.push(
                  {
                      title: 'Add new measurement',
-                     action: function(d, i) {
-                         self.addNewMeasurement(this, d, i);
+                     action: function(event, d) {
+                         self.addNewMeasurement(this, d);
                      }
                  }
              );
              terminalsMenu.push(
                  {
                      title: 'Add new measurement',
-                     action: function(d, i) {
-                         self.addNewMeasurement(this, d, i);
+                     action: function(event, d) {
+                         self.addNewMeasurement(this, d);
                      }
                  }
              );
@@ -602,7 +602,7 @@
      });
 
      // listen to 'addToDiagram' event from parent 
-     self.parent.on("addToDiagram", function(selection) {
+     opts.dispatcher.on("addToDiagram", function(selection) {
          if (selection.size() === 1) {
              self.addToQuadtree(selection);
              if (self.status === "DRAG") {
@@ -614,7 +614,7 @@
      });
 
      // listen to 'createEdges' event from parent
-     self.parent.on("createEdges", function(edgesEnter) {
+     opts.dispatcher.on("createEdges", function(edgesEnter) {
          edgesEnter.on("contextmenu", d3.contextMenu(edgesMenu));
      });
 
@@ -873,7 +873,7 @@
 
      zooming(event) {
          d3.select("svg").select("g.diagram").attr("transform", event.transform);
-         self.parent.trigger("transform");
+         opts.dispatcher.trigger("transform");
          // Update path data.
          // Needed if zooming while connecting objects or drawing multi-lines.
          let pathData = d3.select("svg > path").datum();
@@ -1411,7 +1411,7 @@
            });
      }
 
-     addNewMeasurement(elm, d, i) {
+     addNewMeasurement(elm, d) {
          // applies to only one element
          self.deselectAll();
          if (d.nodeName !== "cim:Terminal") { // TODO: select element associated with terminal
@@ -1443,7 +1443,7 @@
          opts.model.addToActiveDiagram(newObject, []);
      }
 
-     addNewLimitSet(elm, d, i) {
+     addNewLimitSet(elm, d) {
          // applies to only one element
          self.deselectAll();
          let element = elm;
@@ -1477,7 +1477,7 @@
          opts.model.addToActiveDiagram(newObject, []);
      }
 
-     addRegulatingControl(elm, d, i) {
+     addRegulatingControl(elm, d) {
          // applies to only one element
          self.deselectAll();
          let newObject = opts.model.createObject("cim:RegulatingControl");
@@ -1485,7 +1485,7 @@
          opts.model.addToActiveDiagram(newObject, []);
      }
 
-     addTCControl(elm, d, i) {
+     addTCControl(elm, d) {
          // applies to only one element
          self.deselectAll();
          let newObject = opts.model.createObject("cim:TapChangerControl");
@@ -1496,7 +1496,7 @@
      // Associate a new tap changer to the object 'd', which can be either
      // a terminal or a transformer end. If 'd' is already associated with a
      // tap changer the function does nothing.
-     addTC(elm, d, i) {
+     addTC(elm, d) {
          // applies to only one element
          self.deselectAll();
          let wind = d;

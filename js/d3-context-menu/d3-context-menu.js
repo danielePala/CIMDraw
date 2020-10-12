@@ -121,14 +121,14 @@
 
 				// store close callback already bound to the correct args and scope
 				d3ContextMenu = {
-					boundCloseCallback: closeCallback.bind(element, data, index)
+					boundCloseCallback: closeCallback.bind(element, param1, param2)
 				};
 
 				// create the div element that will hold the context menu
 				d3.selectAll('.d3-context-menu').data([1])
 					.enter()
 					.append('div')
-					.attr('class', 'd3-context-menu ' + themeFactory.bind(element)(data, index));
+					.attr('class', 'd3-context-menu ' + themeFactory.bind(element)(param1, param2));
 
 				// close menu on mousedown outside
 				d3.select('body').on('mousedown.d3-context-menu', closeMenu);
@@ -146,14 +146,14 @@
 
 				// the openCallback allows an action to fire before the menu is displayed
 				// an example usage would be closing a tooltip
-				if (openCallback.bind(element)(data, index) === false) {
+				if (openCallback.bind(element)(param1, param2) === false) {
 					return;
 				}
         
 				//console.log(this.parentNode.parentNode.parentNode);//.getBoundingClientRect());   Use this if you want to align your menu from the containing element, otherwise aligns towards center of window
 
 				// get position
-				var position = positionFactory.bind(element)(data, index);
+				var position = positionFactory.bind(element)(param1, param2);
 
 				var doc = document.documentElement;
 				var pageWidth = window.innerWidth || doc.clientWidth;
@@ -192,7 +192,7 @@
 
 				function createNestedMenu(parent, root, depth = 0) {
 					var resolve = function (value) {
-						return utils.toFactory(value).call(root, data, index);
+						return utils.toFactory(value).call(root, param1, param2);
 					};
 
 					parent.selectAll('li')
@@ -220,7 +220,7 @@
 									// do nothing if disabled or no action
 									if (isDisabled || !hasAction) return;
 
-									d.action.call(root, data, index);
+									d.action.call(root, param1, param2);
 									closeMenu();
 								});
 

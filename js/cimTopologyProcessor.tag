@@ -56,7 +56,7 @@
      "use strict";
      let self = this;
 
-     self.parent.on("diagrams", function() {
+     opts.dispatcher.on("diagrams", function() {
          document.querySelector("#cim-topology-processor").style.display = "flex";
      });
 
