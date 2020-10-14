@@ -382,7 +382,7 @@
 
          function movePoint(d, seq, delta) {
              let p = d.lineData.filter(el => el.seq === seq)[0];
-             let ev = self.parent.rotate({x: delta.x, y: delta.y}, d.rotation * (-1));
+             let ev = rotate({x: delta.x, y: delta.y}, d.rotation * (-1));
              if (p.seq !== 1) {
                  p.x = delta.x;
                  p.y = delta.y;
@@ -685,7 +685,7 @@
                          delta = {x: aligned.x - lineDatum.x, y: aligned.y - lineDatum.y};
                          if (delta.x !== 0.0 || delta.y !== 0.0) {
                              if (lineDatum.seq > 1) {
-                                 delta = self.parent.rotate(delta, dd.rotation);
+                                 delta = rotate(delta, dd.rotation);
                              }
                              break;
                          }
@@ -702,10 +702,10 @@
                      let t1XY = {x: c.cnTerms[0].x, y: c.cnTerms[0].y};
                      let t2XY = {x: c.cnTerms[1].x, y: c.cnTerms[1].y};
                      if (c.cnTerms[0].rotation > 0) {
-                         t1XY = self.parent.rotateTerm(c.cnTerms[0]);
+                         t1XY = rotateTerm(opts.model, c.cnTerms[0]);
                      }
                      if (c.cnTerms[1].rotation > 0) {
-                         t2XY = self.parent.rotateTerm(c.cnTerms[1]);
+                         t2XY = rotateTerm(opts.model, c.cnTerms[1]);
                      }
                      // update position of cn
                      c.cn.x = (t1XY.x + t2XY.x)/2;
@@ -774,7 +774,7 @@
                      let datum = d3.select(d.elm).datum();
                      for (let lineDatum of datum.lineData) {
                          // the object can be rotated
-                         let lineDatumR = self.parent.rotate(lineDatum, datum.rotation);
+                         let lineDatumR = rotate(lineDatum, datum.rotation);
                          let dx = datum.x + lineDatumR.x;
                          let dy = datum.y + lineDatumR.y;
                          if((dx >= x0) && (dx < x3) && (dy >= y0) && (dy < y3)) {
@@ -929,7 +929,7 @@
                // handle rotation of terminal
                let termXY = {x: d.x, y: d.y};
                if (d.rotation > 0) {
-                   termXY = self.parent.rotateTerm(d);
+                   termXY = rotateTerm(opts.model, d);
                }
 
                let svg = d3.select("svg");
@@ -966,7 +966,7 @@
                        // handle rotation of the origin terminal
                        let term1XY = {x: termToChange.x, y: termToChange.y};
                        if (termToChange.rotation > 0) {
-                           term1XY = self.parent.rotateTerm(termToChange);
+                           term1XY = rotateTerm(opts.model, termToChange);
                        }
                        cn = opts.model.createObject("cim:" + NODE_CLASS);
                        opts.model.setAttribute(cn, "cim:IdentifiedObject.name", "new1");
@@ -1066,7 +1066,7 @@
          function clicked(event) {
              if (event.ctrlKey === false) {
                  let newObject = opts.model.createObject("cim:" + type, options);
-                 self.parent.addToDiagram(event, newObject);
+                 addToDiagram(opts.model, event, newObject);
              }
          }
      }
@@ -1155,9 +1155,9 @@
                  y: absy - newObject.y,
                  seq: null
              };
-             let unrotated = self.parent.rotate(lineDatum, newObject.rotation * (-1));
+             let unrotated = rotate(lineDatum, newObject.rotation * (-1));
              let aligned = self.align(newObject, unrotated, true);
-             let rotated = self.parent.rotate(aligned, newObject.rotation);
+             let rotated = rotate(aligned, newObject.rotation);
              movePoint(newObject, null, rotated);
          };
          
@@ -1179,7 +1179,7 @@
              path.attr("d", function() {
                  let lineData = [];
                  for (let linePoint of d.lineData) {
-                     let rotated = self.parent.rotate(linePoint, newObject.rotation);
+                     let rotated = rotate(linePoint, newObject.rotation);
                      lineData.push({x: ((rotated.x+d.x)*transform.k) + transform.x,
                                     y: ((rotated.y+d.y)*transform.k) + transform.y});
                  }
@@ -1201,7 +1201,7 @@
          let newx = point.x - newObject.x;
          let newy = point.y - newObject.y;
          let newSeq = newObject.lineData.length + 1;
-         let rot = self.parent.rotate({x: newx, y: newy}, newObject.rotation * (-1));
+         let rot = rotate({x: newx, y: newy}, newObject.rotation * (-1));
          newObject.lineData.push({x: rot.x, y: rot.y, seq: newSeq});
          // remove highlight
          self.highlight(null);
@@ -1216,7 +1216,7 @@
          let xaligned = false;
          let yaligned = false;
          // the object can be rotated
-         let lineDatumR = self.parent.rotate(lineDatum, d.rotation);
+         let lineDatumR = rotate(lineDatum, d.rotation);
          let absx = d.x + lineDatumR.x;
          let absy = d.y + lineDatumR.y;
          let movex = lineDatumR.x;
@@ -1238,7 +1238,7 @@
                      continue ploop;
                  }
                  // the object can be rotated
-                 let pr = self.parent.rotate(p, datum.rotation);
+                 let pr = rotate(p, datum.rotation);
                  let absxP = pr.x + datum.x;
                  let absyP = pr.y + datum.y;
                  let deltax = absx - absxP;
@@ -1272,7 +1272,7 @@
          // we must return the un-rotated aligned coordinates, except if
          // this is the first point.
          let rotated = {x: movex, y: movey};
-         let unrotated = self.parent.rotate(rotated, d.rotation * (-1));
+         let unrotated = rotate(rotated, d.rotation * (-1));
          if (lineDatum.seq === 1) {
              return rotated;
          }
@@ -1350,7 +1350,7 @@
              if (dobjs.length === 0) {
                  opts.model.deleteObject(datum.obj);
              } else {
-                 self.parent.calcLineData(datum.obj);
+                 calcLineData(opts.model, datum.obj, NODE_CLASS, NODE_TERM);
              }
          }
          d3.select("svg > path").datum(null);
