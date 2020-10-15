@@ -2031,7 +2031,7 @@
                       .x(function(d) { return d.x; })
                       .y(function(d) { return d.y; });
          
-         let pathNode = d3.select(document.createElementNS('http://www.w3.org/2000/svg', 'svg')).append("path").attr("d", line(source.lineData)).node(); 
+         let pathNode = d3.select(document.createElementNS("http://www.w3.org/2000/svg", "svg")).append("path").attr("d", line(source.lineData)).node(); 
          
          if (pathNode === null) {
              return [0, 0];

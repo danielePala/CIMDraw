@@ -188,7 +188,7 @@
      let mode = "default";
      let menu = d3.contextMenu([
          {
-             title: 'Delete',
+             title: "Delete",
              action: function(event, d) {
                  opts.model.deleteObject(d);
              }
@@ -528,7 +528,7 @@
          self.diagramName = decodeURI(self.model.activeDiagramName);
          // the toggling of this checkbox actually renders the tree
          document.getElementById("showAllObjects").checked = false;
-         document.getElementById("showAllObjects").dispatchEvent(new MouseEvent('click'));
+         document.getElementById("showAllObjects").dispatchEvent(new MouseEvent("click"));
      });
 
      // listen to 'setMode' event from model
@@ -559,7 +559,7 @@
         self.diagramName = decodeURI(diagramName);
         // the toggling of this checkbox actually renders the tree
         document.getElementById("showAllObjects").checked = true;
-        document.getElementById("showAllObjects").dispatchEvent(new MouseEvent('click'));
+        document.getElementById("showAllObjects").dispatchEvent(new MouseEvent("click"));
      }
 
      self.createTreeGenerator = function*(showAllObjects) {
@@ -1111,7 +1111,7 @@
              })
              .attr("draggable", "true")
              .on("dragstart", function(event, d) {
-                 event.dataTransfer.setData('text/plain', self.model.ID(d));
+                 event.dataTransfer.setData("text/plain", self.model.ID(d));
              });
          
          let elementEnter = elementTopContainer

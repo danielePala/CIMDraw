@@ -351,7 +351,7 @@
              const hashComponents = window.location.hash.substring(1).split("/");
              const basePath = hashComponents[0] + "/diagrams/";
              const fullPath = basePath + diagramName;
-             $('#newDiagramModal').modal("hide");
+             $("#newDiagramModal").modal("hide");
              route.router.push(fullPath);
          });
          

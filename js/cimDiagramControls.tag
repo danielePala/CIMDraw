@@ -511,7 +511,7 @@
          } else {
              menu.push(
                  {
-                     title: 'Add new measurement',
+                     title: "Add new measurement",
                      action: function(event, d) {
                          self.addNewMeasurement(this, d);
                      }
@@ -519,7 +519,7 @@
              );
              multiMenu.push(
                  {
-                     title: 'Add new measurement',
+                     title: "Add new measurement",
                      action: function(event, d) {
                          self.addNewMeasurement(this, d);
                      }
@@ -527,7 +527,7 @@
              );
              terminalsMenu.push(
                  {
-                     title: 'Add new measurement',
+                     title: "Add new measurement",
                      action: function(event, d) {
                          self.addNewMeasurement(this, d);
                      }
