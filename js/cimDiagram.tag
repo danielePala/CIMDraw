@@ -101,7 +101,7 @@
      const TRAFO_RADIUS = 14;
      // terminal-related defs
      const TERMINAL_RADIUS = 1; // radius of terminals
-     const HIGHLIGHT_RADIUS = 6; // radius of highlighted terminals
+     const HIGHLIGHT_RADIUS = 4; // radius of highlighted terminals
      const TERMINAL_OFFSET = 0; // distance between element and its terminals
      const self = this;
      // color scale for voltage levels
