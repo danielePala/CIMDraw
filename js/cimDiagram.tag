@@ -2025,91 +2025,6 @@
          opts.dispatcher.trigger("transform");
      }
 
-     /** Calculate the closest point on a given busbar relative to a given point (a terminal) */
-     closestPoint(source, point) {       
-         let line = d3.line()
-                      .x(function(d) { return d.x; })
-                      .y(function(d) { return d.y; });
-         
-         let pathNode = d3.select(document.createElementNS("http://www.w3.org/2000/svg", "svg")).append("path").attr("d", line(source.lineData)).node(); 
-         
-         if (pathNode === null) {
-             return [0, 0];
-         }
-         
-         let pathLength = pathNode.getTotalLength(),
-             precision = 8,
-             best,
-             bestLength,
-             bestDistance = Infinity;
-
-         if (pathLength === 0) {
-             return [0, 0];
-         }
-         
-         if (typeof(point.x) === "undefined" || typeof(point.y) === "undefined") {
-             return [0, 0];
-         }
-         
-         // linear scan for coarse approximation
-         for (let scanLength = 0; scanLength <= pathLength; scanLength += precision) {
-             let scan = pathNode.getPointAtLength(scanLength);
-             if (source.rotation !== 0) {
-                 scan = rotate(scan, source.rotation);
-             }
-             let scanDistance = distance2int(scan);
-             if (scanDistance < bestDistance) {
-                 best = scan;
-                 bestLength = scanLength;
-                 bestDistance = scanDistance;
-             }
-         }
-
-         // binary search for precise estimate
-         precision /= 2;
-         while (precision > 0.5) {
-             let beforeLength = bestLength - precision;
-             if (beforeLength >= 0) {
-                 let before = pathNode.getPointAtLength(beforeLength);
-                 if (source.rotation !== 0) {
-                     before = rotate(before, source.rotation);
-                 }
-                 let beforeDistance = distance2int(before);
-                 
-                 if (beforeDistance < bestDistance) {
-                     best = before;
-                     bestLength = beforeLength;
-                     bestDistance = beforeDistance;
-                     continue;
-                 }
-             } 
-             let afterLength = bestLength + precision;
-             if (afterLength <= pathLength) {
-                 let after = pathNode.getPointAtLength(afterLength);
-                 if (source.rotation !== 0) {
-                     after = rotate(after, source.rotation);
-                 }
-                 let afterDistance = distance2int(after);
-                 if (afterDistance < bestDistance) {
-                     best = after;
-                     bestLength = afterLength;
-                     bestDistance = afterDistance;
-                     continue;
-                 }
-             }
-             precision /= 2;        
-         }
-
-         best = [best.x, best.y];
-         return best;
-
-         function distance2int(p) {
-             let dx = p.x + source.x - point.x, 
-                 dy = p.y + source.y - point.y; 
-             return dx * dx + dy * dy;
-         }       
-     }
-
      /** Update the diagram based on x and y values of data */
      forceTick(selection) {
          if (arguments.length === 0 || selection.alpha !== undefined) {
@@ -2210,7 +2125,7 @@
                   // then we calculate the optimal position of the connection
                   // towards the terminal.
                   if (d.source.lineData.length > 1) {
-                      d.p = self.closestPoint(d.source, terminalXY);
+                      d.p = closestPoint(d.source, terminalXY);
                   } else {
                       d.p = [0, 0];
                   }
