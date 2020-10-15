@@ -182,7 +182,7 @@ function distance2(p1, p2) {
 }
 
 // Calculate the closest point on a given busbar relative to a given point (a terminal) 
-closestPoint(source, point) {
+function closestPoint(source, point) {
     let line = d3.line()
         .x(function (d) { return d.x; })
         .y(function (d) { return d.y; });
