@@ -69,7 +69,7 @@ function addToDiagram(model, event, object) {
 function calcLineData(model, d) {
     let NODE_CLASS = "ConnectivityNode";
     let NODE_TERM = "ConnectivityNode.Terminals";
-    if (self.model.getMode() === "BUS_BRANCH") {
+    if (model.getMode() === "BUS_BRANCH") {
         NODE_CLASS = "TopologicalNode";
         NODE_TERM = "TopologicalNode.Terminal";
     }
