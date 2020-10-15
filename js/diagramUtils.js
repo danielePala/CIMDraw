@@ -19,7 +19,7 @@
  along with CIMDraw. If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* rotate a point of a given amount (in degrees) */
+// rotate a point of a given amount (in degrees) 
 function rotate(p, rotation) {
     let svgroot = d3.select("svg").node();
     let pt = svgroot.createSVGPoint();
@@ -33,6 +33,7 @@ function rotate(p, rotation) {
     return pt.matrixTransform(rotate.matrix);
 }
 
+// rotate a terminal according to it's 'rotation' attribute
 function rotateTerm(model, term) {
     let equipment = model.getTargets(
         [term],
@@ -45,6 +46,7 @@ function rotateTerm(model, term) {
     return {x: newX, y: newY};
 }
 
+// add an object to the active diagram according to the mouse click position
 function addToDiagram(model, event, object) {
     let m = d3.pointer(event, d3.select("svg").node());
     let transform = d3.zoomTransform(d3.select("svg").node());
@@ -63,7 +65,14 @@ function addToDiagram(model, event, object) {
     model.addToActiveDiagram(object, lineData);
 }
 
-function calcLineData(model, d, NODE_CLASS, NODE_TERM) {
+// calculate the array of x,y coordinates for an object, based on diagram objects
+function calcLineData(model, d) {
+    let NODE_CLASS = "ConnectivityNode";
+    let NODE_TERM = "ConnectivityNode.Terminals";
+    if (self.model.getMode() === "BUS_BRANCH") {
+        NODE_CLASS = "TopologicalNode";
+        NODE_TERM = "TopologicalNode.Terminal";
+    }
     d.x = undefined;
     d.y = undefined;
     d.rotation = 0;

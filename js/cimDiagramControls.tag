@@ -1350,7 +1350,7 @@
              if (dobjs.length === 0) {
                  opts.model.deleteObject(datum.obj);
              } else {
-                 calcLineData(opts.model, datum.obj, NODE_CLASS, NODE_TERM);
+                 calcLineData(opts.model, datum.obj);
              }
          }
          d3.select("svg > path").datum(null);

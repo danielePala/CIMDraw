@@ -1142,7 +1142,7 @@
          }
 
          for (let d of data) {
-             calcLineData(self.model, d, NODE_CLASS, NODE_TERM);
+             calcLineData(self.model, d);
          }
          
          let updateSel = d3.select("svg").select("g." + types).selectAll("g." + type)
@@ -1878,7 +1878,7 @@
                       .y(function(d) { return d.y; }); 
          
          for (let cn of allNodes) {
-             calcLineData(self.model, cn, NODE_CLASS, NODE_TERM);
+             calcLineData(self.model, cn);
          }
          
          if (d3.select("svg").select("g." + NODE_CLASS + "s").empty()) {
