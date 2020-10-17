@@ -1,0 +1,9 @@
+{
+    "name": "cimDraw",
+    "version": "1.0.0",
+    "description": "",
+    "scripts": {
+        "build": "riot ./js --format umd -o tmp && terser tmp/cimTopologyProcessor.js tmp/cimDiagram.js tmp/cimDiagramControls.js tmp/cimTree.js tmp/cimDraw.js js/schema.js js/model.js js/topology.js js/matpower.js js/diagramUtils.js --compress --mangle > dist/cimdraw.min.js && rm -r tmp"
+    },
+    "author": "Daniele Pala"
+}

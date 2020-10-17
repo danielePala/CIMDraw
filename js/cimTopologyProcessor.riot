@@ -1,7 +1,7 @@
 /*
  Topology processor user interface.
 
- Copyright 2017-2020 Daniele Pala <pala.daniele@gmail.com>
+ Copyright 2017-2020 Daniele Pala (pala.daniele@gmail.com)
 
  This file is part of CIMDraw.
 
@@ -16,7 +16,7 @@
  GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License
- along with CIMDraw. If not, see <http://www.gnu.org/licenses/>.
+ along with CIMDraw. If not, see http://www.gnu.org/licenses/.
 */
 
 <cimTopologyProcessor>
@@ -53,23 +53,25 @@
     </div>
 
     <script>
-     "use strict";
-     let self = this;
+    let self = null;
 
-     opts.dispatcher.on("diagrams", function() {
-         document.querySelector("#cim-topology-processor").style.display = "flex";
-     });
+    export default {
+        onBeforeMount(props, state) {
+            self = this;
+            props.dispatcher.on("diagrams", function() {
+                document.querySelector("#cim-topology-processor").style.display = "flex";
+            });
+        },
 
-     run(e) {
-         document.querySelector("#tpMsg").textContent = "Loading...";
-         $("#tpStatusModal").modal("show");
-         $("#tpStatusModal").on("shown.bs.modal", function (e) {
-             let topos = topologyProcessor(opts.model).calcTopology();
-             document.querySelector("#tpMsg").textContent = "Done (" + topos.length + " nodes calculated).";
-         });
-
-     }
-     
+        run(e) {
+            document.querySelector("#tpMsg").textContent = "Loading...";
+            $("#tpStatusModal").modal("show");
+            $("#tpStatusModal").on("shown.bs.modal", function (e) {
+                let topos = topologyProcessor(self.props.model).calcTopology();
+                document.querySelector("#tpMsg").textContent = "Done (" + topos.length + " nodes calculated).";
+            });
+        }
+    }
     </script>
 
 </cimTopologyProcessor>

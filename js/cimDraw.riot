@@ -1,7 +1,7 @@
 /*
  This tag renders the whole CIMDraw application, handling routing logic.
 
- Copyright 2017-2020 Daniele Pala <pala.daniele@gmail.com>
+ Copyright 2017-2020 Daniele Pala (pala.daniele@gmail.com)
 
  This file is part of CIMDraw.
 
@@ -16,7 +16,7 @@
  GNU General Public License for more details.
 
  You should have received a copy of the GNU General Public License
- along with CIMDraw. If not, see <http://www.gnu.org/licenses/>.
+ along with CIMDraw. If not, see http://www.gnu.org/licenses/.
 */
 
 <cimDraw>
@@ -76,7 +76,7 @@
                         </div>
                     </li>
                     <li class="nav-item">
-                        <cimTopologyProcessor model={cimModel} dispatcher={dispatcher}></cimTopologyProcessor>
+                        <cimTopologyProcessor model={state.cimModel} dispatcher={state.dispatcher}></cimTopologyProcessor>
                     </li>
                     <li class="nav-item">
                         <select id="cim-diagrams" class="custom-select"
@@ -129,8 +129,8 @@
 
         <div class="row">
             <div class="app-container col-md-12" id="app-container">
-                <cimTree model={cimModel} dispatcher={dispatcher}></cimTree>
-                <cimDiagram model={cimModel} dispatcher={dispatcher}></cimDiagram>
+                <cimTree model={state.cimModel} dispatcher={state.dispatcher}></cimTree>
+                <cimDiagram model={state.cimModel} dispatcher={state.dispatcher}></cimDiagram>
             </div>
         </div>
 
@@ -219,31 +219,35 @@
     </div>
 
     <script>
-     "use strict";
-     const self = this;
-     self.cimModel = cimModel();
-     let diagramsToLoad = 2;
-     self.dispatcher = {};
-     observable(self.dispatcher);
+    let self = null;
+     
+    export default {
+        onBeforeMount(props, state) {
+            self = this;
+            self.state.cimModel = cimModel();
+            self.state.diagramsToLoad = 2;
+            self.state.dispatcher = {};
+            observable(self.state.dispatcher);
 
-     self.cimModel.on("setMode", function(mode) {
-         if (mode === "NODE_BREAKER") {
-             document.getElementById("cim-mode").textContent = "Mode: Operational"; 
-         } else {
-             document.getElementById("cim-mode").textContent = "Mode: Planning"; 
-         }
-     });
+            self.state.cimModel.on("setMode", function(mode) {
+                if (mode === "NODE_BREAKER") {
+                    document.getElementById("cim-mode").textContent = "Mode: Operational"; 
+                } else {
+                    document.getElementById("cim-mode").textContent = "Mode: Planning"; 
+                }
+            });
      
-     self.dispatcher.on("loaded", function() {
-         diagramsToLoad = diagramsToLoad - 1;
-         if (diagramsToLoad === 0) {
-             $("#loadingModal").modal("hide");
-             document.getElementById("loadingDiagramMsg").textContent = "loading diagram..."; 
-             diagramsToLoad = 2;
-         }
-     });
-     
-     self.on("mount", function() {
+            self.state.dispatcher.on("loaded", function() {
+                self.state.diagramsToLoad = self.state.diagramsToLoad - 1;
+                if (self.state.diagramsToLoad === 0) {
+                    $("#loadingModal").modal("hide");
+                    document.getElementById("loadingDiagramMsg").textContent = "loading diagram..."; 
+                    self.state.diagramsToLoad = 2;
+                }
+            });
+        },
+
+        onMounted() {
          let cimFile = {};
          let createNewFile = false;
          // router setup
@@ -257,11 +261,11 @@
          route.initDomListeners();
 
          document.getElementById("operational").addEventListener("change", function() {
-             self.cimModel.setMode("NODE_BREAKER");
+             self.state.cimModel.setMode("NODE_BREAKER");
          });
 
          document.getElementById("planning").addEventListener("change", function() {
-             self.cimModel.setMode("BUS_BRANCH");
+             self.state.cimModel.setMode("BUS_BRANCH");
          });
 
          document.getElementById("cim-create-new-container").addEventListener("click", function() {
@@ -294,7 +298,7 @@
          document.getElementById("upload-boundary").addEventListener("change", function() {
              const bdFile = this.files[0];
              function loadBoundary() {
-                 self.cimModel.loadBoundary(bdFile).then(function(result) {
+                 self.state.cimModel.loadBoundary(bdFile).then(function(result) {
                      const br = document.createElement("br");
                      document.getElementById("boundaryMsg").append(br, "OK. " + result);
                      document.getElementById("cim-boundary-modal-error-container").style.display = null;
@@ -311,7 +315,7 @@
 
          // allow saving a copy of the file as plain XML
          document.getElementById("cim-save").addEventListener("click", function(e) {
-             const out = self.cimModel.save();
+             const out = self.state.cimModel.save();
              const blob = new Blob([out], {type : "text/xml"});
              const objectURL = URL.createObjectURL(blob);
              e.currentTarget.setAttribute("href", objectURL);
@@ -319,7 +323,7 @@
 
          // allow saving a copy of the file as CGMES
          document.getElementById("cgmes-save").addEventListener("click", function(e) {
-             const out = self.cimModel.saveAsCGMES();
+             const out = self.state.cimModel.saveAsCGMES();
              out.then(function(content) {
                  const objectURL = URL.createObjectURL(content);
                  document.getElementById("cgmes-download").setAttribute("href", objectURL);
@@ -331,7 +335,7 @@
 
          // allow exporting a copy of the diagram
          document.getElementById("cim-export").addEventListener("click", function(e) {
-             const out = self.cimModel.export();
+             const out = self.state.cimModel.export();
              const blob = new Blob([out], {type : "text/xml"});
              const objectURL = URL.createObjectURL(blob);
              e.currentTarget.setAttribute("href", objectURL);
@@ -339,7 +343,7 @@
 
          // export CIM network to Matpower
          document.getElementById("matpower-export").addEventListener("click", function(e) {
-             const out = exportToMatpower(self.cimModel);
+             const out = exportToMatpower(self.state.cimModel);
              const blob = new Blob([out], {type : "text/plain"});
              const objectURL = URL.createObjectURL(blob);
              e.currentTarget.setAttribute("href", objectURL);
@@ -365,7 +369,7 @@
              document.getElementById("cim-home-container").style.display = "none";
              document.getElementById("cim-diagrams").style.display = "none";
              document.getElementById("cim-mode").style.display = "none";
-             document.getElementById("cim-topology-processor").style.display = "none";
+             //document.getElementById("cim-topology-processor").style.display = "none";
              document.getElementById("cim-loading-modal-error-container").style.display = "none";
              document.getElementById("cim-boundary-modal-error-container").style.display = "none";
              // main logic
@@ -410,9 +414,9 @@
                      document.getElementById("cim-filename").innerHTML = "[" + cimFile.name + "]&nbsp&nbsp";
                      let loadingResult = null;
                      if (createNewFile === false) {
-                         loadingResult = self.cimModel.load(cimFile);
+                         loadingResult = self.state.cimModel.load(cimFile);
                      } else {
-                         loadingResult = self.cimModel.newFile(cimFile.name);
+                         loadingResult = self.state.cimModel.newFile(cimFile.name);
                      }
                      loadingResult.then(function() {
                          loadDiagramList(cimFile.name);
@@ -432,21 +436,21 @@
                  }
 
                  function selectMode() {
-                     const nodes = self.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
+                     const nodes = self.state.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
                      let cns = nodes["cim:ConnectivityNode"];
                      const tns = nodes["cim:TopologicalNode"];
                      cns = cns.filter(function(el) {
-                         return self.cimModel.isBoundary(el) === false;
+                         return self.state.cimModel.isBoundary(el) === false;
                      });
                      if (cns.length > 0 || tns.length === 0) {
-                         self.cimModel.setMode("NODE_BREAKER");
+                         self.state.cimModel.setMode("NODE_BREAKER");
                      } else {
-                         self.cimModel.setMode("BUS_BRANCH");
+                         self.state.cimModel.setMode("BUS_BRANCH");
                      }
                  };
              });
              $("#loadingModal").modal("show");
-             self.dispatcher.trigger("diagrams");
+             self.state.dispatcher.trigger("diagrams");
          });
 
          // here we show a certain diagram
@@ -457,8 +461,8 @@
                  route.router.push("");
                  return;
              }
-             if (self.cimModel.activeDiagramName === decodeURI(name)) {
-                 self.dispatcher.trigger("showDiagram", file, name);
+             if (self.state.cimModel.activeDiagramName === decodeURI(name)) {
+                 self.state.dispatcher.trigger("showDiagram", file, name);
                  document.getElementById("app-container").style.display = null;
                  return; // nothing more to do;
              }
@@ -477,7 +481,7 @@
              const name = url.params.name;
              const element = url.params.element;
              document.getElementById("cim-local-file-component").style.display = "none";
-             self.dispatcher.trigger("showDiagram", file, name, element);
+             self.state.dispatcher.trigger("showDiagram", file, name, element);
          });
 
          // here we create a new diagram
@@ -488,12 +492,12 @@
          
          // creates a new model if it doesn't exist, and shows a diagram.
          function loadDiagram(file, name, element) {
-             self.cimModel.selectDiagram(decodeURI(name));
+             self.state.cimModel.selectDiagram(decodeURI(name));
              loadDiagramList(decodeURI(file));
              document.getElementById(decodeURI(name)).setAttribute("selected", true);
              document.getElementById("app-container").style.display = null;
              document.getElementById("cim-export").parentNode.classList.remove("disabled");
-             self.dispatcher.trigger("showDiagram", file, name, element);
+             self.state.dispatcher.trigger("showDiagram", file, name, element);
          }
 
          function loadDiagramList(filename) {
@@ -506,7 +510,7 @@
              opt.textContent = "Generate a new diagram";
              cimDiagrams.appendChild(opt);
              // create all theother options
-             const diagrams = self.cimModel.getDiagramList();
+             const diagrams = self.state.cimModel.getDiagramList();
              for (let i in diagrams) {
                  const diagOpt = document.createElement("option");
                  diagOpt.setAttribute("value", "#" + filename + "/diagrams/" + diagrams[i]);
@@ -531,6 +535,7 @@
              opt.textContent = "Select a diagram";
              cimDiagrams.appendChild(opt);
          }
-     });
+     }
+    }
     </script>
 </cimDraw>
