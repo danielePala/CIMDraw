@@ -1,9 +1,18 @@
 {
-    "name": "cimDraw",
+    "name": "CIMDraw",
     "version": "1.0.0",
-    "description": "",
+    "description": "CIMDraw is a WebApp to view IEC CIM (CGMES) files",
     "scripts": {
         "build": "riot ./js --format umd -o js/tmp && terser js/*/*.js js/*.js --compress --mangle > dist/cimdraw.min.js && rm -r js/tmp"
     },
-    "author": "Daniele Pala"
+    "homepage": "https://danielepala.github.io/CIMDraw/",
+    "license": "GPL-3.0",
+    "author": {
+      "name": "Daniele Pala",
+      "url": "https://github.com/danielePala"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/danielePala/CIMDraw.git"
+    }
 }
