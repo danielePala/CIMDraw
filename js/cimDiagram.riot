@@ -659,8 +659,47 @@
                         }
                         break;
                     }
+                    case "cim:ConductingEquipment.BaseVoltage":
+                    case "cim:BaseVoltage.ConductingEquipment": {
+                        let psr = source;
+                        if (linkName === "cim:BaseVoltage.ConductingEquipment") {
+                            psr = target;
+                        }
+                        if (typeof(psr) !== "undefined") {
+                            // handle aclines
+                            if (psr.nodeName === "cim:ACLineSegment") {
+                                self.drawACLines([psr]);
+                            }
+                            // handle busbars
+                            if (psr.nodeName === "cim:BusbarSection") {
+                                psr = self.props.model.getNode(psr);
+                                self.drawNodes([psr]);
+                            }
+                        }
+                        break;
+                    }
+                    case "cim:BaseVoltage.TransformerEnds":
+                    case "cim:TransformerEnd.BaseVoltage": {
+                        let trafoEnd = source;
+                        if (linkName === "cim:BaseVoltage.TransformerEnds") {
+                            trafoEnd = target;
+                        }
+                        if (typeof(trafoEnd) !== "undefined") {
+                            const termNode = self.getTermNode(trafoEnd);
+                            if (termNode !== null) {
+                                self.handlePowerTransformerEnds(termNode);
+                            }
+                        }
+                        break;
+                    }
                 }
             });
+            // listen to 'deleteObject' event from model
+            self.props.model.on("deleteObject", function(objectUUID) {
+                // TODO: this must be called only for base voltages
+                self.drawLegend();
+            });
+            
         },
 
         // listen to 'mount' event

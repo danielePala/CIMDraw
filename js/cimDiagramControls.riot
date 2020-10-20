@@ -314,7 +314,7 @@
                 let cn = self.getLinkedCNs([d.target])[0];
                 if (typeof(cn) !== "undefined") {
                     let cnUUID = self.props.model.ID(cn.cn);
-                    let cnElem = d3.select("svg").selectAll("g#cimdiagram-"+cnUUID).node();
+                    let cnElem = d3.select("svg").selectAll("g#cimdiagram-" + cnUUID).node();
                     self.deleteObject(cnElem);
                 } else {
                     self.props.model.removeLink(d.source, "cim:" + NODE_TERM, d.target);
