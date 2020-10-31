@@ -290,7 +290,7 @@
                 self.addNewObject(object);
             });
             // listen to 'deleteObject' event from model
-            self.props.model.on("deleteObject", function(objectUUID) {
+            self.props.model.on("deleteObject", function(objectUUID, objectType) {
                 self.deleteObject(objectUUID);
             });
             // listen to 'deleteFromDiagram' event from model

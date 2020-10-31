@@ -1254,11 +1254,12 @@ function cimModel() {
             }
             for (let object of objects) {
                 let objUUID = model.ID(object);
+                let objType = object.localName;
                 // update the 'dataMap' map
                 dataMap.delete("#" + objUUID);
                 // delete the object
                 object.remove();
-                model.trigger("deleteObject", objUUID);
+                model.trigger("deleteObject", objUUID, objType);
             }
 
             function checkRelatedObject(object, related) {

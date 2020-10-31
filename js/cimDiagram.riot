@@ -643,9 +643,11 @@
                 }
             });
             // listen to 'deleteObject' event from model
-            self.props.model.on("deleteObject", function(objectUUID) {
-                // TODO: this must be called only for base voltages
-                self.drawLegend();
+            self.props.model.on("deleteObject", function(objectUUID, objectType) {
+                // this must be called only for base voltages
+                if (objectType === "BaseVoltage") {
+                    self.drawLegend();
+                }
             });
             
         },
