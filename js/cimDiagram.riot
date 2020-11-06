@@ -1562,7 +1562,7 @@
                     .style("text-anchor", "end")
                     .attr("font-size", LABEL_SIZE)
                     .attr("x", (TRAFO_HEIGHT/2) * (-1))
-                    .attr("y", (TRAFO_HEIGHT/2))
+                    .attr("y", 0)
                     .text(function(d) {
                         const name = self.props.model.getAttribute(d, "cim:IdentifiedObject.name");
                         if (typeof(name) !== "undefined") {
@@ -2052,14 +2052,14 @@
                                 case "cim:Disconnector":
                                 case "cim:LoadBreakSwitch":
                                 case "cim:Junction":
+                                case "cim:PowerTransformer":
                                     rotationOrigin = {x:0, y:0};
                                     break;
-                                case "cim:PowerTransformer":
-                                    rotationOrigin = {x:0, y:30}; // TODO: define this constant
-                                    break;
                                 default:
-                                    rotationOrigin = {x: d3.select(this).attr("x"),
-                                                        y: d3.select(this).attr("y")};
+                                    rotationOrigin = {
+                                        x: d3.select(this).attr("x"),
+                                        y: d3.select(this).attr("y")
+                                    };
                                     break;
                             }
                             return "rotate("+textRotation+","+rotationOrigin.x+","+rotationOrigin.y+")";
