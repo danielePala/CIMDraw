@@ -1336,8 +1336,8 @@
                     .attr("class", "cim-object-text")
                     .style("text-anchor", "middle")
                     .attr("font-size", LABEL_SIZE)
-                    .attr("x", 0)
-                    .attr("y", (GEN_HEIGHT/2)-60)
+                    .attr("x", (GEN_HEIGHT/2)*1.4)
+                    .attr("y", 0)
                     .text(function(d) {
                         let name = self.props.model.getAttribute(d, "cim:IdentifiedObject.name");
                         if (typeof(name) !== "undefined") {
