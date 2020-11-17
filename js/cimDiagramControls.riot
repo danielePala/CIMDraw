@@ -368,20 +368,31 @@
             }
         }
     ];
-    // move one point of the multi-segment. "lineData" coordinates
-    // are relative to d.x and d.y, and the first point is always (0,0).
-    // Therefore, we must handle the translation of the first point in a different way.
-    let resizeDrag = d3.drag().on("drag", function(event, d) {
+    // move one point of the multi-segment. "lineData" coordinates are
+    // relative to datum.x and datum.y, and the first point is always (0,0).
+    // Therefore, we must handle the translation of the first point in a 
+    // different way: in fact in this special case we are moving the origin
+    // of our reference frame, so that all of the points must be recalculated 
+    // in the new reference.
+    // The data associated to this callback (i.e. its second argument, 
+    // called 'd') is a two-element array: the datum itself (i.e. the CIM 
+    // object) and the sequence number of the point of the segment that is 
+    // being moved.
+    const resizeDrag = d3.drag().on("drag", function(event, d) {
         // hide popovers
         $(selected).filter('[data-toggle="popover"]').popover("hide");
-        let lineDatum = {x: event.x, y: event.y, seq: d[1]};
-        let aligned = self.align(d[0], lineDatum, true);
+        // define a point corresponding to the actual mouse position
+        const lineDatum = {x: event.x, y: event.y, seq: d[1]};
+        // check its alignment with nearby graphic objects
+        const aligned = self.align(d[0], lineDatum, true);
+        // update the coordinates of the point
         movePoint(d[0], d[1], aligned);
+        // update the model accordingly
         self.props.model.updateActiveDiagram(d[0], d[0].lineData);
 
         function movePoint(d, seq, delta) {
-            let p = d.lineData.filter(el => el.seq === seq)[0];
-            let ev = rotate({x: delta.x, y: delta.y}, d.rotation * (-1));
+            const p = d.lineData.filter(el => el.seq === seq)[0];
+            const ev = rotate({x: delta.x, y: delta.y}, d.rotation * (-1));
             if (p.seq !== 1) {
                 p.x = delta.x;
                 p.y = delta.y;
