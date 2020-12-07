@@ -56,13 +56,13 @@
         <svg width="1200" height="800" style="border: 1px solid black;">
             <path stroke-width="1" stroke="black" fill="none"></path>
             <circle r="3.5" cy="-10" cx="-10"></circle>
-            <g class="brush"></g>
-            <g class="diagram-grid"></g>
-            <g class="diagram-highlight">
+            <g id="diagram-brush"></g>
+            <g id="diagram-grid"></g>
+            <g id="diagram-highlight">
                 <line class="highlight-x"></line>
                 <line class="highlight-y"></line>
             </g>
-            <g class="diagram">
+            <g id="diagram-main">
                 <g class="edges"></g>
             </g>
             <g id="legend" transform="translate(1050,50)">
@@ -162,7 +162,7 @@
                             type = cn.localName;
                             uuid = self.props.model.ID(cn);
                         }
-                        let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
+                        let types = d3.select("svg").selectAll("svg > g#diagram-main > g." + type + "s");
                         let target = types.select("#cimdiagram-" + uuid);
                         target.select("text").html(value);
                         break;
@@ -302,7 +302,7 @@
                 }
                 let type = object.localName;
                 let uuid = self.props.model.ID(object);
-                let types = d3.select("svg").selectAll("svg > g.diagram > g." + type + "s");
+                let types = d3.select("svg").selectAll("svg > g#diagram-main > g." + type + "s");
                 let target = types.select("#cimdiagram-" + uuid);
                 self.forceTick(target); 
             });     
@@ -449,7 +449,7 @@
                                 return;
                             }
                         }
-                        let edgeToChange = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").data().filter(el => el.target === term)[0];
+                        let edgeToChange = d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g").data().filter(el => el.target === term)[0];
                         if (typeof(edgeToChange) === "undefined") {
                             let equipment = self.props.model.getTargets(
                                 [term],
@@ -463,7 +463,7 @@
                             edgeToChange.source = cn;
                         }
                         let cnUUID = self.props.model.ID(cn);
-                        let selection = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID);
+                        let selection = d3.select("svg > g#diagram-main > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID);
                         self.forceTick(selection);
                         break;
                     }
@@ -591,7 +591,7 @@
                             }
                         }
                         d3.select("svg")
-                        .selectAll("svg > g.diagram > g.edges > g")
+                        .selectAll("svg > g#diagram-main > g.edges > g")
                         .filter(function(d) {
                             return d.target === term
                         })
@@ -680,7 +680,7 @@
 
             function* renderGenerator(diagramName) {
                 // clear all
-                d3.select("svg").select("g.diagram").selectAll("g:not(.edges)").remove();
+                d3.select("svg").select("g#diagram-main").selectAll("g:not(.edges)").remove();
 
                 self.props.model.selectDiagram(decodeURI(diagramName));
                 self.diagramName = decodeURI(diagramName);
@@ -1120,7 +1120,7 @@
         createSelection(type, data) {
             let types = type + "s";
             if (d3.select("svg").select("g." + types).empty()) {
-                d3.select("svg").select("g.diagram").append("g")
+                d3.select("svg").select("g#diagram-main").append("g")
                 .attr("class", types);
             }
 
@@ -1865,7 +1865,7 @@
             }
             
             if (d3.select("svg").select("g." + NODE_CLASS + "s").empty()) {
-                d3.select("svg").select("g.diagram").append("g")
+                d3.select("svg").select("g#diagram-main").append("g")
                 .attr("class", NODE_CLASS + "s");
             }
             
@@ -2003,7 +2003,7 @@
                         .duration(750)
                         .ease(d3.easeLinear);
             let t = d3.zoomIdentity.translate(newx, newy).scale(1);
-            d3.selectAll("svg").select("g.diagram").transition(trans).attr("transform", t);
+            d3.selectAll("svg").select("g#diagram-main").transition(trans).attr("transform", t);
             d3.zoom().transform(d3.selectAll("svg"), t);
             self.props.dispatcher.trigger("transform");
         },
@@ -2012,7 +2012,7 @@
         forceTick(selection) {
             if (arguments.length === 0 || selection.alpha !== undefined) {
                 // update everything
-                selection = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
+                selection = d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g");
             }
                 
             let transform = d3.zoomTransform(d3.select("svg").node());
@@ -2023,7 +2023,7 @@
 
             if (arguments.length === 1) {
                 let terminals = self.props.model.getTerminals(selection.data());
-                let links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+                let links = d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g").filter(function(d) {
                     return selection.data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
                 });
                 self.updateEdges(xoffset, yoffset, svgZoom, links);
@@ -2093,7 +2093,7 @@
                         .y(function(d) { return d.y; })
                         .curve(d3.curveStepBefore); 
             if (arguments.length === 3) {
-                links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g"); 
+                links = d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g"); 
             } 
 
             links.select("path")
@@ -2132,7 +2132,7 @@
         drawGrid(zoom) {
             let width = parseInt(d3.select("svg").style("width"))/zoom;
             let height = parseInt(d3.select("svg").style("height"))/zoom;
-            let gridG = d3.select("svg").select("g.diagram-grid");
+            let gridG = d3.select("svg").select("g#diagram-grid");
             gridG.selectAll("*").remove();
             const spacing = 25;
             for (let j=spacing; j <= height-spacing; j=j+spacing) {

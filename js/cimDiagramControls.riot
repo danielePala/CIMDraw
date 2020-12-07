@@ -518,7 +518,7 @@
                 // the sequence number of the diagram object point. In fact for
                 // each diagram object point of a given object we must insert
                 // a dedicated node in the quadtree.
-                let points = d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g");
+                let points = d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g");
                 quadtree.x(function(d) {
                     let obj = d3.select(d.elm).datum();
                     let lineDatum = obj.lineData.filter(el => el.seq === d.seq);
@@ -530,7 +530,7 @@
                 });
                 self.addToQuadtree(points);
                 // setup context menu
-                let edges = d3.select("svg").selectAll("svg > g.diagram > g.edges > g");
+                let edges = d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g");
                 self.addContextMenu(points);
                 d3.select("svg").on("contextmenu.general", d3.contextMenu(diagramMenu));
                 edges.on("contextmenu", d3.contextMenu(edgesMenu));
@@ -671,7 +671,7 @@
                         cnsToMove = self.getLinkedCNs(terminals);
                     }
                     let terminals = self.props.model.getTerminals(d3.selectAll(selected).data());
-                    let links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+                    let links = d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g").filter(function(d) {
                         return d3.selectAll(selected).data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
                     });
                     links.select("path").attr("stroke", "green").attr("stroke-width", "3");
@@ -734,15 +734,15 @@
                     self.addToQuadtree(d3.selectAll(selected)); // update quadtree
                     cnsToMove = [];
                     let terminals = self.props.model.getTerminals(d3.selectAll(selected).data());
-                    let links = d3.select("svg").selectAll("svg > g.diagram > g.edges > g").filter(function(d) {
+                    let links = d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g").filter(function(d) {
                         return d3.selectAll(selected).data().indexOf(d.source) > -1 || terminals.indexOf(d.target) > -1;
                     });
                     links.select("path").attr("stroke", "black").attr("stroke-width", "1");
                     self.highlight("x", null);
                     self.highlight("y", null);
                 });
-            d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").call(drag);
-            d3.select("svg").select("g.brush").call(
+            d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g").call(drag);
+            d3.select("svg").select("g#diagram-brush").call(
                 d3.brush()
                 .on("start", function() {
                     // reset the current path
@@ -758,7 +758,7 @@
 
             function selectInsideBrush(event) {
                 // hide the brush
-                d3.select("svg").select("g.brush").selectAll("*:not(.overlay)").style("display", "none");
+                d3.select("svg").select("g#diagram-brush").selectAll("*:not(.overlay)").style("display", "none");
                 // update selection with quadtree
                 let extent = event.selection;
                 if (extent === null) {
@@ -853,18 +853,18 @@
         },
 
         disableDrag() {
-            d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").on(".drag", null);
-            d3.select("svg").select("g.brush").on(".brush", null);
+            d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g").on(".drag", null);
+            d3.select("svg").select("g#diagram-brush").on(".brush", null);
             if (self.status === "DRAG") {
                 // delete any brush
-                d3.select("svg").select("g.brush").call(d3.brush().move, null);
+                d3.select("svg").select("g#diagram-brush").call(d3.brush().move, null);
             }
         },
      
         enableZoom() {
             self.status = "ZOOM";
             $('[data-toggle="popover"]').popover("hide");
-            d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g")
+            d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g")
             .on("click.zoom", function (event, d) {
                 let hashComponents = window.location.hash.substring(1).split("/");
                 let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
@@ -877,12 +877,12 @@
         },
 
         disableZoom() {
-            d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g").on("click.zoom", null);
+            d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g").on("click.zoom", null);
             d3.select("svg").on(".zoom", null);
         },
 
         zooming(event) {
-            d3.select("svg").select("g.diagram").attr("transform", event.transform);
+            d3.select("svg").select("g#diagram-main").attr("transform", event.transform);
             self.props.dispatcher.trigger("transform");
             // Update path data.
             // Needed if zooming while connecting objects or drawing multi-lines.
@@ -931,7 +931,7 @@
             d3.select(self.root).selectAll("#cim-diagram-controls > label:not(#connectLabel)").classed("active", false);
             self.status = "CONNECT";
 
-            d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
+            d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g > g.Terminal")
             .on("click", function(event, d) {
                 let line = d3.line()
                                 .x(function(d) { return d.x; })
@@ -966,7 +966,7 @@
                         let cnsToRemove = self.getLinkedCNs([termToChange]);
                         for (let cnToRemove of cnsToRemove) {
                             let cnUUID = self.props.model.ID(cnToRemove.cn);
-                            let cnElem = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID).node();
+                            let cnElem = d3.select("svg > g#diagram-main > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID).node();
                             self.deleteObject(cnElem);
                         }
                     }
@@ -1009,11 +1009,11 @@
                     };
                 }
             });
-            d3.select("svg").selectAll("svg > g.diagram > g." + NODE_CLASS + "s > g." + NODE_CLASS)
+            d3.select("svg").selectAll("svg > g#diagram-main > g." + NODE_CLASS + "s > g." + NODE_CLASS)
             .on("click", function(event, d) {
                 connect(d);
             });
-            d3.select("svg").selectAll("svg > g.diagram > g.edges > g")
+            d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g")
             .on("click", function(event, d) {
                 connect(d.source);
             });
@@ -1033,11 +1033,11 @@
 
         disableConnect() {
             d3.select("body").on("keyup.connect", null);
-            d3.select("svg").selectAll("svg > g.diagram > g:not(.edges) > g > g.Terminal")
+            d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g > g.Terminal")
             .on("click", null);
-            d3.select("svg").selectAll("svg > g.diagram > g." + NODE_CLASS + "s > g." + NODE_CLASS)
+            d3.select("svg").selectAll("svg > g#diagram-main > g." + NODE_CLASS + "s > g." + NODE_CLASS)
             .on("click", null);
-            d3.select("svg").selectAll("svg > g.diagram > g.edges > g")
+            d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g")
             .on("click", null);
             d3.select("svg").on("mousemove", null);
             d3.select("svg > path").attr("d", null);
@@ -1290,7 +1290,7 @@
         },
 
         highlight(direction, val, rotation) {
-            let hG = d3.select("svg").select("g.diagram-highlight");
+            let hG = d3.select("svg").select("g#diagram-highlight");
             let x1 = null;
             let y1 = null;
             let x2 = null;
@@ -1575,7 +1575,7 @@
             let cnsToRemove = self.getLinkedCNs(terminals);
             for (let cnToRemove of cnsToRemove) {
                 let cnUUID = self.props.model.ID(cnToRemove.cn);
-                let cnElem = d3.select("svg > g.diagram > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID).node();
+                let cnElem = d3.select("svg > g#diagram-main > g." + NODE_CLASS + "s > g#cimdiagram-" + cnUUID).node();
                 selected.push(cnElem);
             }
             self.removeFromQuadtree(); // update quadtree
