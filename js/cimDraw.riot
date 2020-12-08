@@ -25,7 +25,7 @@
          text-align: center;
      }
      
-     .diagramTools {
+     nav.navbar {
          margin-bottom: 20px;
      }
      
@@ -122,18 +122,12 @@
             </div>
         </div>
         
-        <div class="row diagramTools">
-            <div class="col-md-4"></div>        
-            <div class="col-md-4"></div>
-        </div>
-
         <div class="row">
             <div class="app-container col-md-12" id="app-container">
                 <cimTree model={state.cimModel} dispatcher={state.dispatcher}></cimTree>
                 <cimDiagram model={state.cimModel} dispatcher={state.dispatcher}></cimDiagram>
             </div>
         </div>
-
 
         <!-- Modal for loading a specific diagram -->
         <div class="modal fade" id="newDiagramModal" tabindex="-1" role="dialog" aria-labelledby="newDiagramModalLabel">
