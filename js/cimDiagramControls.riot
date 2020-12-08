@@ -621,9 +621,9 @@
                         .duration(750)
                         .ease(d3.easeLinear);
                 if (this.checked === false) {
-                    d3.select("#legend").transition(t).attr("transform", d3.zoomIdentity.translate(1200, 50)); 
+                    d3.select("#diagram-legend").transition(t).attr("transform", d3.zoomIdentity.translate(1200, 50)); 
                 } else {
-                    d3.select("#legend").transition(t).attr("transform", d3.zoomIdentity.translate(1050, 50));
+                    d3.select("#diagram-legend").transition(t).attr("transform", d3.zoomIdentity.translate(1050, 50));
                 }
             });
         },

@@ -65,7 +65,7 @@
             <g id="diagram-main">
                 <g class="edges"></g>
             </g>
-            <g id="legend" transform="translate(1050,50)">
+            <g id="diagram-legend" transform="translate(1050,50)">
                 <rect id="legend-rect" x="0" y="0" width="150" height="100" fill="white"/>
                 <text x="75" y="25" text-anchor="middle" font-weight="bold">Legend</text>
             </g>
@@ -144,8 +144,8 @@
                 let yScale = d3.scaleLinear().domain([-newy/newZoom, (svgHeight-newy)/newZoom]).range([0, svgHeight]);
                 let yAxis = d3.axisRight(yScale);
                 let xAxis = d3.axisBottom(xScale);
-                d3.select("svg").select("#yAxisG").call(yAxis);
-                d3.select("svg").select("#xAxisG").call(xAxis);
+                d3.select("svg").select("#diagram-yAxis").call(yAxis);
+                d3.select("svg").select("#diagram-xAxis").call(xAxis);
             });
             // listen to 'setAttribute' event from model
             self.props.model.on("setAttribute", function(object, attrName, value) {
@@ -659,8 +659,8 @@
             let yScale = d3.scaleLinear().domain([0, 800]).range([0, 800]);
             let yAxis = d3.axisRight(yScale);
             let xAxis = d3.axisBottom(xScale);
-            d3.select("svg").append("g").attr("id", "yAxisG").call(yAxis);
-            d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
+            d3.select("svg").append("g").attr("id", "diagram-yAxis").call(yAxis);
+            d3.select("svg").append("g").attr("id", "diagram-xAxis").call(xAxis);
             // draw grid
             self.drawGrid(1.0);
         },
@@ -2197,11 +2197,11 @@
                 return 0;
             });
             // clean up
-            d3.select("#legend")
+            d3.select("#diagram-legend")
             .selectAll("g.voltage")
             .remove();
             const voltages =
-                d3.select("#legend")
+                d3.select("#diagram-legend")
                 .selectAll("g.voltage")
                 .data(bvObjs)
                 .enter()
