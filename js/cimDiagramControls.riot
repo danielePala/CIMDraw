@@ -199,8 +199,8 @@
                 d3.select("svg").on("contextmenu.general", null);
                 self.addDrawing(d, function(event) {
                     let svg = d3.select("svg");
-                    let path = svg.selectAll("svg > path");
-                    let circle = svg.selectAll("svg > circle");
+                    let path = svg.selectAll("svg > #diagram-connect > path");
+                    let circle = svg.selectAll("svg > #diagram-connect > circle");
                     event.preventDefault();
                     self.addNewPoint(d);
                     self.deleteFromDiagram(elm);
@@ -208,7 +208,7 @@
                     svg.on("mousemove", null);
                     path.attr("d", null);
                     circle.attr("transform", "translate(0, 0)");
-                    d3.select("svg > path").datum(null);
+                    d3.select("svg > #diagram-connect > path").datum(null);
                     // disable ourselves
                     svg.on("contextmenu.add", null);
                     svg.on("click.add", null);
@@ -886,16 +886,16 @@
             self.props.dispatcher.trigger("transform");
             // Update path data.
             // Needed if zooming while connecting objects or drawing multi-lines.
-            let pathData = d3.select("svg > path").datum();
+            let pathData = d3.select("svg > #diagram-connect > path").datum();
             if (typeof(pathData) === "undefined") {
                 return;
             }
             let line = d3.line()
                         .x(function(d) { return d.x; })
                         .y(function(d) { return d.y; });
-            let path = d3.select("svg > path");
+            let path = d3.select("svg > #diagram-connect > path");
             let transform = d3.zoomTransform(d3.select("svg").node());
-            let circleTr = d3.select("svg > circle").node().transform.baseVal.consolidate();
+            let circleTr = d3.select("svg > #diagram-connect > circle").node().transform.baseVal.consolidate();
             if (circleTr === null) {
                 return;
             }
@@ -943,8 +943,8 @@
                 }
 
                 let svg = d3.select("svg");
-                let path = d3.select("svg > path");
-                let circle = d3.select("svg > circle");
+                let path = d3.select("svg > #diagram-connect > path");
+                let circle = d3.select("svg > #diagram-connect > circle");
                 let termToChange = path.datum();
                 if (typeof(termToChange) !== "undefined") {
                     termToChange = termToChange.obj;
@@ -970,8 +970,8 @@
                             self.deleteObject(cnElem);
                         }
                     }
-                    d3.select("svg").selectAll("svg > path").attr("d", null);
-                    d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
+                    d3.select("svg").selectAll("svg > #diagram-connect > path").attr("d", null);
+                    d3.select("svg").selectAll("svg > #diagram-connect > circle").attr("transform", "translate(0, 0)");
                     if (typeof(cn) === "undefined") {
                         // handle rotation of the origin terminal
                         let term1XY = {x: termToChange.x, y: termToChange.y};
@@ -1019,14 +1019,14 @@
             });
             
             function connect(cn) {
-                d3.select("svg").selectAll("svg > path").attr("d", null);
-                d3.select("svg").selectAll("svg > circle").attr("transform", "translate(0, 0)");
-                let termToChange = d3.select("svg > path").datum();
+                d3.select("svg").selectAll("svg > #diagram-connect > path").attr("d", null);
+                d3.select("svg").selectAll("svg > #diagram-connect > circle").attr("transform", "translate(0, 0)");
+                let termToChange = d3.select("svg > #diagram-connect > path").datum();
                 if (typeof(termToChange) !== "undefined") {
                     d3.select("svg").on("mousemove", null);
                     // update the model
                     self.props.model.setLink(termToChange.obj, "cim:" + TERM_NODE, cn);
-                    d3.select("svg > path").datum(null);
+                    d3.select("svg > #diagram-connect > path").datum(null);
                 }
             };
         },
@@ -1040,12 +1040,12 @@
             d3.select("svg").selectAll("svg > g#diagram-main > g.edges > g")
             .on("click", null);
             d3.select("svg").on("mousemove", null);
-            d3.select("svg > path").attr("d", null);
-            d3.select("svg > circle").attr("transform", "translate(0, 0)");
-            let datum = d3.select("svg > path").datum();
+            d3.select("svg > #diagram-connect > path").attr("d", null);
+            d3.select("svg > #diagram-connect > circle").attr("transform", "translate(0, 0)");
+            let datum = d3.select("svg > #diagram-connect > path").datum();
             if (typeof(datum) !== "undefined") {
                 if (datum.nodeName === "cim:Terminal") {
-                    d3.select("svg > path").datum(null);
+                    d3.select("svg > #diagram-connect > path").datum(null);
                 }
             }
         },
@@ -1086,8 +1086,8 @@
             let type = "";
             let text = "";
             let svg = d3.select("svg");
-            let path = svg.selectAll("svg > path");
-            let circle = svg.selectAll("svg > circle");
+            let path = svg.selectAll("svg > #diagram-connect > path");
+            let circle = svg.selectAll("svg > #diagram-connect > circle");
             self.disableAll();
             d3.select("svg").on("contextmenu.general", null);
             // handle escape key
@@ -1135,7 +1135,7 @@
                             svg.on("mousemove", null);
                             path.attr("d", null);
                             circle.attr("transform", "translate(0, 0)");
-                            d3.select("svg > path").datum(null);
+                            d3.select("svg > #diagram-connect > path").datum(null);
                             // disable ourselves
                             svg.on("contextmenu.add", null);
                         });
@@ -1173,8 +1173,8 @@
             
             function movePoint(d, seq, delta) {
                 let transform = d3.zoomTransform(svg.node());
-                let path = svg.selectAll("svg > path");
-                let circle = svg.selectAll("svg > circle");
+                let path = svg.selectAll("svg > #diagram-connect > path");
+                let circle = svg.selectAll("svg > #diagram-connect > circle");
                 let line = d3.line()
                             .x(function(d) { return d.x; })
                             .y(function(d) { return d.y; });
@@ -1206,7 +1206,7 @@
 
         addNewPoint(newObject) {
             let svg = d3.select("svg");
-            let path = svg.selectAll("svg > path");
+            let path = svg.selectAll("svg > #diagram-connect > path");
             let point = path.datum();
             let newx = point.x - newObject.x;
             let newy = point.y - newObject.y;
@@ -1348,10 +1348,10 @@
             d3.select("svg").on("contextmenu.add", null);
             d3.select("svg").on("contextmenu.general", d3.contextMenu(diagramMenu));
             d3.select("svg").on("mousemove", null);
-            d3.select("svg > path").attr("d", null);
-            d3.select("svg > circle").attr("transform", "translate(0, 0)");
+            d3.select("svg > #diagram-connect > path").attr("d", null);
+            d3.select("svg > #diagram-connect > circle").attr("transform", "translate(0, 0)");
             // delete from model
-            let datum = d3.select("svg > path").datum();
+            let datum = d3.select("svg > #diagram-connect > path").datum();
             if (typeof(datum) !== "undefined") {
                 // if the object is new, we delete it
                 // if we are adding new points to an existing object
@@ -1363,7 +1363,7 @@
                     calcLineData(self.props.model, datum.obj);
                 }
             }
-            d3.select("svg > path").datum(null);
+            d3.select("svg > #diagram-connect > path").datum(null);
             self.highlight("x", null);
             self.highlight("y", null);
         },

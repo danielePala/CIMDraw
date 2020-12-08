@@ -54,8 +54,10 @@
     <cimDiagramControls model={props.model} dispatcher={props.dispatcher}></cimDiagramControls>
     <div class="app-diagram">   
         <svg width="1200" height="800" style="border: 1px solid black;">
-            <path stroke-width="1" stroke="black" fill="none"></path>
-            <circle r="3.5" cy="-10" cx="-10"></circle>
+            <g id="diagram-connect">
+                <path stroke-width="1" stroke="black" fill="none"></path>
+                <circle r="3.5" cy="-10" cx="-10"></circle>
+            </g>
             <g id="diagram-brush"></g>
             <g id="diagram-grid"></g>
             <g id="diagram-highlight">
