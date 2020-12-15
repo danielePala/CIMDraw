@@ -265,3 +265,48 @@ function closestPoint(source, point) {
         return dx * dx + dy * dy;
     }
 }
+
+function hidePopovers(nodes) {
+    let povs = [];
+    if (typeof(nodes) === "undefined") {
+        povs = document.querySelectorAll('[data-bs-toggle="popover"]');
+    } else {
+        povs = nodes.filter(elem => elem.matches('[data-bs-toggle="popover"]'));
+    }
+    for (let pov of povs) {
+        let povInst = bootstrap.Popover.getInstance(pov);
+        if (povInst !== null) {
+            povInst.hide();
+        }
+    }  
+}
+
+function showPopovers(nodes) {
+    let povs = [];
+    if (typeof(nodes) === "undefined") {
+        povs = document.querySelectorAll('[data-bs-toggle="popover"]');
+    } else {
+        povs = nodes.filter(elem => elem.matches('[data-bs-toggle="popover"]'));
+    }
+    for (let pov of povs) {
+        let povInst = bootstrap.Popover.getInstance(pov);
+        if (povInst !== null) {
+            povInst.show();
+        }
+    }  
+}
+
+function disposePopovers(nodes) {
+    let povs = [];
+    if (typeof(nodes) === "undefined") {
+        povs = document.querySelectorAll('[data-bs-toggle="popover"]');
+    } else {
+        povs = nodes.filter(elem => elem.matches('[data-bs-toggle="popover"]'));
+    }
+    for (let pov of povs) {
+        let povInst = bootstrap.Popover.getInstance(pov);
+        if (povInst !== null) {
+            povInst.dispose();
+        }
+    }  
+}

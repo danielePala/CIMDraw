@@ -142,7 +142,7 @@
                      </button>
                  </div>
                  <div class="input-group-append">
-                     <button class="btn btn-outline-secondary" type="button" id="cim-search-case" data-toggle="button" aria-pressed="false" autocomplete="off">Match case</button>
+                     <button class="btn btn-outline-secondary" type="button" id="cim-search-case" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Match case</button>
                  </div>
                  <div class="input-group-append d-none" id="cim-search-results">
                      <span class="input-group-text" id="basic-addon2"></span>
@@ -150,12 +150,12 @@
              </div>
             <!-- Nav tabs -->
             <ul class="nav nav-tabs" role="tablist">
-                <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#components" id="componentsTab">Components</a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#containers" id="containersTab">Containers</a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#measurements" id="measurementsTab">Measurements</a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#bases" id="basesTab">Bases</a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#curvesAndRegs" id="curvesAndRegsTab">Curves and Regulations</a></li>
-                <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#limits" id="limitsTab">Operational Limits</a></li>
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#components" id="componentsTab">Components</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#containers" id="containersTab">Containers</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#measurements" id="measurementsTab">Measurements</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bases" id="basesTab">Bases</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#curvesAndRegs" id="curvesAndRegsTab">Curves and Regulations</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#limits" id="limitsTab">Operational Limits</a></li>
             </ul>
             <div class="tab-content" id="tab-content">
                 <div role="tabpanel" class="tab-pane fade show active" id="components">
@@ -281,7 +281,7 @@
                 self.resetAttrs();
             });
             // setup tabs: reset path upon clicking on another tab
-            document.querySelectorAll("a[data-toggle=\"tab\"]").forEach(tab => tab.addEventListener("click", function(e) {
+            document.querySelectorAll("a[data-bs-toggle=\"tab\"]").forEach(tab => tab.addEventListener("click", function(e) {
                 self.goToBasePath();
             }));
 
@@ -961,7 +961,7 @@
                 listContainer.append("a")
                                     .attr("class", "btn btn-primary btn-sm")
                                     .attr("role", "button")
-                                    .attr("data-toggle", "collapse")
+                                    .attr("data-bs-toggle", "collapse")
                                     .attr("href", "#" + name + "sList")
                                     .html(printName);
                 elementsTopContainer.append("h4")
@@ -1038,7 +1038,7 @@
                 listContainer.append("a")
                             .attr("class", "btn btn-primary btn-sm")
                             .attr("role", "button")
-                            .attr("data-toggle", "collapse")
+                            .attr("data-bs-toggle", "collapse")
                             .attr("href", "#" + name + "sList")
                             .html(printName);
                 elementsTopContainer.append("h4")
@@ -1075,7 +1075,7 @@
                 .append("a")
                 .attr("class", "btn btn-outline-secondary btn-sm cim-expand-object")
                 .attr("role", "button")
-                .attr("data-toggle", "collapse")
+                .attr("data-bs-toggle", "collapse")
                 .attr("href", function(d) {
                     return "#" + self.props.model.ID(d);
                 }).on("click", function (event, d) {
@@ -1302,7 +1302,7 @@
             }).append("div").attr("class", "input-group-append cim-tree-btn-group");
             let elementBoolBtn = elementBool.append("button").attr("type", "button")
                                             .attr("class", "btn btn-outline-secondary dropdown-toggle cim-tree-dropdown-toggle")
-                                            .attr("data-toggle", "dropdown")
+                                            .attr("data-bs-toggle", "dropdown")
                                             .attr("aria-haspopup", "true")
                                             .attr("aria-expanded", "false");
             elementBoolBtn.append("span").attr("class", "boolVal").each(setBoolValueFromModel);
@@ -1325,7 +1325,7 @@
             }).append("div").attr("class", "input-group-append cim-tree-btn-group");
             let elementEnumBtn = elementEnum.append("button").attr("type", "button")
                                             .attr("class", "btn btn-outline-secondary dropdown-toggle cim-tree-dropdown-toggle")
-                                            .attr("data-toggle", "dropdown")
+                                            .attr("data-bs-toggle", "dropdown")
                                             .attr("aria-haspopup", "true")
                                             .attr("aria-expanded", "false");
             elementEnumBtn.append("span").attr("class", "enumVal").each(setEnumValueFromModel);
@@ -1559,7 +1559,7 @@
                 if (el.querySelectorAll(":scope > li.d-flex").length === 0) {
                     document.getElementById(tab).classList.add("d-none");
                 } else {
-                    $("#" + tab).tab("show");
+                    bootstrap.Tab.getInstance(document.querySelector("#" + tab)).show();
                 }
             });
             
@@ -1630,12 +1630,13 @@
             if (document.getElementById(tabId).classList.contains("active")) {
                 self.scrollTo("#" + uuid);
             } else {
-                $("#" + tabId).on("shown.bs.tab", function(event) {
+                function shown(event) {
                     self.scrollTo("#" + uuid);
-                    $(this).off("shown.bs.tab");
-                });
+                    this.removeEventListener("shown.bs.tab", shown);
+                };
+                document.querySelector("#" + tabId).addEventListener("shown.bs.tab", shown);
             }
-            $("#" + tabId).tab("show");
+            bootstrap.Tab.getInstance(document.querySelector("#" + tabId)).show();
             d3.select(target).select("button.cim-object-btn").classed("btn-danger", true).classed("btn-primary", false);
         },
      
@@ -1668,20 +1669,24 @@
         },
 
         scrollTo(targetUUID) {
-            if (document.querySelector(targetUUID).parentNode.closest(".collapse:not(.show)") !== null) {
-                $(targetUUID).parents(".collapse:not(.show)").on("shown.bs.collapse", function(event) {
+            let parent = document.querySelector(targetUUID).parentNode.closest(".collapse:not(.show)");
+            if (parent === null) {
+                scrollToVisible(targetUUID);
+            }
+            while (parent !== null) {
+                function shown(event) {
                     event.stopPropagation();
                     let elementEnter = d3.select(this.parentNode).filter(".CIM-object").select("ul");
                     if (elementEnter.selectAll("li.attribute").size() === 0) {
                         self.generateAttrsAndLinks(elementEnter);
                     }
                     scrollToVisible(targetUUID);
-                    $(this).off("shown.bs.collapse");
-                });
-            } else {
-                scrollToVisible(targetUUID);
+                    this.removeEventListener("shown.bs.collapse", shown);
+                };
+                parent.addEventListener("shown.bs.collapse", shown);
+                bootstrap.Collapse.getInstance(parent).show();
+                parent = parent.parentNode.closest("shown.bs.collapse");
             }
-            $(targetUUID).parents(".collapse:not(.show)").collapse("show");
 
             function scrollToVisible(targetUUID) {
                 

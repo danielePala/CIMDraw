@@ -894,7 +894,7 @@
         // This is visualized as a popover.
         // TODO: junctions
         createStatusInfo(psrSelection) {
-            psrSelection.attr("data-toggle", "popover");
+            psrSelection.attr("data-bs-toggle", "popover");
             // change fill color of switches based on their status
             let path = psrSelection.filter(function(d) {
                 return self.props.model.schema.isA("Switch", d);
@@ -953,7 +953,8 @@
                 if (measurements.length > 0 || svPFs.length > 0 || svVs.length > 0 || limitSets.length > 0) {
                     let tooltip = self.createTooltip(measurements, svPFs, svVs, limitSets);
                     // create the actual popover
-                    $(this).popover("dispose").popover({title: "<b>Element Status Info</b>",
+                    disposePopovers([this]);
+                    new bootstrap.Popover(this, {title: "<b>Element Status Info</b>",
                                     content: tooltip,
                                     container: "body",
                                     html: true,
@@ -963,8 +964,7 @@
                     });
                 } else {
                     // no measurements, destroy popover
-                    d3.select(this).attr("data-toggle", null);
-                    $(this).popover("dispose");
+                    disposePopovers([this]);
                 }
             })
         },
@@ -1993,7 +1993,7 @@
                 return;
             }
             // hide popover before moving
-            $('[data-toggle="popover"]').popover("hide");
+            hidePopovers();
             // do the transform
             let svgWidth = parseInt(d3.select("svg").style("width"));
             let svgHeight = parseInt(d3.select("svg").style("height"));

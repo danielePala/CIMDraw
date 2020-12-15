@@ -24,55 +24,55 @@
         <div class="row justify-content-center">
             <div class="col-md-auto">
                 <div class="btn-toolbar" role="toolbar">
-                    <div class="btn-group btn-group-toggle invisible" data-toggle="buttons" id="cim-diagram-controls">
-                        <label class="btn btn-secondary active" id="selectLabel">
-                            <input type="radio" id="select" name="tool" value="select" autocomplete="off" checked="checked">select
-                        </label>
-                        <label class="btn btn-secondary" id="panLabel">
-                            <input type="radio" id="pan" name="tool" value="pan" autocomplete="off">pan
-                        </label>
-                        <label class="btn btn-secondary" id="connectLabel">
-                            <input type="radio" id="connect" name="tool" value="connect" autocomplete="off">edit connections
-                        </label>
+                    <!-- first group -->
+                    <div class="btn-group invisible" role="group" id="cim-diagram-controls">
+                        <input type="radio" class="btn-check" id="select" name="tool" value="select" autocomplete="off" checked="checked">
+                        <label class="btn btn-secondary active" id="selectLabel" for="select">select</label>
+                        <input type="radio" class="btn-check" id="pan" name="tool" value="pan" autocomplete="off">
+                        <label class="btn btn-secondary" id="panLabel" for="pan">pan</label>
+                        <input type="radio" class="btn-check" id="connect" name="tool" value="connect" autocomplete="off">
+                        <label class="btn btn-secondary" id="connectLabel" for="connect">edit connections</label>
                     </div>
+                    <!-- second group -->
                     <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <span id="addElement">Insert element</span>
-                            <span class="caret"></span>
-                        </button>
-                        <div class="dropdown-menu" id="cimElementList">
-                            <h6 class="dropdown-header">Busses</h6>
-                            <a class="dropdown-item" id="BusbarSection" onclick={enableAddMulti}>Node</a>
-                            <h6 class="dropdown-header">Branches</h6>
-                            <a class="dropdown-item" id="ACLineSegment" onclick={enableAddMulti}>AC Line Segment</a>
-                            <h6 class="dropdown-header">Switches</h6>
-                            <a class="dropdown-item" id="Breaker" onclick={enableAdd}>Breaker</a>
-                            <a class="dropdown-item" id="Disconnector" onclick={enableAdd}>Disconnector</a>
-                            <a class="dropdown-item" id="LoadBreakSwitch" onclick={enableAdd}>Load Break Switch</a>
-                            <!-- junctions are still not implemented properly for now
-                                 <!--<li class="dropdown-header">Connectors</li>-->
-                            <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
-                            <h6 class="dropdown-header">Equivalents</h6>
-                            <a class="dropdown-item" id="EnergySource" onclick={enableAdd}>Energy Source</a>
-                            <h6 class="dropdown-header">Rotating Machines</h6>
-                            <a class="dropdown-item" id="SynchronousMachine" onclick={enableAdd}>Synchronous Machine</a>
-                            <a class="dropdown-item" id="AsynchronousMachine" onclick={enableAdd}>Asynchronous Machine</a>
-                            <h6 class="dropdown-header">Loads</h6>
-                            <a class="dropdown-item" id="EnergyConsumer" onclick={enableAdd}>Energy Consumer</a>
-                            <a class="dropdown-item" id="ConformLoad" onclick={enableAdd}>Conform Load</a>
-                            <a class="dropdown-item" id="NonConformLoad" onclick={enableAdd}>Non Conform Load</a>
-                            <h6 class="dropdown-header">Compensators</h6>
-                            <a class="dropdown-item" id="LinearShuntCompensator" onclick={enableAdd}>Linear</a>
-                            <a class="dropdown-item" id="NonlinearShuntCompensator" onclick={enableAdd}>Nonlinear</a>
-                            <h6 class="dropdown-header">Transformers</h6>
-                            <a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Two-winding Transformer</a>
-                            <a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Three-winding Transformer</a>
+                        <div class="btn-group" role="group">
+                            <button id="addElement" type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                Insert element
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="addElement" id="cimElementList">
+                                <li><h6 class="dropdown-header">Busses</h6></li>
+                                <li><a class="dropdown-item" id="BusbarSection" onclick={enableAddMulti}>Node</a></li>
+                                <li><h6 class="dropdown-header">Branches</h6></li>
+                                <li><a class="dropdown-item" id="ACLineSegment" onclick={enableAddMulti}>AC Line Segment</a></li>
+                                <li><h6 class="dropdown-header">Switches</h6></li>
+                                <li><a class="dropdown-item" id="Breaker" onclick={enableAdd}>Breaker</a></li>
+                                <li><a class="dropdown-item" id="Disconnector" onclick={enableAdd}>Disconnector</a></li>
+                                <li><a class="dropdown-item" id="LoadBreakSwitch" onclick={enableAdd}>Load Break Switch</a></li>
+                                <!-- junctions are still not implemented properly for now
+                                    <!--<li class="dropdown-header">Connectors</li>-->
+                                <!--<li id="cim:Junction" onclick={enableAdd}><a>Junction</a></li>-->
+                                <li><h6 class="dropdown-header">Equivalents</h6></li>
+                                <li><a class="dropdown-item" id="EnergySource" onclick={enableAdd}>Energy Source</a></li>
+                                <li><h6 class="dropdown-header">Rotating Machines</h6></li>
+                                <li><a class="dropdown-item" id="SynchronousMachine" onclick={enableAdd}>Synchronous Machine</a></li>
+                                <li><a class="dropdown-item" id="AsynchronousMachine" onclick={enableAdd}>Asynchronous Machine</a></li>
+                                <li><h6 class="dropdown-header">Loads</h6></li>
+                                <li><a class="dropdown-item" id="EnergyConsumer" onclick={enableAdd}>Energy Consumer</a></li>
+                                <li><a class="dropdown-item" id="ConformLoad" onclick={enableAdd}>Conform Load</a></li>
+                                <li><a class="dropdown-item" id="NonConformLoad" onclick={enableAdd}>Non Conform Load</a></li>
+                                <li><h6 class="dropdown-header">Compensators</h6></li>
+                                <li><a class="dropdown-item" id="LinearShuntCompensator" onclick={enableAdd}>Linear</a></li>
+                                <li><a class="dropdown-item" id="NonlinearShuntCompensator" onclick={enableAdd}>Nonlinear</a></li>
+                                <li><h6 class="dropdown-header">Transformers</h6></li>
+                                <li><a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Two-winding Transformer</a></li>
+                                <li><a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Three-winding Transformer</a></li>
+                            </ul>
                         </div>
                     </div>
-                    <div class="btn-group-toggle" data-toggle="buttons">
-                        <label class="btn btn-secondary active" id="legendLabel">
-                            <input type="checkbox" id="legendToggle" checked> Show legend
-                        </label>
+                    <!-- third group -->
+                    <div class="btn-group" role="group">
+                        <input type="checkbox" class="btn-check" id="legendToggle" autocomplete="off" checked>
+                        <label class="btn btn-secondary active" for="legendToggle" id="legendLabel">Show legend</label>
                     </div>
                 </div>
             </div>
@@ -130,7 +130,7 @@
                     selected.push(elm);
                     self.updateSelected();
                 }
-                $(selected).filter('[data-toggle="popover"]').popover("hide");
+                hidePopovers(selected);
                 let selection = d3.selectAll(selected);
                 let terminals = self.props.model.getTerminals(selection.data());
                 terminals.forEach(function (terminal) {
@@ -175,7 +175,7 @@
                     selected.push(elm);
                     self.updateSelected();
                 }
-                $(selected).filter('[data-toggle="popover"]').popover("show");
+                showPopovers(selected);
             }
         },
         {
@@ -380,7 +380,7 @@
     // being moved.
     const resizeDrag = d3.drag().on("drag", function(event, d) {
         // hide popovers
-        $(selected).filter('[data-toggle="popover"]').popover("hide");
+        hidePopovers(selected);
         // define a point corresponding to the actual mouse position
         const lineDatum = {x: event.x, y: event.y, seq: d[1]};
         // check its alignment with nearby graphic objects
@@ -598,20 +598,17 @@
         // Initialization function (executed when the tag is mounted)
         onMounted() {
             // setup diagram buttons
-            // document.querySelector("#select").addEventListener("change",function() {
-            $("#select").change(function() {
+            document.querySelector("#select").addEventListener("change",function() {
                 self.disableAll();
                 self.enableDrag();
             });
             
-            // document.querySelector("#pan").addEventListener("change",function() {
-            $("#pan").change(function() {
+            document.querySelector("#pan").addEventListener("change",function() {
                 self.disableAll();
                 self.enableZoom();
             });
 
-            // document.querySelector("#connect").addEventListener("change",function() {
-            $("#connect").change(function() {
+            document.querySelector("#connect").addEventListener("change",function() {
                 self.disableAll();
                 self.enableConnect();
             });
@@ -677,7 +674,7 @@
                     links.select("path").attr("stroke", "green").attr("stroke-width", "3");
                 })
                 .on("drag", function(event, d) {
-                    $(selected).filter('[data-toggle="popover"]').popover("hide");
+                    hidePopovers(selected);
                     let deltax = event.x - d.x;
                     let deltay = event.y - d.y;
                     let delta = {x: 0.0, y: 0.0};
@@ -750,7 +747,7 @@
                     let basePath = hashComponents[0] + "/" + hashComponents[1] + "/" + hashComponents[2];
                     route.router.push(basePath);
                     self.deselectAll();
-                    $('[data-toggle="popover"]').popover("hide");
+                    hidePopovers();
                     d3.contextMenu("close");
                 })
                 .on("end", selectInsideBrush)
@@ -863,7 +860,7 @@
      
         enableZoom() {
             self.status = "ZOOM";
-            $('[data-toggle="popover"]').popover("hide");
+            hidePopovers();
             d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g")
             .on("click.zoom", function (event, d) {
                 let hashComponents = window.location.hash.substring(1).split("/");
@@ -1580,7 +1577,7 @@
             }
             self.removeFromQuadtree(); // update quadtree
             selection = d3.selectAll(selected);
-            $(selected).filter('[data-toggle="popover"]').popover("dispose");
+            disposePopovers(selected);
             selection.remove();
             return selection;
         }

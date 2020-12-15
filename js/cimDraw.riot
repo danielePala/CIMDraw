@@ -52,34 +52,32 @@
      }
     </style>
     
-    <nav class="navbar navbar-expand-lg navbar-expand navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
             <a class="navbar-brand" href="">CIMDraw</a>
             <div class="collapse navbar-collapse justify-content-between" id="navbarSupportedContent">
-                <ul class="nav navbar-nav" id="cim-home-container">
-                    <li class="nav-item">
-                        <span class="navbar-text" id="cim-filename"></span>
-                    </li>
+                <span class="navbar-text" id="cim-filename"></span>
+                <ul class="me-auto mb-2 mb-lg-0 navbar-nav" id="cim-home-container">
                     <li class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                            File <span class="caret"></span>
+                        <a href="#" id="fileDropdown" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false">
+                            File
                         </a>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="">Open</a>
-                            <a class="dropdown-item" id="cim-save" download="file.xml">Save as RDF/XML...</a>
-                            <a class="dropdown-item" id="cgmes-save">Save as CGMES...</a>
-                            <a class="dropdown-item" id="cgmes-download" download="file.zip" style="display: none;"></a>
-                            <a class="dropdown-item" id="cim-export" download="diagram.xml">Export current diagram</a>
-                            <a class="dropdown-item" id="matpower-export" download="file.m">Export to Matpower</a>
-                            <input type="file" id="upload-boundary" name="upload"/>
-                            <a class="dropdown-item" id="load-boundary">Load boundary file</a>
-                        </div>
+                        <ul class="dropdown-menu" aria-labelledby="fileDropdown">
+                            <li><a class="dropdown-item" href="">Open</a></li>
+                            <li><a class="dropdown-item" id="cim-save" download="file.xml">Save as RDF/XML...</a></li>
+                            <li><a class="dropdown-item" id="cgmes-save">Save as CGMES...</a></li>
+                            <li><a class="dropdown-item" id="cgmes-download" download="file.zip" style="display: none;"></a></li>
+                            <li><a class="dropdown-item" id="cim-export" download="diagram.xml">Export current diagram</a></li>
+                            <li><a class="dropdown-item" id="matpower-export" download="file.m">Export to Matpower</a></li>
+                            <li><input type="file" id="upload-boundary" name="upload"/></li>
+                            <li><a class="dropdown-item" id="load-boundary">Load boundary file</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <cimTopologyProcessor model={state.cimModel} dispatcher={state.dispatcher}></cimTopologyProcessor>
                     </li>
                     <li class="nav-item">
-                        <select id="cim-diagrams" class="custom-select"
+                        <select id="cim-diagrams" class="form-select"
                                 onchange="location = this.options[this.selectedIndex].value;" title="Select a diagram">
                         </select>
                     </li>
@@ -96,22 +94,21 @@
                 <div class="row justify-content-center">
                     <div class="col-md-12" id="cim-file-input-container">
                         <br><br>
-                        <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="cim-file-input">
-                            <label class="custom-file-label" for="cim-file-input">Use existing file</label>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold" for="cim-file-input">Select a CIM file</label>
+                            <input type="file" class="form-control" id="cim-file-input">    
                         </div>
                     </div>
                 </div>
                 
                 <div class="row justify-content-center">
                     <div class="col-md-auto" id="cim-load-container">
-                        <br>
                         <a class="btn btn-primary btn-lg" role="button" id="cim-load">Load</a>
                     </div>
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-md-auto">
-                        <label class="control-label">or</label>
+                        <label class="control-label my-3 fw-bold">or</label>
                     </div>
                 </div>
                 <div class="row justify-content-center">
@@ -130,13 +127,12 @@
         </div>
 
         <!-- Modal for loading a specific diagram -->
-        <div class="modal fade" id="newDiagramModal" tabindex="-1" role="dialog" aria-labelledby="newDiagramModalLabel">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="newDiagramModal" tabindex="-1" aria-labelledby="newDiagramModalLabel">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="newDiagramModalLabel">Enter a name for the new diagram</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                        
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form>
@@ -151,23 +147,34 @@
             </div>
         </div>
 
-        <!-- Modal for loading diagram list -->
-        <div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingDiagramModalLabel" data-backdrop="static">
-            <div class="modal-dialog" role="document">
+        <!-- Modal for loading diagram contents -->
+        <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-body">
                         <p id="loadingDiagramMsg">loading diagram...</p>
                     </div>
-                    <div class="modal-footer" id="cim-loading-modal-error-container">
-                        <button type="button" class="btn btn-primary" id="cim-loading-modal-error">Ok</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal for loading CIM file contents -->
+        <div class="modal fade" id="loadingFileModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <p id="loadingFileMsg">loading CIM network...</p>
+                    </div>
+                    <div class="modal-footer" id="cim-file-modal-error-container">
+                        <button type="button" class="btn btn-primary" id="cim-file-modal-error">Ok</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Modal for loading boundary file -->
-        <div class="modal fade" id="boundaryModal" tabindex="-1" role="dialog" aria-labelledby="boundaryModalLabel" data-backdrop="static">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="boundaryModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-body">
                         <p id="boundaryMsg">loading boundary file...</p>
@@ -180,23 +187,23 @@
         </div>
 
         <!-- Modal for selecting the modeling type: bus-branch vs node-breaker -->
-        <div class="modal fade" id="cimModeModal" tabindex="-1" role="dialog" aria-labelledby="cimModeModalLabel">
-            <div class="modal-dialog" role="document">
+        <div class="modal fade" id="cimModeModal" tabindex="-1" aria-labelledby="cimModeModalLabel">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="cimModeModalLabel">Choose diagram type</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <div class="row justify-content-center">
                             <div class="col-md-auto">
-                                <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" id="operational" name="diagramTypes" class="custom-control-input" checked="checked">
-                                    <label class="custom-control-label" for="operational">Operational</label>
+                                <div class="form-check">
+                                    <input type="radio" id="operational" name="diagramTypes" class="form-check-input" checked="checked">
+                                    <label class="form-check-label" for="operational">Operational</label>
                                 </div>
-                                <div class="custom-control custom-radio custom-control-inline">
-                                    <input type="radio" id="planning" name="diagramTypes" class="custom-control-input">
-                                    <label class="custom-control-label" for="planning">Planning</label>
+                                <div class="form-check">
+                                    <input type="radio" id="planning" name="diagramTypes" class="form-check-input">
+                                    <label class="form-check-label" for="planning">Planning</label>
                                 </div>
                             </div>
                         </div>
@@ -230,306 +237,311 @@
                     document.getElementById("cim-mode").textContent = "Mode: Planning"; 
                 }
             });
-     
+        },
+
+        onMounted() {
+            const cimModeModal = new bootstrap.Modal(document.getElementById("cimModeModal"));
+            const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"));
+            const loadingFileModal = new bootstrap.Modal(document.getElementById("loadingFileModal"));
+            const boundaryModal = new bootstrap.Modal(document.getElementById("boundaryModal"));
+            const newDiagramModal = new bootstrap.Modal(document.getElementById("newDiagramModal"));
+            let cimFile = {};
+            let createNewFile = false;
+            // router setup
+            let path = window.location.pathname.substring(1);
+            if (path.indexOf("index.html") === -1) {
+                path = path + "index.html";
+            }
+            route.setBase(path + "#");
+            // start router
+            route.router.push(window.location.hash.replace("#", ""));
+            route.initDomListeners();
+
             self.state.dispatcher.on("loaded", function() {
                 self.state.diagramsToLoad = self.state.diagramsToLoad - 1;
                 if (self.state.diagramsToLoad === 0) {
-                    $("#loadingModal").modal("hide");
+                    loadingModal.hide();
                     document.getElementById("loadingDiagramMsg").textContent = "loading diagram..."; 
                     self.state.diagramsToLoad = 2;
                 }
             });
-        },
 
-        onMounted() {
-         let cimFile = {};
-         let createNewFile = false;
-         // router setup
-         let path = window.location.pathname.substring(1);
-         if (path.indexOf("index.html") === -1) {
-             path = path + "index.html";
-         }
-         route.setBase(path + "#");
-         // start router
-         route.router.push(window.location.hash.replace("#", ""));
-         route.initDomListeners();
+            document.getElementById("operational").addEventListener("change", function() {
+                self.state.cimModel.setMode("NODE_BREAKER");
+            });
 
-         document.getElementById("operational").addEventListener("change", function() {
-             self.state.cimModel.setMode("NODE_BREAKER");
-         });
+            document.getElementById("planning").addEventListener("change", function() {
+                self.state.cimModel.setMode("BUS_BRANCH");
+            });
 
-         document.getElementById("planning").addEventListener("change", function() {
-             self.state.cimModel.setMode("BUS_BRANCH");
-         });
+            document.getElementById("cim-create-new-container").addEventListener("click", function() {
+                cimFile = {name: "new1"};
+                createNewFile = true;
+                cimModeModal.show();
+            });
 
-         document.getElementById("cim-create-new-container").addEventListener("click", function() {
-             cimFile = {name: "new1"};
-             createNewFile = true;
-             $("#cimModeModal").modal("show");
-         });
+            // Button shown in loading modal in case of errors.
+            document.getElementById("cim-file-modal-error").addEventListener("click", function() {
+                loadingFileModal.hide();
+                route.router.push("");
+            });
 
-         // Button shown in loading modal in case of errors.
-         document.getElementById("cim-loading-modal-error").addEventListener("click", function() {
-             $("#loadingModal").modal("hide");
-             route.router.push("");
-         });
+            // Button shown in boundary modal in case of errors.
+            document.getElementById("cim-boundary-modal-error").addEventListener("click", function() {
+                boundaryModal.hide();
+                document.getElementById("boundaryMsg").textContent = "loading boundary file...";
+            });
 
-         // Button shown in boundary modal in case of errors.
-         document.getElementById("cim-boundary-modal-error").addEventListener("click", function() {
-             $("#boundaryModal").modal("hide");
-             document.getElementById("boundaryMsg").textContent = "loading boundary file...";
-         });
+            document.getElementById("cim-create-new-modal").addEventListener("click", function() {
+                route.router.push(cimFile.name + "/diagrams");
+            });
 
-         document.getElementById("cim-create-new-modal").addEventListener("click", function() {
-             route.router.push(cimFile.name + "/diagrams");
-         });
+            // Boundary file loading menu item 
+            document.getElementById("load-boundary").addEventListener("click", function() {
+                document.getElementById("upload-boundary").click();
+                return false;
+            });
+            document.getElementById("upload-boundary").addEventListener("change", function() {
+                const bdFile = this.files[0];
+                function loadBoundary() {
+                    self.state.cimModel.loadBoundary(bdFile).then(function(result) {
+                        const br = document.createElement("br");
+                        document.getElementById("boundaryMsg").append(br, "OK. " + result);
+                        document.getElementById("cim-boundary-modal-error-container").style.display = null;
+                    }).catch(function(e) {
+                        const br = document.createElement("br");
+                        document.getElementById("boundaryMsg").append(br, e);
+                        document.getElementById("cim-boundary-modal-error-container").style.display = null;
+                    });
+                };
+                document.getElementById("boundaryModal").removeEventListener("shown.bs.modal", loadBoundary);
+                document.getElementById("boundaryModal").addEventListener("shown.bs.modal", loadBoundary);
+                boundaryModal.show();
+            });
 
-         // Boundary file loading menu item 
-         document.getElementById("load-boundary").addEventListener("click", function() {
-             document.getElementById("upload-boundary").click();
-             return false;
-         });
-         document.getElementById("upload-boundary").addEventListener("change", function() {
-             const bdFile = this.files[0];
-             function loadBoundary() {
-                 self.state.cimModel.loadBoundary(bdFile).then(function(result) {
-                     const br = document.createElement("br");
-                     document.getElementById("boundaryMsg").append(br, "OK. " + result);
-                     document.getElementById("cim-boundary-modal-error-container").style.display = null;
-                 }).catch(function(e) {
-                     const br = document.createElement("br");
-                     document.getElementById("boundaryMsg").append(br, e);
-                     document.getElementById("cim-boundary-modal-error-container").style.display = null;
-                 });
-             };
-             $("#boundaryModal").off("shown.bs.modal");
-             $("#boundaryModal").on("shown.bs.modal", loadBoundary);
-             $("#boundaryModal").modal("show");
-         });
+            // allow saving a copy of the file as plain XML
+            document.getElementById("cim-save").addEventListener("click", function(e) {
+                const out = self.state.cimModel.save();
+                const blob = new Blob([out], {type : "text/xml"});
+                const objectURL = URL.createObjectURL(blob);
+                e.currentTarget.setAttribute("href", objectURL);
+            });
 
-         // allow saving a copy of the file as plain XML
-         document.getElementById("cim-save").addEventListener("click", function(e) {
-             const out = self.state.cimModel.save();
-             const blob = new Blob([out], {type : "text/xml"});
-             const objectURL = URL.createObjectURL(blob);
-             e.currentTarget.setAttribute("href", objectURL);
-         });
+            // allow saving a copy of the file as CGMES
+            document.getElementById("cgmes-save").addEventListener("click", function(e) {
+                const out = self.state.cimModel.saveAsCGMES();
+                out.then(function(content) {
+                    const objectURL = URL.createObjectURL(content);
+                    document.getElementById("cgmes-download").setAttribute("href", objectURL);
+                    document.getElementById("cgmes-download").click();
+                }).catch(function(reason) {
+                    console.log(reason);
+                });
+            });
 
-         // allow saving a copy of the file as CGMES
-         document.getElementById("cgmes-save").addEventListener("click", function(e) {
-             const out = self.state.cimModel.saveAsCGMES();
-             out.then(function(content) {
-                 const objectURL = URL.createObjectURL(content);
-                 document.getElementById("cgmes-download").setAttribute("href", objectURL);
-                 document.getElementById("cgmes-download").click();
-             }).catch(function(reason) {
-                 console.log(reason);
-             });
-         });
+            // allow exporting a copy of the diagram
+            document.getElementById("cim-export").addEventListener("click", function(e) {
+                const out = self.state.cimModel.export();
+                const blob = new Blob([out], {type : "text/xml"});
+                const objectURL = URL.createObjectURL(blob);
+                e.currentTarget.setAttribute("href", objectURL);
+            });
 
-         // allow exporting a copy of the diagram
-         document.getElementById("cim-export").addEventListener("click", function(e) {
-             const out = self.state.cimModel.export();
-             const blob = new Blob([out], {type : "text/xml"});
-             const objectURL = URL.createObjectURL(blob);
-             e.currentTarget.setAttribute("href", objectURL);
-         });
+            // export CIM network to Matpower
+            document.getElementById("matpower-export").addEventListener("click", function(e) {
+                const out = exportToMatpower(self.state.cimModel);
+                const blob = new Blob([out], {type : "text/plain"});
+                const objectURL = URL.createObjectURL(blob);
+                e.currentTarget.setAttribute("href", objectURL);
+            });
 
-         // export CIM network to Matpower
-         document.getElementById("matpower-export").addEventListener("click", function(e) {
-             const out = exportToMatpower(self.state.cimModel);
-             const blob = new Blob([out], {type : "text/plain"});
-             const objectURL = URL.createObjectURL(blob);
-             e.currentTarget.setAttribute("href", objectURL);
-         });
+            // button for creating a new diagram
+            document.getElementById("newDiagramBtn").addEventListener("click", function(e) {
+                const diagramName = document.getElementById("newDiagramName").value; 
+                const hashComponents = window.location.hash.substring(1).split("/");
+                const basePath = hashComponents[0] + "/diagrams/";
+                const fullPath = basePath + diagramName;
+                newDiagramModal.hide();
+                route.router.push(fullPath);
+            });
 
-         // button for creating a new diagram
-         document.getElementById("newDiagramBtn").addEventListener("click", function(e) {
-             const diagramName = document.getElementById("newDiagramName").value; 
-             const hashComponents = window.location.hash.substring(1).split("/");
-             const basePath = hashComponents[0] + "/diagrams/";
-             const fullPath = basePath + diagramName;
-             $("#newDiagramModal").modal("hide");
-             route.router.push(fullPath);
-         });
-         
-         // This is the initial route ("the home page").
-         route.route("").on.value(function(url) {
-             // things to show
-             document.getElementById("cim-local-file-component").style.display = null;
-             // things to hide
-             document.getElementById("app-container").style.display = "none";
-             document.getElementById("cim-load-container").style.display = "none";
-             document.getElementById("cim-home-container").style.display = "none";
-             document.getElementById("cim-diagrams").style.display = "none";
-             document.getElementById("cim-mode").style.display = "none";
-             //document.getElementById("cim-topology-processor").style.display = "none";
-             document.getElementById("cim-loading-modal-error-container").style.display = "none";
-             document.getElementById("cim-boundary-modal-error-container").style.display = "none";
-             // main logic
-             // clean up any diagram in the list which may be present
-             resetDiagramList();
-             // clean up the file name
-             document.getElementById("cim-filename").textContent = "";
-             // initialize the file input component
-             const inputElement = document.getElementById("cim-file-input");
-             inputElement.addEventListener("change", handleFile);
-             function handleFile() {
-                 cimFile = this.files[0];
-                 createNewFile = false;
-                 const target = "#" + encodeURI(cimFile.name) + "/diagrams";
-                 document.getElementById("cim-load").setAttribute("href", target);
-                 document.getElementById("cim-load-container").style.display = null;
-             }
-         });
+            document.getElementById("loadingFileModal").addEventListener("shown.bs.modal", function(e) {
+                if (typeof(cimFile.name) !== "undefined") {
+                    document.getElementById("cim-filename").innerHTML = "[" + cimFile.name + "]&nbsp&nbsp";
+                    let loadingResult = null;
+                    if (createNewFile === false) {
+                        loadingResult = self.state.cimModel.load(cimFile);
+                    } else {
+                        loadingResult = self.state.cimModel.newFile(cimFile.name);
+                    }
+                    loadingResult.then(function() {
+                        loadDiagramList(cimFile.name);
+                        loadingFileModal.hide();
+                        if (cimFile.name !== "new1") {
+                            selectMode();
+                        }
+                    }).catch(function(e) {
+                        const br = document.createElement("br");
+                        document.getElementById("loadingFileMsg").append(br, e);
+                        document.getElementById("cim-file-modal-error-container").style.display = null;
+                    });
+                } else {
+                    loadingFileModal.hide();
+                    route.router.push("");
+                    return;
+                }
 
-         // here we choose a diagram to display
-         route.route(":file/diagrams").on.value(function(url) {
-             // things to show
-             document.getElementById("cim-home-container").style.display = null;
-             document.getElementById("cim-diagrams").style.display = null;
-             document.getElementById("cim-mode").style.display = null;
-             // things to hide
-             document.getElementById("cim-local-file-component").style.display = "none";
-             document.getElementById("app-container").style.display = "none";
-             document.getElementById("cim-export").parentNode.classList.add("disabled");
-             $("#cimModeModal").modal("hide");
-             // main logic
-             const actFile = document.getElementById("cim-filename").textContent;
-             if (cimFile.name === actFile) {
-                 // nothing to do in this case, just refresh the diagram list
-                 loadDiagramList(cimFile.name);
-                 return;
-             }
-             document.getElementById("loadingDiagramMsg").textContent = "loading CIM network...";
-             $("#loadingModal").off("shown.bs.modal");
-             $("#loadingModal").on("shown.bs.modal", function(e) {
-                 if (typeof(cimFile.name) !== "undefined") {
-                     document.getElementById("cim-filename").innerHTML = "[" + cimFile.name + "]&nbsp&nbsp";
-                     let loadingResult = null;
-                     if (createNewFile === false) {
-                         loadingResult = self.state.cimModel.load(cimFile);
-                     } else {
-                         loadingResult = self.state.cimModel.newFile(cimFile.name);
-                     }
-                     loadingResult.then(function() {
-                         loadDiagramList(cimFile.name);
-                         $("#loadingModal").modal("hide");
-                         if (cimFile.name !== "new1") {
-                             selectMode();
-                         }
-                     }).catch(function(e) {
-                         const br = document.createElement("br");
-                         document.getElementById("loadingDiagramMsg").append(br, e);
-                         document.getElementById("cim-loading-modal-error-container").style.display = null;
-                     });
-                 } else {
-                     $("#loadingModal").modal("hide");
-                     route.router.push("");
-                     return;
-                 }
+                function selectMode() {
+                    const nodes = self.state.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
+                    let cns = nodes["cim:ConnectivityNode"];
+                    const tns = nodes["cim:TopologicalNode"];
+                    cns = cns.filter(function(el) {
+                        return self.state.cimModel.isBoundary(el) === false;
+                    });
+                    if (cns.length > 0 || tns.length === 0) {
+                        self.state.cimModel.setMode("NODE_BREAKER");
+                    } else {
+                        self.state.cimModel.setMode("BUS_BRANCH");
+                    }
+                };
+            });
+            
+            // This is the initial route ("the home page").
+            route.route("").on.value(function(url) {
+                // things to show
+                document.getElementById("cim-local-file-component").style.display = null;
+                // things to hide
+                document.getElementById("app-container").style.display = "none";
+                document.getElementById("cim-load-container").style.display = "none";
+                document.getElementById("cim-home-container").style.display = "none";
+                document.getElementById("cim-diagrams").style.display = "none";
+                document.getElementById("cim-mode").style.display = "none";
+                document.getElementById("cim-file-modal-error-container").style.display = "none";
+                document.getElementById("cim-boundary-modal-error-container").style.display = "none";
+                // main logic
+                // clean up any diagram in the list which may be present
+                resetDiagramList();
+                // clean up the file name
+                document.getElementById("cim-filename").textContent = "";
+                // initialize the file input component
+                const inputElement = document.getElementById("cim-file-input");
+                inputElement.addEventListener("change", handleFile);
+                function handleFile() {
+                    cimFile = this.files[0];
+                    createNewFile = false;
+                    const target = "#" + encodeURI(cimFile.name) + "/diagrams";
+                    document.getElementById("cim-load").setAttribute("href", target);
+                    document.getElementById("cim-load-container").style.display = null;
+                }
+            });
 
-                 function selectMode() {
-                     const nodes = self.state.cimModel.getObjects(["cim:ConnectivityNode", "cim:TopologicalNode"]);
-                     let cns = nodes["cim:ConnectivityNode"];
-                     const tns = nodes["cim:TopologicalNode"];
-                     cns = cns.filter(function(el) {
-                         return self.state.cimModel.isBoundary(el) === false;
-                     });
-                     if (cns.length > 0 || tns.length === 0) {
-                         self.state.cimModel.setMode("NODE_BREAKER");
-                     } else {
-                         self.state.cimModel.setMode("BUS_BRANCH");
-                     }
-                 };
-             });
-             $("#loadingModal").modal("show");
-             self.state.dispatcher.trigger("diagrams");
-         });
+            // here we choose a diagram to display
+            route.route(":file/diagrams").on.value(function(url) {
+                // things to show
+                document.getElementById("cim-home-container").style.display = null;
+                document.getElementById("cim-diagrams").style.display = null;
+                document.getElementById("cim-mode").style.display = null;
+                // things to hide
+                document.getElementById("cim-local-file-component").style.display = "none";
+                document.getElementById("app-container").style.display = "none";
+                document.getElementById("cim-export").parentNode.classList.add("disabled");
+                cimModeModal.hide();
+                // main logic
+                const actFile = document.getElementById("cim-filename").textContent;
+                if (cimFile.name === actFile) {
+                    // nothing to do in this case, just refresh the diagram list
+                    loadDiagramList(cimFile.name);
+                    return;
+                }
+                document.getElementById("loadingFileMsg").textContent = "loading CIM network...";
+                loadingFileModal.show();
+                self.state.dispatcher.trigger("diagrams");
+            });
 
-         // here we show a certain diagram
-         route.route(":file/diagrams/:name").on.value(function(url) {
-             const file = url.params.file;
-             const name = url.params.name;
-             if (typeof(cimFile.name) === "undefined") {
-                 route.router.push("");
-                 return;
-             }
-             if (self.state.cimModel.activeDiagramName === decodeURI(name)) {
-                 self.state.dispatcher.trigger("showDiagram", file, name);
-                 document.getElementById("app-container").style.display = null;
-                 return; // nothing more to do;
-             }
-             document.getElementById("cim-local-file-component").style.display = "none";
-             document.getElementById("loadingDiagramMsg").textContent = "loading diagram...";
-             $("#loadingModal").off("shown.bs.modal");
-             $("#loadingModal").modal("show");
-             $("#loadingModal").on("shown.bs.modal", function(e) {
-                 loadDiagram(file, name);
-             });
-         });
+            // here we show a certain diagram
+            route.route(":file/diagrams/:name").on.value(function(url) {
+                const file = url.params.file;
+                const name = url.params.name;
+                if (typeof(cimFile.name) === "undefined") {
+                    route.router.push("");
+                    return;
+                }
+                if (self.state.cimModel.activeDiagramName === decodeURI(name)) {
+                    self.state.dispatcher.trigger("showDiagram", file, name);
+                    document.getElementById("app-container").style.display = null;
+                    return; // nothing more to do;
+                }
+                document.getElementById("cim-local-file-component").style.display = "none";
+                document.getElementById("loadingDiagramMsg").textContent = "loading diagram...";
+                function show(e) {
+                    loadDiagram(file, name);
+                    document.getElementById("loadingModal").removeEventListener("shown.bs.modal", show);
+                };
+                document.getElementById("loadingModal").addEventListener("shown.bs.modal", show);
+                loadingModal.show();
+            });
 
-         // here we focus on a specific element of the diagram
-         route.route(":file/diagrams/:name/:element").on.value(function(url) {
-             const file = url.params.file;
-             const name = url.params.name;
-             const element = url.params.element;
-             document.getElementById("cim-local-file-component").style.display = "none";
-             self.state.dispatcher.trigger("showDiagram", file, name, element);
-         });
+            // here we focus on a specific element of the diagram
+            route.route(":file/diagrams/:name/:element").on.value(function(url) {
+                const file = url.params.file;
+                const name = url.params.name;
+                const element = url.params.element;
+                document.getElementById("cim-local-file-component").style.display = "none";
+                self.state.dispatcher.trigger("showDiagram", file, name, element);
+            });
 
-         // here we create a new diagram
-         route.route(":file/createNew").on.value(function(url) {
-             window.history.back();
-             $("#newDiagramModal").modal("show");
-         });
-         
-         // creates a new model if it doesn't exist, and shows a diagram.
-         function loadDiagram(file, name, element) {
-             self.state.cimModel.selectDiagram(decodeURI(name));
-             loadDiagramList(decodeURI(file));
-             document.getElementById(decodeURI(name)).setAttribute("selected", true);
-             document.getElementById("app-container").style.display = null;
-             document.getElementById("cim-export").parentNode.classList.remove("disabled");
-             self.state.dispatcher.trigger("showDiagram", file, name, element);
-         }
+            // here we create a new diagram
+            route.route(":file/createNew").on.value(function(url) {
+                window.history.back();
+                newDiagramModal.show();
+            });
+            
+            // creates a new model if it doesn't exist, and shows a diagram.
+            function loadDiagram(file, name, element) {
+                self.state.cimModel.selectDiagram(decodeURI(name));
+                loadDiagramList(decodeURI(file));
+                document.getElementById(decodeURI(name)).setAttribute("selected", true);
+                document.getElementById("app-container").style.display = null;
+                document.getElementById("cim-export").parentNode.classList.remove("disabled");
+                self.state.dispatcher.trigger("showDiagram", file, name, element);
+            }
 
-         function loadDiagramList(filename) {
-             // load diagram list
-             resetDiagramList();
-             const cimDiagrams = document.getElementById("cim-diagrams");
-             // create theoption for generating anew diagram
-             const opt = document.createElement("option");
-             opt.setAttribute("value", "#" + filename + "/createNew");
-             opt.textContent = "Generate a new diagram";
-             cimDiagrams.appendChild(opt);
-             // create all theother options
-             const diagrams = self.state.cimModel.getDiagramList();
-             for (let i in diagrams) {
-                 const diagOpt = document.createElement("option");
-                 diagOpt.setAttribute("value", "#" + filename + "/diagrams/" + diagrams[i]);
-                 diagOpt.setAttribute("id", diagrams[i]);
-                 diagOpt.textContent = diagrams[i];
-                 cimDiagrams.appendChild(diagOpt);
-             }
-             if (diagrams.length === 0) {
-                 route.router.push(filename + "/createNew");
-             }
-         }
+            function loadDiagramList(filename) {
+                // load diagram list
+                resetDiagramList();
+                const cimDiagrams = document.getElementById("cim-diagrams");
+                // create theoption for generating anew diagram
+                const opt = document.createElement("option");
+                opt.setAttribute("value", "#" + filename + "/createNew");
+                opt.textContent = "Generate a new diagram";
+                cimDiagrams.appendChild(opt);
+                // create all theother options
+                const diagrams = self.state.cimModel.getDiagramList();
+                for (let i in diagrams) {
+                    const diagOpt = document.createElement("option");
+                    diagOpt.setAttribute("value", "#" + filename + "/diagrams/" + diagrams[i]);
+                    diagOpt.setAttribute("id", diagrams[i]);
+                    diagOpt.textContent = diagrams[i];
+                    cimDiagrams.appendChild(diagOpt);
+                }
+                if (diagrams.length === 0) {
+                    route.router.push(filename + "/createNew");
+                }
+            }
 
-         function resetDiagramList() {
-             const cimDiagrams = document.getElementById("cim-diagrams");
-             while (cimDiagrams.firstChild !== null) {
-                 cimDiagrams.removeChild(cimDiagrams.lastChild);
-             }
-             // create the initial option
-             const opt = document.createElement("option");
-             opt.setAttribute("disabled", "disabled");
-             opt.setAttribute("selected", "selected");
-             opt.textContent = "Select a diagram";
-             cimDiagrams.appendChild(opt);
-         }
-     }
+            function resetDiagramList() {
+                const cimDiagrams = document.getElementById("cim-diagrams");
+                while (cimDiagrams.firstChild !== null) {
+                    cimDiagrams.removeChild(cimDiagrams.lastChild);
+                }
+                // create the initial option
+                const opt = document.createElement("option");
+                opt.setAttribute("disabled", "disabled");
+                opt.setAttribute("selected", "selected");
+                opt.textContent = "Select a diagram";
+                cimDiagrams.appendChild(opt);
+            }
+        }
     }
     </script>
 </cimDraw>
