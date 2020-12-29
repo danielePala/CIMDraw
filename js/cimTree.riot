@@ -119,61 +119,55 @@
             </div>
             <div class="row" id="tree-controls">
                 <div class="col">
-                    <div class="custom-control custom-switch">
-                        <input type="checkbox" class="custom-control-input" id="showAllObjects">
-                        <label class="custom-control-label" for="showAllObjects">Show all objects</label>
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="showAllObjects">
+                        <label class="form-check-label" for="showAllObjects">Show all objects</label>
                     </div>
                 </div>
                 <div class="col">
-                    <div class="custom-control custom-switch">
-                        <input type="checkbox" class="custom-control-input" id="sshInput">
-                        <label class="custom-control-label" for="sshInput">Power flow input</label>
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="sshInput">
+                        <label class="form-check-label" for="sshInput">Power flow input</label>
                     </div>
                 </div>
             </div>
-             <div class="input-group" id="cim-search-form">
-                 <input type="text" class="form-control" placeholder="Search..." aria-label="Search" aria-describedby="button-addon4" id="cim-search-key">
-                 <div class="input-group-append" id="button-addon4">
-                     <button class="btn btn-outline-secondary" id="cim-search-prev" type="button" title="Find previous">
-                         <span class="fas fa-angle-up"></span>
-                     </button>
-                     <button class="btn btn-outline-secondary" id="cim-search-next" type="button" title="Find next">
-                         <span class="fas fa-angle-down"></span>
-                     </button>
-                 </div>
-                 <div class="input-group-append">
-                     <button class="btn btn-outline-secondary" type="button" id="cim-search-case" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Match case</button>
-                 </div>
-                 <div class="input-group-append d-none" id="cim-search-results">
-                     <span class="input-group-text" id="basic-addon2"></span>
-                 </div>
+            <div class="input-group" id="cim-search-form">
+                <input type="text" class="form-control" placeholder="Search..." aria-label="Search" id="cim-search-key">
+                <button class="btn btn-outline-secondary" id="cim-search-prev" type="button" title="Find previous">
+                    <span class="fas fa-angle-up"></span>
+                </button>
+                <button class="btn btn-outline-secondary" id="cim-search-next" type="button" title="Find next">
+                    <span class="fas fa-angle-down"></span>
+                </button>
+                <button class="btn btn-outline-secondary" type="button" id="cim-search-case" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Match case</button>
+                <span class="input-group-text d-none" id="cim-search-results"></span>                     
              </div>
             <!-- Nav tabs -->
-            <ul class="nav nav-tabs" role="tablist">
-                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#components" id="componentsTab">Components</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#containers" id="containersTab">Containers</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#measurements" id="measurementsTab">Measurements</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bases" id="basesTab">Bases</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#curvesAndRegs" id="curvesAndRegsTab">Curves and Regulations</a></li>
-                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#limits" id="limitsTab">Operational Limits</a></li>
+            <ul class="nav nav-tabs" role="tablist" id="cim-tree-tabs">
+                <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#components" id="componentsTab" role="tab" aria-controls="components" aria-selected="true">Components</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#containers" id="containersTab" role="tab" aria-controls="containers" aria-selected="false">Containers</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#measurements" id="measurementsTab" role="tab" aria-controls="measurements" aria-selected="false">Measurements</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bases" id="basesTab" role="tab" aria-controls="bases" aria-selected="false">Bases</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#curvesAndRegs" id="curvesAndRegsTab" role="tab" aria-controls="curves and regulations" aria-selected="false">Curves and Regulations</a></li>
+                <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#limits" id="limitsTab" role="tab" aria-controls="operational limits" aria-selected="false">Operational Limits</a></li>
             </ul>
             <div class="tab-content" id="tab-content">
-                <div role="tabpanel" class="tab-pane fade show active" id="components">
+                <div role="tabpanel" class="tab-pane fade show active" id="components" aria-labelledby="componentsTab">
                     <ul class="list-group" id="CIMComponents"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane fade" id="containers">
+                <div role="tabpanel" class="tab-pane fade" id="containers" aria-labelledby="containersTab">
                     <ul class="list-group" id="CIMContainers"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane fade" id="measurements">
+                <div role="tabpanel" class="tab-pane fade" id="measurements" aria-labelledby="measurementsTab">
                     <ul class="list-group" id="CIMMeasurements"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane fade" id="bases">
+                <div role="tabpanel" class="tab-pane fade" id="bases" aria-labelledby="basesTab">
                     <ul class="list-group" id="CIMBases"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane fade" id="curvesAndRegs">
+                <div role="tabpanel" class="tab-pane fade" id="curvesAndRegs" aria-labelledby="curvesAndRegsTab">
                     <ul class="list-group" id="CIMCurvesAndRegs"></ul>
                 </div>
-                <div role="tabpanel" class="tab-pane fade" id="limits">
+                <div role="tabpanel" class="tab-pane fade" id="limits" aria-labelledby="limitsTab">
                     <ul class="list-group" id="CIMLimits"></ul>
                 </div>
             </div>
@@ -213,6 +207,18 @@
         },
      
         onMounted() {
+            // Enable all tabs
+            const triggerTabList = [].slice.call(document.querySelectorAll("#cim-tree-tabs a"));
+            triggerTabList.forEach(function (triggerEl) {
+                const tabTrigger = new bootstrap.Tab(triggerEl);
+
+                triggerEl.addEventListener("click", function (event) {
+                    event.preventDefault()
+                    tabTrigger.show()
+                });
+            });
+
+
             // setup search input field
             document.getElementById("cim-search-key").addEventListener("keyup", function(event) {
                 if (event.key === "Enter") {
@@ -243,11 +249,11 @@
                         total = [...new Set(total)];
                         document.getElementById("cim-search-results").classList.remove("d-none");
                         if (total.length > 0) {
-                            document.querySelector("#cim-search-results > span").textContent = "Result 1 of " + total.length;
+                            document.querySelector("#cim-search-results").textContent = "Result 1 of " + total.length;
                             searchResults = {elements: d3.selectAll(total).data(), actualResult: 0};
                             self.moveTo(self.props.model.ID(searchResults.elements[searchResults.actualResult]));
                         } else {
-                            document.querySelector("#cim-search-results > span").textContent = "Text not found"; 
+                            document.querySelector("#cim-search-results").textContent = "Text not found"; 
                         }
                     }
                 }
@@ -259,7 +265,7 @@
                     if (searchResults.actualResult < (searchResults.elements.length - 1)) {
                         searchResults.actualResult = searchResults.actualResult + 1;
                         let result = searchResults.actualResult + 1;
-                        document.querySelector("#cim-search-results > span").textContent = "Result " + result  + " of " + searchResults.elements.length;
+                        document.querySelector("#cim-search-results").textContent = "Result " + result  + " of " + searchResults.elements.length;
                         self.moveTo(self.props.model.ID(searchResults.elements[searchResults.actualResult]));
                     } 
                 }
@@ -269,7 +275,7 @@
                     if (searchResults.actualResult > 0) {
                         searchResults.actualResult = searchResults.actualResult - 1;
                         let result = searchResults.actualResult + 1;
-                        document.querySelector("#cim-search-results > span").textContent = "Result " + result  + " of " + searchResults.elements.length;
+                        document.querySelector("#cim-search-results").textContent = "Result " + result  + " of " + searchResults.elements.length;
                         self.moveTo(self.props.model.ID(searchResults.elements[searchResults.actualResult]));
                     } 
                 }
@@ -966,7 +972,7 @@
                                     .html(printName);
                 elementsTopContainer.append("h4")
                                     .append("span")
-                                    .attr("class", "badge badge-primary badge-pill")
+                                    .attr("class", "badge bg-primary rounded-pill")
                                     .html(0);
                 elements = listContainer
                     .append("ul")
@@ -1043,7 +1049,7 @@
                             .html(printName);
                 elementsTopContainer.append("h4")
                                     .append("span")
-                                    .attr("class", "badge badge-primary badge-pill")
+                                    .attr("class", "badge bg-primary rounded-pill")
                                     .html(0);
                 elementsTopContainer.on("click", function(event) {
                     if (event.target === this) {
@@ -1079,6 +1085,7 @@
                 .attr("href", function(d) {
                     return "#" + self.props.model.ID(d);
                 }).on("click", function (event, d) {
+                    event.preventDefault();
                     // if necessary, generate attributes and links
                     let elementEnter = d3.select(this.parentNode).select("ul");
                     if (elementEnter.selectAll("li.attribute").size() === 0) {
@@ -1249,7 +1256,7 @@
         },
 
         generateAttributes(elementDiv) {
-            elementDiv.append("div").attr("class", "input-group-prepend").append("span").attr("class", "input-group-text cim-tree-attribute-name")
+            elementDiv.append("span").attr("class", "input-group-text cim-tree-attribute-name")
                     .html(function (d) {
                         let about = d.attributes.getNamedItem("rdf:about").value;
                         let fullName = about.split(".")[1];
@@ -1287,7 +1294,7 @@
                 .attr("type", "number")
                 .attr("step", "0.00001")
                 .on("input", attrInput);
-            floats.append("div").attr("class", "input-group-append").append("span").attr("class", "input-group-text cim-tree-attribute-uom")
+            floats.append("span").attr("class", "input-group-text cim-tree-attribute-uom")
                 .html(function (d) {
                     let attrType = self.props.model.schema.getSchemaAttributeType(d);
                     if (attrType[2] === "none") {
@@ -1299,17 +1306,15 @@
             let elementBool = elementDiv.filter(function(d) {
                 let attrType = self.props.model.schema.getSchemaAttributeType(d);
                 return attrType[0] === "#Boolean";
-            }).append("div").attr("class", "input-group-append cim-tree-btn-group");
+            });
             let elementBoolBtn = elementBool.append("button").attr("type", "button")
                                             .attr("class", "btn btn-outline-secondary dropdown-toggle cim-tree-dropdown-toggle")
                                             .attr("data-bs-toggle", "dropdown")
-                                            .attr("aria-haspopup", "true")
                                             .attr("aria-expanded", "false");
             elementBoolBtn.append("span").attr("class", "boolVal").each(setBoolValueFromModel);
-            elementBoolBtn.append("span").attr("class", "caret");
-            let elementBoolList = elementBool.append("div").attr("class", "dropdown-menu");
-            elementBoolList.append("a").attr("class", "dropdown-item").text("true").on("click", setBoolAttr);
-            elementBoolList.append("a").attr("class", "dropdown-item").text("false").on("click", setBoolAttr);
+            let elementBoolList = elementBool.append("ul").attr("class", "dropdown-menu dropdown-menu-end");
+            elementBoolList.append("li").append("a").attr("class", "dropdown-item").text("true").on("click", setBoolAttr);
+            elementBoolList.append("li").append("a").attr("class", "dropdown-item").text("false").on("click", setBoolAttr);
             // DateTime attributes (note: such input types are not supported by Firefox) 
             elementDiv.filter(function(d) {
                 let attrType = self.props.model.schema.getSchemaAttributeType(d);
@@ -1322,21 +1327,20 @@
             // Enum attributes
             let elementEnum = elementDiv.filter(function(d) {
                 return self.props.model.schema.isEnum(d);
-            }).append("div").attr("class", "input-group-append cim-tree-btn-group");
+            });
             let elementEnumBtn = elementEnum.append("button").attr("type", "button")
                                             .attr("class", "btn btn-outline-secondary dropdown-toggle cim-tree-dropdown-toggle")
                                             .attr("data-bs-toggle", "dropdown")
-                                            .attr("aria-haspopup", "true")
                                             .attr("aria-expanded", "false");
             elementEnumBtn.append("span").attr("class", "enumVal").each(setEnumValueFromModel);
-            elementEnumBtn.append("span").attr("class", "caret");
-            let elementEnumList = elementEnum.append("div").attr("class", "dropdown-menu");
+            let elementEnumList = elementEnum.append("ul").attr("class", "dropdown-menu dropdown-menu-end");
             elementEnumList
-                .selectAll("a")
+                .selectAll("li")
                 .data(function(d) {
                     return self.props.model.schema.getSchemaEnumValues(d);
                 })
                 .enter()
+                .append("li")
                 .append("a")
                 .on("click", setEnumAttr)
                 .attr("class", "dropdown-item")
@@ -1391,8 +1395,8 @@
             // set a boolean attribute according to user input
             function setBoolAttr(event, d) {
                 // change the element's text
-                let value = d3.select(this).node().textContent;
-                this.parentNode.parentNode.querySelector(":scope>button>span.boolVal").textContent = value;
+                let value = this.textContent;
+                this.closest("div.input-group").querySelector(":scope>button>span.boolVal").textContent = value;
                 let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
                 let attrName = "cim:" + d.attributes[0].value.substring(1);
                 // update the model
@@ -1401,7 +1405,7 @@
             // set an enum attribute according to user input
             function setEnumAttr(event, d) {
                 // change the element's text
-                this.parentNode.parentNode.querySelector(":scope>button>span.enumVal").textContent = d;
+                this.closest("div.input-group").querySelector(":scope>button>span.enumVal").textContent = d;
                 let object = d3.select(this.closest("li.attribute").parentNode).data()[0];
                 let attr = d3.select(this.closest("li.attribute")).data()[0];
                 let attrName = "cim:" + attr.attributes[0].value.substring(1);
@@ -1423,7 +1427,7 @@
         },
 
         generateLinks(elementLink) {
-            elementLink.attr("class", "input-group-prepend").append("span").attr("class", "input-group-text cim-tree-attribute-name")
+            elementLink.attr("class", "input-group").append("span").attr("class", "input-group-text cim-tree-attribute-name")
                         .html(function (d) {
                             let about = d.attributes.getNamedItem("rdf:about").value;
                             let fullName = about.split(".")[1];
@@ -1684,12 +1688,15 @@
                     this.removeEventListener("shown.bs.collapse", shown);
                 };
                 parent.addEventListener("shown.bs.collapse", shown);
-                bootstrap.Collapse.getInstance(parent).show();
-                parent = parent.parentNode.closest("shown.bs.collapse");
+                let collInst = bootstrap.Collapse.getInstance(parent);
+                if (collInst === null) {
+                    collInst = new bootstrap.Collapse(parent, {toggle: false});
+                }
+                collInst.show();
+                parent = parent.parentNode.closest(".collapse:not(.show)");
             }
 
             function scrollToVisible(targetUUID) {
-                
                 const tabContent = document.getElementById("tab-content");
                 const target = tabContent.querySelector(targetUUID);
                 const tabOffset = tabContent.getBoundingClientRect().top + document.body.scrollTop;
