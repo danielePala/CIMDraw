@@ -23,23 +23,22 @@
     <div class="container-fluid">
         <div class="row justify-content-center">
             <div class="col-md-auto">
-                <div class="btn-toolbar" role="toolbar">
+                <div class="btn-toolbar" role="toolbar" aria-label="Toolbar for diagram interaction">
                     <!-- first group -->
-                    <div class="btn-group invisible" role="group" id="cim-diagram-controls">
+                    <div class="btn-group invisible" role="group" id="cim-diagram-controls" aria-label="Diagram controls">
                         <input type="radio" class="btn-check" id="select" name="tool" value="select" autocomplete="off" checked="checked">
-                        <label class="btn btn-secondary active" id="selectLabel" for="select">select</label>
+                        <label class="btn btn-secondary" id="selectLabel" for="select">select</label>
                         <input type="radio" class="btn-check" id="pan" name="tool" value="pan" autocomplete="off">
                         <label class="btn btn-secondary" id="panLabel" for="pan">pan</label>
                         <input type="radio" class="btn-check" id="connect" name="tool" value="connect" autocomplete="off">
                         <label class="btn btn-secondary" id="connectLabel" for="connect">edit connections</label>
                     </div>
                     <!-- second group -->
-                    <div class="btn-group" role="group">
-                        <div class="btn-group" role="group">
-                            <button id="addElement" type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                Insert element
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="addElement" id="cimElementList">
+                    <div class="btn-group invisible" role="group" id="cim-diagram-insert" aria-label="Insert new elements">
+                        <button id="addElement" type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            Insert element
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="addElement" id="cimElementList">
                                 <li><h6 class="dropdown-header">Busses</h6></li>
                                 <li><a class="dropdown-item" id="BusbarSection" onclick={enableAddMulti}>Node</a></li>
                                 <li><h6 class="dropdown-header">Branches</h6></li>
@@ -67,12 +66,11 @@
                                 <li><a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Two-winding Transformer</a></li>
                                 <li><a class="dropdown-item" id="PowerTransformer" onclick={enableAdd}>Three-winding Transformer</a></li>
                             </ul>
-                        </div>
                     </div>
                     <!-- third group -->
-                    <div class="btn-group" role="group">
-                        <input type="checkbox" class="btn-check" id="legendToggle" autocomplete="off" checked>
-                        <label class="btn btn-secondary active" for="legendToggle" id="legendLabel">Show legend</label>
+                    <div class="btn-group invisible" role="group" id="cim-diagram-legend" aria-label="Diagram legend">
+                        <input type="checkbox" class="btn-check" id="legendToggle" autocomplete="off" checked="checked">
+                        <label class="btn btn-secondary" for="legendToggle" id="legendLabel">Show legend</label>
                     </div>
                 </div>
             </div>
@@ -539,6 +537,8 @@
                 self.disableConnect();
                 self.enableDrag();
                 document.querySelector("#cim-diagram-controls").classList.remove("invisible");
+                document.querySelector("#cim-diagram-insert").classList.remove("invisible");
+                document.querySelector("#cim-diagram-legend").classList.remove("invisible");
                 // modality for drag+zoom
                 let oldStatus = null;         
                 d3.select("body")
@@ -645,7 +645,6 @@
         enableDrag() {
             let cnsToMove = [];
             self.disableDrag();
-            d3.select(self.root).selectAll("#cim-diagram-controls > label:not(#selectLabel)").classed("active", false);
             self.status = "DRAG";
             let drag = d3
                 .drag()
@@ -925,7 +924,6 @@
                     self.enableConnect();
                 }
             });
-            d3.select(self.root).selectAll("#cim-diagram-controls > label:not(#connectLabel)").classed("active", false);
             self.status = "CONNECT";
 
             d3.select("svg").selectAll("svg > g#diagram-main > g:not(.edges) > g > g.Terminal")
@@ -1063,7 +1061,6 @@
                 options = {windNum: 3};
             }
             self.disableAll();
-            d3.select(self.root).selectAll("#cim-diagram-controls > label").classed("active", false);
             document.querySelector("cimDiagramControls").querySelectorAll("input").forEach(function(el) {
                 el.checked = false;
             });
@@ -1101,7 +1098,6 @@
                 type = e;
                 text = d3.select("#" + type).text();
             }
-            d3.select(self.root).selectAll("#cim-diagram-controls > label").classed("active", false);
             document.querySelector("cimDiagramControls").querySelectorAll("input").forEach(function(el) {
                 el.checked = false;
             });
