@@ -591,14 +591,13 @@ function cimModel() {
                             return Promise.reject(e);
                         });
                 } else {
-                    let result = readUploadedFileAsText(file).then(function(parsedXML) {
+                    result = readUploadedFileAsText(file).then(function(parsedXML) {
                         data.all = parsedXML;
                         return buildModel();
                     }).catch(function(e) {
                         model.clear();
                         return Promise.reject(e);
                     });
-                    return result;
                 }
             } 
             return result;
