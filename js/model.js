@@ -73,8 +73,18 @@ function cimModel() {
         let gldata = [];
         let eqbdata = null;
         let tpbdata = null;
+        
         function parseUnzipped(content) {
-            let result = readUploadedFileAsText(content).then(function(parsedXML) {
+            for (const cimfile in content) {
+                let parser = new DOMParser();
+                let cimXML = fflate.strFromU8(content[cimfile]);
+                let parsedXML = parser.parseFromString(cimXML, "application/xml");
+                if (parsedXML.children.length > 0) {
+                    if (parsedXML.children[0].nodeName !== "rdf:RDF") {
+                        // parsing has failed
+                        return Promise.reject(new DOMException("invalid input file."));
+                    }
+                }
                 if (eqdata.length === 0 ||
                     dldata.length === 0 ||
                     svdata.length === 0 ||
@@ -119,22 +129,12 @@ function cimModel() {
                         gldata.push(parsedXML);
                     }               
                 }
-                return Promise.resolve();
-            });
-            return result;
+            }
+            return Promise.resolve();
         };
 
         return function(zip) {
-            let promises = [];
-            zip.forEach(function (relativePath, zipEntry) {
-                let promise = zipEntry.async("blob")
-                    .then(parseUnzipped)
-                    .catch(function(e) {
-                        return Promise.reject(e);
-                    });
-                promises.push(promise);
-            });
-            let result = Promise.all(promises).then(function() {
+            let result = unzip(new Uint8Array(zip)).then(parseUnzipped).then(function() {
                 // at the end we need to have at least the EQ file
                 if (eqdata.length > 0 && isBoundary === false) {
                     let all = parser.parseFromString(emptyFile, "application/xml");
@@ -238,6 +238,30 @@ function cimModel() {
         };
     };
 
+    function zip(inputFiles) {
+        return new Promise(function(resolve, reject) {
+            fflate.zip(inputFiles, (err, zipped) => {
+                if (err === null) {
+                    resolve(new Blob([zipped.buffer]));
+                } else {
+                    reject(new DOMException("problem zipping input files."));
+                }
+              })
+        });
+    };
+
+    function unzip(inputFile) {
+        return new Promise(function(resolve, reject) {
+            fflate.unzip(inputFile, (err, unzipped) => {
+                if (err === null) {
+                    resolve(unzipped);
+                } else {
+                    reject(new DOMException("problem unzipping input file."));
+                }
+              })
+        });
+    };
+
     // plain RDF/XML file loading with promise wrapper. This
     // function uses the FileReader API but wrapped in a promise-based
     // pattern. Copied with minor modifications from StackOverflow.
@@ -264,6 +288,22 @@ function cimModel() {
                 resolve(parsedXML);
             };
             reader.readAsText(inputFile);
+        });
+    };
+
+    function readAsArrayBuffer(inputFile) {
+        const reader = new FileReader();
+
+        return new Promise(function(resolve, reject) {
+            reader.onerror = function() {
+                reader.abort();
+                reject(new DOMException("problem parsing input file."));
+            };
+
+            reader.onload = function() {
+                resolve(reader.result);
+            };
+            reader.readAsArrayBuffer(inputFile);
         });
     };
 
@@ -584,7 +624,7 @@ function cimModel() {
                 model.fileName = file.name;
                 if (file.name.endsWith(".zip")) {
                     // zip file loading (ENTSO-E).
-                    result = JSZip.loadAsync(file)
+                    result = readAsArrayBuffer(file)
                         .then(parseZip(false))
                         .catch(function(e) {
                             model.clear();
@@ -674,7 +714,7 @@ function cimModel() {
             let result = Promise.resolve();
             if (file.name.endsWith(".zip")) {
                 // zip file loading (ENTSO-E).
-                result = JSZip.loadAsync(file)
+                result = readAsArrayBuffer(file)
                     .then(parseZip(true))
                     .catch(function(e) {
                         return Promise.reject(e);
@@ -720,7 +760,7 @@ function cimModel() {
                 return Promise.reject("error: no CIM file loaded.");
             }
             let oSerializer = new XMLSerializer();
-            let zip = new JSZip();
+            let zipFiles = {};
             let all = null;
             // set links according to CGMES schemas
             let linksToChange = [];
@@ -756,13 +796,13 @@ function cimModel() {
             let sshDoc = profile("SSH", [sshNS], all, [eqDoc]);
             // create GL file
             let glDoc = profile("GL", [glNS], all, [eqDoc]);
-            zip.file("EQ.xml", oSerializer.serializeToString(eqDoc));
-            zip.file("DL.xml", oSerializer.serializeToString(dlDoc));
-            zip.file("SV.xml", oSerializer.serializeToString(svDoc));
-            zip.file("TP.xml", oSerializer.serializeToString(tpDoc));
-            zip.file("SSH.xml", oSerializer.serializeToString(sshDoc));
-            zip.file("GL.xml", oSerializer.serializeToString(glDoc));
-            return zip.generateAsync({type:"blob", compression: "DEFLATE"});
+            zipFiles["EQ.xml"] = fflate.strToU8(oSerializer.serializeToString(eqDoc));
+            zipFiles["DL.xml"] = fflate.strToU8(oSerializer.serializeToString(dlDoc));
+            zipFiles["SV.xml"] = fflate.strToU8(oSerializer.serializeToString(svDoc));
+            zipFiles["TP.xml"] = fflate.strToU8(oSerializer.serializeToString(tpDoc));
+            zipFiles["SSH.xml"] = fflate.strToU8(oSerializer.serializeToString(sshDoc));
+            zipFiles["GL.xml"] = fflate.strToU8(oSerializer.serializeToString(glDoc));
+            return zip(zipFiles);
 
             function profile(name, nss, data, deps) {
                 let all = [].filter.call(data, function(el) {
