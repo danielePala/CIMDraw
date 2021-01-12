@@ -139,9 +139,17 @@ function cimSchema() {
                 }
                 // try to get from map
                 let schObj = schemaObjsMap.get(profile+type);
-                if (typeof(schObj) !== "undefined") {
+                if (typeof(schObj) !== "undefined" && schObj !== null) {
                     ret = schObj;
                     break;
+                }
+                if (schObj === null) {
+                    // we found null so the object is NOT in this schema
+                    if (typeof(schema) !== "undefined") {
+                        break; // we have finished
+                    } else {
+                        continue; // proceed to the next schema
+                    }
                 }
                 // not found in map, search and add it
                 let schData = schemaData[profile];
@@ -151,8 +159,13 @@ function cimSchema() {
                 })[0];
                 if (typeof(schObj) !== "undefined") {
                     ret = schObj;
+                    // found, add it to the map
                     schemaObjsMap.set(profile+type, schObj);
                     break;
+                } else {
+                    // add null to the map, indicating that the object is 
+                    // NOT in this schema
+                    schemaObjsMap.set(profile+type, null);
                 }
             };
             return ret;
@@ -403,18 +416,20 @@ function cimSchema() {
         isConcrete(obj, schemaName) {
             let ret = false;
             let schDesc = schema.getSchemaObject(obj.localName, schemaName);
-            let stereotypes = [].filter.call(schDesc.children, function(el) {
-                return el.nodeName === "cims:stereotype";
-            });
-            stereotypes.forEach(function(stereotype) {
-                let resource = stereotype.attributes.getNamedItem("rdf:resource");
-                if (resource !== null) {
-                    let val = resource.value;
-                    if (val === "http://iec.ch/TC57/NonStandard/UML#concrete") {
-                        ret = true;
+            if (schDesc !== null) {
+                let stereotypes = [].filter.call(schDesc.children, function (el) {
+                    return el.nodeName === "cims:stereotype";
+                });
+                stereotypes.forEach(function (stereotype) {
+                    let resource = stereotype.attributes.getNamedItem("rdf:resource");
+                    if (resource !== null) {
+                        let val = resource.value;
+                        if (val === "http://iec.ch/TC57/NonStandard/UML#concrete") {
+                            ret = true;
+                        }
                     }
-                }
-            });
+                });
+            }
             return ret;
         },
 
@@ -423,15 +438,17 @@ function cimSchema() {
         isDescription(obj, schemaName) {
             let ret = false;
             let schDesc = schema.getSchemaObject(obj.localName, schemaName);
-            let stereotypes = [].filter.call(schDesc.children, function(el) {
-                return el.nodeName === "cims:stereotype";
-            });
-            stereotypes.forEach(function(stereotype) {
-                let val = stereotype.textContent;
-                if (val === "Description") {
-                    ret = true;
-                }
-            });
+            if (schDesc !== null) {
+                let stereotypes = [].filter.call(schDesc.children, function (el) {
+                    return el.nodeName === "cims:stereotype";
+                });
+                stereotypes.forEach(function (stereotype) {
+                    let val = stereotype.textContent;
+                    if (val === "Description") {
+                        ret = true;
+                    }
+                });
+            }
             return ret;
         },
 
