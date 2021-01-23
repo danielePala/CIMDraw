@@ -611,7 +611,7 @@
                             "Terminal.ConductingEquipment")[0];
                         if (typeof(psr) !== "undefined") {
                             let limPsrUUID = self.props.model.ID(psr);
-                            let limPsrSelection = d3.select("g#" + limPsrUUID);
+                            let limPsrSelection = d3.select("g#cimdiagram-" + limPsrUUID);
                             self.createStatusInfo(limPsrSelection);
                         }
                         break;
@@ -629,7 +629,7 @@
                             }
                             if (psr !== null) {
                                 let psrUUID = self.props.model.ID(psr);
-                                let psrSelection = d3.select("g#" + psrUUID);
+                                let psrSelection = d3.select("g#cimdiagram-" + psrUUID);
                                 self.createStatusInfo(psrSelection);
                             }
                         }

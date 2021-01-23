@@ -173,7 +173,6 @@
                 </div>
                 <div role="tabpanel" class="tab-pane fade" id="limits" aria-labelledby="limitsTab">
                     <ul class="list-group" id="CIMLimits"></ul>
-                </div>
             </div>
             
         </div>
@@ -390,158 +389,196 @@
         },
      
         addNewObject(object) {
-            let cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
-            let cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
-            let cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
-            let cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
-            let cimCurvesAndRegs = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMCurvesAndRegs");
-            let cimLimits = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMLimits");
-            let equivalents = undefined;
-            let rotMac = undefined;
-            let loads = undefined;
-            let allComps = undefined;
-            let genUnits = undefined;
+            const tabs = d3.select("div.tree > div.tab-content > div.tab-pane");
+            const cimNetwork = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMComponents");
+            const cimContainers = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMContainers");
+            const cimMeasurements = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMMeasurements");
+            const cimBases = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMBases");
+            const cimCurvesAndRegs = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMCurvesAndRegs");
+            const cimLimits = d3.select("div.tree > div.tab-content > div.tab-pane > ul#CIMLimits");
             switch (object.nodeName) {
-                case "cim:ACLineSegment":
+                case "cim:ACLineSegment": {
                     self.elements(cimNetwork, "ACLineSegment", "AC Line Segments", [object]);
                     break;
-                case "cim:Breaker":
+                }
+                case "cim:Breaker": {
                     self.elements(cimNetwork, "Breaker", "Breakers", [object]);
                     break;
-                case "cim:Disconnector":
+                }
+                case "cim:Disconnector": {
                     self.elements(cimNetwork, "Disconnector", "Disconnectors", [object]);
                     break;
-                case "cim:LoadBreakSwitch":
+                }
+                case "cim:LoadBreakSwitch": {
                     self.elements(cimNetwork, "LoadBreakSwitch", "Load Break Switches", [object]);
                     break;
-                case "cim:Junction":
+                }
+                case "cim:Junction": {
                     self.elements(cimNetwork, "Junction", "Junctions", [object]);
                     break;
-                case "cim:EnergySource":
-                    equivalents = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", [object]);
+                }
+                case "cim:EnergySource": {
+                    const equivalents = self.createTopContainer(cimNetwork, "Equivalent", "Equivalents", [object]);
                     self.elements(equivalents, "EnergySource", "Energy Sources", [object]);
                     break;
-                case "cim:SynchronousMachine":
-                    rotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "RotatingMachines", [object]);
+                }
+                case "cim:SynchronousMachine": {
+                    const rotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "RotatingMachines", [object]);
                     self.elements(rotMac, "SynchronousMachine", "Synchronous Machines", [object]);
                     break;
-                case "cim:AsynchronousMachine":
-                    rotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "RotatingMachines", [object]);
+                }
+                case "cim:AsynchronousMachine": {
+                    const rotMac = self.createTopContainer(cimNetwork, "RotatingMachine", "RotatingMachines", [object]);
                     self.elements(rotMac, "AsynchronousMachine", "Asynchronous Machines", [object]);
                     break;
-                case "cim:EnergyConsumer":
-                    loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
+                }
+                case "cim:EnergyConsumer": {
+                    const loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
                     self.elements(loads, "EnergyConsumer", "Energy Consumers", [object]);
                     break;
-                case "cim:ConformLoad":
-                    loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
+                }
+                case "cim:ConformLoad": {
+                    const loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
                     self.elements(loads, "ConformLoad", "Conform Loads", [object]);
                     break;
-                case "cim:NonConformLoad":
-                    loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
+                }
+                case "cim:NonConformLoad": {
+                    const loads = self.createTopContainer(cimNetwork, "Load", "Loads", [object]);
                     self.elements(loads, "NonConformLoad", "Non Conform Loads", [object]);
                     break;
-                case "cim:LinearShuntCompensator":
-                    allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", [object]);
+                }
+                case "cim:LinearShuntCompensator": {
+                    const allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", [object]);
                     self.elements(allComps, "LinearShuntCompensator", "Linear", [object]);
                     break;
-                case "cim:NonlinearShuntCompensator":
-                    allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", [object]);
+                }
+                case "cim:NonlinearShuntCompensator": {
+                    const allComps = self.createTopContainer(cimNetwork, "Compensator", "Compensators", [object]);
                     self.nlCompensators(allComps, [object]);
                     break;
-                case "cim:NonlinearShuntCompensatorPoint":
-                    let nlc = self.props.model.getTargets([object], "NonlinearShuntCompensatorPoint.NonlinearShuntCompensator");
-                    let nlcUUID = self.props.model.ID(nlc[0]);
-                    let nlcG = cimNetwork.selectAll("ul#" + nlcUUID);
+                }
+                case "cim:NonlinearShuntCompensatorPoint": {
+                    const nlc = self.props.model.getTargets([object], "NonlinearShuntCompensatorPoint.NonlinearShuntCompensator");
+                    const nlcUUID = self.props.model.ID(nlc[0]);
+                    const nlcG = cimNetwork.selectAll("ul#" + nlcUUID);
                     self.nlCompensatorPoints(nlcG, [object]);
                     break;
-                case "cim:PowerTransformer":
+                }
+                case "cim:PowerTransformer": {
                     self.powerTransformers(cimNetwork, [object]);
                     break;
-                case "cim:RatioTapChanger":
-                    let tcEnd = self.props.model.getTargets([object], "RatioTapChanger.TransformerEnd");
-                    let endUUID = self.props.model.ID(tcEnd[0]);
-                    let endG = cimNetwork.selectAll("ul#" + endUUID);
+                }
+                case "cim:RatioTapChanger": {
+                    const tcEnd = self.props.model.getTargets([object], "RatioTapChanger.TransformerEnd");
+                    const endUUID = self.props.model.ID(tcEnd[0]);
+                    const endG = cimNetwork.selectAll("ul#" + endUUID);
                     self.tapChangers(endG, [object]);
                     break;
-                case "cim:BusbarSection":
+                }
+                case "cim:BusbarSection": {
                     self.elements(cimNetwork, "BusbarSection", "Nodes", [object]);
                     break;
-                case "cim:BaseVoltage":
-                    let bvEnter = self.elements(cimBases, "BaseVoltage", "Base Voltages", [object]);
+                }
+                case "cim:BaseVoltage": {
+                    const bvEnter = self.elements(cimBases, "BaseVoltage", "Base Voltages", [object]);
                     self.createDeleteMenu(bvEnter);
                     break;
-                case "cim:GeographicalRegion":
+                }
+                case "cim:GeographicalRegion": {
                     self.geoRegions(cimContainers, [object]);
                     break;
-                case "cim:SubGeographicalRegion":
-                    let region = self.props.model.getTargets([object], "SubGeographicalRegion.Region");
-                    let regionUUID = self.props.model.ID(region[0]);
-                    let regionG = cimContainers.selectAll("ul#" + regionUUID);
+                }
+                case "cim:SubGeographicalRegion": {
+                    const region = self.props.model.getTargets([object], "SubGeographicalRegion.Region");
+                    const regionUUID = self.props.model.ID(region[0]);
+                    const regionG = cimContainers.selectAll("ul#" + regionUUID);
                     self.subGeoRegions(regionG, [object]);
-                    break;          
-                case "cim:Substation":
+                    break;   
+                }       
+                case "cim:Substation": {
                     self.substations(cimContainers, [object]);
                     break;
-                case "cim:VoltageLevel":
-                    let vlSub = self.props.model.getTargets([object], "VoltageLevel.Substation");
-                    let subUUID = self.props.model.ID(vlSub[0]);
-                    let subG = cimContainers.selectAll("ul#" + subUUID);
+                }
+                case "cim:VoltageLevel": {
+                    const vlSub = self.props.model.getTargets([object], "VoltageLevel.Substation");
+                    const subUUID = self.props.model.ID(vlSub[0]);
+                    const subG = cimContainers.selectAll("ul#" + subUUID);
                     self.voltageLevels(subG, [object]);
                     break;
-                case "cim:Bay":
-                    let bayVl = self.props.model.getTargets([object], "Bay.VoltageLevel");
-                    let vlUUID = self.props.model.ID(bayVl[0]);
-                    let vlG = cimContainers.selectAll("ul#" + vlUUID);
+                }
+                case "cim:Bay": {
+                    const bayVl = self.props.model.getTargets([object], "Bay.VoltageLevel");
+                    const vlUUID = self.props.model.ID(bayVl[0]);
+                    const vlG = cimContainers.selectAll("ul#" + vlUUID);
                     self.bays(vlG, [object]);
                     break;
-                case "cim:Line":
-                    let lineEnter = self.elements(cimContainers, "Line", "Lines", [object]);
+                }
+                case "cim:Line": {
+                    const lineEnter = self.elements(cimContainers, "Line", "Lines", [object]);
                     self.createDeleteMenu(lineEnter);
                     break;
-                case "cim:GeneratingUnit":
-                    genUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", [object]);
+                }
+                case "cim:GeneratingUnit": {
+                    const genUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", [object]);
                     self.elements(genUnits, "GeneratingUnit", "General Units", [object]);
                     break;
-                case "cim:ThermalGeneratingUnit":
-                    genUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", [object]);
+                }
+                case "cim:ThermalGeneratingUnit": {
+                    const genUnits = self.createTopContainer(cimContainers, "GeneralGeneratingUnit", "Generating Units", [object]);
                     self.elements(genUnits, "ThermalGeneratingUnit", "Thermal Units", [object]);
                     break;
-                case "cim:Analog":
-                    let analogEnter = self.elements(cimMeasurements, "Analog", "Analogs", [object]);
+                }
+                case "cim:Analog": {
+                    const analogEnter = self.elements(cimMeasurements, "Analog", "Analogs", [object]);
                     self.createDeleteMenu(analogEnter);
                     break;
-                case "cim:Discrete":
-                    let discEnter = self.elements(cimMeasurements, "Discrete", "Discretes", [object]);
+                }
+                case "cim:Discrete": {
+                    const discEnter = self.elements(cimMeasurements, "Discrete", "Discretes", [object]);
                     self.createDeleteMenu(discEnter);
                     break;
-                case "cim:LoadResponseCharacteristic":
-                    let lrEnter = self.elements(cimCurvesAndRegs, "LoadResponseCharacteristic", "Load Response Characteristics", [object]);
+                }
+                case "cim:LoadResponseCharacteristic": {
+                    const lrEnter = self.elements(cimCurvesAndRegs, "LoadResponseCharacteristic", "Load Response Characteristics", [object]);
                     self.createDeleteMenu(lrEnter);
                     break;
-                case "cim:TapChangerControl":
-                    let tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", [object]);
+                }
+                case "cim:TapChangerControl": {
+                    const tccEnter = self.elements(cimCurvesAndRegs, "TapChangerControl", "Tap Changer Controls", [object]);
                     self.createDeleteMenu(tccEnter);
                     break;
-                case "cim:RegulatingControl":
-                    let rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", [object]);
+                }
+                case "cim:RegulatingControl": {
+                    const rcEnter = self.elements(cimCurvesAndRegs, "RegulatingControl", "Regulating Controls", [object]);
                     self.createDeleteMenu(rcEnter);
                     break;
-                case "cim:OperationalLimitType":
-                    let limTypesEnter = self.elements(cimLimits, "OperationalLimitType", "Operational Limit Types", [object]);
+                }
+                case "cim:OperationalLimitType": {
+                    const limTypesEnter = self.elements(cimLimits, "OperationalLimitType", "Operational Limit Types", [object]);
                     self.createDeleteMenu(limTypesEnter);
-                case "cim:OperationalLimitSet":
-                    self.limitSets(cimLimits, [object]);
                     break;
+                }
+                case "cim:OperationalLimitSet": {
+                    let eq = self.props.model.getTargets([object], "OperationalLimitSet.Equipment");
+                    if (eq.length === 0) {
+                        const term = self.props.model.getTargets([object], "OperationalLimitSet.Terminal");
+                        eq = self.props.model.getTargets(term, "Terminal.ConductingEquipment");
+                    }
+                    const eqUUID = self.props.model.ID(eq[0]);
+                    const eqG = tabs.selectAll("ul#" + eqUUID);
+                    self.limitSets(eqG, [object]);
+                    break;
+                }
                 case "cim:VoltageLimit":
                 case "cim:CurrentLimit":
                 case "cim:ActivePowerLimit":
-                case "cim:ApparentPowerLimit":
-                    let opSet = self.props.model.getTargets([object], "OperationalLimit.OperationalLimitSet");
-                    let setUUID = self.props.model.ID(opSet[0]);
-                    let setG = cimLimits.selectAll("ul#" + setUUID);
+                case "cim:ApparentPowerLimit": {
+                    const opSet = self.props.model.getTargets([object], "OperationalLimit.OperationalLimitSet");
+                    const setUUID = self.props.model.ID(opSet[0]);
+                    const setG = tabs.selectAll("ul#" + setUUID);
                     self.limits(setG, [object]);
                     break;
+                }
                 default:
             }       
         },
@@ -582,7 +619,6 @@
                 let allSubGeoRegions = null;
                 let allGeoRegions = null;
                 let allLoadResponses = null;
-                let allLimitSets = null;
                 // setup the right function to get objects
                 let getObjects = self.props.model.getObjects;
                 let getConnectors = self.props.model.getObjects;
@@ -653,16 +689,11 @@
                     allLoadResponses = self.props.model.getLinkedObjects(
                         ["cim:LoadResponseCharacteristic"],
                         ["LoadResponseCharacteristic.EnergyConsumer"]);
-                    allLimitSets = self.props.model.getLinkedObjects(
-                        ["cim:OperationalLimitSet"],
-                        ["OperationalLimitSet.Equipment",
-                        "OperationalLimitSet.Terminal/Terminal.ConductingEquipment"]);
                 } else {
                     allContainers = getObjects(contNames);
                     allMeasurements = getObjects(measNames);
                     allGeneratingUnits = getObjects(genNames);
                     allLoadResponses = getObjects(["cim:LoadResponseCharacteristic"]);
-                    allLimitSets = getObjects(["cim:OperationalLimitSet"]);
                 }
                 let noDiagObjs = self.props.model.getObjects(
                     ["cim:BaseVoltage",
@@ -738,7 +769,6 @@
                 // ====================================================================
                 let limTypesEnter = self.elements(cimLimits, "OperationalLimitType", "Operational Limit Types", noDiagObjs["cim:OperationalLimitType"]);
                 self.createDeleteMenu(limTypesEnter);
-                self.limitSets(cimLimits, allLimitSets["cim:OperationalLimitSet"]);
                 
                 // add buttons
                 self.createAddButton(cimBases, "BaseVoltage");
@@ -848,9 +878,6 @@
                     self.props.model.ID(d) + "PowerTransformerEnd",
                     "Transformer Windings",
                     trafoEnds);
-                    for (const node of trafoEndsEnter.nodes()) {
-                        node.parentNode.classList.add("CIM-subobject")
-                    }
                 // tap changer(s)
                 trafoEndsEnter.each(function(d, i) {
                     let tcs = self.props.model.getTargets([d], "TransformerEnd.RatioTapChanger");
@@ -881,9 +908,6 @@
                 self.props.model.ID(nlc) + "NonlinearShuntCompensatorPoint",
                 "Points",
                 nlcPoints, true); 
-            for (const node of nlcPointsEnter.nodes()) {
-                node.parentNode.classList.add("CIM-subobject")
-            }
             self.createDeleteMenu(nlcPointsEnter);
         },
 
@@ -894,14 +918,12 @@
                 self.props.model.ID(trafo) + "RatioTapChanger",
                 "Ratio Tap Changer",
                 tcs);
-            for (const node of tcEnter.nodes()) {
-                node.parentNode.classList.add("CIM-subobject")
-            }
             self.createDeleteMenu(tcEnter);
         },
 
-        limitSets(tab, allLimits) {
-            let limSetEnter = self.elements(tab, "OperationalLimitSet", "Operational Limit Sets", allLimits);
+        limitSets(eqG, allLimits) {
+            const eq = eqG.data()[0];
+            let limSetEnter = self.elements(eqG, self.props.model.ID(eq) + "OperationalLimitSet", "Operational Limit Sets", allLimits);
             limSetEnter.each(function(d, i) {
                 // limits
                 let lims = self.props.model.getTargets(
@@ -1037,7 +1059,7 @@
             btnSel.on("contextmenu", menu);
         },
 
-        elements(cimNetwork, name, printName, data, isSubobject) {
+        elements(cimNetwork, name, printName, data) {
             let elementsTopContainer = cimNetwork.select("li." + name + "s");
             let elements = elementsTopContainer.select("ul#" + name + "sList");
             if (elementsTopContainer.empty() === true) {
@@ -1131,8 +1153,8 @@
             elementCount = elementCount + elementEnter.size();
             elementsTopContainer.select(":scope > h4 > span").html(elementCount);
             // update also the top containers (if any)
-            if (typeof(isSubobject) === "undefined" || isSubobject === false) {
-                let tcNode = elementsTopContainer.node();
+            const tcNode = elementsTopContainer.node();
+            if (tcNode.closest(".CIM-object") === null) {
                 let parent = tcNode.closest("li.cim-parent-container");
                 while (parent !== null) {
                     let span = parent.querySelector(":scope>h4>span");
@@ -1142,12 +1164,12 @@
                     parent = parent.parentNode.closest("li.cim-parent-container");
                 }
             }
+
             return elementEnter;
         },
 
         generateAttrsAndLinks(elementEnter) {
             // add attributes
-            
             let elementDiv = createTopDivs(document.getElementById("sshInput").checked === false, "EQ");
             self.generateAttributes(elementDiv);
             let sshDiv = createTopDivs(document.getElementById("sshInput").checked === true, "SSH");
@@ -1157,6 +1179,14 @@
             self.generateLinks(eqLinks);
             let sshLinks = createLinkDivs(document.getElementById("sshInput").checked === true, "SSH");
             self.generateLinks(sshLinks);
+            // For every subclass of Equipment we provide also its operational limits
+            const d = elementEnter.datum();
+            if (self.props.model.schema.isA("Equipment", d)) {
+                let terms = self.props.model.getTerminals([d]);
+                let limSets = self.props.model.getTargets([d], "Equipment.OperationalLimitSet");
+                limSets = limSets.concat(self.props.model.getTargets(terms, "ACDCTerminal.OperationalLimitSet"));
+                self.limitSets(elementEnter, limSets);
+            }
             
             function createTopDivs(visible, profile) {
                 let elementDiv = elementEnter
