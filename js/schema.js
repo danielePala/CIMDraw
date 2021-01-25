@@ -1,7 +1,7 @@
 /*
   Fundamental functions to use CGMES schemas.
 
-  Copyright 2017-2020 Daniele Pala <pala.daniele@gmail.com>
+  Copyright 2017-2021 Daniele Pala <pala.daniele@gmail.com>
 
   This file is part of CIMDraw.
 
