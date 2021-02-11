@@ -1715,7 +1715,7 @@
                 function shown(event) {
                     event.stopPropagation();
                     let elementEnter = d3.select(this.parentNode).filter(".CIM-object").select("ul");
-                    if (elementEnter.selectAll("li.attribute").size() === 0) {
+                    if (elementEnter.size() > 0 && elementEnter.selectAll("li.attribute").size() === 0) {
                         self.generateAttrsAndLinks(elementEnter);
                     }
                     scrollToVisible(targetUUID);
