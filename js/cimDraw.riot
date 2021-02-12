@@ -331,7 +331,6 @@
             document.getElementById("cgmes-save").addEventListener("click", function(e) {
                 const out = self.state.cimModel.saveAsCGMES();
                 out.then(function(content) {
-                    console.log(content);
                     const objectURL = URL.createObjectURL(content);
                     document.getElementById("cgmes-download").setAttribute("href", objectURL);
                     document.getElementById("cgmes-download").click();

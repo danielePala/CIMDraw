@@ -99,7 +99,6 @@ function topologyProcessor(model) {
                     let trafoEnds = model.getTargets(terms, "Terminal.TransformerEnd");
                     baseVs =  model.getTargets(trafoEnds, "TransformerEnd.BaseVoltage");
                     if (baseVs.length > 0) {
-                        console.log(trafoEnds);
                         model.setLink(tobj, "cim:TopologicalNode.BaseVoltage", baseVs[0]);
                     } else {
                         // third option: containment in voltage level
