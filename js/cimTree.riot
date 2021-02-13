@@ -1164,6 +1164,15 @@
                     parent = parent.parentNode.closest("li.cim-parent-container");
                 }
             }
+            // For every subclass of Equipment we provide also its operational limits
+            elementEnter.each(function(d) {
+                if (self.props.model.schema.isA("Equipment", d)) {
+                    let terms = self.props.model.getTerminals([d]);
+                    let limSets = self.props.model.getTargets([d], "Equipment.OperationalLimitSet");
+                    limSets = limSets.concat(self.props.model.getTargets(terms, "ACDCTerminal.OperationalLimitSet"));
+                    self.limitSets(d3.select(this), limSets);
+                }
+            });
 
             return elementEnter;
         },
@@ -1179,14 +1188,6 @@
             self.generateLinks(eqLinks);
             let sshLinks = createLinkDivs(document.getElementById("sshInput").checked === true, "SSH");
             self.generateLinks(sshLinks);
-            // For every subclass of Equipment we provide also its operational limits
-            const d = elementEnter.datum();
-            if (self.props.model.schema.isA("Equipment", d)) {
-                let terms = self.props.model.getTerminals([d]);
-                let limSets = self.props.model.getTargets([d], "Equipment.OperationalLimitSet");
-                limSets = limSets.concat(self.props.model.getTargets(terms, "ACDCTerminal.OperationalLimitSet"));
-                self.limitSets(elementEnter, limSets);
-            }
             
             function createTopDivs(visible, profile) {
                 let elementDiv = elementEnter
