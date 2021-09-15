@@ -460,7 +460,7 @@ function cimModel() {
     };
 
     // Returns all relations between given sources and other objects,
-    // via a given link name. The inverse link name should be supplied too.
+    // via a given link name.
     // It doesn't filter by diagram.
     // This is a 'private' function (not visible in the model object).
     function getGraph(sources, linkName) {
